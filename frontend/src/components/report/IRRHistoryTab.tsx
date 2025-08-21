@@ -1820,6 +1820,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                 // Store using the normalized date for consistency, but only if not NaN
                                 if (!isNaN(irrValue)) {
                                   productHistoricalIrrMap.set(normalizedDbDate, irrValue);
+                                  console.log(`🔍 [INDIVIDUAL CARD DEBUG] Product ${productHistory.product_id} storing IRR for date ${normalizedDbDate}: ${irrValue}% (from portfolio_historical_irr table)`);
                                 }
                               }
                             });
@@ -1882,6 +1883,7 @@ Available database dates: ${productHistory.portfolio_historical_irr.map((r: any)
                                   <td key={date} className="px-2 py-2 text-xs font-bold text-left text-black">
                                     {(() => {
                                       const historicalIrr = productHistoricalIrrMap.get(normalizedDate);
+                                      console.log(`🔍 [INDIVIDUAL CARD DISPLAY] Product ${productHistory.product_id} displaying IRR for date ${normalizedDate}: ${historicalIrr}% (formatted: ${historicalIrr !== null && historicalIrr !== undefined ? formatIrrWithPrecision(historicalIrr) : '-'})`);
                                       if (historicalIrr !== null && historicalIrr !== undefined) {
                                         return formatIrrWithPrecision(historicalIrr);
                                       }

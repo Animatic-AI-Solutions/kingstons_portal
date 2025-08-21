@@ -173,20 +173,14 @@ export class IRRCalculationService implements IIRRCalculationService {
       this.log('Selected dates:', reportData.selectedHistoricalIRRDates);
       this.log('Available dates:', reportData.availableHistoricalIRRDates);
       
-      // Check if we have pre-fetched raw historical IRR data to avoid duplicate API calls
-      if (reportData.rawHistoricalIRRData) {
-        this.log('🎯 [OPTIMIZATION] Using pre-fetched historical IRR data, avoiding duplicate API calls');
-        
-        // Create the IRR history data structure using pre-fetched data
-        const irrHistoryPromises = reportData.productSummaries.map(product => {
-          const rawHistoricalData = reportData.rawHistoricalIRRData!.get(product.id);
-          return this.processProductHistoricalIRRWithRawData(product, reportData.selectedHistoricalIRRDates!, rawHistoricalData);
-        });
-        
-        const irrHistoryResults = await Promise.all(irrHistoryPromises);
-        
-        this.log('🎯 [OPTIMIZATION] Processed historical IRR data using pre-fetched data - no API calls made');
-        return irrHistoryResults;
+      // FORCE FRESH DATA: Always fetch fresh historical IRR data to ensure consistency with summary table
+      // Skip pre-fetched data to avoid stale data issues where individual cards show different values
+      // than the history summary table (e.g., 48.6% vs 58.6% for same product/date)
+      this.log('🔄 [DATA CONSISTENCY] Forcing fresh historical IRR data fetch to match summary table data');
+      
+      // Always use fresh API calls to ensure data consistency
+      if (false && reportData.rawHistoricalIRRData) {
+        // Disabled pre-fetched data optimization
       } else {
         this.log('⚠️ No pre-fetched historical IRR data available, falling back to API calls');
         

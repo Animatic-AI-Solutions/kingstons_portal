@@ -322,24 +322,31 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
   }, [memoizedProductIds, memoizedSelectedDates, memoizedClientGroupIds, irrSummaryService]);
 
   // Get IRR value for a specific product and date from flat rows
-  const getIRRValueForProductAndDate = (productName: string, date: string): number | null => {
-    // Debug: Log the search parameters and available data for Previous Funds entries
-    if (productName.includes("Previous Funds")) {
-      const matchingRows = tableData.productRows.filter((row: any) => row.product_name === productName);
-      console.log(`🔍 [PREVIOUS FUNDS DEBUG] Searching for: ${productName} on ${date}`);
-      console.log(`🔍 [PREVIOUS FUNDS DEBUG] Available rows for this product:`, matchingRows);
-    }
+  const getIRRValueForProductAndDate = (productId: number, date: string): number | null => {
+    console.log(`🔍 [IRR SUMMARY DEBUG] Looking for productId: ${productId}, date: ${date}`);
+    console.log(`🔍 [IRR SUMMARY DEBUG] Available productRows:`, tableData.productRows.map(row => ({
+      product_id: row.product_id,
+      irr_date: row.irr_date,
+      irr_result: row.irr_result,
+      product_name: row.product_name
+    })));
     
     const flatRow = tableData.productRows.find((row: any) => 
-      row.product_name === productName && row.irr_date === date
+      row.product_id === productId && row.irr_date === date
     ) as any;
     
-    if (productName.includes("Previous Funds")) {
-      console.log(`🔍 [PREVIOUS FUNDS DEBUG] Found row:`, flatRow);
-      console.log(`🔍 [PREVIOUS FUNDS DEBUG] Returning IRR:`, flatRow ? flatRow.irr_result : null);
-    }
+    console.log(`🔍 [IRR SUMMARY DEBUG] Found row for productId ${productId}, date ${date}:`, flatRow ? {
+      product_id: flatRow.product_id,
+      product_name: flatRow.product_name,
+      irr_date: flatRow.irr_date,
+      irr_result: flatRow.irr_result,
+      portfolio_id: flatRow.portfolio_id
+    } : null);
     
-    return flatRow ? flatRow.irr_result : null;
+    const result = flatRow ? flatRow.irr_result : null;
+    console.log(`🔍 [IRR SUMMARY DEBUG] Returning IRR for productId ${productId}, date ${date}: ${result}`);
+    
+    return result;
   };
 
   // Get unique products from flat rows (including Previous Funds entries)
@@ -369,23 +376,14 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
 
   // Get portfolio IRR for a specific date - backend already filters for portfolios with valuations
   const getPortfolioIRRForDate = (date: string): number | null => {
-    // Backend calculation already ensures only portfolios with valuations are included
-    // No need to check if ALL current products have data - historical portfolios may not have existed
-    const isCurrentDate = tableData.dateHeaders.length > 0 && date === tableData.dateHeaders[0];
-    
-    if (isCurrentDate && realTimeTotalIRR !== null && realTimeTotalIRR !== undefined) {
-      console.log(`🎯 [IRR SUMMARY] Using realTimeTotalIRR for current date ${date}: ${realTimeTotalIRR}%`);
-      return realTimeTotalIRR;
-    }
-    
-    // For historical dates, use backend calculated portfolio IRR
+    // Always use backend calculated portfolio IRR for consistency
     // Backend only includes portfolios that have valuations for that specific date
     const portfolioData = tableData.portfolioTotals.find(data => data.date === date);
     const backendIRR = portfolioData ? portfolioData.portfolio_irr : null;
     
-    if (!isCurrentDate && backendIRR !== null) {
-      console.log(`📊 [IRR SUMMARY] Using backend IRR for historical date ${date}: ${backendIRR}% (calculated from portfolios with valuations)`);
-    } else if (!isCurrentDate && backendIRR === null) {
+    if (backendIRR !== null) {
+      console.log(`📊 [IRR SUMMARY] Using backend IRR for date ${date}: ${backendIRR}% (calculated from portfolios with valuations)`);
+    } else {
       console.log(`⚠️ [IRR SUMMARY] No portfolio IRR data available for ${date} (no portfolios had valuations)`);
     }
     
@@ -610,7 +608,7 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
 
                       {/* IRR Value Cells */}
                       {tableData.dateHeaders.map((date, index) => {
-                        const irrValue = getIRRValueForProductAndDate(product.product_name, date);
+                        const irrValue = getIRRValueForProductAndDate(product.product_id, date);
                         // Check if this is the most recent (first) date since dates are sorted newest first
                         const isCurrentYear = index === 0;
                         // Use 'total' format type for active products (1 decimal place), 'inactive' for inactive products (smart decimal places)

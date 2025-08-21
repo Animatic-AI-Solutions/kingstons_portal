@@ -1,3 +1,0 @@
-Check if fund has any transactions/activities first
-If no transactions exist → assume 0 valuation (no need for manual entry)
-If transactions exist but no valuations → require valuation or default to 0

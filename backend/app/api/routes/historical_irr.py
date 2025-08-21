@@ -332,11 +332,8 @@ async def get_irr_history_summary(
                 return result
             
             # For each product, get stored IRR values for each selected date
-            logger.info(f"💰 DEBUG: Processing {len(request.product_ids)} products for history summary: {request.product_ids}")
             for product_id in request.product_ids:
-                logger.info(f"💰 DEBUG: Processing product {product_id} for history summary")
                 if product_id not in product_info_map:
-                    logger.warning(f"💰 DEBUG: Product {product_id} not found in product info map - this will cause missing rows!")
                     continue
                     
                 product_info = product_info_map[product_id]
@@ -348,8 +345,7 @@ async def get_irr_history_summary(
                 )
                 
                 if not portfolio_id_result or not portfolio_id_result["portfolio_id"]:
-                    logger.warning(f"💰 DEBUG: No portfolio found for product {product_id} - creating rows with NULL IRR")
-                    # ENHANCED: Create null entries for consistency with better logging
+                    # Create null entries for consistency
                     for date_str in request.selected_dates:
                         product_irr_history.append({
                             "product_id": product_id,
@@ -360,7 +356,6 @@ async def get_irr_history_summary(
                             "irr_date": date_str,
                             "irr_result": None
                         })
-                        logger.info(f"💰 DEBUG: Created history row for product {product_id} on {date_str} with NULL IRR")
                     continue
                 
                 portfolio_id = portfolio_id_result["portfolio_id"]
@@ -372,24 +367,23 @@ async def get_irr_history_summary(
                         normalized_date_str = date_str.split('T')[0] if 'T' in date_str else date_str
                         normalized_date = datetime.strptime(normalized_date_str, "%Y-%m-%d").date()
                         
-                        logger.info(f"📊 Fetching stored IRR for product {product_id} (portfolio {portfolio_id}) on {date_str}")
-                        
-                        # Fetch stored IRR from portfolio_irr_values table
+                        # Fetch stored IRR from portfolio_historical_irr (same source as individual product cards)
                         stored_irr_result = await db.fetchrow(
                             """
-                            SELECT irr_result
-                            FROM portfolio_irr_values
+                            SELECT irr_result, date
+                            FROM portfolio_historical_irr
                             WHERE portfolio_id = $1 AND date = $2
                             """,
                             portfolio_id, normalized_date
                         )
                         
+                        logger.info(f"🔍 [SUMMARY ENDPOINT DEBUG] Product {product_id} (portfolio {portfolio_id}) for date {normalized_date}: {stored_irr_result['irr_result'] if stored_irr_result else None}% (from portfolio_historical_irr table)")
+                        
                         irr_value = None
                         if stored_irr_result and stored_irr_result["irr_result"] is not None:
                             irr_value = float(stored_irr_result["irr_result"])
-                            logger.info(f"✅ Found stored IRR for product {product_id} on {date_str}: {irr_value}%")
-                        else:
-                            logger.info(f"⚠️ No stored IRR found for product {product_id} (portfolio {portfolio_id}) on {date_str}")
+                        
+                        logger.info(f"🔍 [SUMMARY ENDPOINT RESULT] Product {product_id} for date {date_str}: storing irr_result = {irr_value}% in response")
                         
                         # Add entry with stored IRR (or None if not found)
                         product_irr_history.append({
@@ -401,7 +395,6 @@ async def get_irr_history_summary(
                             "irr_date": date_str,
                             "irr_result": irr_value
                         })
-                        logger.info(f"💰 DEBUG: Created history row for product {product_id} on {date_str} with IRR: {irr_value}")
                         
                     except Exception as product_date_error:
                         logger.error(f"Error fetching stored IRR for product {product_id} on date {date_str}: {str(product_date_error)}")
@@ -498,7 +491,7 @@ async def get_irr_history_summary(
                         "portfolio_irr": None
                     })
             
-            logger.info(f"Successfully fetched IRR history summary: {len(product_irr_history)} products, {len(portfolio_irr_history)} dates")
+            logger.info(f"Successfully fetched IRR history summary: {len(product_irr_history)} product rows, {len(portfolio_irr_history)} date totals")
             
             result = {
                 "success": True,

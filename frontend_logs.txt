@@ -1,0 +1,1401 @@
+ReportGenerator.tsx:1286 Report generation validation:
+ReportGenerator.tsx:1287 Selected client groups: 1
+ReportGenerator.tsx:1288 Selected products: 0
+ReportGenerator.tsx:1327 Using fallback valuation date: 2023-02-01 (from IRR dates)
+ReportGenerator.tsx:1331 Final valuation date for report: 2023-02-01
+ReportGenerator.tsx:1332 IRR dates selected: Yes (3 dates)
+ReportGenerator.tsx:1333 Available valuation dates: 0
+ReportGenerator.tsx:1389 Unique Product IDs for report: (2) [236, 237]
+ReportGenerator.tsx:1422 Fetching historical IRR data for products: (2) [236, 237]
+ReportGenerator.tsx:1235 Global selected months: (2) ['2023-02', '2023-01']
+ReportGenerator.tsx:1236 Total historical IRR map entries: 4
+ReportGenerator.tsx:3107 📅 End valuation date changed, filtering IRR dates: 2023-02-01
+ReportGenerator.tsx:1424 Historical IRR data fetched: 4 funds with historical data
+ReportGenerator.tsx:1452 Product Stocks & Shares ISA has 3 portfolio funds: (3) [{…}, {…}, {…}]
+ReportGenerator.tsx:1488 Fetching activity logs for 3 portfolio funds: (3) [1107, 1108, 1109]
+ReportGenerator.tsx:1495 Retrieved 4 total activity logs for product Stocks & Shares ISA
+ReportGenerator.tsx:1496 Sample activities: (3) [{…}, {…}, {…}]
+valuationDataService.ts:145 🚀 Batch fetching ALL historical valuations for 3 funds (eliminates 3 individual requests)
+valuationDataService.ts:164 ✅ Batch historical valuation fetch complete: 12 total valuations for 3 funds
+ReportGenerator.tsx:1643 Processing 4 activity logs for product Stocks & Shares ISA
+ReportGenerator.tsx:1690 Product Stocks & Shares ISA activity totals: {totalInvestment: 300, totalWithdrawal: 40, totalSwitchIn: 0, totalSwitchOut: 0, productStartDate: '2023-01-01', …}
+ReportGenerator.tsx:1831 Fund Cash (ID: 1107) has 2 activity logs
+ReportGenerator.tsx:1847 Activities for Cash: (2) [{…}, {…}]
+ReportGenerator.tsx:1856 Processing activity for Cash: {activity_type: 'Withdrawal', raw_amount: 40, parsed_amount: 40, amount_check: false, amount_absolute: 40, …}
+ReportGenerator.tsx:1856 Processing activity for Cash: {activity_type: 'Investment', raw_amount: 100, parsed_amount: 100, amount_check: false, amount_absolute: 100, …}
+ReportGenerator.tsx:1905 Fund Cash activity totals: {fundInvestment: 100, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ReportGenerator.tsx:1831 Fund Artemis Income (ID: 1108) has 1 activity logs
+ReportGenerator.tsx:1847 Activities for Artemis Income: [{…}]
+ReportGenerator.tsx:1856 Processing activity for Artemis Income: {activity_type: 'Investment', raw_amount: 100, parsed_amount: 100, amount_check: false, amount_absolute: 100, …}
+ReportGenerator.tsx:1905 Fund Artemis Income activity totals: {fundInvestment: 100, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ReportGenerator.tsx:1831 Fund Aviva BNY Multi-Asset Balanced S2 (ID: 1109) has 1 activity logs
+ReportGenerator.tsx:1847 Activities for Aviva BNY Multi-Asset Balanced S2: [{…}]
+ReportGenerator.tsx:1856 Processing activity for Aviva BNY Multi-Asset Balanced S2: {activity_type: 'Investment', raw_amount: 100, parsed_amount: 100, amount_check: false, amount_absolute: 100, …}
+ReportGenerator.tsx:1905 Fund Aviva BNY Multi-Asset Balanced S2 activity totals: {fundInvestment: 100, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ReportGenerator.tsx:1983 Calculating standardized IRR for product 236 with fund IDs: (3) [1107, 1108, 1109]
+irrDataService.ts:131 🚀 [IRR DEBUG] Starting getOptimizedIRRData with params: {portfolioId: 249, portfolioFundIds: Array(3), endDate: undefined, includeHistorical: false}
+irrDataService.ts:141 📋 [IRR DEBUG] Strategy 1: Checking for stored portfolio IRR
+irrDataService.ts:143 📋 [IRR DEBUG] Portfolio ID provided: 249, fetching stored IRR...
+irrDataService.ts:44 🔍 [IRR DEBUG] Fetching stored portfolio IRR for portfolio 249
+irrDataService.ts:45 🔍 [IRR DEBUG] API endpoint: /api/portfolios/249/latest-irr
+irrDataService.ts:49 🔍 [IRR DEBUG] Portfolio IRR API response: {status: 200, data: {…}, hasData: true, irrResult: 48.6, irrResultType: 'number', …}
+irrDataService.ts:60 🔍 [IRR DEBUG] Extracted IRR result: 48.6 (type: number)
+irrDataService.ts:145 📋 [IRR DEBUG] Stored portfolio IRR result: 48.6
+irrDataService.ts:148 ✅ [IRR DEBUG] Using stored portfolio IRR: 48.6% for portfolio 249
+irrDataService.ts:160 Retrieved undefined stored fund IRRs
+irrDataService.ts:169 📋 [IRR DEBUG] Strategy 3: Checking if IRR calculation is needed
+irrDataService.ts:170 📋 [IRR DEBUG] Calculation decision factors: {noStoredIRR: false, includeHistorical: false, hasEndDate: false, needsCalculation: undefined, portfolioFundIdsLength: 3}
+irrDataService.ts:203 ⏭️ [IRR DEBUG] Skipping IRR calculation - needsCalculation: undefined, fundIds length: 3
+irrDataService.ts:213 🎯 [IRR DEBUG] Final getOptimizedIRRData result: {portfolioIRR: 48.6, fundIRRs: {…}, historicalIRR: null, irrDate: 'latest'}
+ReportGenerator.tsx:2037 Optimized IRR for active product 236: 48.6% (source: latest)
+ReportGenerator.tsx:2301 - Total fund summaries: 3
+ReportGenerator.tsx:2302 - Active funds: 2
+ReportGenerator.tsx:2303 - Inactive funds: 1
+ReportGenerator.tsx:2304 - All fund statuses: (3) [{…}, {…}, {…}]
+ReportGenerator.tsx:2070 🔍 Previous Funds IRR Calculation Debug:
+ReportGenerator.tsx:2071 - Inactive funds count: 1
+ReportGenerator.tsx:2072 - Inactive funds details: [{…}]
+ReportGenerator.tsx:2080 - Extracted inactive fund IDs: [1107]
+ReportGenerator.tsx:2092 🚀 Calculating Previous Funds IRR for fund IDs: [1107] with date: undefined
+api.ts:607 🔍 DEBUG: api.ts calculateStandardizedMultipleFundsIRR called with: {portfolioFundIds: Array(1), irrDate: undefined}
+api.ts:608 🔍 DEBUG: portfolioFundIds being sent to backend: [1107]
+ReportGenerator.tsx:2100 📊 Previous Funds IRR API Response: {data: {…}, status: 200, statusText: 'OK', headers: AxiosHeaders, config: {…}, …}
+ReportGenerator.tsx:2101 📊 Response data: {success: true, irr_percentage: -315.8, irr_decimal: -3.158324403263071, calculation_date: '2023-04-01', portfolio_fund_ids: Array(1), …}
+ReportGenerator.tsx:2105 ✅ Previous Funds IRR calculated successfully: -315.8
+ReportGenerator.tsx:2121 🎯 Final Previous Funds IRR result: -315.8
+ReportGenerator.tsx:2127 🔍 Fetching latest IRRs for individual inactive funds...
+ReportGenerator.tsx:2131 ✅ Latest IRRs fetched successfully: [{…}]
+ReportGenerator.tsx:2197 🎯 Using net flow weighting for Previous Funds risk
+ReportGenerator.tsx:2236 🎯 Previous Funds weighted risk calculation: {totalInactiveFunds: 1, fundsWithRisk: 1, totalInvestment: 100, weightedRisk: '2.0', inactiveFundsData: Array(1)}
+ReportGenerator.tsx:2277 🎯 Previous Funds aggregation details: {inactiveFundsCount: 1, totalInvestment: 100, totalRegularInvestment: 0, totalTaxUplift: 0, totalProductSwitchIn: 0, …}
+ReportGenerator.tsx:2290 🎯 Created Previous Funds entry with IRR: -315.8
+ReportGenerator.tsx:2291 🎯 Created Previous Funds entry with Risk: 2
+ReportGenerator.tsx:2292 🎯 Full Previous Funds entry: {id: -1, available_funds_id: -1, fund_name: 'Previous Funds', total_investment: 100, total_regular_investment: 0, …}
+ReportGenerator.tsx:1452 Product Stocks & Shares ISA has 2 portfolio funds: (2) [{…}, {…}]
+ReportGenerator.tsx:1488 Fetching activity logs for 2 portfolio funds: (2) [1110, 1111]
+ReportGenerator.tsx:1495 Retrieved 3 total activity logs for product Stocks & Shares ISA
+ReportGenerator.tsx:1496 Sample activities: (3) [{…}, {…}, {…}]
+valuationDataService.ts:145 🚀 Batch fetching ALL historical valuations for 2 funds (eliminates 2 individual requests)
+valuationDataService.ts:164 ✅ Batch historical valuation fetch complete: 6 total valuations for 2 funds
+ReportGenerator.tsx:1643 Processing 3 activity logs for product Stocks & Shares ISA
+ReportGenerator.tsx:1690 Product Stocks & Shares ISA activity totals: {totalInvestment: 320, totalWithdrawal: 0, totalSwitchIn: 0, totalSwitchOut: 0, productStartDate: '2022-08-01', …}
+ReportGenerator.tsx:1831 Fund Cash (ID: 1110) has 1 activity logs
+ReportGenerator.tsx:1847 Activities for Cash: [{…}]
+ReportGenerator.tsx:1856 Processing activity for Cash: {activity_type: 'RegularInvestment', raw_amount: 20, parsed_amount: 20, amount_check: false, amount_absolute: 20, …}
+ReportGenerator.tsx:1905 Fund Cash activity totals: {fundInvestment: 20, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ReportGenerator.tsx:1831 Fund Artemis Income (ID: 1111) has 2 activity logs
+ReportGenerator.tsx:1847 Activities for Artemis Income: (2) [{…}, {…}]
+ReportGenerator.tsx:1856 Processing activity for Artemis Income: {activity_type: 'Investment', raw_amount: 200, parsed_amount: 200, amount_check: false, amount_absolute: 200, …}
+ReportGenerator.tsx:1856 Processing activity for Artemis Income: {activity_type: 'Investment', raw_amount: 100, parsed_amount: 100, amount_check: false, amount_absolute: 100, …}
+ReportGenerator.tsx:1905 Fund Artemis Income activity totals: {fundInvestment: 300, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ReportGenerator.tsx:1983 Calculating standardized IRR for product 237 with fund IDs: (2) [1110, 1111]
+irrDataService.ts:131 🚀 [IRR DEBUG] Starting getOptimizedIRRData with params: {portfolioId: 250, portfolioFundIds: Array(2), endDate: undefined, includeHistorical: false}
+irrDataService.ts:141 📋 [IRR DEBUG] Strategy 1: Checking for stored portfolio IRR
+irrDataService.ts:143 📋 [IRR DEBUG] Portfolio ID provided: 250, fetching stored IRR...
+irrDataService.ts:44 🔍 [IRR DEBUG] Fetching stored portfolio IRR for portfolio 250
+irrDataService.ts:45 🔍 [IRR DEBUG] API endpoint: /api/portfolios/250/latest-irr
+irrDataService.ts:49 🔍 [IRR DEBUG] Portfolio IRR API response: {status: 200, data: {…}, hasData: true, irrResult: -316.1, irrResultType: 'number', …}
+irrDataService.ts:60 🔍 [IRR DEBUG] Extracted IRR result: -316.1 (type: number)
+irrDataService.ts:145 📋 [IRR DEBUG] Stored portfolio IRR result: -316.1
+irrDataService.ts:148 ✅ [IRR DEBUG] Using stored portfolio IRR: -316.1% for portfolio 250
+irrDataService.ts:160 Retrieved undefined stored fund IRRs
+irrDataService.ts:169 📋 [IRR DEBUG] Strategy 3: Checking if IRR calculation is needed
+irrDataService.ts:170 📋 [IRR DEBUG] Calculation decision factors: {noStoredIRR: false, includeHistorical: false, hasEndDate: false, needsCalculation: undefined, portfolioFundIdsLength: 2}
+irrDataService.ts:203 ⏭️ [IRR DEBUG] Skipping IRR calculation - needsCalculation: undefined, fundIds length: 2
+irrDataService.ts:213 🎯 [IRR DEBUG] Final getOptimizedIRRData result: {portfolioIRR: -316.1, fundIRRs: {…}, historicalIRR: null, irrDate: 'latest'}
+ReportGenerator.tsx:2037 Optimized IRR for active product 237: -316.1% (source: latest)
+ReportGenerator.tsx:2301 - Total fund summaries: 2
+ReportGenerator.tsx:2302 - Active funds: 2
+ReportGenerator.tsx:2303 - Inactive funds: 0
+ReportGenerator.tsx:2304 - All fund statuses: (2) [{…}, {…}]
+ReportGenerator.tsx:2438 Total portfolio fund IDs collected for IRR calculation: {total: 5, unique: 5, duplicatesRemoved: 0}
+ReportGenerator.tsx:2445 Calculating standardized IRR for portfolio fund IDs: (5) [1107, 1108, 1109, 1110, 1111]
+ReportGenerator.tsx:2456 Using optimized batch IRR service for total IRR: {portfolioFundIds: Array(5), irrDate: undefined}
+irrDataService.ts:131 🚀 [IRR DEBUG] Starting getOptimizedIRRData with params: {portfolioFundIds: Array(5), endDate: undefined, includeHistorical: false}
+irrDataService.ts:141 📋 [IRR DEBUG] Strategy 1: Checking for stored portfolio IRR
+irrDataService.ts:154 ⚠️ [IRR DEBUG] No portfolio ID provided, skipping stored portfolio IRR lookup
+irrDataService.ts:160 Retrieved undefined stored fund IRRs
+irrDataService.ts:169 📋 [IRR DEBUG] Strategy 3: Checking if IRR calculation is needed
+irrDataService.ts:170 📋 [IRR DEBUG] Calculation decision factors: {noStoredIRR: true, includeHistorical: false, hasEndDate: false, needsCalculation: true, portfolioFundIdsLength: 5}
+irrDataService.ts:179 🔄 [IRR DEBUG] Calculating IRR due to: {noStoredIRR: true, includeHistorical: false, hasEndDate: false}
+irrDataService.ts:95 🔄 [IRR DEBUG] Calculating IRR using standardized endpoint: {portfolioFundIds: Array(5), endDate: undefined}
+irrDataService.ts:96 🔍 DEBUG: irrDataService portfolioFundIds being sent: (5) [1107, 1108, 1109, 1110, 1111]
+api.ts:607 🔍 DEBUG: api.ts calculateStandardizedMultipleFundsIRR called with: {portfolioFundIds: Array(5), irrDate: undefined}
+api.ts:608 🔍 DEBUG: portfolioFundIds being sent to backend: (5) [1107, 1108, 1109, 1110, 1111]
+irrDataService.ts:106 🔄 [IRR DEBUG] Raw API response from calculateStandardizedMultipleFundsIRR: {success: true, irr_percentage: -62.3, irr_decimal: -0.6229311758554119, calculation_date: '2023-04-01', portfolio_fund_ids: Array(5), …}
+irrDataService.ts:118 🔄 [IRR DEBUG] Extracted IRR result: -62.3
+irrDataService.ts:190 🔄 [IRR DEBUG] Calculated IRR result: -62.3
+irrDataService.ts:195 ✅ [IRR DEBUG] Using calculated IRR as portfolio IRR: -62.3
+irrDataService.ts:213 🎯 [IRR DEBUG] Final getOptimizedIRRData result: {portfolioIRR: -62.3, fundIRRs: {…}, historicalIRR: null, irrDate: 'calculated'}
+ReportGenerator.tsx:2469 🎯 [TOTAL IRR DEBUG] Optimized total IRR response: {portfolioIRR: -62.3, fundIRRs: {…}, historicalIRR: null, irrDate: 'calculated'}
+ReportGenerator.tsx:2470 🎯 [TOTAL IRR DEBUG] portfolioIRR field: -62.3
+ReportGenerator.tsx:2471 🎯 [TOTAL IRR DEBUG] portfolioIRR type: number
+ReportGenerator.tsx:2475 ✅ [TOTAL IRR DEBUG] Optimized total IRR calculation complete: -62.3
+ReportGenerator.tsx:2559 🔍 [PRODUCT OWNER ORDER DEBUG] Current productOwnerOrder state: (2) ['Alison Sear', 'Andrew Plumb']
+ReportGenerator.tsx:2560 🔍 [PRODUCT OWNER ORDER DEBUG] productOwnerOrder length: 2
+ReportGenerator.tsx:2564 🔍 [PRODUCT OWNER DEBUG - FINAL] Raw product owner names: (2) [{…}, {…}]
+ReportGenerator.tsx:2575 🔍 [PRODUCT OWNER DEBUG - FINAL] Filtered names: (2) ['Andrew Plumb', 'Alison Sear']
+ReportGenerator.tsx:2581 🔍 [PRODUCT OWNER DEBUG - FINAL] After splitting: (2) ['Andrew Plumb', 'Alison Sear']
+ReportGenerator.tsx:2586 🔍 [PRODUCT OWNER DEBUG - FINAL] Final unique full names: (2) ['Alison Sear', 'Andrew Plumb']
+ReportDisplayPage.tsx:54 🔍 [REPORT DISPLAY DEBUG] Initializing report data...
+ReportDisplayPage.tsx:64 🔍 [REPORT DISPLAY DEBUG] Received report data with 2 products
+ReportDisplayPage.tsx:81 🎯 [OPTIMIZATION] Using pre-fetched portfolio IRR values from reportData: {236: 48.6, 237: -316.1}
+IRRCalculationService.ts:603 Using pre-selected historical IRR dates from report generation
+IRRCalculationService.ts:603 Selected dates: {236: Array(2), 237: Array(3)}
+IRRCalculationService.ts:603 Available dates: (5) [{…}, {…}, {…}, {…}, {…}]
+IRRCalculationService.ts:603 🔄 [DATA CONSISTENCY] Forcing fresh historical IRR data fetch to match summary table data
+IRRCalculationService.ts:603 ⚠️ No pre-fetched historical IRR data available, falling back to API calls
+IRRCalculationService.ts:603 Product 236 (Stocks & Shares ISA) selected dates: (2) ['2023-02-01', '2023-01-01']
+IRRCalculationService.ts:603 Product 237 (Stocks & Shares ISA) selected dates: (3) ['2023-02-01', '2023-01-01', '2022-08-01']
+SummaryTab.tsx:103 🔍 [SUMMARY TAB DEBUG] Sorting ISAs (ISA/JISA) products by owner order: {productsCount: 2, productOwnerOrder: Array(2), productOwnerOrderLength: 2, productNames: Array(2), productOwnerNames: Array(2)}
+SummaryTab.tsx:111 🔍 [SUMMARY TAB DEBUG] After sorting ISAs (ISA/JISA) products: {sortedProductNames: Array(2), sortedProductOwnerNames: Array(2)}
+SummaryTab.tsx:103 🔍 [SUMMARY TAB DEBUG] Sorting ISAs (ISA/JISA) products by owner order: {productsCount: 2, productOwnerOrder: Array(2), productOwnerOrderLength: 2, productNames: Array(2), productOwnerNames: Array(2)}
+SummaryTab.tsx:111 🔍 [SUMMARY TAB DEBUG] After sorting ISAs (ISA/JISA) products: {sortedProductNames: Array(2), sortedProductOwnerNames: Array(2)}
+SummaryTab.tsx:103 🔍 [SUMMARY TAB DEBUG] Sorting ISAs (ISA/JISA) products by owner order: {productsCount: 2, productOwnerOrder: Array(2), productOwnerOrderLength: 2, productNames: Array(2), productOwnerNames: Array(2)}
+SummaryTab.tsx:111 🔍 [SUMMARY TAB DEBUG] After sorting ISAs (ISA/JISA) products: {sortedProductNames: Array(2), sortedProductOwnerNames: Array(2)}
+SummaryTab.tsx:103 🔍 [SUMMARY TAB DEBUG] Sorting ISAs (ISA/JISA) products by owner order: {productsCount: 2, productOwnerOrder: Array(2), productOwnerOrderLength: 2, productNames: Array(2), productOwnerNames: Array(2)}
+SummaryTab.tsx:111 🔍 [SUMMARY TAB DEBUG] After sorting ISAs (ISA/JISA) products: {sortedProductNames: Array(2), sortedProductOwnerNames: Array(2)}
+IRRHistoryTab.tsx:115 🎯 [IRR HISTORY] Using actual user-selected dates: (3) ['2022-08-01', '2023-01-01', '2023-02-01']
+IRRHistoryTab.tsx:443 🔍 [IRR HISTORY DEBUG] Chart data processing: {chartDataLength: 3, chartDataSample: {…}, productsForChartLength: 2}
+IRRHistoryTab.tsx:1748 🔍 [PRODUCT IRR DEBUG] Product 237 - Raw historical IRR data: {productId: 237, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 3, rawRecords: Array(3), …}
+IRRHistoryTab.tsx:1823 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2023-01-01: -367.1% (from portfolio_historical_irr table)
+IRRHistoryTab.tsx:1823 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2022-08-01: -120% (from portfolio_historical_irr table)
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2023-01-01: -367.1% (formatted: -367.1%)
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2022-08-01: -120% (formatted: -120.0%)
+IRRHistoryTab.tsx:638 🔍 [Previous Funds IRR] Starting calculation for 1 inactive funds: [1107]
+IRRHistoryTab.tsx:639 🔍 [Previous Funds IRR] Will attempt to calculate IRR for 2 dates: (2) ['2023-02-01', '2023-01-01']
+IRRHistoryTab.tsx:664 🔍 [Previous Funds IRR] Calculating for date 2023-02-01 (2023-02-01) with fund IDs: [1107]
+IRRHistoryTab.tsx:1748 🔍 [PRODUCT IRR DEBUG] Product 236 - Raw historical IRR data: {productId: 236, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 2, rawRecords: Array(2), …}
+IRRHistoryTab.tsx:1823 🔍 [INDIVIDUAL CARD DEBUG] Product 236 storing IRR for date 2023-01-01: 40% (from portfolio_historical_irr table)
+IRRHistoryTab.tsx:1842 ⚠️ [DATE MISMATCH WARNING] Product 236 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(2), selectedDatesFromReport: Array(2), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2023-02-01'}
+(anonymous) @ IRRHistoryTab.tsx:1842
+(anonymous) @ IRRHistoryTab.tsx:1898
+(anonymous) @ IRRHistoryTab.tsx:1261
+IRRHistoryTab @ IRRHistoryTab.tsx:1913
+renderWithHooks @ chunk-QYFCA5BS.js?v=cc98fab4:11596
+mountIndeterminateComponent @ chunk-QYFCA5BS.js?v=cc98fab4:14974
+beginWork @ chunk-QYFCA5BS.js?v=cc98fab4:15962
+beginWork$1 @ chunk-QYFCA5BS.js?v=cc98fab4:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=cc98fab4:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=cc98fab4:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=cc98fab4:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=cc98fab4:18728
+workLoop @ chunk-QYFCA5BS.js?v=cc98fab4:197
+flushWork @ chunk-QYFCA5BS.js?v=cc98fab4:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=cc98fab4:384
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2023-01-01: 40% (formatted: 40.0%)
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2022-08-01: undefined% (formatted: -)
+IRRHistoryTab.tsx:115 🎯 [IRR HISTORY] Using actual user-selected dates: (3) ['2022-08-01', '2023-01-01', '2023-02-01']
+IRRHistoryTab.tsx:443 🔍 [IRR HISTORY DEBUG] Chart data processing: {chartDataLength: 3, chartDataSample: {…}, productsForChartLength: 2}
+IRRHistoryTab.tsx:1748 🔍 [PRODUCT IRR DEBUG] Product 237 - Raw historical IRR data: {productId: 237, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 3, rawRecords: Array(3), …}
+IRRHistoryTab.tsx:1823 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2023-01-01: -367.1% (from portfolio_historical_irr table)
+IRRHistoryTab.tsx:1823 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2022-08-01: -120% (from portfolio_historical_irr table)
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2023-01-01: -367.1% (formatted: -367.1%)
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2022-08-01: -120% (formatted: -120.0%)
+IRRHistoryTab.tsx:638 🔍 [Previous Funds IRR] Starting calculation for 1 inactive funds: [1107]
+IRRHistoryTab.tsx:639 🔍 [Previous Funds IRR] Will attempt to calculate IRR for 2 dates: (2) ['2023-02-01', '2023-01-01']
+IRRHistoryTab.tsx:664 🔍 [Previous Funds IRR] Calculating for date 2023-02-01 (2023-02-01) with fund IDs: [1107]
+IRRHistoryTab.tsx:1748 🔍 [PRODUCT IRR DEBUG] Product 236 - Raw historical IRR data: {productId: 236, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 2, rawRecords: Array(2), …}
+IRRHistoryTab.tsx:1823 🔍 [INDIVIDUAL CARD DEBUG] Product 236 storing IRR for date 2023-01-01: 40% (from portfolio_historical_irr table)
+IRRHistoryTab.tsx:1842 ⚠️ [DATE MISMATCH WARNING] Product 236 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(2), selectedDatesFromReport: Array(2), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2023-02-01'}
+(anonymous) @ IRRHistoryTab.tsx:1842
+(anonymous) @ IRRHistoryTab.tsx:1898
+(anonymous) @ IRRHistoryTab.tsx:1261
+IRRHistoryTab @ IRRHistoryTab.tsx:1913
+renderWithHooks @ chunk-QYFCA5BS.js?v=cc98fab4:11596
+mountIndeterminateComponent @ chunk-QYFCA5BS.js?v=cc98fab4:15024
+beginWork @ chunk-QYFCA5BS.js?v=cc98fab4:15962
+beginWork$1 @ chunk-QYFCA5BS.js?v=cc98fab4:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=cc98fab4:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=cc98fab4:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=cc98fab4:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=cc98fab4:18728
+workLoop @ chunk-QYFCA5BS.js?v=cc98fab4:197
+flushWork @ chunk-QYFCA5BS.js?v=cc98fab4:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=cc98fab4:384
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2023-01-01: 40% (formatted: 40.0%)
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2022-08-01: undefined% (formatted: -)
+IRRHistorySummaryTable.tsx:62 🎯 [IRR SUMMARY MEMOIZATION] ProductIds memoized: {rawLength: 2, memoizedLength: 2, sameReference: true}
+IRRHistorySummaryTable.tsx:70 🎯 [IRR SUMMARY MEMOIZATION] SelectedDates memoized: {rawLength: 3, memoizedLength: 3, sameReference: true}
+IRRHistorySummaryTable.tsx:237 🔄 [IRR SUMMARY TABLE] useEffect triggered: {productIdsLength: 2, selectedDatesLength: 3, clientGroupIds: undefined, productIds: Array(2), selectedDates: Array(2)}
+IRRHistorySummaryTable.tsx:266 🔍 [IRR SUMMARY TABLE] Request details: {productIds: Array(2), uniqueProductIds: Array(2), selectedDates: Array(3), clientGroupIds: undefined}
+IRRHistorySummaryTable.tsx:279 🔍 [IRR HISTORY SUMMARY] Fetching data with request: {product_ids: Array(2), selected_dates: Array(3), client_group_ids: undefined}
+irrHistorySummaryService.ts:167 🔍 [IRR HISTORY SUMMARY] Fetching data with request: {product_ids: Array(2), selected_dates: Array(3), client_group_ids: undefined}
+irrHistorySummaryService.ts:96 🔍 [GLOBAL IRR REQUEST MANAGER] Processing request: irr_summary_236,237_2022-08-01,2023-01-01,2023-02-01_none
+irrHistorySummaryService.ts:102 ✅ [GLOBAL IRR REQUEST MANAGER] Using cached data for: irr_summary_236,237_2022-08-01,2023-01-01,2023-02-01_none
+IRRHistoryTab.tsx:77 🔍 [IRR HISTORY DEBUG] Component loaded with: {hasReportData: true, productCount: 2, hasIrrHistoryData: true, irrHistoryDataLength: 2, loadingState: {…}, …}
+IRRHistoryTab.tsx:141 🔧 [MEMOIZATION DEBUG] ProductIds changed: (2) [236, 237]
+IRRHistoryTab.tsx:144 🔧 [MEMOIZATION DEBUG] SelectedDates changed: (3) ['2022-08-01', '2023-01-01', '2023-02-01']
+IRRHistoryTab.tsx:703 🔄 [Previous Funds] useEffect triggered {hasIrrHistoryData: true, irrHistoryDataLength: 2, hasProductSummaries: true, productSummariesLength: 2}
+IRRHistoryTab.tsx:727 🔄 [Previous Funds] Starting calculation with 3 dates: (3) ['2023-02-01', '2023-01-01', '2022-08-01']
+IRRHistoryTab.tsx:733 🔍 [Previous Funds] Analyzing product 236: {productName: 'Stocks & Shares ISA', totalFunds: 3, fundDetails: Array(3)}
+IRRHistoryTab.tsx:749 🔍 [Previous Funds] Product 236 - Historical/Previous Funds check: {foundHistoricalFunds: 1, historicalFundsDetails: Array(1)}
+IRRHistoryTab.tsx:767 🔍 [Previous Funds] Product 236 - ALL FUNDS CHECK: {totalFunds: 3, allFundNames: Array(3), historicalFundsInAll: Array(0), previousFundsInAll: Array(1)}
+IRRHistoryTab.tsx:782 🔍 [Previous Funds] Product 236 inactive funds: {count: 0, funds: Array(0)}
+IRRHistoryTab.tsx:794 🔍 [Previous Funds] Product 236 historical funds: {count: 1, funds: Array(1)}
+IRRHistoryTab.tsx:799 🔍 [Previous Funds] Product 236 total dynamic funds: {count: 1, funds: Array(1)}
+IRRHistoryTab.tsx:818 🔍 [Previous Funds] Product 236 - Found virtual Previous/Historical Funds with stored inactive funds: {virtualFund: {…}, inactiveFunds: Array(1), actualInactiveFundIds: Array(1)}
+IRRHistoryTab.tsx:869 🔍 [Previous Funds] Product 236 extracted fund IDs: {originalCount: 1, extractedIds: Array(1), filteredCount: 1}
+IRRHistoryTab.tsx:733 🔍 [Previous Funds] Analyzing product 237: {productName: 'Stocks & Shares ISA', totalFunds: 2, fundDetails: Array(2)}
+IRRHistoryTab.tsx:749 🔍 [Previous Funds] Product 237 - Historical/Previous Funds check: {foundHistoricalFunds: 0, historicalFundsDetails: Array(0)}
+IRRHistoryTab.tsx:767 🔍 [Previous Funds] Product 237 - ALL FUNDS CHECK: {totalFunds: 2, allFundNames: Array(2), historicalFundsInAll: Array(0), previousFundsInAll: Array(0)}
+IRRHistoryTab.tsx:782 🔍 [Previous Funds] Product 237 inactive funds: {count: 0, funds: Array(0)}
+IRRHistoryTab.tsx:794 🔍 [Previous Funds] Product 237 historical funds: {count: 0, funds: Array(0)}
+IRRHistoryTab.tsx:799 🔍 [Previous Funds] Product 237 total dynamic funds: {count: 0, funds: Array(0)}
+IRRHistoryTab.tsx:883 🔍 [Previous Funds] Final analysis: {totalProductsAnalyzed: 2, productsWithDynamicFunds: 1, dynamicFundDetails: Array(1)}
+IRRHistoryTab.tsx:893 🔄 [Previous Funds] Starting IRR calculations for 1 products
+IRRHistoryTab.tsx:900 🔄 [Previous Funds] Calculating IRR for product 236 with fund IDs: [1107]
+IRRHistoryTab.tsx:638 🔍 [Previous Funds IRR] Starting calculation for 1 inactive funds: [1107]
+IRRHistoryTab.tsx:639 🔍 [Previous Funds IRR] Will attempt to calculate IRR for 3 dates: (3) ['2023-02-01', '2023-01-01', '2022-08-01']
+IRRHistoryTab.tsx:664 🔍 [Previous Funds IRR] Calculating for date 2023-02-01 (2023-02-01) with fund IDs: [1107]
+IRRHistorySummaryTable.tsx:62 🎯 [IRR SUMMARY MEMOIZATION] ProductIds memoized: {rawLength: 2, memoizedLength: 2, sameReference: true}
+ 🎯 [IRR SUMMARY MEMOIZATION] SelectedDates memoized: {rawLength: 3, memoizedLength: 3, sameReference: true}
+ 🔄 [IRR SUMMARY TABLE] useEffect triggered: {productIdsLength: 2, selectedDatesLength: 3, clientGroupIds: undefined, productIds: Array(2), selectedDates: Array(2)}
+ 🔍 [IRR SUMMARY TABLE] Request details: {productIds: Array(2), uniqueProductIds: Array(2), selectedDates: Array(3), clientGroupIds: undefined}
+ 🔍 [IRR HISTORY SUMMARY] Fetching data with request: {product_ids: Array(2), selected_dates: Array(3), client_group_ids: undefined}
+ 🔍 [IRR HISTORY SUMMARY] Fetching data with request: {product_ids: Array(2), selected_dates: Array(3), client_group_ids: undefined}
+ 🔍 [GLOBAL IRR REQUEST MANAGER] Processing request: irr_summary_236,237_2022-08-01,2023-01-01,2023-02-01_none
+ ✅ [GLOBAL IRR REQUEST MANAGER] Using cached data for: irr_summary_236,237_2022-08-01,2023-01-01,2023-02-01_none
+ 🔍 [IRR HISTORY DEBUG] Component loaded with: {hasReportData: true, productCount: 2, hasIrrHistoryData: true, irrHistoryDataLength: 2, loadingState: {…}, …}
+ 🔧 [MEMOIZATION DEBUG] ProductIds changed: (2) [236, 237]
+ 🔧 [MEMOIZATION DEBUG] SelectedDates changed: (3) ['2022-08-01', '2023-01-01', '2023-02-01']
+ 🔄 [Previous Funds] useEffect triggered {hasIrrHistoryData: true, irrHistoryDataLength: 2, hasProductSummaries: true, productSummariesLength: 2}
+ 🔄 [Previous Funds] Starting calculation with 3 dates: (3) ['2023-02-01', '2023-01-01', '2022-08-01']
+ 🔍 [Previous Funds] Analyzing product 236: {productName: 'Stocks & Shares ISA', totalFunds: 3, fundDetails: Array(3)}
+ 🔍 [Previous Funds] Product 236 - Historical/Previous Funds check: {foundHistoricalFunds: 1, historicalFundsDetails: Array(1)}
+ 🔍 [Previous Funds] Product 236 - ALL FUNDS CHECK: {totalFunds: 3, allFundNames: Array(3), historicalFundsInAll: Array(0), previousFundsInAll: Array(1)}
+ 🔍 [Previous Funds] Product 236 inactive funds: {count: 0, funds: Array(0)}
+ 🔍 [Previous Funds] Product 236 historical funds: {count: 1, funds: Array(1)}
+ 🔍 [Previous Funds] Product 236 total dynamic funds: {count: 1, funds: Array(1)}
+ 🔍 [Previous Funds] Product 236 - Found virtual Previous/Historical Funds with stored inactive funds: {virtualFund: {…}, inactiveFunds: Array(1), actualInactiveFundIds: Array(1)}
+ 🔍 [Previous Funds] Product 236 extracted fund IDs: {originalCount: 1, extractedIds: Array(1), filteredCount: 1}
+ 🔍 [Previous Funds] Analyzing product 237: {productName: 'Stocks & Shares ISA', totalFunds: 2, fundDetails: Array(2)}
+ 🔍 [Previous Funds] Product 237 - Historical/Previous Funds check: {foundHistoricalFunds: 0, historicalFundsDetails: Array(0)}
+ 🔍 [Previous Funds] Product 237 - ALL FUNDS CHECK: {totalFunds: 2, allFundNames: Array(2), historicalFundsInAll: Array(0), previousFundsInAll: Array(0)}
+ 🔍 [Previous Funds] Product 237 inactive funds: {count: 0, funds: Array(0)}
+ 🔍 [Previous Funds] Product 237 historical funds: {count: 0, funds: Array(0)}
+ 🔍 [Previous Funds] Product 237 total dynamic funds: {count: 0, funds: Array(0)}
+ 🔍 [Previous Funds] Final analysis: {totalProductsAnalyzed: 2, productsWithDynamicFunds: 1, dynamicFundDetails: Array(1)}
+ 🔄 [Previous Funds] Starting IRR calculations for 1 products
+ 🔄 [Previous Funds] Calculating IRR for product 236 with fund IDs: [1107]
+ 🔍 [Previous Funds IRR] Starting calculation for 1 inactive funds: [1107]
+ 🔍 [Previous Funds IRR] Will attempt to calculate IRR for 3 dates: (3) ['2023-02-01', '2023-01-01', '2022-08-01']
+ 🔍 [Previous Funds IRR] Calculating for date 2023-02-01 (2023-02-01) with fund IDs: [1107]
+ ✅ [IRR HISTORY SUMMARY] Data fetched successfully: {success: true, data: {…}}
+ ✅ [IRR HISTORY SUMMARY] Data fetched successfully: {success: true, data: {…}}
+ 🔍 [IRR SUMMARY TABLE] Backend response analysis: {productRowsCount: 6, portfolioTotalsCount: 3, productRowsSample: Array(3), uniqueProductIdsInResponse: Array(2), requestedProductIds: Array(2)}
+ ✅ [IRR SUMMARY TABLE] Received flat rows from backend: {totalRows: 6, expectedRows: 6, structure: 'flat'}
+ 🔍 [IRR SUMMARY TABLE] Setting table data: {productRows: Array(6), portfolioTotals: Array(3), dateHeaders: Array(3)}
+ 🔍 [IRR SUMMARY TABLE] Backend response analysis: {productRowsCount: 6, portfolioTotalsCount: 3, productRowsSample: Array(3), uniqueProductIdsInResponse: Array(2), requestedProductIds: Array(2)}
+ ✅ [IRR SUMMARY TABLE] Received flat rows from backend: {totalRows: 6, expectedRows: 6, structure: 'flat'}
+ 🔍 [IRR SUMMARY TABLE] Setting table data: {productRows: Array(6), portfolioTotals: Array(3), dateHeaders: Array(3)}
+ 🔍 [Previous Funds IRR] API response for 2023-02-01: {success: true, irr_percentage: -126.7, irr_decimal: -1.2668737080010097, calculation_date: '2023-02-01', portfolio_fund_ids: Array(1)}
+ ✅ [Previous Funds IRR] Successfully calculated IRR for 2023-02-01: -126.7%
+ 🔍 [Previous Funds IRR] Calculating for date 2023-01-01 (2023-01-01) with fund IDs: [1107]
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-02-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: -316.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-02-01: -316.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-01-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: -367.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-01-01: -367.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2022-08-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: -120, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2022-08-01: -120
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-02-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: 58.6, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-02-01: 58.6
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-01-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: 40, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-01-01: 40
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2022-08-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: null, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2022-08-01: null
+ 🎯 [CLIENT GROUP RISK] Calculated client group weight risk: {productCount: 2, totalValue: 445, weightedRiskSum: 1750, calculatedRisk: '3.9', productBreakdown: Array(2)}
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-02-01: -125.4% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-01-01: -184.3% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2022-08-01: -120% (calculated from portfolios with valuations)
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-02-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: -316.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-02-01: -316.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-01-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: -367.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-01-01: -367.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2022-08-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: -120, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2022-08-01: -120
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-02-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: 58.6, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-02-01: 58.6
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-01-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: 40, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-01-01: 40
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2022-08-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: null, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2022-08-01: null
+ 🎯 [CLIENT GROUP RISK] Calculated client group weight risk: {productCount: 2, totalValue: 445, weightedRiskSum: 1750, calculatedRisk: '3.9', productBreakdown: Array(2)}
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-02-01: -125.4% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-01-01: -184.3% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2022-08-01: -120% (calculated from portfolios with valuations)
+ 🔍 [Previous Funds IRR] API response for 2023-02-01: {success: true, irr_percentage: -126.7, irr_decimal: -1.2668737080010097, calculation_date: '2023-02-01', portfolio_fund_ids: Array(1)}
+ ✅ [Previous Funds IRR] Successfully calculated IRR for 2023-02-01: -126.7%
+ 🔍 [Previous Funds IRR] Calculating for date 2023-01-01 (2023-01-01) with fund IDs: [1107]
+ 📊 Portfolio historical IRR fetched for product 236: {product_id: 236, portfolio_historical_irr: Array(4), count: 4}
+ Fetched 4 historical IRR records for product 236
+ Created 2 portfolio historical IRR records for product 236: (2) [{…}, {…}]
+ Created data structure for product 236: {product_id: 236, product_name: 'Stocks & Shares ISA', portfolio_historical_irr: Array(2), funds_historical_irr: Array(3)}
+ 📊 Portfolio historical IRR fetched for product 237: {product_id: 237, portfolio_historical_irr: Array(3), count: 3}
+ Fetched 3 historical IRR records for product 237
+ Created 3 portfolio historical IRR records for product 237: (3) [{…}, {…}, {…}]
+ Created data structure for product 237: {product_id: 237, product_name: 'Stocks & Shares ISA', portfolio_historical_irr: Array(3), funds_historical_irr: Array(2)}
+ Final processed historical IRR data: (2) [{…}, {…}]
+ 🔍 [IRR HISTORY DEBUG] Processed historical IRR data: {length: 2, sample: {…}}
+ 🎯 [REPORT DISPLAY] Calculating real-time total IRR for 4 portfolio funds: (4) [1108, 1109, 1111, 1110]
+ 🎯 [REPORT DISPLAY] Using end date for real-time IRR: undefined
+ 🚀 [IRR DEBUG] Starting getOptimizedIRRData with params: {portfolioFundIds: Array(4), endDate: undefined, includeHistorical: false}
+ 📋 [IRR DEBUG] Strategy 1: Checking for stored portfolio IRR
+ ⚠️ [IRR DEBUG] No portfolio ID provided, skipping stored portfolio IRR lookup
+ 🔍 [SUMMARY TAB DEBUG] Sorting ISAs (ISA/JISA) products by owner order: {productsCount: 2, productOwnerOrder: Array(2), productOwnerOrderLength: 2, productNames: Array(2), productOwnerNames: Array(2)}
+ 🔍 [SUMMARY TAB DEBUG] After sorting ISAs (ISA/JISA) products: {sortedProductNames: Array(2), sortedProductOwnerNames: Array(2)}
+ 🔍 [SUMMARY TAB DEBUG] Sorting ISAs (ISA/JISA) products by owner order: {productsCount: 2, productOwnerOrder: Array(2), productOwnerOrderLength: 2, productNames: Array(2), productOwnerNames: Array(2)}
+ 🔍 [SUMMARY TAB DEBUG] After sorting ISAs (ISA/JISA) products: {sortedProductNames: Array(2), sortedProductOwnerNames: Array(2)}
+ 🔍 [SUMMARY TAB DEBUG] Sorting ISAs (ISA/JISA) products by owner order: {productsCount: 2, productOwnerOrder: Array(2), productOwnerOrderLength: 2, productNames: Array(2), productOwnerNames: Array(2)}
+ 🔍 [SUMMARY TAB DEBUG] After sorting ISAs (ISA/JISA) products: {sortedProductNames: Array(2), sortedProductOwnerNames: Array(2)}
+ 🔍 [SUMMARY TAB DEBUG] Sorting ISAs (ISA/JISA) products by owner order: {productsCount: 2, productOwnerOrder: Array(2), productOwnerOrderLength: 2, productNames: Array(2), productOwnerNames: Array(2)}
+ 🔍 [SUMMARY TAB DEBUG] After sorting ISAs (ISA/JISA) products: {sortedProductNames: Array(2), sortedProductOwnerNames: Array(2)}
+ 🔍 [IRR HISTORY DEBUG] Chart data processing: {chartDataLength: 3, chartDataSample: {…}, productsForChartLength: 2}
+ 🔍 [PRODUCT IRR DEBUG] Product 237 - Raw historical IRR data: {productId: 237, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 3, rawRecords: Array(3), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2023-01-01: -367.1% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2022-08-01: -120% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2023-01-01: -367.1% (formatted: -367.1%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2022-08-01: -120% (formatted: -120.0%)
+ 🔍 [Previous Funds IRR] Starting calculation for 1 inactive funds: [1107]
+ 🔍 [Previous Funds IRR] Will attempt to calculate IRR for 2 dates: (2) ['2023-02-01', '2023-01-01']
+ 🔍 [Previous Funds IRR] Calculating for date 2023-02-01 (2023-02-01) with fund IDs: [1107]
+ 🔍 [PRODUCT IRR DEBUG] Product 236 - Raw historical IRR data: {productId: 236, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 2, rawRecords: Array(2), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 236 storing IRR for date 2023-01-01: 40% (from portfolio_historical_irr table)
+ ⚠️ [DATE MISMATCH WARNING] Product 236 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(2), selectedDatesFromReport: Array(2), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2023-02-01'}
+(anonymous) @ IRRHistoryTab.tsx:2021
+(anonymous) @ IRRHistoryTab.tsx:2080
+(anonymous) @ IRRHistoryTab.tsx:1458
+IRRHistoryTab @ IRRHistoryTab.tsx:2118
+renderWithHooks @ chunk-QYFCA5BS.js:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js:14630
+beginWork @ chunk-QYFCA5BS.js:15972
+beginWork$1 @ chunk-QYFCA5BS.js:19806
+performUnitOfWork @ chunk-QYFCA5BS.js:19251
+workLoopSync @ chunk-QYFCA5BS.js:19190
+renderRootSync @ chunk-QYFCA5BS.js:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js:18728
+workLoop @ chunk-QYFCA5BS.js:197
+flushWork @ chunk-QYFCA5BS.js:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js:384
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2023-01-01: 40% (formatted: 40.0%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2022-08-01: undefined% (formatted: -)
+ 🔍 [IRR HISTORY DEBUG] Chart data processing: {chartDataLength: 3, chartDataSample: {…}, productsForChartLength: 2}
+ 🔍 [PRODUCT IRR DEBUG] Product 237 - Raw historical IRR data: {productId: 237, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 3, rawRecords: Array(3), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2023-01-01: -367.1% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2022-08-01: -120% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2023-01-01: -367.1% (formatted: -367.1%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2022-08-01: -120% (formatted: -120.0%)
+ 🔍 [Previous Funds IRR] Starting calculation for 1 inactive funds: [1107]
+ 🔍 [Previous Funds IRR] Will attempt to calculate IRR for 2 dates: (2) ['2023-02-01', '2023-01-01']
+ 🔍 [Previous Funds IRR] Calculating for date 2023-02-01 (2023-02-01) with fund IDs: [1107]
+ 🔍 [PRODUCT IRR DEBUG] Product 236 - Raw historical IRR data: {productId: 236, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 2, rawRecords: Array(2), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 236 storing IRR for date 2023-01-01: 40% (from portfolio_historical_irr table)
+ ⚠️ [DATE MISMATCH WARNING] Product 236 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(2), selectedDatesFromReport: Array(2), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2023-02-01'}
+(anonymous) @ IRRHistoryTab.tsx:2021
+(anonymous) @ IRRHistoryTab.tsx:2080
+(anonymous) @ IRRHistoryTab.tsx:1458
+IRRHistoryTab @ IRRHistoryTab.tsx:2118
+renderWithHooks @ chunk-QYFCA5BS.js:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js:14635
+beginWork @ chunk-QYFCA5BS.js:15972
+beginWork$1 @ chunk-QYFCA5BS.js:19806
+performUnitOfWork @ chunk-QYFCA5BS.js:19251
+workLoopSync @ chunk-QYFCA5BS.js:19190
+renderRootSync @ chunk-QYFCA5BS.js:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js:18728
+workLoop @ chunk-QYFCA5BS.js:197
+flushWork @ chunk-QYFCA5BS.js:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js:384
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2023-01-01: 40% (formatted: 40.0%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2022-08-01: undefined% (formatted: -)
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-02-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: -316.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-02-01: -316.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-01-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: -367.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-01-01: -367.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2022-08-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: -120, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2022-08-01: -120
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-02-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: 58.6, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-02-01: 58.6
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-01-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: 40, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-01-01: 40
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2022-08-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: null, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2022-08-01: null
+ 🎯 [CLIENT GROUP RISK] Calculated client group weight risk: {productCount: 2, totalValue: 445, weightedRiskSum: 1750, calculatedRisk: '3.9', productBreakdown: Array(2)}
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-02-01: -125.4% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-01-01: -184.3% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2022-08-01: -120% (calculated from portfolios with valuations)
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-02-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: -316.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-02-01: -316.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-01-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: -367.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-01-01: -367.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2022-08-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: -120, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2022-08-01: -120
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-02-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: 58.6, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-02-01: 58.6
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-01-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: 40, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-01-01: 40
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2022-08-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: null, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2022-08-01: null
+ 🎯 [CLIENT GROUP RISK] Calculated client group weight risk: {productCount: 2, totalValue: 445, weightedRiskSum: 1750, calculatedRisk: '3.9', productBreakdown: Array(2)}
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-02-01: -125.4% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-01-01: -184.3% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2022-08-01: -120% (calculated from portfolios with valuations)
+ 🔄 [Previous Funds] useEffect triggered {hasIrrHistoryData: true, irrHistoryDataLength: 2, hasProductSummaries: true, productSummariesLength: 2}
+ 🔄 [Previous Funds] Starting calculation with 3 dates: (3) ['2023-02-01', '2023-01-01', '2022-08-01']
+ 🔍 [Previous Funds] Analyzing product 236: {productName: 'Stocks & Shares ISA', totalFunds: 3, fundDetails: Array(3)}
+ 🔍 [Previous Funds] Product 236 - Historical/Previous Funds check: {foundHistoricalFunds: 1, historicalFundsDetails: Array(1)}
+ 🔍 [Previous Funds] Product 236 - ALL FUNDS CHECK: {totalFunds: 3, allFundNames: Array(3), historicalFundsInAll: Array(0), previousFundsInAll: Array(1)}
+ 🔍 [Previous Funds] Product 236 inactive funds: {count: 0, funds: Array(0)}
+ 🔍 [Previous Funds] Product 236 historical funds: {count: 1, funds: Array(1)}
+ 🔍 [Previous Funds] Product 236 total dynamic funds: {count: 1, funds: Array(1)}
+ 🔍 [Previous Funds] Product 236 - Found virtual Previous/Historical Funds with stored inactive funds: {virtualFund: {…}, inactiveFunds: Array(1), actualInactiveFundIds: Array(1)}
+ 🔍 [Previous Funds] Product 236 extracted fund IDs: {originalCount: 1, extractedIds: Array(1), filteredCount: 1}
+ 🔍 [Previous Funds] Analyzing product 237: {productName: 'Stocks & Shares ISA', totalFunds: 2, fundDetails: Array(2)}
+ 🔍 [Previous Funds] Product 237 - Historical/Previous Funds check: {foundHistoricalFunds: 0, historicalFundsDetails: Array(0)}
+ 🔍 [Previous Funds] Product 237 - ALL FUNDS CHECK: {totalFunds: 2, allFundNames: Array(2), historicalFundsInAll: Array(0), previousFundsInAll: Array(0)}
+ 🔍 [Previous Funds] Product 237 inactive funds: {count: 0, funds: Array(0)}
+ 🔍 [Previous Funds] Product 237 historical funds: {count: 0, funds: Array(0)}
+ 🔍 [Previous Funds] Product 237 total dynamic funds: {count: 0, funds: Array(0)}
+ 🔍 [Previous Funds] Final analysis: {totalProductsAnalyzed: 2, productsWithDynamicFunds: 1, dynamicFundDetails: Array(1)}
+ 🔄 [Previous Funds] Starting IRR calculations for 1 products
+ 🔄 [Previous Funds] Calculating IRR for product 236 with fund IDs: [1107]
+ 🔍 [Previous Funds IRR] Starting calculation for 1 inactive funds: [1107]
+ 🔍 [Previous Funds IRR] Will attempt to calculate IRR for 3 dates: (3) ['2023-02-01', '2023-01-01', '2022-08-01']
+ 🔍 [Previous Funds IRR] Calculating for date 2023-02-01 (2023-02-01) with fund IDs: [1107]
+ 🔍 [Previous Funds IRR] API response for 2023-02-01: {success: true, irr_percentage: -126.7, irr_decimal: -1.2668737080010097, calculation_date: '2023-02-01', portfolio_fund_ids: Array(1)}
+ ✅ [Previous Funds IRR] Successfully calculated IRR for 2023-02-01: -126.7%
+ 🔍 [Previous Funds IRR] Calculating for date 2023-01-01 (2023-01-01) with fund IDs: [1107]
+ 🔍 [Previous Funds IRR] API response for 2023-01-01: {success: true, irr_percentage: -120, irr_decimal: -1.200000000000001, calculation_date: '2023-01-01', portfolio_fund_ids: Array(1)}
+ ✅ [Previous Funds IRR] Successfully calculated IRR for 2023-01-01: -120%
+ 🔍 [IRR HISTORY DEBUG] Chart data processing: {chartDataLength: 3, chartDataSample: {…}, productsForChartLength: 2}
+ 🔍 [PRODUCT IRR DEBUG] Product 237 - Raw historical IRR data: {productId: 237, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 3, rawRecords: Array(3), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2023-01-01: -367.1% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2022-08-01: -120% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2023-01-01: -367.1% (formatted: -367.1%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2022-08-01: -120% (formatted: -120.0%)
+ 🔍 [Previous Funds IRR] Starting calculation for 1 inactive funds: [1107]
+ 🔍 [Previous Funds IRR] Will attempt to calculate IRR for 2 dates: (2) ['2023-02-01', '2023-01-01']
+ 🔍 [Previous Funds IRR] Calculating for date 2023-02-01 (2023-02-01) with fund IDs: [1107]
+ 🔍 [PRODUCT IRR DEBUG] Product 236 - Raw historical IRR data: {productId: 236, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 2, rawRecords: Array(2), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 236 storing IRR for date 2023-01-01: 40% (from portfolio_historical_irr table)
+ ⚠️ [DATE MISMATCH WARNING] Product 236 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(2), selectedDatesFromReport: Array(2), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2023-02-01'}
+(anonymous) @ IRRHistoryTab.tsx:2021
+(anonymous) @ IRRHistoryTab.tsx:2080
+(anonymous) @ IRRHistoryTab.tsx:1458
+IRRHistoryTab @ IRRHistoryTab.tsx:2118
+renderWithHooks @ chunk-QYFCA5BS.js:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js:14630
+beginWork @ chunk-QYFCA5BS.js:15972
+beginWork$1 @ chunk-QYFCA5BS.js:19806
+performUnitOfWork @ chunk-QYFCA5BS.js:19251
+workLoopSync @ chunk-QYFCA5BS.js:19190
+renderRootSync @ chunk-QYFCA5BS.js:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js:18728
+workLoop @ chunk-QYFCA5BS.js:197
+flushWork @ chunk-QYFCA5BS.js:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js:384
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2023-01-01: 40% (formatted: 40.0%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2022-08-01: undefined% (formatted: -)
+ 🔍 [IRR HISTORY DEBUG] Chart data processing: {chartDataLength: 3, chartDataSample: {…}, productsForChartLength: 2}
+ 🔍 [PRODUCT IRR DEBUG] Product 237 - Raw historical IRR data: {productId: 237, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 3, rawRecords: Array(3), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2023-01-01: -367.1% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2022-08-01: -120% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2023-01-01: -367.1% (formatted: -367.1%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2022-08-01: -120% (formatted: -120.0%)
+ 🔍 [Previous Funds IRR] Starting calculation for 1 inactive funds: [1107]
+ 🔍 [Previous Funds IRR] Will attempt to calculate IRR for 2 dates: (2) ['2023-02-01', '2023-01-01']
+ 🔍 [Previous Funds IRR] Calculating for date 2023-02-01 (2023-02-01) with fund IDs: [1107]
+ 🔍 [PRODUCT IRR DEBUG] Product 236 - Raw historical IRR data: {productId: 236, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 2, rawRecords: Array(2), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 236 storing IRR for date 2023-01-01: 40% (from portfolio_historical_irr table)
+ ⚠️ [DATE MISMATCH WARNING] Product 236 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(2), selectedDatesFromReport: Array(2), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2023-02-01'}
+(anonymous) @ IRRHistoryTab.tsx:2021
+(anonymous) @ IRRHistoryTab.tsx:2080
+(anonymous) @ IRRHistoryTab.tsx:1458
+IRRHistoryTab @ IRRHistoryTab.tsx:2118
+renderWithHooks @ chunk-QYFCA5BS.js:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js:14635
+beginWork @ chunk-QYFCA5BS.js:15972
+beginWork$1 @ chunk-QYFCA5BS.js:19806
+performUnitOfWork @ chunk-QYFCA5BS.js:19251
+workLoopSync @ chunk-QYFCA5BS.js:19190
+renderRootSync @ chunk-QYFCA5BS.js:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js:18728
+workLoop @ chunk-QYFCA5BS.js:197
+flushWork @ chunk-QYFCA5BS.js:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js:384
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2023-01-01: 40% (formatted: 40.0%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2022-08-01: undefined% (formatted: -)
+ 🔍 [Previous Funds IRR] API response for 2023-02-01: {success: true, irr_percentage: -126.7, irr_decimal: -1.2668737080010097, calculation_date: '2023-02-01', portfolio_fund_ids: Array(1)}
+ ✅ [Previous Funds IRR] Successfully calculated IRR for 2023-02-01: -126.7%
+ 🔍 [Previous Funds IRR] Calculating for date 2023-01-01 (2023-01-01) with fund IDs: [1107]
+ 🔍 [Previous Funds IRR] API response for 2023-01-01: {success: true, irr_percentage: -120, irr_decimal: -1.200000000000001, calculation_date: '2023-01-01', portfolio_fund_ids: Array(1)}
+ ✅ [Previous Funds IRR] Successfully calculated IRR for 2023-01-01: -120%
+ 🔍 [IRR HISTORY DEBUG] Chart data processing: {chartDataLength: 3, chartDataSample: {…}, productsForChartLength: 2}
+ 🔍 [PRODUCT IRR DEBUG] Product 237 - Raw historical IRR data: {productId: 237, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 3, rawRecords: Array(3), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2023-01-01: -367.1% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2022-08-01: -120% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2023-01-01: -367.1% (formatted: -367.1%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2022-08-01: -120% (formatted: -120.0%)
+ 🔍 [PRODUCT IRR DEBUG] Product 236 - Raw historical IRR data: {productId: 236, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 2, rawRecords: Array(2), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 236 storing IRR for date 2023-01-01: 40% (from portfolio_historical_irr table)
+ ⚠️ [DATE MISMATCH WARNING] Product 236 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(2), selectedDatesFromReport: Array(2), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2023-02-01'}
+(anonymous) @ IRRHistoryTab.tsx:2021
+(anonymous) @ IRRHistoryTab.tsx:2080
+(anonymous) @ IRRHistoryTab.tsx:1458
+IRRHistoryTab @ IRRHistoryTab.tsx:2118
+renderWithHooks @ chunk-QYFCA5BS.js:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js:14630
+beginWork @ chunk-QYFCA5BS.js:15972
+beginWork$1 @ chunk-QYFCA5BS.js:19806
+performUnitOfWork @ chunk-QYFCA5BS.js:19251
+workLoopSync @ chunk-QYFCA5BS.js:19190
+renderRootSync @ chunk-QYFCA5BS.js:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js:18728
+workLoop @ chunk-QYFCA5BS.js:197
+flushWork @ chunk-QYFCA5BS.js:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js:384
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2023-01-01: 40% (formatted: 40.0%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2022-08-01: undefined% (formatted: -)
+ 🔍 [IRR HISTORY DEBUG] Chart data processing: {chartDataLength: 3, chartDataSample: {…}, productsForChartLength: 2}
+ 🔍 [PRODUCT IRR DEBUG] Product 237 - Raw historical IRR data: {productId: 237, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 3, rawRecords: Array(3), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2023-01-01: -367.1% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2022-08-01: -120% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2023-01-01: -367.1% (formatted: -367.1%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2022-08-01: -120% (formatted: -120.0%)
+ 🔍 [PRODUCT IRR DEBUG] Product 236 - Raw historical IRR data: {productId: 236, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 2, rawRecords: Array(2), …}
+IRRHistoryTab.tsx:1823 🔍 [INDIVIDUAL CARD DEBUG] Product 236 storing IRR for date 2023-01-01: 40% (from portfolio_historical_irr table)
+IRRHistoryTab.tsx:1842 ⚠️ [DATE MISMATCH WARNING] Product 236 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(2), selectedDatesFromReport: Array(2), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2023-02-01'}
+(anonymous) @ IRRHistoryTab.tsx:1842
+(anonymous) @ IRRHistoryTab.tsx:1898
+(anonymous) @ IRRHistoryTab.tsx:1261
+IRRHistoryTab @ IRRHistoryTab.tsx:1913
+renderWithHooks @ chunk-QYFCA5BS.js?v=cc98fab4:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=cc98fab4:14635
+beginWork @ chunk-QYFCA5BS.js?v=cc98fab4:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=cc98fab4:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=cc98fab4:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=cc98fab4:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=cc98fab4:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=cc98fab4:18728
+workLoop @ chunk-QYFCA5BS.js?v=cc98fab4:197
+flushWork @ chunk-QYFCA5BS.js?v=cc98fab4:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=cc98fab4:384
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2023-01-01: 40% (formatted: 40.0%)
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2022-08-01: undefined% (formatted: -)
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-02-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-02-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: -316.1, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-02-01: -316.1
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-01-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-01-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: -367.1, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-01-01: -367.1
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2022-08-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2022-08-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: -120, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2022-08-01: -120
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-02-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-02-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: 58.6, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-02-01: 58.6
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-01-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-01-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: 40, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-01-01: 40
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2022-08-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2022-08-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: null, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2022-08-01: null
+IRRHistorySummaryTable.tsx:429 🎯 [CLIENT GROUP RISK] Calculated client group weight risk: {productCount: 2, totalValue: 445, weightedRiskSum: 1750, calculatedRisk: '3.9', productBreakdown: Array(2)}
+IRRHistorySummaryTable.tsx:385 📊 [IRR SUMMARY] Using backend IRR for date 2023-02-01: -125.4% (calculated from portfolios with valuations)
+IRRHistorySummaryTable.tsx:385 📊 [IRR SUMMARY] Using backend IRR for date 2023-01-01: -184.3% (calculated from portfolios with valuations)
+IRRHistorySummaryTable.tsx:385 📊 [IRR SUMMARY] Using backend IRR for date 2022-08-01: -120% (calculated from portfolios with valuations)
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-02-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-02-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: -316.1, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-02-01: -316.1
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-01-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-01-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: -367.1, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-01-01: -367.1
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2022-08-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2022-08-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: -120, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2022-08-01: -120
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-02-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-02-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: 58.6, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-02-01: 58.6
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-01-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-01-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: 40, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-01-01: 40
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2022-08-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2022-08-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: null, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2022-08-01: null
+IRRHistorySummaryTable.tsx:429 🎯 [CLIENT GROUP RISK] Calculated client group weight risk: {productCount: 2, totalValue: 445, weightedRiskSum: 1750, calculatedRisk: '3.9', productBreakdown: Array(2)}
+IRRHistorySummaryTable.tsx:385 📊 [IRR SUMMARY] Using backend IRR for date 2023-02-01: -125.4% (calculated from portfolios with valuations)
+IRRHistorySummaryTable.tsx:385 📊 [IRR SUMMARY] Using backend IRR for date 2023-01-01: -184.3% (calculated from portfolios with valuations)
+IRRHistorySummaryTable.tsx:385 📊 [IRR SUMMARY] Using backend IRR for date 2022-08-01: -120% (calculated from portfolios with valuations)
+irrDataService.ts:160 Retrieved undefined stored fund IRRs
+irrDataService.ts:169 📋 [IRR DEBUG] Strategy 3: Checking if IRR calculation is needed
+irrDataService.ts:170 📋 [IRR DEBUG] Calculation decision factors: {noStoredIRR: true, includeHistorical: false, hasEndDate: false, needsCalculation: true, portfolioFundIdsLength: 4}
+irrDataService.ts:179 🔄 [IRR DEBUG] Calculating IRR due to: {noStoredIRR: true, includeHistorical: false, hasEndDate: false}
+irrDataService.ts:95 🔄 [IRR DEBUG] Calculating IRR using standardized endpoint: {portfolioFundIds: Array(4), endDate: undefined}
+irrDataService.ts:96 🔍 DEBUG: irrDataService portfolioFundIds being sent: (4) [1108, 1109, 1111, 1110]
+api.ts:607 🔍 DEBUG: api.ts calculateStandardizedMultipleFundsIRR called with: {portfolioFundIds: Array(4), irrDate: undefined}
+api.ts:608 🔍 DEBUG: portfolioFundIds being sent to backend: (4) [1108, 1109, 1111, 1110]
+IRRHistoryTab.tsx:673 🔍 [Previous Funds IRR] API response for 2023-02-01: {success: true, irr_percentage: -126.7, irr_decimal: -1.2668737080010097, calculation_date: '2023-02-01', portfolio_fund_ids: Array(1)}
+IRRHistoryTab.tsx:683 ✅ [Previous Funds IRR] Successfully calculated IRR for 2023-02-01: -126.7%
+IRRHistoryTab.tsx:664 🔍 [Previous Funds IRR] Calculating for date 2023-01-01 (2023-01-01) with fund IDs: [1107]
+IRRHistoryTab.tsx:673 🔍 [Previous Funds IRR] API response for 2023-02-01: {success: true, irr_percentage: -126.7, irr_decimal: -1.2668737080010097, calculation_date: '2023-02-01', portfolio_fund_ids: Array(1)}
+IRRHistoryTab.tsx:683 ✅ [Previous Funds IRR] Successfully calculated IRR for 2023-02-01: -126.7%
+IRRHistoryTab.tsx:664 🔍 [Previous Funds IRR] Calculating for date 2023-01-01 (2023-01-01) with fund IDs: [1107]
+IRRHistoryTab.tsx:673 🔍 [Previous Funds IRR] API response for 2023-01-01: {success: true, irr_percentage: -120, irr_decimal: -1.200000000000001, calculation_date: '2023-01-01', portfolio_fund_ids: Array(1)}
+IRRHistoryTab.tsx:683 ✅ [Previous Funds IRR] Successfully calculated IRR for 2023-01-01: -120%
+IRRHistoryTab.tsx:664 🔍 [Previous Funds IRR] Calculating for date 2022-08-01 (2022-08-01) with fund IDs: [1107]
+IRRHistoryTab.tsx:673 🔍 [Previous Funds IRR] API response for 2023-02-01: {success: true, irr_percentage: -126.7, irr_decimal: -1.2668737080010097, calculation_date: '2023-02-01', portfolio_fund_ids: Array(1)}
+IRRHistoryTab.tsx:683 ✅ [Previous Funds IRR] Successfully calculated IRR for 2023-02-01: -126.7%
+IRRHistoryTab.tsx:664 🔍 [Previous Funds IRR] Calculating for date 2023-01-01 (2023-01-01) with fund IDs: [1107]
+IRRHistoryTab.tsx:673 🔍 [Previous Funds IRR] API response for 2023-01-01: {success: true, irr_percentage: -120, irr_decimal: -1.200000000000001, calculation_date: '2023-01-01', portfolio_fund_ids: Array(1)}
+IRRHistoryTab.tsx:683 ✅ [Previous Funds IRR] Successfully calculated IRR for 2023-01-01: -120%
+IRRHistoryTab.tsx:664 🔍 [Previous Funds IRR] Calculating for date 2022-08-01 (2022-08-01) with fund IDs: [1107]
+IRRHistoryTab.tsx:673 🔍 [Previous Funds IRR] API response for 2023-02-01: {success: true, irr_percentage: -126.7, irr_decimal: -1.2668737080010097, calculation_date: '2023-02-01', portfolio_fund_ids: Array(1)}
+IRRHistoryTab.tsx:683 ✅ [Previous Funds IRR] Successfully calculated IRR for 2023-02-01: -126.7%
+IRRHistoryTab.tsx:664 🔍 [Previous Funds IRR] Calculating for date 2023-01-01 (2023-01-01) with fund IDs: [1107]
+ 🔍 [Previous Funds IRR] API response for 2023-01-01: {success: true, irr_percentage: -120, irr_decimal: -1.200000000000001, calculation_date: '2023-01-01', portfolio_fund_ids: Array(1)}
+ ✅ [Previous Funds IRR] Successfully calculated IRR for 2023-01-01: -120%
+ 🔍 [IRR HISTORY DEBUG] Chart data processing: {chartDataLength: 3, chartDataSample: {…}, productsForChartLength: 2}
+ 🔍 [PRODUCT IRR DEBUG] Product 237 - Raw historical IRR data: {productId: 237, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 3, rawRecords: Array(3), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2023-01-01: -367.1% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2022-08-01: -120% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2023-01-01: -367.1% (formatted: -367.1%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2022-08-01: -120% (formatted: -120.0%)
+ 🔍 [PRODUCT IRR DEBUG] Product 236 - Raw historical IRR data: {productId: 236, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 2, rawRecords: Array(2), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 236 storing IRR for date 2023-01-01: 40% (from portfolio_historical_irr table)
+ ⚠️ [DATE MISMATCH WARNING] Product 236 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(2), selectedDatesFromReport: Array(2), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2023-02-01'}
+(anonymous) @ IRRHistoryTab.tsx:2021
+(anonymous) @ IRRHistoryTab.tsx:2080
+(anonymous) @ IRRHistoryTab.tsx:1458
+IRRHistoryTab @ IRRHistoryTab.tsx:2118
+renderWithHooks @ chunk-QYFCA5BS.js:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js:14630
+beginWork @ chunk-QYFCA5BS.js:15972
+beginWork$1 @ chunk-QYFCA5BS.js:19806
+performUnitOfWork @ chunk-QYFCA5BS.js:19251
+workLoopSync @ chunk-QYFCA5BS.js:19190
+renderRootSync @ chunk-QYFCA5BS.js:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js:18728
+workLoop @ chunk-QYFCA5BS.js:197
+flushWork @ chunk-QYFCA5BS.js:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js:384
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2023-01-01: 40% (formatted: 40.0%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2022-08-01: undefined% (formatted: -)
+ 🔍 [IRR HISTORY DEBUG] Chart data processing: {chartDataLength: 3, chartDataSample: {…}, productsForChartLength: 2}
+ 🔍 [PRODUCT IRR DEBUG] Product 237 - Raw historical IRR data: {productId: 237, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 3, rawRecords: Array(3), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2023-01-01: -367.1% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2022-08-01: -120% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2023-01-01: -367.1% (formatted: -367.1%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2022-08-01: -120% (formatted: -120.0%)
+ 🔍 [PRODUCT IRR DEBUG] Product 236 - Raw historical IRR data: {productId: 236, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 2, rawRecords: Array(2), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 236 storing IRR for date 2023-01-01: 40% (from portfolio_historical_irr table)
+ ⚠️ [DATE MISMATCH WARNING] Product 236 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(2), selectedDatesFromReport: Array(2), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2023-02-01'}
+(anonymous) @ IRRHistoryTab.tsx:2021
+(anonymous) @ IRRHistoryTab.tsx:2080
+(anonymous) @ IRRHistoryTab.tsx:1458
+IRRHistoryTab @ IRRHistoryTab.tsx:2118
+renderWithHooks @ chunk-QYFCA5BS.js:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js:14635
+beginWork @ chunk-QYFCA5BS.js:15972
+beginWork$1 @ chunk-QYFCA5BS.js:19806
+performUnitOfWork @ chunk-QYFCA5BS.js:19251
+workLoopSync @ chunk-QYFCA5BS.js:19190
+renderRootSync @ chunk-QYFCA5BS.js:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js:18728
+workLoop @ chunk-QYFCA5BS.js:197
+flushWork @ chunk-QYFCA5BS.js:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js:384
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2023-01-01: 40% (formatted: 40.0%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2022-08-01: undefined% (formatted: -)
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-02-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: -316.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-02-01: -316.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-01-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: -367.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-01-01: -367.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2022-08-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: -120, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2022-08-01: -120
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-02-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: 58.6, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-02-01: 58.6
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-01-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: 40, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-01-01: 40
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2022-08-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: null, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2022-08-01: null
+ 🎯 [CLIENT GROUP RISK] Calculated client group weight risk: {productCount: 2, totalValue: 445, weightedRiskSum: 1750, calculatedRisk: '3.9', productBreakdown: Array(2)}
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-02-01: -125.4% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-01-01: -184.3% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2022-08-01: -120% (calculated from portfolios with valuations)
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-02-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: -316.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-02-01: -316.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-01-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: -367.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-01-01: -367.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2022-08-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: -120, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2022-08-01: -120
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-02-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: 58.6, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-02-01: 58.6
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-01-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: 40, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-01-01: 40
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2022-08-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: null, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2022-08-01: null
+ 🎯 [CLIENT GROUP RISK] Calculated client group weight risk: {productCount: 2, totalValue: 445, weightedRiskSum: 1750, calculatedRisk: '3.9', productBreakdown: Array(2)}
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-02-01: -125.4% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-01-01: -184.3% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2022-08-01: -120% (calculated from portfolios with valuations)
+ 🔍 [Previous Funds IRR] API response for 2023-02-01: {success: true, irr_percentage: -126.7, irr_decimal: -1.2668737080010097, calculation_date: '2023-02-01', portfolio_fund_ids: Array(1)}
+ ✅ [Previous Funds IRR] Successfully calculated IRR for 2023-02-01: -126.7%
+ 🔍 [Previous Funds IRR] Calculating for date 2023-01-01 (2023-01-01) with fund IDs: [1107]
+ 🔍 [Previous Funds IRR] API response for 2023-01-01: {success: true, irr_percentage: -120, irr_decimal: -1.200000000000001, calculation_date: '2023-01-01', portfolio_fund_ids: Array(1)}
+ ✅ [Previous Funds IRR] Successfully calculated IRR for 2023-01-01: -120%
+ 🔍 [Previous Funds IRR] API response for 2023-01-01: {success: true, irr_percentage: -120, irr_decimal: -1.200000000000001, calculation_date: '2023-01-01', portfolio_fund_ids: Array(1)}
+ ✅ [Previous Funds IRR] Successfully calculated IRR for 2023-01-01: -120%
+ 🔍 [IRR HISTORY DEBUG] Chart data processing: {chartDataLength: 3, chartDataSample: {…}, productsForChartLength: 2}
+ 🔍 [PRODUCT IRR DEBUG] Product 237 - Raw historical IRR data: {productId: 237, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 3, rawRecords: Array(3), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2023-01-01: -367.1% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2022-08-01: -120% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2023-01-01: -367.1% (formatted: -367.1%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2022-08-01: -120% (formatted: -120.0%)
+ 🔍 [PRODUCT IRR DEBUG] Product 236 - Raw historical IRR data: {productId: 236, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 2, rawRecords: Array(2), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 236 storing IRR for date 2023-01-01: 40% (from portfolio_historical_irr table)
+ ⚠️ [DATE MISMATCH WARNING] Product 236 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(2), selectedDatesFromReport: Array(2), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2023-02-01'}
+(anonymous) @ IRRHistoryTab.tsx:2021
+(anonymous) @ IRRHistoryTab.tsx:2080
+(anonymous) @ IRRHistoryTab.tsx:1458
+IRRHistoryTab @ IRRHistoryTab.tsx:2118
+renderWithHooks @ chunk-QYFCA5BS.js:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js:14630
+beginWork @ chunk-QYFCA5BS.js:15972
+beginWork$1 @ chunk-QYFCA5BS.js:19806
+performUnitOfWork @ chunk-QYFCA5BS.js:19251
+workLoopSync @ chunk-QYFCA5BS.js:19190
+renderRootSync @ chunk-QYFCA5BS.js:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js:18728
+workLoop @ chunk-QYFCA5BS.js:197
+flushWork @ chunk-QYFCA5BS.js:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js:384
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2023-01-01: 40% (formatted: 40.0%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2022-08-01: undefined% (formatted: -)
+ 🔍 [IRR HISTORY DEBUG] Chart data processing: {chartDataLength: 3, chartDataSample: {…}, productsForChartLength: 2}
+ 🔍 [PRODUCT IRR DEBUG] Product 237 - Raw historical IRR data: {productId: 237, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 3, rawRecords: Array(3), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2023-01-01: -367.1% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2022-08-01: -120% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2023-01-01: -367.1% (formatted: -367.1%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2022-08-01: -120% (formatted: -120.0%)
+ 🔍 [PRODUCT IRR DEBUG] Product 236 - Raw historical IRR data: {productId: 236, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 2, rawRecords: Array(2), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 236 storing IRR for date 2023-01-01: 40% (from portfolio_historical_irr table)
+ ⚠️ [DATE MISMATCH WARNING] Product 236 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(2), selectedDatesFromReport: Array(2), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2023-02-01'}
+(anonymous) @ IRRHistoryTab.tsx:2021
+(anonymous) @ IRRHistoryTab.tsx:2080
+(anonymous) @ IRRHistoryTab.tsx:1458
+IRRHistoryTab @ IRRHistoryTab.tsx:2118
+renderWithHooks @ chunk-QYFCA5BS.js:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js:14635
+beginWork @ chunk-QYFCA5BS.js:15972
+beginWork$1 @ chunk-QYFCA5BS.js:19806
+performUnitOfWork @ chunk-QYFCA5BS.js:19251
+workLoopSync @ chunk-QYFCA5BS.js:19190
+renderRootSync @ chunk-QYFCA5BS.js:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js:18728
+workLoop @ chunk-QYFCA5BS.js:197
+flushWork @ chunk-QYFCA5BS.js:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js:384
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2023-01-01: 40% (formatted: 40.0%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2022-08-01: undefined% (formatted: -)
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-02-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: -316.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-02-01: -316.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-01-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: -367.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-01-01: -367.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2022-08-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: -120, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2022-08-01: -120
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-02-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: 58.6, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-02-01: 58.6
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-01-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: 40, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-01-01: 40
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2022-08-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: null, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2022-08-01: null
+ 🎯 [CLIENT GROUP RISK] Calculated client group weight risk: {productCount: 2, totalValue: 445, weightedRiskSum: 1750, calculatedRisk: '3.9', productBreakdown: Array(2)}
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-02-01: -125.4% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-01-01: -184.3% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2022-08-01: -120% (calculated from portfolios with valuations)
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-02-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: -316.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-02-01: -316.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-01-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: -367.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-01-01: -367.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2022-08-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: -120, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2022-08-01: -120
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-02-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: 58.6, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-02-01: 58.6
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-01-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: 40, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-01-01: 40
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2022-08-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: null, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2022-08-01: null
+ 🎯 [CLIENT GROUP RISK] Calculated client group weight risk: {productCount: 2, totalValue: 445, weightedRiskSum: 1750, calculatedRisk: '3.9', productBreakdown: Array(2)}
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-02-01: -125.4% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-01-01: -184.3% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2022-08-01: -120% (calculated from portfolios with valuations)
+ 🔍 [Previous Funds IRR] API response for 2023-01-01: {success: true, irr_percentage: -120, irr_decimal: -1.200000000000001, calculation_date: '2023-01-01', portfolio_fund_ids: Array(1)}
+ ✅ [Previous Funds IRR] Successfully calculated IRR for 2023-01-01: -120%
+ 🔍 [Previous Funds IRR] Calculating for date 2022-08-01 (2022-08-01) with fund IDs: [1107]
+ 🔍 [Previous Funds IRR] API response for 2022-08-01: {success: true, irr_percentage: 0, irr_decimal: 0, calculation_date: '2022-08-01', portfolio_fund_ids: Array(1)}
+ ✅ [Previous Funds IRR] Successfully calculated IRR for 2022-08-01: 0%
+ 🔍 [Previous Funds] Product 236 IRR calculation result: {mapSize: 3, dates: Array(3), values: Array(3), detailedValues: Array(3)}
+ ✅ [Previous Funds] Successfully stored IRR data for product 236
+ 🔍 [Previous Funds] Final state update: {newDataSize: 1, completedProductsCount: 1, completedProducts: Array(1), allCalculatedData: Array(1)}
+ ✅ [Previous Funds] State updated successfully with 1 products
+ 🔍 [IRR HISTORY DEBUG] Chart data processing: {chartDataLength: 3, chartDataSample: {…}, productsForChartLength: 2}
+ 🔍 [PRODUCT IRR DEBUG] Product 237 - Raw historical IRR data: {productId: 237, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 3, rawRecords: Array(3), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2023-01-01: -367.1% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2022-08-01: -120% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2023-01-01: -367.1% (formatted: -367.1%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2022-08-01: -120% (formatted: -120.0%)
+ 🔍 [PRODUCT IRR DEBUG] Product 236 - Raw historical IRR data: {productId: 236, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 2, rawRecords: Array(2), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 236 storing IRR for date 2023-01-01: 40% (from portfolio_historical_irr table)
+ ⚠️ [DATE MISMATCH WARNING] Product 236 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(2), selectedDatesFromReport: Array(2), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2023-02-01'}
+(anonymous) @ IRRHistoryTab.tsx:2021
+(anonymous) @ IRRHistoryTab.tsx:2080
+(anonymous) @ IRRHistoryTab.tsx:1458
+IRRHistoryTab @ IRRHistoryTab.tsx:2118
+renderWithHooks @ chunk-QYFCA5BS.js:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js:14630
+beginWork @ chunk-QYFCA5BS.js:15972
+beginWork$1 @ chunk-QYFCA5BS.js:19806
+performUnitOfWork @ chunk-QYFCA5BS.js:19251
+workLoopSync @ chunk-QYFCA5BS.js:19190
+renderRootSync @ chunk-QYFCA5BS.js:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js:18728
+workLoop @ chunk-QYFCA5BS.js:197
+flushWork @ chunk-QYFCA5BS.js:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js:384
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2023-01-01: 40% (formatted: 40.0%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2022-08-01: undefined% (formatted: -)
+ 🔍 [IRR HISTORY DEBUG] Chart data processing: {chartDataLength: 3, chartDataSample: {…}, productsForChartLength: 2}
+ 🔍 [PRODUCT IRR DEBUG] Product 237 - Raw historical IRR data: {productId: 237, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 3, rawRecords: Array(3), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2023-01-01: -367.1% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2022-08-01: -120% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2023-01-01: -367.1% (formatted: -367.1%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2022-08-01: -120% (formatted: -120.0%)
+ 🔍 [PRODUCT IRR DEBUG] Product 236 - Raw historical IRR data: {productId: 236, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 2, rawRecords: Array(2), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 236 storing IRR for date 2023-01-01: 40% (from portfolio_historical_irr table)
+ ⚠️ [DATE MISMATCH WARNING] Product 236 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(2), selectedDatesFromReport: Array(2), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2023-02-01'}
+(anonymous) @ IRRHistoryTab.tsx:2021
+(anonymous) @ IRRHistoryTab.tsx:2080
+(anonymous) @ IRRHistoryTab.tsx:1458
+IRRHistoryTab @ IRRHistoryTab.tsx:2118
+renderWithHooks @ chunk-QYFCA5BS.js:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js:14635
+beginWork @ chunk-QYFCA5BS.js:15972
+beginWork$1 @ chunk-QYFCA5BS.js:19806
+performUnitOfWork @ chunk-QYFCA5BS.js:19251
+workLoopSync @ chunk-QYFCA5BS.js:19190
+renderRootSync @ chunk-QYFCA5BS.js:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js:18728
+workLoop @ chunk-QYFCA5BS.js:197
+flushWork @ chunk-QYFCA5BS.js:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js:384
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2023-01-01: 40% (formatted: 40.0%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2022-08-01: undefined% (formatted: -)
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-02-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: -316.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-02-01: -316.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-01-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: -367.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-01-01: -367.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2022-08-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: -120, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2022-08-01: -120
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-02-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: 58.6, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-02-01: 58.6
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-01-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: 40, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-01-01: 40
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2022-08-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: null, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2022-08-01: null
+ 🎯 [CLIENT GROUP RISK] Calculated client group weight risk: {productCount: 2, totalValue: 445, weightedRiskSum: 1750, calculatedRisk: '3.9', productBreakdown: Array(2)}
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-02-01: -125.4% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-01-01: -184.3% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2022-08-01: -120% (calculated from portfolios with valuations)
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-02-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: -316.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-02-01: -316.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-01-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: -367.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-01-01: -367.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2022-08-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: -120, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2022-08-01: -120
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-02-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: 58.6, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-02-01: 58.6
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-01-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: 40, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-01-01: 40
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2022-08-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: null, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2022-08-01: null
+ 🎯 [CLIENT GROUP RISK] Calculated client group weight risk: {productCount: 2, totalValue: 445, weightedRiskSum: 1750, calculatedRisk: '3.9', productBreakdown: Array(2)}
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-02-01: -125.4% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-01-01: -184.3% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2022-08-01: -120% (calculated from portfolios with valuations)
+ 🔍 [Previous Funds IRR] API response for 2023-01-01: {success: true, irr_percentage: -120, irr_decimal: -1.200000000000001, calculation_date: '2023-01-01', portfolio_fund_ids: Array(1)}
+ ✅ [Previous Funds IRR] Successfully calculated IRR for 2023-01-01: -120%
+ 🔍 [IRR HISTORY DEBUG] Chart data processing: {chartDataLength: 3, chartDataSample: {…}, productsForChartLength: 2}
+ 🔍 [PRODUCT IRR DEBUG] Product 237 - Raw historical IRR data: {productId: 237, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 3, rawRecords: Array(3), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2023-01-01: -367.1% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2022-08-01: -120% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2023-01-01: -367.1% (formatted: -367.1%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2022-08-01: -120% (formatted: -120.0%)
+ 🔍 [PRODUCT IRR DEBUG] Product 236 - Raw historical IRR data: {productId: 236, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 2, rawRecords: Array(2), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 236 storing IRR for date 2023-01-01: 40% (from portfolio_historical_irr table)
+ ⚠️ [DATE MISMATCH WARNING] Product 236 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(2), selectedDatesFromReport: Array(2), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2023-02-01'}
+(anonymous) @ IRRHistoryTab.tsx:2021
+(anonymous) @ IRRHistoryTab.tsx:2080
+(anonymous) @ IRRHistoryTab.tsx:1458
+IRRHistoryTab @ IRRHistoryTab.tsx:2118
+renderWithHooks @ chunk-QYFCA5BS.js:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js:14630
+beginWork @ chunk-QYFCA5BS.js:15972
+beginWork$1 @ chunk-QYFCA5BS.js:19806
+performUnitOfWork @ chunk-QYFCA5BS.js:19251
+workLoopSync @ chunk-QYFCA5BS.js:19190
+renderRootSync @ chunk-QYFCA5BS.js:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js:18728
+workLoop @ chunk-QYFCA5BS.js:197
+flushWork @ chunk-QYFCA5BS.js:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js:384
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2023-01-01: 40% (formatted: 40.0%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2022-08-01: undefined% (formatted: -)
+ 🔍 [IRR HISTORY DEBUG] Chart data processing: {chartDataLength: 3, chartDataSample: {…}, productsForChartLength: 2}
+ 🔍 [PRODUCT IRR DEBUG] Product 237 - Raw historical IRR data: {productId: 237, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 3, rawRecords: Array(3), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2023-01-01: -367.1% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2022-08-01: -120% (from portfolio_historical_irr table)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2023-01-01: -367.1% (formatted: -367.1%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2022-08-01: -120% (formatted: -120.0%)
+ 🔍 [PRODUCT IRR DEBUG] Product 236 - Raw historical IRR data: {productId: 236, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 2, rawRecords: Array(2), …}
+ 🔍 [INDIVIDUAL CARD DEBUG] Product 236 storing IRR for date 2023-01-01: 40% (from portfolio_historical_irr table)
+ ⚠️ [DATE MISMATCH WARNING] Product 236 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(2), selectedDatesFromReport: Array(2), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2023-02-01'}
+(anonymous) @ IRRHistoryTab.tsx:2021
+(anonymous) @ IRRHistoryTab.tsx:2080
+(anonymous) @ IRRHistoryTab.tsx:1458
+IRRHistoryTab @ IRRHistoryTab.tsx:2118
+renderWithHooks @ chunk-QYFCA5BS.js:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js:14635
+beginWork @ chunk-QYFCA5BS.js:15972
+beginWork$1 @ chunk-QYFCA5BS.js:19806
+performUnitOfWork @ chunk-QYFCA5BS.js:19251
+workLoopSync @ chunk-QYFCA5BS.js:19190
+renderRootSync @ chunk-QYFCA5BS.js:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js:18728
+workLoop @ chunk-QYFCA5BS.js:197
+flushWork @ chunk-QYFCA5BS.js:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js:384
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2023-01-01: 40% (formatted: 40.0%)
+ 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2022-08-01: undefined% (formatted: -)
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-02-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: -316.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-02-01: -316.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-01-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: -367.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-01-01: -367.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2022-08-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: -120, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2022-08-01: -120
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-02-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: 58.6, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-02-01: 58.6
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-01-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: 40, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-01-01: 40
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2022-08-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: null, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2022-08-01: null
+ 🎯 [CLIENT GROUP RISK] Calculated client group weight risk: {productCount: 2, totalValue: 445, weightedRiskSum: 1750, calculatedRisk: '3.9', productBreakdown: Array(2)}
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-02-01: -125.4% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-01-01: -184.3% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2022-08-01: -120% (calculated from portfolios with valuations)
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-02-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: -316.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-02-01: -316.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-01-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: -367.1, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-01-01: -367.1
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2022-08-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: -120, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2022-08-01: -120
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-02-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-02-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: 58.6, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-02-01: 58.6
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-01-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-01-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: 40, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-01-01: 40
+ 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2022-08-01
+ 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+ 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2022-08-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: null, portfolio_id: undefined}
+ 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2022-08-01: null
+ 🎯 [CLIENT GROUP RISK] Calculated client group weight risk: {productCount: 2, totalValue: 445, weightedRiskSum: 1750, calculatedRisk: '3.9', productBreakdown: Array(2)}
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-02-01: -125.4% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2023-01-01: -184.3% (calculated from portfolios with valuations)
+ 📊 [IRR SUMMARY] Using backend IRR for date 2022-08-01: -120% (calculated from portfolios with valuations)
+ 🔄 [IRR DEBUG] Raw API response from calculateStandardizedMultipleFundsIRR: {success: true, irr_percentage: -37.8, irr_decimal: -0.37839305987553784, calculation_date: '2023-04-01', portfolio_fund_ids: Array(4), …}
+ 🔄 [IRR DEBUG] Extracted IRR result: -37.8
+ 🔄 [IRR DEBUG] Calculated IRR result: -37.8
+ ✅ [IRR DEBUG] Using calculated IRR as portfolio IRR: -37.8
+ 🎯 [IRR DEBUG] Final getOptimizedIRRData result: {portfolioIRR: -37.8, fundIRRs: {…}, historicalIRR: null, irrDate: 'calculated'}
+ReportDisplayPage.tsx:128 🎯 [REPORT DISPLAY] Real-time total IRR response: {portfolioIRR: -37.8, fundIRRs: {…}, historicalIRR: null, irrDate: 'calculated'}
+ReportDisplayPage.tsx:130 🎯 [REPORT DISPLAY] Set real-time total IRR: -37.8%
+IRRHistoryTab.tsx:673 🔍 [Previous Funds IRR] API response for 2022-08-01: {success: true, irr_percentage: 0, irr_decimal: 0, calculation_date: '2022-08-01', portfolio_fund_ids: Array(1)}
+IRRHistoryTab.tsx:683 ✅ [Previous Funds IRR] Successfully calculated IRR for 2022-08-01: 0%
+IRRHistoryTab.tsx:906 🔍 [Previous Funds] Product 236 IRR calculation result: {mapSize: 3, dates: Array(3), values: Array(3), detailedValues: Array(3)}
+IRRHistoryTab.tsx:916 ✅ [Previous Funds] Successfully stored IRR data for product 236
+IRRHistoryTab.tsx:925 🔍 [Previous Funds] Final state update: {newDataSize: 1, completedProductsCount: 1, completedProducts: Array(1), allCalculatedData: Array(1)}
+IRRHistoryTab.tsx:940 ✅ [Previous Funds] State updated successfully with 1 products
+IRRHistoryTab.tsx:443 🔍 [IRR HISTORY DEBUG] Chart data processing: {chartDataLength: 3, chartDataSample: {…}, productsForChartLength: 2}
+IRRHistoryTab.tsx:1748 🔍 [PRODUCT IRR DEBUG] Product 237 - Raw historical IRR data: {productId: 237, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 3, rawRecords: Array(3), …}
+IRRHistoryTab.tsx:1823 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2023-01-01: -367.1% (from portfolio_historical_irr table)
+IRRHistoryTab.tsx:1823 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2022-08-01: -120% (from portfolio_historical_irr table)
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2023-01-01: -367.1% (formatted: -367.1%)
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2022-08-01: -120% (formatted: -120.0%)
+IRRHistoryTab.tsx:1748 🔍 [PRODUCT IRR DEBUG] Product 236 - Raw historical IRR data: {productId: 236, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 2, rawRecords: Array(2), …}
+IRRHistoryTab.tsx:1823 🔍 [INDIVIDUAL CARD DEBUG] Product 236 storing IRR for date 2023-01-01: 40% (from portfolio_historical_irr table)
+IRRHistoryTab.tsx:1842 ⚠️ [DATE MISMATCH WARNING] Product 236 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(2), selectedDatesFromReport: Array(2), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2023-02-01'}
+(anonymous) @ IRRHistoryTab.tsx:1842
+(anonymous) @ IRRHistoryTab.tsx:1898
+(anonymous) @ IRRHistoryTab.tsx:1261
+IRRHistoryTab @ IRRHistoryTab.tsx:1913
+renderWithHooks @ chunk-QYFCA5BS.js?v=cc98fab4:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=cc98fab4:14630
+beginWork @ chunk-QYFCA5BS.js?v=cc98fab4:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=cc98fab4:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=cc98fab4:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=cc98fab4:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=cc98fab4:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=cc98fab4:18728
+workLoop @ chunk-QYFCA5BS.js?v=cc98fab4:197
+flushWork @ chunk-QYFCA5BS.js?v=cc98fab4:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=cc98fab4:384
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2023-01-01: 40% (formatted: 40.0%)
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2022-08-01: undefined% (formatted: -)
+IRRHistoryTab.tsx:443 🔍 [IRR HISTORY DEBUG] Chart data processing: {chartDataLength: 3, chartDataSample: {…}, productsForChartLength: 2}
+IRRHistoryTab.tsx:1748 🔍 [PRODUCT IRR DEBUG] Product 237 - Raw historical IRR data: {productId: 237, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 3, rawRecords: Array(3), …}
+IRRHistoryTab.tsx:1823 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2023-01-01: -367.1% (from portfolio_historical_irr table)
+IRRHistoryTab.tsx:1823 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2022-08-01: -120% (from portfolio_historical_irr table)
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2023-01-01: -367.1% (formatted: -367.1%)
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2022-08-01: -120% (formatted: -120.0%)
+IRRHistoryTab.tsx:1748 🔍 [PRODUCT IRR DEBUG] Product 236 - Raw historical IRR data: {productId: 236, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 2, rawRecords: Array(2), …}
+IRRHistoryTab.tsx:1823 🔍 [INDIVIDUAL CARD DEBUG] Product 236 storing IRR for date 2023-01-01: 40% (from portfolio_historical_irr table)
+IRRHistoryTab.tsx:1842 ⚠️ [DATE MISMATCH WARNING] Product 236 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(2), selectedDatesFromReport: Array(2), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2023-02-01'}
+(anonymous) @ IRRHistoryTab.tsx:1842
+(anonymous) @ IRRHistoryTab.tsx:1898
+(anonymous) @ IRRHistoryTab.tsx:1261
+IRRHistoryTab @ IRRHistoryTab.tsx:1913
+renderWithHooks @ chunk-QYFCA5BS.js?v=cc98fab4:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=cc98fab4:14635
+beginWork @ chunk-QYFCA5BS.js?v=cc98fab4:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=cc98fab4:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=cc98fab4:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=cc98fab4:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=cc98fab4:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=cc98fab4:18728
+workLoop @ chunk-QYFCA5BS.js?v=cc98fab4:197
+flushWork @ chunk-QYFCA5BS.js?v=cc98fab4:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=cc98fab4:384
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2023-01-01: 40% (formatted: 40.0%)
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2022-08-01: undefined% (formatted: -)
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-02-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-02-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: -316.1, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-02-01: -316.1
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-01-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-01-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: -367.1, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-01-01: -367.1
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2022-08-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2022-08-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: -120, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2022-08-01: -120
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-02-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-02-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: 58.6, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-02-01: 58.6
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-01-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-01-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: 40, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-01-01: 40
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2022-08-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2022-08-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: null, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2022-08-01: null
+IRRHistorySummaryTable.tsx:429 🎯 [CLIENT GROUP RISK] Calculated client group weight risk: {productCount: 2, totalValue: 445, weightedRiskSum: 1750, calculatedRisk: '3.9', productBreakdown: Array(2)}
+IRRHistorySummaryTable.tsx:385 📊 [IRR SUMMARY] Using backend IRR for date 2023-02-01: -125.4% (calculated from portfolios with valuations)
+IRRHistorySummaryTable.tsx:385 📊 [IRR SUMMARY] Using backend IRR for date 2023-01-01: -184.3% (calculated from portfolios with valuations)
+IRRHistorySummaryTable.tsx:385 📊 [IRR SUMMARY] Using backend IRR for date 2022-08-01: -120% (calculated from portfolios with valuations)
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-02-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-02-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: -316.1, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-02-01: -316.1
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-01-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-01-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: -367.1, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-01-01: -367.1
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2022-08-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2022-08-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: -120, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2022-08-01: -120
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-02-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-02-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: 58.6, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-02-01: 58.6
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-01-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-01-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: 40, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-01-01: 40
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2022-08-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2022-08-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: null, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2022-08-01: null
+IRRHistorySummaryTable.tsx:429 🎯 [CLIENT GROUP RISK] Calculated client group weight risk: {productCount: 2, totalValue: 445, weightedRiskSum: 1750, calculatedRisk: '3.9', productBreakdown: Array(2)}
+IRRHistorySummaryTable.tsx:385 📊 [IRR SUMMARY] Using backend IRR for date 2023-02-01: -125.4% (calculated from portfolios with valuations)
+IRRHistorySummaryTable.tsx:385 📊 [IRR SUMMARY] Using backend IRR for date 2023-01-01: -184.3% (calculated from portfolios with valuations)
+IRRHistorySummaryTable.tsx:385 📊 [IRR SUMMARY] Using backend IRR for date 2022-08-01: -120% (calculated from portfolios with valuations)
+IRRHistoryTab.tsx:673 🔍 [Previous Funds IRR] API response for 2022-08-01: {success: true, irr_percentage: 0, irr_decimal: 0, calculation_date: '2022-08-01', portfolio_fund_ids: Array(1)}
+IRRHistoryTab.tsx:683 ✅ [Previous Funds IRR] Successfully calculated IRR for 2022-08-01: 0%
+IRRHistoryTab.tsx:906 🔍 [Previous Funds] Product 236 IRR calculation result: {mapSize: 3, dates: Array(3), values: Array(3), detailedValues: Array(3)}
+IRRHistoryTab.tsx:916 ✅ [Previous Funds] Successfully stored IRR data for product 236
+IRRHistoryTab.tsx:925 🔍 [Previous Funds] Final state update: {newDataSize: 1, completedProductsCount: 1, completedProducts: Array(1), allCalculatedData: Array(1)}
+IRRHistoryTab.tsx:940 ✅ [Previous Funds] State updated successfully with 1 products
+IRRHistoryTab.tsx:443 🔍 [IRR HISTORY DEBUG] Chart data processing: {chartDataLength: 3, chartDataSample: {…}, productsForChartLength: 2}
+IRRHistoryTab.tsx:1748 🔍 [PRODUCT IRR DEBUG] Product 237 - Raw historical IRR data: {productId: 237, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 3, rawRecords: Array(3), …}
+IRRHistoryTab.tsx:1823 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2023-01-01: -367.1% (from portfolio_historical_irr table)
+IRRHistoryTab.tsx:1823 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2022-08-01: -120% (from portfolio_historical_irr table)
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2023-01-01: -367.1% (formatted: -367.1%)
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2022-08-01: -120% (formatted: -120.0%)
+IRRHistoryTab.tsx:1748 🔍 [PRODUCT IRR DEBUG] Product 236 - Raw historical IRR data: {productId: 236, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 2, rawRecords: Array(2), …}
+IRRHistoryTab.tsx:1823 🔍 [INDIVIDUAL CARD DEBUG] Product 236 storing IRR for date 2023-01-01: 40% (from portfolio_historical_irr table)
+IRRHistoryTab.tsx:1842 ⚠️ [DATE MISMATCH WARNING] Product 236 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(2), selectedDatesFromReport: Array(2), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2023-02-01'}
+(anonymous) @ IRRHistoryTab.tsx:1842
+(anonymous) @ IRRHistoryTab.tsx:1898
+(anonymous) @ IRRHistoryTab.tsx:1261
+IRRHistoryTab @ IRRHistoryTab.tsx:1913
+renderWithHooks @ chunk-QYFCA5BS.js?v=cc98fab4:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=cc98fab4:14630
+beginWork @ chunk-QYFCA5BS.js?v=cc98fab4:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=cc98fab4:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=cc98fab4:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=cc98fab4:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=cc98fab4:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=cc98fab4:18728
+workLoop @ chunk-QYFCA5BS.js?v=cc98fab4:197
+flushWork @ chunk-QYFCA5BS.js?v=cc98fab4:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=cc98fab4:384
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2023-01-01: 40% (formatted: 40.0%)
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2022-08-01: undefined% (formatted: -)
+IRRHistoryTab.tsx:443 🔍 [IRR HISTORY DEBUG] Chart data processing: {chartDataLength: 3, chartDataSample: {…}, productsForChartLength: 2}
+IRRHistoryTab.tsx:1748 🔍 [PRODUCT IRR DEBUG] Product 237 - Raw historical IRR data: {productId: 237, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 3, rawRecords: Array(3), …}
+IRRHistoryTab.tsx:1823 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2023-01-01: -367.1% (from portfolio_historical_irr table)
+IRRHistoryTab.tsx:1823 🔍 [INDIVIDUAL CARD DEBUG] Product 237 storing IRR for date 2022-08-01: -120% (from portfolio_historical_irr table)
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2023-01-01: -367.1% (formatted: -367.1%)
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 237 displaying IRR for date 2022-08-01: -120% (formatted: -120.0%)
+IRRHistoryTab.tsx:1748 🔍 [PRODUCT IRR DEBUG] Product 236 - Raw historical IRR data: {productId: 236, selectedDatesFromReport: Array(2), normalizedSelectedDates: Array(2), rawRecordCount: 2, rawRecords: Array(2), …}
+IRRHistoryTab.tsx:1823 🔍 [INDIVIDUAL CARD DEBUG] Product 236 storing IRR for date 2023-01-01: 40% (from portfolio_historical_irr table)
+IRRHistoryTab.tsx:1842 ⚠️ [DATE MISMATCH WARNING] Product 236 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(2), selectedDatesFromReport: Array(2), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2023-02-01'}
+(anonymous) @ IRRHistoryTab.tsx:1842
+(anonymous) @ IRRHistoryTab.tsx:1898
+(anonymous) @ IRRHistoryTab.tsx:1261
+IRRHistoryTab @ IRRHistoryTab.tsx:1913
+renderWithHooks @ chunk-QYFCA5BS.js?v=cc98fab4:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=cc98fab4:14635
+beginWork @ chunk-QYFCA5BS.js?v=cc98fab4:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=cc98fab4:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=cc98fab4:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=cc98fab4:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=cc98fab4:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=cc98fab4:18728
+workLoop @ chunk-QYFCA5BS.js?v=cc98fab4:197
+flushWork @ chunk-QYFCA5BS.js?v=cc98fab4:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=cc98fab4:384
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2023-01-01: 40% (formatted: 40.0%)
+IRRHistoryTab.tsx:1886 🔍 [INDIVIDUAL CARD DISPLAY] Product 236 displaying IRR for date 2022-08-01: undefined% (formatted: -)
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-02-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-02-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: -316.1, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-02-01: -316.1
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-01-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-01-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: -367.1, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-01-01: -367.1
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2022-08-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2022-08-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: -120, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2022-08-01: -120
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-02-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-02-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: 58.6, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-02-01: 58.6
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-01-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-01-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: 40, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-01-01: 40
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2022-08-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2022-08-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: null, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2022-08-01: null
+IRRHistorySummaryTable.tsx:429 🎯 [CLIENT GROUP RISK] Calculated client group weight risk: {productCount: 2, totalValue: 445, weightedRiskSum: 1750, calculatedRisk: '3.9', productBreakdown: Array(2)}
+IRRHistorySummaryTable.tsx:385 📊 [IRR SUMMARY] Using backend IRR for date 2023-02-01: -125.4% (calculated from portfolios with valuations)
+IRRHistorySummaryTable.tsx:385 📊 [IRR SUMMARY] Using backend IRR for date 2023-01-01: -184.3% (calculated from portfolios with valuations)
+IRRHistorySummaryTable.tsx:385 📊 [IRR SUMMARY] Using backend IRR for date 2022-08-01: -120% (calculated from portfolios with valuations)
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-02-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-02-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: -316.1, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-02-01: -316.1
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2023-01-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2023-01-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: -367.1, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2023-01-01: -367.1
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 237, date: 2022-08-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 237, date 2022-08-01: {product_id: 237, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: -120, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 237, date 2022-08-01: -120
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-02-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-02-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-02-01', irr_result: 58.6, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-02-01: 58.6
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2023-01-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2023-01-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2023-01-01', irr_result: 40, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2023-01-01: 40
+IRRHistorySummaryTable.tsx:326 🔍 [IRR SUMMARY DEBUG] Looking for productId: 236, date: 2022-08-01
+IRRHistorySummaryTable.tsx:327 🔍 [IRR SUMMARY DEBUG] Available productRows: (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:338 🔍 [IRR SUMMARY DEBUG] Found row for productId 236, date 2022-08-01: {product_id: 236, product_name: 'Stocks & Shares ISA', irr_date: '2022-08-01', irr_result: null, portfolio_id: undefined}
+IRRHistorySummaryTable.tsx:347 🔍 [IRR SUMMARY DEBUG] Returning IRR for productId 236, date 2022-08-01: null
+IRRHistorySummaryTable.tsx:429 🎯 [CLIENT GROUP RISK] Calculated client group weight risk: {productCount: 2, totalValue: 445, weightedRiskSum: 1750, calculatedRisk: '3.9', productBreakdown: Array(2)}
+IRRHistorySummaryTable.tsx:385 📊 [IRR SUMMARY] Using backend IRR for date 2023-02-01: -125.4% (calculated from portfolios with valuations)
+IRRHistorySummaryTable.tsx:385 📊 [IRR SUMMARY] Using backend IRR for date 2023-01-01: -184.3% (calculated from portfolios with valuations)
+IRRHistorySummaryTable.tsx:385 📊 [IRR SUMMARY] Using backend IRR for date 2022-08-01: -120% (calculated from portfolios with valuations)
