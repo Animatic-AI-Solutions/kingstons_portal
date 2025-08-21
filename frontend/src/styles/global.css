@@ -423,6 +423,14 @@
     padding-right: 1px !important;
   }
   
+  /* Make Withdrawal text more compact to fit in column */
+  .portfolio-summary-table th:nth-child(7),
+  .product-fund-table th:nth-child(7) {
+    white-space: nowrap !important;
+    letter-spacing: -0.5px !important;
+    font-size: 9px !important;
+  }
+  
   /* Enhanced font sizes for Investment Summary table values in print */
   .portfolio-summary-table td {
     padding-left: 1px !important;
