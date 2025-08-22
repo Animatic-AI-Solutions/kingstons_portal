@@ -243,9 +243,9 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                 <col className="w-[28%]" />
                 <col className="w-[8%]" />
                 <col className="w-[8%]" />
-                <col className="w-[8%]" />
-                <col className="w-[8%]" />
-                <col className="w-[8%]" />
+                <col className="w-[7%]" />
+                <col className="w-[7%]" />
+                <col className="w-[10%]" />
                 <col className="w-[8%]" />
                 <col className="w-[8%]" />
                 <col className="w-[8%]" />

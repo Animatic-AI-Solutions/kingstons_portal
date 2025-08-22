@@ -423,8 +423,7 @@
     padding-right: 1px !important;
   }
   
-  /* Make Withdrawal text more compact to fit in column */
-  .portfolio-summary-table th:nth-child(6),
+  /* Make Withdrawal text more compact to fit in column - only for product fund tables */
   .product-fund-table th:nth-child(6) {
     white-space: nowrap !important;
     letter-spacing: -0.5px !important;
@@ -847,10 +846,25 @@
 
 /* Column width adjustments for investment summary table - Web View */
 .portfolio-summary-table colgroup col:nth-child(2),
-.portfolio-summary-table colgroup col:nth-child(3),
+.portfolio-summary-table colgroup col:nth-child(3) {
+  width: 8% !important;
+  max-width: 8% !important;
+  min-width: 8% !important;
+}
+
 .portfolio-summary-table colgroup col:nth-child(4),
-.portfolio-summary-table colgroup col:nth-child(5),
-.portfolio-summary-table colgroup col:nth-child(6),
+.portfolio-summary-table colgroup col:nth-child(5) {
+  width: 7% !important;
+  max-width: 7% !important;
+  min-width: 7% !important;
+}
+
+.portfolio-summary-table colgroup col:nth-child(6) {
+  width: 10% !important;
+  max-width: 10% !important;
+  min-width: 10% !important;
+}
+
 .portfolio-summary-table colgroup col:nth-child(7),
 .portfolio-summary-table colgroup col:nth-child(8),
 .portfolio-summary-table colgroup col:nth-child(9) {
@@ -889,7 +903,7 @@
 /* Comprehensive print-only normalization for all report titles */
 @media print {
   /* Column width adjustments for investment summary table - Maximum Specificity */
-  /* All data columns (2nd through 9th) - uniform 8% width */
+  /* Investment and Tax Uplift columns (2nd and 3rd) - 8% width */
   body .portfolio-summary-table colgroup col:nth-child(2),
   body .portfolio-summary-table th:nth-child(2),
   body .portfolio-summary-table td:nth-child(2),
@@ -901,7 +915,14 @@
   body .portfolio-summary-table td:nth-child(3),
   html body .portfolio-summary-table colgroup col:nth-child(3),
   html body .portfolio-summary-table th:nth-child(3),
-  html body .portfolio-summary-table td:nth-child(3),
+  html body .portfolio-summary-table td:nth-child(3) {
+    width: 8% !important;
+    max-width: 8% !important;
+    min-width: 8% !important;
+    flex: none !important;
+  }
+  
+  /* Product Switch In and Out columns (4th and 5th) - 7% width */
   body .portfolio-summary-table colgroup col:nth-child(4),
   body .portfolio-summary-table th:nth-child(4),
   body .portfolio-summary-table td:nth-child(4),
@@ -913,13 +934,27 @@
   body .portfolio-summary-table td:nth-child(5),
   html body .portfolio-summary-table colgroup col:nth-child(5),
   html body .portfolio-summary-table th:nth-child(5),
-  html body .portfolio-summary-table td:nth-child(5),
+  html body .portfolio-summary-table td:nth-child(5) {
+    width: 7% !important;
+    max-width: 7% !important;
+    min-width: 7% !important;
+    flex: none !important;
+  }
+  
+  /* Withdrawal column (6th) - 10% width to prevent wrapping */
   body .portfolio-summary-table colgroup col:nth-child(6),
   body .portfolio-summary-table th:nth-child(6),
   body .portfolio-summary-table td:nth-child(6),
   html body .portfolio-summary-table colgroup col:nth-child(6),
   html body .portfolio-summary-table th:nth-child(6),
-  html body .portfolio-summary-table td:nth-child(6),
+  html body .portfolio-summary-table td:nth-child(6) {
+    width: 10% !important;
+    max-width: 10% !important;
+    min-width: 10% !important;
+    flex: none !important;
+  }
+  
+  /* Valuation, Profit Made, Average Return columns (7th, 8th, 9th) - 8% width */
   body .portfolio-summary-table colgroup col:nth-child(7),
   body .portfolio-summary-table th:nth-child(7),
   body .portfolio-summary-table td:nth-child(7),
