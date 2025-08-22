@@ -5,6 +5,7 @@ import DynamicPageContainer from '../components/DynamicPageContainer';
 import AccountOverview from './ProductOverview';
 import AccountIRRCalculation from './ProductIRRCalculation';
 import AccountIRRHistory from './ProductIRRHistory';
+import { generateProductDisplayName } from '../utils/productTitleUtils';
 
 interface Account {
   id: number;
@@ -204,7 +205,7 @@ const ProductDetails: React.FC = () => {
                 <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
               </svg>
               <span className="ml-1 text-sm font-medium text-primary-700 md:ml-2">
-                {account?.product_name || 'Product Details'}
+                {account ? generateProductDisplayName(account) : 'Product Details'}
               </span>
             </div>
           </li>
@@ -219,7 +220,7 @@ const ProductDetails: React.FC = () => {
           </div>
         ) : account ? (
           <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">
-            {account.product_name}
+            {generateProductDisplayName(account)}
           </h1>
         ) : (
           <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">

@@ -6,6 +6,7 @@ import { getProviderColor } from '../services/providerColors';
 import { FilterSearch } from '../components/ui';
 import { ActionButton } from '../components/ui';
 import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
+import { generateProductDisplayName } from '../utils/productTitleUtils';
 import { StatCard, StatBox, Skeleton } from '../components/ui';
 import StandardTable, { ColumnConfig } from '../components/StandardTable';
 import DynamicPageContainer from '../components/DynamicPageContainer';
@@ -120,7 +121,15 @@ const Products: React.FC = () => {
       dataType: 'text',
       alignment: 'left',
       control: 'sort',
-      width: 'auto'
+      width: 'auto',
+      format: (value: any, row: Product) => {
+        const displayName = generateProductDisplayName(row);
+        return (
+          <div className="text-sm font-medium text-gray-800 font-sans tracking-tight">
+            {displayName}
+          </div>
+        );
+      }
     },
     {
       key: 'provider_name',
@@ -213,6 +222,7 @@ const Products: React.FC = () => {
     
     const query = searchQuery.toLowerCase();
     return processedData.filter(product => 
+      generateProductDisplayName(product).toLowerCase().includes(query) ||
       product.product_name?.toLowerCase().includes(query) ||
       product.client_name?.toLowerCase().includes(query) ||
       product.provider_name?.toLowerCase().includes(query) ||
@@ -271,7 +281,7 @@ const Products: React.FC = () => {
           <div className="flex-1">
             <div style={{ fontSize: '0.75rem' }}>
               <FilterSearch
-                placeholder="Filter products by name, client, provider, or status..."
+                placeholder="Filter products by display name, provider, product owner, or type..."
                 onFilter={setSearchQuery}
                 showResultCount={true}
                 resultCount={finalFilteredData.length}
