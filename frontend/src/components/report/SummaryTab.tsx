@@ -691,7 +691,8 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                                     </td>
                                     <td className="px-2 py-2 text-xs text-right">
                                       {(() => {
-                                        const formatted = formatCurrencyWithVisualSigningWrapper((fund.total_fund_switch_in || 0) + (fund.total_fund_switch_out || 0), 'fund_switch');
+                                        const netFundSwitch = (fund.total_fund_switch_in || 0) - (fund.total_fund_switch_out || 0);
+                                        const formatted = formatCurrencyWithVisualSigningWrapper(netFundSwitch, 'fund_switch');
                                         return <span className={formatted.className}>{formatted.value}</span>;
                                       })()}
                                     </td>
@@ -751,7 +752,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                               {formatCurrencyWithTruncation(product.total_product_switch_in || 0)}
                             </td>
                             <td className="px-2 py-2 text-xs font-bold text-right text-black">
-                              {formatCurrencyWithTruncation((product.total_fund_switch_in || 0) + (product.total_fund_switch_out || 0))}
+                              {formatCurrencyWithTruncation((product.total_fund_switch_in || 0) - (product.total_fund_switch_out || 0))}
                             </td>
                             <td className="px-2 py-2 text-xs font-bold text-right text-black">
                               {formatCurrencyWithTruncation(product.total_product_switch_out || 0)}
