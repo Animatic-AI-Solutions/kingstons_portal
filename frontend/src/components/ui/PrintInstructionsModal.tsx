@@ -41,7 +41,7 @@ const PrintInstructionsModal: React.FC<PrintInstructionsModalProps> = ({
                         1
                       </div>
                       <p className="text-sm text-gray-700">
-                        Click the <strong>Print Report</strong> button to open the browser's print dialog
+                        Use <strong>Google Chrome</strong> for best results, then click the <strong>Print Report</strong> button
                       </p>
                     </div>
                     
@@ -49,9 +49,13 @@ const PrintInstructionsModal: React.FC<PrintInstructionsModalProps> = ({
                       <div className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">
                         2
                       </div>
-                      <p className="text-sm text-gray-700">
-                        In the destination dropdown, select <strong>"Save as PDF"</strong> (use the standard browser PDF option, not third-party applications)
-                      </p>
+                      <div className="text-sm text-gray-700">
+                        <p className="mb-1">In the print dialog:</p>
+                        <ul className="ml-4 space-y-1 text-xs text-gray-600">
+                          <li>• Select <strong>"Save as PDF"</strong> as destination</li>
+                          <li>• Ensure <strong>headers and footers are unchecked</strong></li>
+                        </ul>
+                      </div>
                     </div>
                     
                     <div className="flex items-start space-x-3">
