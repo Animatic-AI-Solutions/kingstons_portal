@@ -240,17 +240,16 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
           <div className="overflow-x-auto product-table">
             <table className="w-full table-fixed divide-y divide-gray-300 landscape-table portfolio-summary-table">
               <colgroup>
-                <col className="w-[22%]" />
-                <col className="w-[7%]" />
-                <col className="w-[7%]" />
-                <col className="w-[7%]" />
-                <col className="w-[7%]" />
-                <col className="w-[7%]" />
-                <col className="w-[7%]" />
+                <col className="w-[28%]" />
                 <col className="w-[8%]" />
                 <col className="w-[8%]" />
-                <col className="w-[9%]" />
-                <col className="w-[5%]" />
+                <col className="w-[8%]" />
+                <col className="w-[8%]" />
+                <col className="w-[8%]" />
+                <col className="w-[8%]" />
+                <col className="w-[8%]" />
+                <col className="w-[8%]" />
+                <col className="w-[4%]" />
               </colgroup>
               <thead className="bg-gray-100">
                 <tr>

@@ -424,8 +424,8 @@
   }
   
   /* Make Withdrawal text more compact to fit in column */
-  .portfolio-summary-table th:nth-child(7),
-  .product-fund-table th:nth-child(7) {
+  .portfolio-summary-table th:nth-child(6),
+  .product-fund-table th:nth-child(6) {
     white-space: nowrap !important;
     letter-spacing: -0.5px !important;
     font-size: 9px !important;
@@ -845,8 +845,97 @@
   }
 }
 
+/* Column width adjustments for investment summary table - Web View */
+.portfolio-summary-table colgroup col:nth-child(2),
+.portfolio-summary-table colgroup col:nth-child(3),
+.portfolio-summary-table colgroup col:nth-child(4),
+.portfolio-summary-table colgroup col:nth-child(5),
+.portfolio-summary-table colgroup col:nth-child(6),
+.portfolio-summary-table colgroup col:nth-child(7),
+.portfolio-summary-table colgroup col:nth-child(8),
+.portfolio-summary-table colgroup col:nth-child(9) {
+  width: 8% !important;
+  max-width: 8% !important;
+  min-width: 8% !important;
+}
+
+.portfolio-summary-table colgroup col:last-child {
+  width: 4% !important;
+  max-width: 4% !important;
+  min-width: 4% !important;
+}
+
 /* Comprehensive print-only normalization for all report titles */
 @media print {
+  /* Column width adjustments for investment summary table - Maximum Specificity */
+  /* All data columns (2nd through 9th) - uniform 8% width */
+  body .portfolio-summary-table colgroup col:nth-child(2),
+  body .portfolio-summary-table th:nth-child(2),
+  body .portfolio-summary-table td:nth-child(2),
+  html body .portfolio-summary-table colgroup col:nth-child(2),
+  html body .portfolio-summary-table th:nth-child(2),
+  html body .portfolio-summary-table td:nth-child(2),
+  body .portfolio-summary-table colgroup col:nth-child(3),
+  body .portfolio-summary-table th:nth-child(3),
+  body .portfolio-summary-table td:nth-child(3),
+  html body .portfolio-summary-table colgroup col:nth-child(3),
+  html body .portfolio-summary-table th:nth-child(3),
+  html body .portfolio-summary-table td:nth-child(3),
+  body .portfolio-summary-table colgroup col:nth-child(4),
+  body .portfolio-summary-table th:nth-child(4),
+  body .portfolio-summary-table td:nth-child(4),
+  html body .portfolio-summary-table colgroup col:nth-child(4),
+  html body .portfolio-summary-table th:nth-child(4),
+  html body .portfolio-summary-table td:nth-child(4),
+  body .portfolio-summary-table colgroup col:nth-child(5),
+  body .portfolio-summary-table th:nth-child(5),
+  body .portfolio-summary-table td:nth-child(5),
+  html body .portfolio-summary-table colgroup col:nth-child(5),
+  html body .portfolio-summary-table th:nth-child(5),
+  html body .portfolio-summary-table td:nth-child(5),
+  body .portfolio-summary-table colgroup col:nth-child(6),
+  body .portfolio-summary-table th:nth-child(6),
+  body .portfolio-summary-table td:nth-child(6),
+  html body .portfolio-summary-table colgroup col:nth-child(6),
+  html body .portfolio-summary-table th:nth-child(6),
+  html body .portfolio-summary-table td:nth-child(6),
+  body .portfolio-summary-table colgroup col:nth-child(7),
+  body .portfolio-summary-table th:nth-child(7),
+  body .portfolio-summary-table td:nth-child(7),
+  html body .portfolio-summary-table colgroup col:nth-child(7),
+  html body .portfolio-summary-table th:nth-child(7),
+  html body .portfolio-summary-table td:nth-child(7),
+  body .portfolio-summary-table colgroup col:nth-child(8),
+  body .portfolio-summary-table th:nth-child(8),
+  body .portfolio-summary-table td:nth-child(8),
+  html body .portfolio-summary-table colgroup col:nth-child(8),
+  html body .portfolio-summary-table th:nth-child(8),
+  html body .portfolio-summary-table td:nth-child(8),
+  body .portfolio-summary-table colgroup col:nth-child(9),
+  body .portfolio-summary-table th:nth-child(9),
+  body .portfolio-summary-table td:nth-child(9),
+  html body .portfolio-summary-table colgroup col:nth-child(9),
+  html body .portfolio-summary-table th:nth-child(9),
+  html body .portfolio-summary-table td:nth-child(9) {
+    width: 8% !important;
+    max-width: 8% !important;
+    min-width: 8% !important;
+    flex: none !important;
+  }
+  
+  /* Risk column (10th column) */
+  body .portfolio-summary-table colgroup col:last-child,
+  body .portfolio-summary-table th:last-child,
+  body .portfolio-summary-table td:last-child,
+  html body .portfolio-summary-table colgroup col:last-child,
+  html body .portfolio-summary-table th:last-child,
+  html body .portfolio-summary-table td:last-child {
+    width: 4% !important;
+    max-width: 4% !important;
+    min-width: 4% !important;
+    flex: none !important;
+  }
+  
   .irr-history-section h2,
   .product-card h2,
   h2.text-lg,
