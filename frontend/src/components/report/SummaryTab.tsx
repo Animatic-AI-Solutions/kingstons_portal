@@ -272,11 +272,6 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                   </th>
                   <th scope="col" className="px-2 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
                     <div className="leading-tight">
-                      Fund<br />Switches
-                    </div>
-                  </th>
-                  <th scope="col" className="px-2 py-2 text-right text-[10px] font-semibold text-gray-700 uppercase tracking-wide">
-                    <div className="leading-tight">
                       Product<br />Switch Out
                     </div>
                   </th>
@@ -353,13 +348,6 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                         </td>
                         <td className="px-2 py-2 whitespace-nowrap text-base text-right">
                           {(() => {
-                            const netSwitches = (product.total_fund_switch_in || 0) + (product.total_fund_switch_out || 0);
-                            const formatted = formatCurrencyWithVisualSigningWrapper(netSwitches, 'fund_switch');
-                            return <span className={formatted.className}>{formatted.value}</span>;
-                          })()}
-                        </td>
-                        <td className="px-2 py-2 whitespace-nowrap text-base text-right">
-                          {(() => {
                             const formatted = formatCurrencyWithVisualSigningWrapper(product.total_product_switch_out || 0, 'product_switch_out');
                             return <span className={formatted.className}>{formatted.value}</span>;
                           })()}
@@ -427,14 +415,6 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                     {(() => {
                       const totalAmount = reportData.productSummaries.reduce((sum, product) =>
                         sum + (product.total_product_switch_in || 0), 0
-                      );
-                      return formatCurrencyWithTruncation(totalAmount);
-                    })()}
-                  </td>
-                  <td className="px-2 py-2 text-base font-bold text-right text-black">
-                    {(() => {
-                      const totalAmount = reportData.productSummaries.reduce((sum, product) =>
-                        sum + (product.total_fund_switch_in || 0) + (product.total_fund_switch_out || 0), 0
                       );
                       return formatCurrencyWithTruncation(totalAmount);
                     })()}
