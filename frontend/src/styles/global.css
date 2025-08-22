@@ -865,6 +865,27 @@
   min-width: 4% !important;
 }
 
+/* Column width adjustments for product fund tables - Web View */
+.product-fund-table colgroup col:nth-child(6) {
+  width: 6% !important;
+  max-width: 6% !important;
+  min-width: 6% !important;
+}
+
+.product-fund-table colgroup col:nth-child(7) {
+  width: 9% !important;
+  max-width: 9% !important;
+  min-width: 9% !important;
+}
+
+.product-fund-table colgroup col:nth-child(8),
+.product-fund-table colgroup col:nth-child(9),
+.product-fund-table colgroup col:nth-child(10) {
+  width: 8% !important;
+  max-width: 8% !important;
+  min-width: 8% !important;
+}
+
 /* Comprehensive print-only normalization for all report titles */
 @media print {
   /* Column width adjustments for investment summary table - Maximum Specificity */
@@ -933,6 +954,58 @@
     width: 4% !important;
     max-width: 4% !important;
     min-width: 4% !important;
+    flex: none !important;
+  }
+  
+  /* Column width adjustments for product fund tables - Print View */
+  /* Product Switch Out column (6th column) - reduced width */
+  body .product-fund-table colgroup col:nth-child(6),
+  body .product-fund-table th:nth-child(6),
+  body .product-fund-table td:nth-child(6),
+  html body .product-fund-table colgroup col:nth-child(6),
+  html body .product-fund-table th:nth-child(6),
+  html body .product-fund-table td:nth-child(6) {
+    width: 6% !important;
+    max-width: 6% !important;
+    min-width: 6% !important;
+    flex: none !important;
+  }
+  
+  /* Withdrawal column (7th column) - increased width to prevent wrapping */
+  body .product-fund-table colgroup col:nth-child(7),
+  body .product-fund-table th:nth-child(7),
+  body .product-fund-table td:nth-child(7),
+  html body .product-fund-table colgroup col:nth-child(7),
+  html body .product-fund-table th:nth-child(7),
+  html body .product-fund-table td:nth-child(7) {
+    width: 9% !important;
+    max-width: 9% !important;
+    min-width: 9% !important;
+    flex: none !important;
+  }
+  
+  /* Valuation, Profit Made, Average Returns columns (8th, 9th, 10th) - uniform width */
+  body .product-fund-table colgroup col:nth-child(8),
+  body .product-fund-table th:nth-child(8),
+  body .product-fund-table td:nth-child(8),
+  html body .product-fund-table colgroup col:nth-child(8),
+  html body .product-fund-table th:nth-child(8),
+  html body .product-fund-table td:nth-child(8),
+  body .product-fund-table colgroup col:nth-child(9),
+  body .product-fund-table th:nth-child(9),
+  body .product-fund-table td:nth-child(9),
+  html body .product-fund-table colgroup col:nth-child(9),
+  html body .product-fund-table th:nth-child(9),
+  html body .product-fund-table td:nth-child(9),
+  body .product-fund-table colgroup col:nth-child(10),
+  body .product-fund-table th:nth-child(10),
+  body .product-fund-table td:nth-child(10),
+  html body .product-fund-table colgroup col:nth-child(10),
+  html body .product-fund-table th:nth-child(10),
+  html body .product-fund-table td:nth-child(10) {
+    width: 8% !important;
+    max-width: 8% !important;
+    min-width: 8% !important;
     flex: none !important;
   }
   
