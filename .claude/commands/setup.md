@@ -6,13 +6,16 @@
   - Key components, services, and utilities to use
   - SPARC methodology and code quality standards
   - Project-specific patterns and constraints
+  
+  Then review `docs/README.md` for complete documentation navigation.
 
   ## Step 2: Architecture Deep Dive
   Read these documentation files in order:
-  1. `docs/3_architecture/01_system_architecture_overview.md` - Complete system overview
-  2. `docs/3_architecture/03_database_schema.md` - Database structure and relationships
-  3. `docs/4_development_standards/01_coding_principles.md` - SPARC methodology details
-  4. `docs/3_architecture/05_shared_modules_pattern.md` - Frontend architecture patterns
+  1. `docs/03_architecture/01_system_architecture_overview.md` - Complete system overview
+  2. `docs/03_architecture/03_database_schema.md` - Database structure and relationships
+  3. `docs/05_development_standards/01_coding_principles.md` - SPARC methodology details
+  4. `docs/03_architecture/05_frontend_architecture.md` - Frontend architecture patterns
+  5. `docs/04_development_workflow/01_git_workflow.md` - Git practices and version control
 
   ## Step 3: Component Library
   Review the component library structure:
@@ -33,4 +36,4 @@
   - Understand TDD approach and 70% coverage requirements
 
   ## Confirmation
-  When ready, confirm: "Familiarized with Kingston's Portal architecture, SPARC methodology, component library, and testing patterns."
+  When ready, confirm: "Familiarized with Kingston's Portal architecture, SPARC methodology, git workflow, component library, and testing patterns."

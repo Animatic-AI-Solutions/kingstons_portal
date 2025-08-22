@@ -1,12 +1,31 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code when working with Kingston's Portal.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
-Kingston's Portal is a wealth management system with FastAPI (Python) backend and React/TypeScript frontend. It manages client groups, financial products, portfolios, funds, and performance analytics.
+Kingston's Portal is a comprehensive wealth management system built with FastAPI (Python) backend and React/TypeScript frontend. It manages client groups, financial products, portfolios, funds, and performance analytics for financial advisors.
 
-## Development Commands
+## Documentation Structure
+
+The project has comprehensive documentation in `docs/` organized in 10 logical sections:
+- `01_introduction/` - Project goals and capabilities overview
+- `02_getting_started/` - Setup, installation, and troubleshooting
+- `03_architecture/` - System design and technical architecture  
+- `04_development_workflow/` - Git workflow, code review, testing, deployment
+- `05_development_standards/` - Coding principles and conventions
+- `06_performance/` - Performance monitoring and optimization
+- `07_security/` - Security considerations and authentication
+- `08_operations/` - Deployment, rollback, and maintenance procedures
+- `09_database/` - Database schema and documentation
+- `10_reference/` - Frontend guide and documentation usage
+
+**Key Documentation Files**:
+- `docs/README.md` - Main navigation hub for all documentation
+- `docs/04_development_workflow/01_git_workflow.md` - Git practices and branching strategy
+- `docs/03_architecture/01_system_architecture_overview.md` - Complete system overview
+
+## Common Development Commands
 
 ### Backend Development
 ```bash
@@ -55,7 +74,7 @@ API_PORT=8001
 
 ### Backend (`backend/`)
 - `main.py` - FastAPI application entry point
-- `app/api/routes/` - 24 API route modules (clients, products, funds, analytics, etc.)
+- `app/api/routes/` - 22 API route modules (clients, products, funds, analytics, etc.)
 - `app/models/` - Pydantic models for validation
 - `app/db/database.py` - PostgreSQL connection management
 - `app/services/` - Business logic (IRR calculations, etc.)
@@ -64,11 +83,11 @@ API_PORT=8001
 ### Frontend (`frontend/src/`)
 - `App.tsx` - Main application with routing and React Query
 - `pages/` - 38 page components
-- `components/` - Reusable UI components:
-  - `ui/` - Base components (buttons, inputs, tables)
-  - `auth/` - Authentication components
-  - `layout/` - Layout components
-  - `report/` - Reporting system
+- `components/` - 69+ reusable UI components:
+  - `ui/` - Base components (buttons, inputs, tables, search, feedback)
+  - `auth/` - Authentication forms and flows
+  - `layout/` - App layout components
+  - `report/` - Advanced reporting system with modular architecture
 - `hooks/` - Custom React hooks
 - `services/` - API clients and report services
 - `utils/` - Shared utilities and formatters
@@ -156,3 +175,79 @@ Follow the 5-phase SPARC process defined in `.cursorrules`:
 - **Environment Variables**: Agent cannot access directly - use scripts to read `.env` files
 - **Testing**: Use real implementations with TDD, not mocks unless testing isolation required
 - **Coverage**: Maintain 70% threshold with Jest (ts-jest warnings expected)
+
+## Git Workflow and Version Control
+
+### Branching Strategy
+- **`main` branch**: Production-ready code, protected, requires PR reviews
+- **Feature branches**: Use for all development work with descriptive naming:
+  - `feature/feature-name` - New features
+  - `fix/bug-name` - Bug fixes  
+  - `docs/update-name` - Documentation updates
+  - `refactor/component-name` - Code refactoring
+
+### Commit Guidelines
+- **Use clear, descriptive commit messages** that explain what was changed
+- **Commit frequently** with logical units of work
+- **Run tests before committing**: `npm test` and `npm run build`
+- **Follow project coding standards**
+
+### Development Workflow
+```bash
+# Start development
+git checkout main && git pull origin main
+git checkout -b feature/new-feature
+
+# Regular development
+git add . && git commit -m "Clear description of changes"
+git push origin feature/new-feature
+
+# Create PR when ready
+# After merge, cleanup branch
+```
+
+### Post-Fix Cleanup
+After fixing issues or bugs:
+- **Remove debug logs** created specifically for troubleshooting
+- **Remove temporary test scripts** or documentation made only for debugging
+- **Only clean up after confirming the fix works** through evidence
+- **Update necessary documentation** affected by the fix
+
+### Code Comments Best Practices
+- **Explain non-obvious implementation choices**: Why one function over another
+- **Document business logic reasoning** behind calculations
+- **Mark complex nested code blocks** with comments explaining each section's purpose
+- **Include performance or security considerations** when relevant
+
+Example of good commenting:
+```typescript
+// Calculate total portfolio value using reduce for performance over forEach
+// (reduce is faster for large datasets and creates immutable result)
+const totalValue = portfolios.reduce((sum, portfolio) => {
+  // Sum active fund valuations only - excludes lapsed/terminated funds  
+  // per business requirement to show only current holdings
+  const activeFunds = portfolio.funds.filter(fund => fund.status === 'active');
+  return sum + activeFunds.reduce((fundSum, fund) => fundSum + fund.valuation, 0);
+}, 0);
+```
+
+## Documentation & AI Assistant Guidelines
+
+### Documentation Governance
+- **When to Create Documentation**: Only for complex architectural changes or new feature areas not covered in existing docs
+- **When NOT to Create Documentation**: Avoid redundant files, simple bug fixes, or features already well-documented  
+- **AI-Assisted Development**: Use "finish commit" workflow for comprehensive commit messages and documentation updates
+- **Maintenance Triggers**: Update docs when changing core architecture, adding new major features, or modifying API contracts
+
+### For AI Code Assistants
+- **Follow SPARC methodology** for all feature development
+- **Use existing component library** before creating new components
+- **Maintain 70% test coverage** threshold with comprehensive testing
+- **Implement accessibility standards** (WCAG 2.1 AA) for all UI components
+- **Use London School TDD** approach with outside-in development and mocking
+
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
