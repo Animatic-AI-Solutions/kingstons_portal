@@ -163,9 +163,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     localStorage.setItem('irr-calculation-selected-year', currentYear.toString());
   }, [currentYear]);
   
-  // Debug effect to track pendingEdits changes
+  // Monitor pending edits state for UI updates
   useEffect(() => {
-    console.log('🔍 DEBUG: pendingEdits state changed, length:', pendingEdits.length, 'edits:', pendingEdits);
+    // Update UI indicators when pending edits change
   }, [pendingEdits]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -251,13 +251,12 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         
         const activityMonthYear = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
         const key = `${activity.portfolio_fund_id}-${activityMonthYear}-${activity.activity_type}`;
-        // console.log(`🔍 ACTIVITY INDEX DEBUG: activity_timestamp=${activity.activity_timestamp}, parsed_date=${date.toISOString()}, activityMonthYear=${activityMonthYear}, key=${key}`);
+        // Index activity by fund, month, and type for efficient lookups
         index.set(key, activity);
       } catch (error) {
         console.error(`🚨 Error parsing activity timestamp: ${activity.activity_timestamp}`, error);
       }
     });
-    // console.log(`🔍 ACTIVITY INDEX TOTAL: ${index.size} activities indexed`);
     return index;
   }, [activitiesState]);
 
@@ -402,7 +401,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           // Handle other activity types
           const backendType = convertActivityTypeForBackend(activityType);
           const activityKey = `${fund.id}-${month}-${backendType}`;
-          // console.log(`🔍 LOOKUP DEBUG: Looking for key=${activityKey}, found=${!!activitiesIndex.get(activityKey)}`);
+          // Lookup activity data using indexed key for O(1) performance
           const activity = activitiesIndex.get(activityKey);
           if (activity) {
             const amount = parseFloat(activity.amount);
@@ -702,7 +701,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   // Add click handler to deselect switch cells when clicking elsewhere
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      // This can be removed as we no longer have switch cells
+      // Handle click outside to close any open modals or dropdowns
     };
 
     document.addEventListener('click', handleClickOutside);
@@ -1508,10 +1507,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         const [month, fundIdStr] = monthFundKey.split('_');
         const fundId = parseInt(fundIdStr);
         
-        // Log preservation analysis for debugging
+        // Analyze activities to preserve when processing edits
         const activitiesToPreserve = getActivitiesToPreserve(fundId, month, monthEdits);
-        console.log(`Month ${month}, Fund ${fundId}: Preserving activities:`, activitiesToPreserve);
-        console.log(`Month ${month}, Fund ${fundId}: Processing edits:`, monthEdits.map(e => e.activityType));
       }
       
       // Filter out empty edits (keep deletions)

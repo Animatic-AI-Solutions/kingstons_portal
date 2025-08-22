@@ -311,7 +311,7 @@ async def cleanup_stale_presence():
             
         cutoff_time = datetime.utcnow() - timedelta(minutes=2)
         
-        # Use AsyncPG syntax instead of Supabase
+        # Clean up stale presence records using asyncpg
         async with db_pool.acquire() as db:
             result = await db.execute(
                 "DELETE FROM user_page_presence WHERE last_seen < $1",

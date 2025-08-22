@@ -638,7 +638,7 @@ const ReportGenerator: React.FC = () => {
     fetchInitialData();
   }, [fetchInitialData]);
   
-  // Removed product owner functionality - no longer needed
+  // Product owner data is now handled through client-product relationships
 
   // PHASE 2.1: Create debounced updateRelatedProducts function
   const updateRelatedProducts = useCallback(async () => {
@@ -1741,15 +1741,10 @@ const ReportGenerator: React.FC = () => {
           }
         });
         
-        // REMOVED: Don't treat zero valuation as missing valuation data
         // Zero is a valid valuation - funds can legitimately have zero value
-        // The missing valuation check is already handled above in the fund-by-fund validation
-        // Only skip products that have NO valuation data at all (already handled above)
+        // Missing valuation check is handled in the fund validation above
         
-        // Log zero valuation for debugging but allow the product to proceed
-        if (productValuation === 0 && activeFundIds.size > 0 && productDetails.status !== 'inactive') {
-          console.log(`Product ${productDetails.product_name} has zero valuation for selected date - this is valid and will be included in the report`);
-        }
+        // Allow products with zero valuation to proceed (valid state)
         
         // Allow inactive products to proceed even with zero valuation
         if (productDetails.status === 'inactive' || (activeFundIds.size === 0 && inactiveFundIds.size > 0)) {
@@ -2431,14 +2426,10 @@ Please select a different valuation date or ensure all active funds have valuati
         return;
       }
       
-      // REMOVED: Don't prevent report generation for zero-value portfolios
-      // Zero portfolio value is legitimate and reports should still be generated
-      // to show transaction history and how the portfolio reached zero value
+      // Zero portfolio value is legitimate - reports show transaction history
+      // and how portfolios reached their current state
       
-      // Log zero valuation for debugging but allow the report to proceed
-      if (overallValuation === 0) {
-        console.log(`Portfolio has zero total value for ${formatDateFallback(selectedValuationDate || '')} - this is valid and the report will be generated`);
-      }
+      // Allow reports with zero total value to proceed
       
       // Set state with summary data
       setProductSummaries(productSummaryResults);

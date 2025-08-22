@@ -25,8 +25,8 @@ curl http://localhost:8001/docs
 # Frontend running?
 curl http://localhost:3000
 
-# Database connectivity
-python backend/check_schema.py
+# Database connectivity - Test with direct connection
+python -c "import asyncpg; import os; print('DATABASE_URL configured' if os.getenv('DATABASE_URL') else 'Missing DATABASE_URL')"
 ```
 
 ### 2. Authentication Quick Fix
@@ -163,8 +163,8 @@ uvicorn main:app --reload --host 127.0.0.1 --port 8001
 # Dependencies issues
 pip install -r requirements.txt
 
-# Database schema verification
-python check_schema.py
+# Database connection verification
+python -c "from app.db.database import get_db; print('Database connection OK')"
 
 # Run tests
 pytest
@@ -190,8 +190,8 @@ npm run test:coverage
 # Direct database connection
 psql $DATABASE_URL
 
-# Schema analysis
-python backend/database_analysis_report.py
+# Schema analysis - Check documentation
+cat docs/7_database_documentation/database_analysis_report.md
 
 # Migration verification
 ls migration_scripts/

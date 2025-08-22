@@ -49,7 +49,7 @@ export interface BulkClientDataResponse {
 const OPTIMIZATION_CONFIG = {
   USE_OPTIMIZED_ENDPOINT: true, // Changed from false to true - use optimized endpoint by default
   ENABLE_AB_TESTING: false, // Keep A/B testing disabled for now
-  ENABLE_PERFORMANCE_LOGGING: true, // Keep logging enabled for debugging
+  ENABLE_PERFORMANCE_LOGGING: true, // Performance monitoring enabled
   CACHE_TIME_MS: 5 * 60 * 1000, // 5 minutes cache
 };
 
@@ -189,7 +189,7 @@ export const useOptimizedClientData = () => {
     });
   };
 
-  // Force switch to original endpoint (useful for debugging)
+  // Switch to original endpoint for performance testing
   const switchToOriginalEndpoint = () => {
     console.log('🔄 Switching to original endpoint for debugging...');
     OPTIMIZATION_CONFIG.USE_OPTIMIZED_ENDPOINT = false;
@@ -210,7 +210,7 @@ export const useOptimizedClientData = () => {
     prefetchClientDetails,
     switchToOriginalEndpoint,
     switchToOptimizedEndpoint,
-    // Expose current configuration for debugging
+    // Expose current optimization configuration
     config: {
       isUsingOptimized: OPTIMIZATION_CONFIG.USE_OPTIMIZED_ENDPOINT,
       isABTesting: OPTIMIZATION_CONFIG.ENABLE_AB_TESTING,

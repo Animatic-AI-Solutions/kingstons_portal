@@ -43,8 +43,8 @@ beforeAll(() => {
       matches: false,
       media: query,
       onchange: null,
-      addListener: jest.fn(), // Deprecated
-      removeListener: jest.fn(), // Deprecated
+      addListener: jest.fn(), // Legacy browser support
+      removeListener: jest.fn(), // Legacy browser support
       addEventListener: jest.fn(),
       removeEventListener: jest.fn(),
       dispatchEvent: jest.fn(),

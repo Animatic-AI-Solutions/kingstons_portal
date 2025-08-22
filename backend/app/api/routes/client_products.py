@@ -540,7 +540,7 @@ async def get_client_products(
     What it does: Retrieves a paginated list of client products with optional filtering.
     Why it's needed: Provides a way to view client products in the system.
     How it works:
-        1. Connects to the Supabase database
+        1. Connects to the PostgreSQL database
         2. Builds a query to the 'client_products' table with optional filters
         3. Separately fetches provider data, client data, and template data
         4. Combines the data in Python 
@@ -1727,7 +1727,7 @@ async def get_complete_product_details(client_product_id: int, db = Depends(get_
                     valuations_map = {}
                     if portfolio_fund_ids:
                         # We want the latest valuation for each fund, so we need to use a SQL query
-                        # A typical approach in Supabase might be:
+                        # Query latest valuations for each fund:
                         latest_valuations_result = await db.fetch("SELECT * FROM latest_portfolio_fund_valuations WHERE portfolio_fund_id = ANY($1::int[])", portfolio_fund_ids)
                         if latest_valuations_result:
                             valuations_map = {dict(v).get("portfolio_fund_id"): dict(v) for v in latest_valuations_result}

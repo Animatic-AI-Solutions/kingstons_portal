@@ -67,7 +67,7 @@ async def get_portfolios(
     What it does: Retrieves a paginated list of portfolios with optional filtering by status and template.
     Why it's needed: Provides a way to view and filter investment portfolios in the system.
     How it works:
-        1. Connects to the Supabase database
+        1. Connects to the PostgreSQL database
         2. Builds a query to the 'portfolios' table with optional filters
         3. If count_only is True, returns just the count of matching records
         4. Otherwise applies pagination parameters to limit result size
@@ -218,7 +218,7 @@ async def get_portfolios_with_template(
     What it does: Retrieves a paginated list of portfolios with template information.
     Why it's needed: Provides a way to view and filter investment portfolios with their template origins.
     How it works:
-        1. Connects to the Supabase database
+        1. Connects to the PostgreSQL database
         2. Builds a query to the 'portfolios' table with optional filters
         3. Applies pagination parameters to limit result size
         4. For each portfolio with a template_generation_id, fetches the template info

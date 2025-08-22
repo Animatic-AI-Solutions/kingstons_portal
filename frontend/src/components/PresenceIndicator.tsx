@@ -25,9 +25,7 @@ const PresenceIndicator: React.FC<PresenceIndicatorProps> = ({
     }
   };
   
-  // Debug logging
-  console.log('🎭 PresenceIndicator: Render with props:', { pageIdentifier, className });
-  console.log('🎭 PresenceIndicator: Hook state:', { users, isConnected, error, userCount: users?.length });
+  // Component state tracking for presence functionality
 
   if (error) {
     console.log('🎭 PresenceIndicator: Rendering error state:', error);
@@ -59,8 +57,7 @@ const PresenceIndicator: React.FC<PresenceIndicatorProps> = ({
   }
 
   if (users.length === 0) {
-    console.log('🎭 PresenceIndicator: No other users, showing debug indicator');
-    // During debugging, show a small indicator even when no users
+    // Show indicator when user is alone on the page
     return (
       <div className={`text-xs text-gray-400 ${className}`}>
         <span className="flex items-center">

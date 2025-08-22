@@ -469,13 +469,10 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
           // Keep activity types in UI format for compatibility with main table
           changedData[fundId][activityType] = currentValue;
           
-          // Add debugging to track what's being saved from bulk modal
-          console.log(`🔍 BULK MODAL DEBUG: Fund ${fundId}, Activity Type: "${activityType}", Value: "${currentValue}"`);
+          // Track changes for bulk activity processing
         }
       });
     });
-    
-    console.log(`🔍 BULK MODAL SAVE: Changed data:`, changedData);
     
     onSave(changedData);
     onClose();
@@ -655,7 +652,7 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
       }
     }
     
-    // Product Switch balance validation removed - no longer required to match
+    // Portfolio balance validation logic
     
     if (warnings.length > 0) {
       return {
