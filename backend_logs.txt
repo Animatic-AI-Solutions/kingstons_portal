@@ -1,871 +1,480 @@
-2025-08-20 15:59:00,051 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2022-08-01
-2025-08-20 15:59:00,052 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 1 funds (eliminates 1 individual requests)
-2025-08-20 15:59:00,054 - app.api.routes.portfolio_funds - WARNING - No valuation found for fund 1107 as of 2022-08-01
-2025-08-20 15:59:00,054 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Valuation lookup for historical date 2022-08-01:   
-2025-08-20 15:59:00,055 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Requested fund IDs: [1107]
-2025-08-20 15:59:00,055 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Found valuations: {1107: None}
-2025-08-20 15:59:00,055 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1107 has NO valuation as of 2022-08-01        
-2025-08-20 15:59:00,056 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {1107: None}
-2025-08-20 15:59:00,056 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: 0 out of 1 funds have valuations as of 2022-08-01  
-2025-08-20 15:59:00,056 - app.api.routes.portfolio_funds - WARNING - 💰 DEBUG: ⚠️ No valuations found for any funds as of 2022-008-01, cannot calculate historical IRR
-2025-08-20 15:59:00,058 - app.api.routes.portfolio_funds - INFO - 📊 Processing 5 activities across 4 funds
-2025-08-20 15:59:00,059 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Separated cash flows by date:
-2025-08-20 15:59:00,060 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2022-08-01: £-100.0
-2025-08-20 15:59:00,060 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-01-01: £-400.0
-2025-08-20 15:59:00,062 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-02-01: £-20.0
-2025-08-20 15:59:00,062 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-05-01: £445.0
-2025-08-20 15:59:00,063 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: About to call calculate_excel_style_irr with:       
-2025-08-20 15:59:00,063 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Dates: ['2022-08-01T00:00:00', '2023-01-01T00:00:00', '2023-02-01T00:00:00', '2023-05-01T00:00:00']
-2025-08-20 15:59:00,064 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Amounts: [-100.0, -400.0, -20.0, 445.0]
-2025-08-20 15:59:00,064 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: First amount: -100.0, Last amount: 445.0
-2025-08-20 15:59:00,065 - app.api.routes.portfolio_funds - INFO -
-Monthly cash flows:
-2025-08-20 15:59:00,065 - app.api.routes.portfolio_funds - INFO - Month 0: -100.0
-2025-08-20 15:59:00,066 - app.api.routes.portfolio_funds - INFO - Month 1: 0.0
-2025-08-20 15:59:00,066 - app.api.routes.portfolio_funds - INFO - Month 2: 0.0
-2025-08-20 15:59:00,066 - app.api.routes.portfolio_funds - INFO - Month 3: 0.0
-2025-08-20 15:59:00,067 - app.api.routes.portfolio_funds - INFO - Month 4: 0.0
-2025-08-20 15:59:00,067 - app.api.routes.portfolio_funds - INFO - Month 5: -400.0
-2025-08-20 15:59:00,067 - app.api.routes.portfolio_funds - INFO - Month 6: -20.0
-2025-08-20 15:59:00,068 - app.api.routes.portfolio_funds - INFO - Month 7: 0.0
-2025-08-20 15:59:00,068 - app.api.routes.portfolio_funds - INFO - Month 8: 0.0
-2025-08-20 15:59:00,068 - app.api.routes.portfolio_funds - INFO - Month 9: 445.0
-2025-08-20 15:59:00,069 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-08-20 15:59:00,069 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: -0.03153275498962815      
-2025-08-20 15:59:00,070 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): -0.37839305987553784       
-2025-08-20 15:59:00,070 - app.api.routes.portfolio_funds - INFO - Days in period: 273
-2025-08-20 15:59:00,070 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-08-20 15:59:00,071 - app.api.routes.portfolio_funds - INFO - Monthly IRR: -3.1533%
-2025-08-20 15:59:00,071 - app.api.routes.portfolio_funds - INFO - Annualized IRR: -37.8393%
-2025-08-20 15:59:00,071 - app.api.routes.portfolio_funds - INFO - Months in period: 10
-2025-08-20 15:59:00,072 - app.api.routes.portfolio_funds - INFO - Array size used: 10
-2025-08-20 15:59:00,072 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: -37.8% over 273 days (4 cash flow periods)
-2025-08-20 15:59:00,073 - app.api.routes.portfolio_funds - ERROR - 🔴 ✅ MULTIPLE FUNDS IRR CALCULATION COMPLETE
-2025-08-20 15:59:00,079 - app.api.routes.portfolio_funds - ERROR - 🔴 🎯 FINAL RESULT: -37.8%
-2025-08-20 15:59:00,080 - app.api.routes.portfolio_funds - INFO - ✅ Successfully calculated aggregate IRR for 4 portfolio funds: -37.8%
-2025-08-20 15:59:00,087 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT DEBUG] Product 236 (portfolio 249) for date 2022-08-01: None% (from portfolio_historical_irr table)
-2025-08-20 15:59:00,088 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT RESULT] Product 236 for date 2022-08-01: storing irr_result = None% in response
-2025-08-20 15:59:00,091 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT DEBUG] Product 236 (portfolio 249) for date 2023-01-01: 40.0000% (from portfolio_historical_irr table)
-2025-08-20 15:59:00,092 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT RESULT] Product 236 for date 2023-01-01: storing irr_result = 40.0% in response
-2025-08-20 15:59:00,095 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT DEBUG] Product 236 (portfolio 249) for date 2023-02-01: 58.6000% (from portfolio_historical_irr table)
-2025-08-20 15:59:00,096 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT RESULT] Product 236 for date 2023-02-01: storing irr_result = 58.6% in response
-2025-08-20 15:59:00,100 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT DEBUG] Product 237 (portfolio 250) for date 2022-08-01: -120.0000% (from portfolio_historical_irr table)
-2025-08-20 15:59:00,101 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT RESULT] Product 237 for date 2022-08-01: storing irr_result = -120.0% in response
-2025-08-20 15:59:00,103 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT DEBUG] Product 237 (portfolio 250) for date 2023-01-01: -367.1000% (from portfolio_historical_irr table)
-2025-08-20 15:59:00,104 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT RESULT] Product 237 for date 2023-01-01: storing irr_result = -367.1% in response
-2025-08-20 15:59:00,107 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT DEBUG] Product 237 (portfolio 250) for date 2023-02-01: -316.1000% (from portfolio_historical_irr table)
-2025-08-20 15:59:00,108 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT RESULT] Product 237 for date 2023-02-01: storing irr_result = -316.1% in response
-2025-08-20 15:59:00,116 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 5 portfolio funds  (BYPASSING CACHE)
-2025-08-20 15:59:00,116 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh calculation as requested
-2025-08-20 15:59:00,116 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2022-08-01
-2025-08-20 15:59:00,117 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 5 funds (eliminates 5 individual requests)
-2025-08-20 15:59:00,119 - app.api.routes.portfolio_funds - WARNING - No valuation found for fund 1108 as of 2022-08-01
-2025-08-20 15:59:00,119 - app.api.routes.portfolio_funds - WARNING - No valuation found for fund 1109 as of 2022-08-01
-2025-08-20 15:59:00,119 - app.api.routes.portfolio_funds - WARNING - No valuation found for fund 1107 as of 2022-08-01
-2025-08-20 15:59:00,120 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Valuation lookup for historical date 2022-08-01:   
-2025-08-20 15:59:00,120 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Requested fund IDs: [1108, 1109, 1107, 1110, 1111] 
-2025-08-20 15:59:00,120 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Found valuations: {1110: 0.0, 1111: 90.0, 1108: None, 1109: None, 1107: None}
-2025-08-20 15:59:00,121 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1110 has valuation £0.0 as of 2022-08-01      
-2025-08-20 15:59:00,121 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1111 has valuation £90.0 as of 2022-08-01     
-2025-08-20 15:59:00,121 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1108 has NO valuation as of 2022-08-01        
-2025-08-20 15:59:00,122 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1109 has NO valuation as of 2022-08-01        
-2025-08-20 15:59:00,122 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1107 has NO valuation as of 2022-08-01        
-2025-08-20 15:59:00,124 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {1110: 0.0, 1111: 90.0, 1108: None, 1109: None, 1107: None}
-2025-08-20 15:59:00,124 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: 2 out of 5 funds have valuations as of 2022-08-01  
-2025-08-20 15:59:00,124 - app.api.routes.portfolio_funds - WARNING - 💰 DEBUG: ⚠️ Excluding 3 funds without valuations from IRR  calculation: [1108, 1109, 1107]
-2025-08-20 15:59:00,126 - app.api.routes.portfolio_funds - WARNING - 💰 DEBUG: ✅ Including 2 funds with valuations: [1110, 1111]
-2025-08-20 15:59:00,131 - app.api.routes.portfolio_funds - INFO - 📊 Processing 1 activities across 2 funds
-2025-08-20 15:59:00,131 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Separated cash flows by date:
-2025-08-20 15:59:00,132 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2022-08-01: £-100.0
-2025-08-20 15:59:00,132 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2022-09-01: £90.0
-2025-08-20 15:59:00,133 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: About to call calculate_excel_style_irr with:       
-2025-08-20 15:59:00,133 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Dates: ['2022-08-01T00:00:00', '2022-09-01T00:00:00']
-2025-08-20 15:59:00,133 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Amounts: [-100.0, 90.0]
-2025-08-20 15:59:00,134 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: First amount: -100.0, Last amount: 90.0
-2025-08-20 15:59:00,134 - app.api.routes.portfolio_funds - INFO -
-Monthly cash flows:
-2025-08-20 15:59:00,134 - app.api.routes.portfolio_funds - INFO - Month 0: -100.0
-2025-08-20 15:59:00,135 - app.api.routes.portfolio_funds - INFO - Month 1: 90.0
-2025-08-20 15:59:00,135 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-08-20 15:59:00,136 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: -0.10000000000000009      
-2025-08-20 15:59:00,136 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): -1.200000000000001
-2025-08-20 15:59:00,136 - app.api.routes.portfolio_funds - INFO - Days in period: 31
-2025-08-20 15:59:00,137 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-08-20 15:59:00,137 - app.api.routes.portfolio_funds - INFO - Monthly IRR: -10.0000%
-2025-08-20 15:59:00,137 - app.api.routes.portfolio_funds - INFO - Annualized IRR: -120.0000%
-2025-08-20 15:59:00,138 - app.api.routes.portfolio_funds - INFO - Months in period: 2
-2025-08-20 15:59:00,138 - app.api.routes.portfolio_funds - INFO - Array size used: 2
-2025-08-20 15:59:00,139 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: -120.0% over 31 days (2 cash flow periods)
-2025-08-20 15:59:00,139 - app.api.routes.portfolio_funds - ERROR - 🔴 ✅ MULTIPLE FUNDS IRR CALCULATION COMPLETE
-2025-08-20 15:59:00,140 - app.api.routes.portfolio_funds - ERROR - 🔴 🎯 FINAL RESULT: -120.0%
-2025-08-20 15:59:00,141 - app.api.routes.portfolio_funds - INFO - ✅ Successfully calculated aggregate IRR for 2 portfolio funds: -120.0%
-2025-08-20 15:59:00,141 - app.api.routes.historical_irr - INFO - ✅ Calculated aggregated portfolio IRR for 2022-08-01: -120.0% 
-2025-08-20 15:59:00,144 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 5 portfolio funds  (BYPASSING CACHE)
-2025-08-20 15:59:00,144 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh calculation as requested
-2025-08-20 15:59:00,145 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2023-01-01
-2025-08-20 15:59:00,145 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 5 funds (eliminates 5 individual requests)
-2025-08-20 15:59:00,147 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Valuation lookup for historical date 2023-01-01:   
-2025-08-20 15:59:00,147 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Requested fund IDs: [1108, 1109, 1107, 1110, 1111] 
-2025-08-20 15:59:00,147 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Found valuations: {1107: 90.0, 1108: 110.0, 1109: 110.0, 1110: 0.0, 1111: 150.0}
-2025-08-20 15:59:00,147 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1107 has valuation £90.0 as of 2023-01-01     
-2025-08-20 15:59:00,148 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1108 has valuation £110.0 as of 2023-01-01    
-2025-08-20 15:59:00,148 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1109 has valuation £110.0 as of 2023-01-01    
-2025-08-20 15:59:00,148 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1110 has valuation £0.0 as of 2023-01-01      
-2025-08-20 15:59:00,149 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1111 has valuation £150.0 as of 2023-01-01    
-2025-08-20 15:59:00,149 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {1107: 90.0, 1108: 110.0, 1109: 110.0, 1110: 0.0, 1111: 150.0}
-2025-08-20 15:59:00,149 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: 5 out of 5 funds have valuations as of 2023-01-01  
-2025-08-20 15:59:00,152 - app.api.routes.portfolio_funds - INFO - 📊 Processing 5 activities across 5 funds
-2025-08-20 15:59:00,153 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Separated cash flows by date:
-2025-08-20 15:59:00,153 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2022-08-01: £-100.0
-2025-08-20 15:59:00,153 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-01-01: £-500.0
-2025-08-20 15:59:00,154 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-02-01: £460.0
-2025-08-20 15:59:00,154 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: About to call calculate_excel_style_irr with:       
-2025-08-20 15:59:00,154 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Dates: ['2022-08-01T00:00:00', '2023-01-01T00:00:00', '2023-02-01T00:00:00']
-2025-08-20 15:59:00,154 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Amounts: [-100.0, -500.0, 460.0]
-2025-08-20 15:59:00,155 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: First amount: -100.0, Last amount: 460.0
-2025-08-20 15:59:00,155 - app.api.routes.portfolio_funds - INFO -
-Monthly cash flows:
-2025-08-20 15:59:00,155 - app.api.routes.portfolio_funds - INFO - Month 0: -100.0
-2025-08-20 15:59:00,156 - app.api.routes.portfolio_funds - INFO - Month 1: 0.0
-2025-08-20 15:59:00,156 - app.api.routes.portfolio_funds - INFO - Month 2: 0.0
-2025-08-20 15:59:00,156 - app.api.routes.portfolio_funds - INFO - Month 3: 0.0
-2025-08-20 15:59:00,157 - app.api.routes.portfolio_funds - INFO - Month 4: 0.0
-2025-08-20 15:59:00,157 - app.api.routes.portfolio_funds - INFO - Month 5: -500.0
-2025-08-20 15:59:00,157 - app.api.routes.portfolio_funds - INFO - Month 6: 460.0
-2025-08-20 15:59:00,158 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-08-20 15:59:00,158 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: -0.15355614212050606      
-2025-08-20 15:59:00,158 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): -1.8426737054460727        
-2025-08-20 15:59:00,159 - app.api.routes.portfolio_funds - INFO - Days in period: 184
-2025-08-20 15:59:00,159 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-08-20 15:59:00,159 - app.api.routes.portfolio_funds - INFO - Monthly IRR: -15.3556%
-2025-08-20 15:59:00,160 - app.api.routes.portfolio_funds - INFO - Annualized IRR: -184.2674%
-2025-08-20 15:59:00,160 - app.api.routes.portfolio_funds - INFO - Months in period: 7
-2025-08-20 15:59:00,160 - app.api.routes.portfolio_funds - INFO - Array size used: 7
-2025-08-20 15:59:00,160 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: -184.3% over 184 days (3 cash flow periods)
-2025-08-20 15:59:00,161 - app.api.routes.portfolio_funds - ERROR - 🔴 ✅ MULTIPLE FUNDS IRR CALCULATION COMPLETE
-2025-08-20 15:59:00,161 - app.api.routes.portfolio_funds - ERROR - 🔴 🎯 FINAL RESULT: -184.3%
-2025-08-20 15:59:00,162 - app.api.routes.portfolio_funds - INFO - ✅ Successfully calculated aggregate IRR for 5 portfolio funds: -184.3%
-2025-08-20 15:59:00,162 - app.api.routes.historical_irr - INFO - ✅ Calculated aggregated portfolio IRR for 2023-01-01: -184.3% 
-2025-08-20 15:59:00,165 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 5 portfolio funds  (BYPASSING CACHE)
-2025-08-20 15:59:00,165 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh calculation as requested
-2025-08-20 15:59:00,166 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2023-02-01
-2025-08-20 15:59:00,166 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 5 funds (eliminates 5 individual requests)
-2025-08-20 15:59:00,168 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Valuation lookup for historical date 2023-02-01:   
-2025-08-20 15:59:00,168 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Requested fund IDs: [1108, 1109, 1107, 1110, 1111] 
-2025-08-20 15:59:00,168 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Found valuations: {1107: 80.0, 1108: 120.0, 1109: 130.0, 1110: 15.0, 1111: 120.0}
-2025-08-20 15:59:00,168 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1107 has valuation £80.0 as of 2023-02-01     
-2025-08-20 15:59:00,170 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1108 has valuation £120.0 as of 2023-02-01    
-2025-08-20 15:59:00,170 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1109 has valuation £130.0 as of 2023-02-01    
-2025-08-20 15:59:00,170 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1110 has valuation £15.0 as of 2023-02-01     
-2025-08-20 15:59:00,170 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1111 has valuation £120.0 as of 2023-02-01    
-2025-08-20 15:59:00,171 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {1107: 80.0, 1108: 120.0, 1109: 130.0, 1110: 15.0, 1111: 120.0}
-2025-08-20 15:59:00,173 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: 5 out of 5 funds have valuations as of 2023-02-01
-2025-08-20 15:59:00,177 - app.api.routes.portfolio_funds - INFO - 📊 Processing 6 activities across 5 funds
-2025-08-20 15:59:00,177 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Separated cash flows by date:
-2025-08-20 15:59:00,178 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2022-08-01: £-100.0
-2025-08-20 15:59:00,179 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-01-01: £-500.0
-2025-08-20 15:59:00,179 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-02-01: £-20.0
-2025-08-20 15:59:00,179 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-03-01: £465.0
-2025-08-20 15:59:00,180 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: About to call calculate_excel_style_irr with:       
-2025-08-20 15:59:00,180 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Dates: ['2022-08-01T00:00:00', '2023-01-01T00:00:00', '2023-02-01T00:00:00', '2023-03-01T00:00:00']
-2025-08-20 15:59:00,181 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Amounts: [-100.0, -500.0, -20.0, 465.0]
-2025-08-20 15:59:00,181 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: First amount: -100.0, Last amount: 465.0
-2025-08-20 15:59:00,181 - app.api.routes.portfolio_funds - INFO -
-Monthly cash flows:
-2025-08-20 15:59:00,182 - app.api.routes.portfolio_funds - INFO - Month 0: -100.0
-2025-08-20 15:59:00,182 - app.api.routes.portfolio_funds - INFO - Month 1: 0.0
-2025-08-20 15:59:00,182 - app.api.routes.portfolio_funds - INFO - Month 2: 0.0
-2025-08-20 15:59:00,183 - app.api.routes.portfolio_funds - INFO - Month 3: 0.0
-2025-08-20 15:59:00,183 - app.api.routes.portfolio_funds - INFO - Month 4: 0.0
-2025-08-20 15:59:00,184 - app.api.routes.portfolio_funds - INFO - Month 5: -500.0
-2025-08-20 15:59:00,184 - app.api.routes.portfolio_funds - INFO - Month 6: -20.0
-2025-08-20 15:59:00,185 - app.api.routes.portfolio_funds - INFO - Month 7: 465.0
-2025-08-20 15:59:00,185 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-08-20 15:59:00,186 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: -0.1045397034354959       
-2025-08-20 15:59:00,186 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): -1.2544764412259508        
-2025-08-20 15:59:00,187 - app.api.routes.portfolio_funds - INFO - Days in period: 212
-2025-08-20 15:59:00,187 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-08-20 15:59:00,188 - app.api.routes.portfolio_funds - INFO - Monthly IRR: -10.4540%
-2025-08-20 15:59:00,189 - app.api.routes.portfolio_funds - INFO - Annualized IRR: -125.4476%
-2025-08-20 15:59:00,189 - app.api.routes.portfolio_funds - INFO - Months in period: 8
-2025-08-20 15:59:00,190 - app.api.routes.portfolio_funds - INFO - Array size used: 8
-2025-08-20 15:59:00,190 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: -125.4% over 212 days (4 cash flow periods)
-2025-08-20 15:59:00,191 - app.api.routes.portfolio_funds - ERROR - 🔴 ✅ MULTIPLE FUNDS IRR CALCULATION COMPLETE
-2025-08-20 15:59:00,192 - app.api.routes.portfolio_funds - ERROR - 🔴 🎯 FINAL RESULT: -125.4%
-2025-08-20 15:59:00,193 - app.api.routes.portfolio_funds - INFO - ✅ Successfully calculated aggregate IRR for 5 portfolio funds: -125.4%
-2025-08-20 15:59:00,193 - app.api.routes.historical_irr - INFO - ✅ Calculated aggregated portfolio IRR for 2023-02-01: -125.4% 
-2025-08-20 15:59:00,194 - app.api.routes.historical_irr - INFO - Successfully fetched IRR history summary: 6 product rows, 3 date totals
-2025-08-20 15:59:00,340 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 15:59:00,341 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -120.0%
-2025-08-20 15:59:00,353 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 15:59:00,355 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -120.0%
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-2025-08-20 16:00:32,231 - main - INFO - Shutting down application...
-2025-08-20 16:00:32,231 - database - INFO - Closing PostgreSQL connection pool...
-2025-08-20 16:00:32,248 - database - INFO - PostgreSQL connection pool closed successfully
-2025-08-20 16:00:32,249 - main - INFO - Database connection pool closed successfully
-2025-08-20 16:00:32,249 - main - INFO - Application shutdown completed successfully
-INFO:     Application shutdown complete.
-INFO:     Finished server process [38876]
-INFO:     Stopping reloader process [23180]
-(venv) PS C:\Users\jacob\Documents\kingstons_portal\backend> uvicorn main:app --reload --port 8001
-INFO:     Will watch for changes in these directories: ['C:\\Users\\jacob\\Documents\\kingstons_portal\\backend']
-INFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)
-INFO:     Started reloader process [38192] using WatchFiles
-2025-08-20 16:00:35,316 - main - INFO - Application startup initiated
-2025-08-20 16:00:35,317 - main - INFO - Python version: 3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]
-2025-08-20 16:00:35,318 - main - INFO - Current working directory: C:\Users\jacob\Documents\kingstons_portal\backend
-2025-08-20 16:00:35,319 - main - INFO - Added to Python path: C:\Users\jacob\Documents\kingstons_portal\backend
-2025-08-20 16:00:36,286 - main - INFO - All modules imported successfully
-2025-08-20 16:00:36,501 - database - INFO - Environment variables loaded
-2025-08-20 16:00:36,502 - database - INFO - Database URL present: True
-C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\pydantic\_internal\_config.py:321: UserWarning: Valid config keys have changed in V2:
-* 'orm_mode' has been renamed to 'from_attributes'
-  warnings.warn(message, UserWarning)
-INFO:     Started server process [32984]
-INFO:     Waiting for application startup.
-2025-08-20 16:00:38,185 - main - INFO - Initializing database connection pool...
-2025-08-20 16:00:38,185 - database - INFO - Creating PostgreSQL connection pool...
-2025-08-20 16:00:38,925 - database - INFO - PostgreSQL connection pool created successfully (min: 5, max: 20)
-2025-08-20 16:00:38,929 - database - INFO - Database connection test successful: 1
-2025-08-20 16:00:38,953 - database - INFO - Database verification: 91 client products found
-2025-08-20 16:00:38,956 - main - INFO - Database connection pool initialized successfully
-2025-08-20 16:00:38,957 - main - INFO - Started periodic presence cleanup task
-2025-08-20 16:00:38,957 - main - INFO - Application startup completed successfully
-INFO:     Application startup complete.
-2025-08-20 16:00:42,970 - app.api.routes.available_providers - INFO - Fetching available providers with skip=0, limit=100
-2025-08-20 16:00:42,985 - app.api.routes.available_providers - INFO - Query returned 18 providers
-2025-08-20 16:00:43,158 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
-2025-08-20 16:00:43,175 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
-2025-08-20 16:00:43,189 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
-2025-08-20 16:00:43,191 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
-2025-08-20 16:00:43,231 - app.api.routes.historical_irr - INFO - Fetching portfolio historical IRR for product 236 (limit: 24)
-2025-08-20 16:00:43,235 - app.api.routes.historical_irr - INFO - Fetching portfolio historical IRR for product 237 (limit: 24)
-2025-08-20 16:00:43,284 - app.api.routes.historical_irr - INFO - Found 4 portfolio IRR records for product 236
-2025-08-20 16:00:43,309 - app.api.routes.historical_irr - INFO - Found 3 portfolio IRR records for product 237
-2025-08-20 16:00:43,411 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:00:43,416 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2023-02-01
-2025-08-20 16:00:43,417 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 1 funds (eliminates 1 individual requests)
-2025-08-20 16:00:43,421 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:00:43,421 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2023-02-01
-2025-08-20 16:00:43,422 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 1 funds (eliminates 1 individual requests)
-2025-08-20 16:00:43,438 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:00:43,439 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2023-02-01
-2025-08-20 16:00:43,439 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 1 funds (eliminates 1 individual requests)
-2025-08-20 16:00:43,442 - app.api.routes.historical_irr - INFO - 🚀 Processing new IRR history summary request: summary_[236, 237]_['2022-08-01', '2023-01-01', '2023-02-01']_None
-2025-08-20 16:00:43,443 - app.api.routes.historical_irr - INFO - Products: [236, 237], Dates: 3
-2025-08-20 16:00:43,443 - app.api.routes.historical_irr - INFO - Querying products for IDs: [236, 237]
-2025-08-20 16:00:43,491 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 4 portfolio funds
-2025-08-20 16:00:43,492 - app.api.routes.portfolio_funds - INFO - No IRR date provided, finding latest valuation date
-2025-08-20 16:00:43,501 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Valuation lookup for historical date 2023-02-01:   
-2025-08-20 16:00:43,501 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Requested fund IDs: [1107]
-2025-08-20 16:00:43,502 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Found valuations: {1107: 80.0}
-2025-08-20 16:00:43,502 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1107 has valuation £80.0 as of 2023-02-01     
-2025-08-20 16:00:43,502 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {1107: 80.0}
-2025-08-20 16:00:43,503 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: 1 out of 1 funds have valuations as of 2023-02-01  
-2025-08-20 16:00:43,503 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Valuation lookup for historical date 2023-02-01:   
-2025-08-20 16:00:43,503 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Requested fund IDs: [1107]
-2025-08-20 16:00:43,503 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Found valuations: {1107: 80.0}
-2025-08-20 16:00:43,504 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1107 has valuation £80.0 as of 2023-02-01     
-2025-08-20 16:00:43,504 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {1107: 80.0}
-2025-08-20 16:00:43,505 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: 1 out of 1 funds have valuations as of 2023-02-01  
-2025-08-20 16:00:43,505 - app.api.routes.portfolio_funds - INFO - Using latest valuation date: 2023-04-01
-2025-08-20 16:00:43,505 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2023-04-01
-2025-08-20 16:00:43,505 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 4 funds (eliminates 4 individual requests)
-2025-08-20 16:00:43,507 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Valuation lookup for historical date 2023-04-01:   
-2025-08-20 16:00:43,507 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Requested fund IDs: [1108, 1109, 1111, 1110]       
-2025-08-20 16:00:43,507 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Found valuations: {1108: 150.0, 1109: 160.0, 1110: 15.0, 1111: 120.0}
-2025-08-20 16:00:43,507 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1108 has valuation £150.0 as of 2023-04-01    
-2025-08-20 16:00:43,507 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1109 has valuation £160.0 as of 2023-04-01    
-2025-08-20 16:00:43,507 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1110 has valuation £15.0 as of 2023-04-01     
-2025-08-20 16:00:43,508 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1111 has valuation £120.0 as of 2023-04-01    
-2025-08-20 16:00:43,508 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {1108: 150.0, 1109: 160.0, 1110: 15.0, 1111: 120.0}
-2025-08-20 16:00:43,508 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: 4 out of 4 funds have valuations as of 2023-04-01  
-2025-08-20 16:00:43,513 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Valuation lookup for historical date 2023-02-01:
-2025-08-20 16:00:43,513 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Requested fund IDs: [1107]
-2025-08-20 16:00:43,513 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Found valuations: {1107: 80.0}
-2025-08-20 16:00:43,513 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1107 has valuation £80.0 as of 2023-02-01     
-2025-08-20 16:00:43,513 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {1107: 80.0}
-2025-08-20 16:00:43,514 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: 1 out of 1 funds have valuations as of 2023-02-01  
-2025-08-20 16:00:43,515 - app.api.routes.historical_irr - INFO - Found 2 products
-2025-08-20 16:00:43,523 - app.api.routes.portfolio_funds - INFO - 📊 Processing 1 activities across 1 funds
-2025-08-20 16:00:43,524 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Separated cash flows by date:
-2025-08-20 16:00:43,524 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-01-01: £-100.0
-2025-08-20 16:00:43,524 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-03-01: £80.0
-2025-08-20 16:00:43,525 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: About to call calculate_excel_style_irr with:       
-2025-08-20 16:00:43,525 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Dates: ['2023-01-01T00:00:00', '2023-03-01T00:00:00']
-2025-08-20 16:00:43,525 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Amounts: [-100.0, 80.0]
-2025-08-20 16:00:43,526 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: First amount: -100.0, Last amount: 80.0
-2025-08-20 16:00:43,526 - app.api.routes.portfolio_funds - INFO -
-Monthly cash flows:
-2025-08-20 16:00:43,526 - app.api.routes.portfolio_funds - INFO - Month 0: -100.0
-2025-08-20 16:00:43,526 - app.api.routes.portfolio_funds - INFO - Month 1: 0.0
-2025-08-20 16:00:43,527 - app.api.routes.portfolio_funds - INFO - Month 2: 80.0
-2025-08-20 16:00:43,527 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-08-20 16:00:43,528 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: -0.10557280900008414      
-2025-08-20 16:00:43,528 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): -1.2668737080010097        
-2025-08-20 16:00:43,528 - app.api.routes.portfolio_funds - INFO - Days in period: 59
-2025-08-20 16:00:43,529 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-08-20 16:00:43,529 - app.api.routes.portfolio_funds - INFO - Monthly IRR: -10.5573%
-2025-08-20 16:00:43,530 - app.api.routes.portfolio_funds - INFO - Annualized IRR: -126.6874%
-2025-08-20 16:00:43,530 - app.api.routes.portfolio_funds - INFO - Months in period: 3
-2025-08-20 16:00:43,530 - app.api.routes.portfolio_funds - INFO - Array size used: 3
-2025-08-20 16:00:43,531 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: -126.7% over 59 days (2 cash flow periods)
-2025-08-20 16:00:43,531 - app.api.routes.portfolio_funds - ERROR - 🔴 ✅ MULTIPLE FUNDS IRR CALCULATION COMPLETE
-2025-08-20 16:00:43,531 - app.api.routes.portfolio_funds - ERROR - 🔴 🎯 FINAL RESULT: -126.7%
-2025-08-20 16:00:43,531 - app.api.routes.portfolio_funds - INFO - ✅ Successfully calculated aggregate IRR for 1 portfolio funds: -126.7%
-2025-08-20 16:00:43,533 - app.api.routes.portfolio_funds - INFO - 📊 Processing 5 activities across 4 funds
-2025-08-20 16:00:43,533 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Separated cash flows by date:
-2025-08-20 16:00:43,534 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2022-08-01: £-100.0
-2025-08-20 16:00:43,535 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-01-01: £-400.0
-2025-08-20 16:00:43,535 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-02-01: £-20.0
-2025-08-20 16:00:43,536 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-05-01: £445.0
-2025-08-20 16:00:43,536 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: About to call calculate_excel_style_irr with:       
-2025-08-20 16:00:43,536 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Dates: ['2022-08-01T00:00:00', '2023-01-01T00:00:00', '2023-02-01T00:00:00', '2023-05-01T00:00:00']
-2025-08-20 16:00:43,537 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Amounts: [-100.0, -400.0, -20.0, 445.0]
-2025-08-20 16:00:43,537 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: First amount: -100.0, Last amount: 445.0
-2025-08-20 16:00:43,537 - app.api.routes.portfolio_funds - INFO -
-Monthly cash flows:
-2025-08-20 16:00:43,537 - app.api.routes.portfolio_funds - INFO - Month 0: -100.0
-2025-08-20 16:00:43,538 - app.api.routes.portfolio_funds - INFO - Month 1: 0.0
-2025-08-20 16:00:43,538 - app.api.routes.portfolio_funds - INFO - Month 2: 0.0
-2025-08-20 16:00:43,538 - app.api.routes.portfolio_funds - INFO - Month 3: 0.0
-2025-08-20 16:00:43,538 - app.api.routes.portfolio_funds - INFO - Month 4: 0.0
-2025-08-20 16:00:43,539 - app.api.routes.portfolio_funds - INFO - Month 5: -400.0
-2025-08-20 16:00:43,539 - app.api.routes.portfolio_funds - INFO - Month 6: -20.0
-2025-08-20 16:00:43,539 - app.api.routes.portfolio_funds - INFO - Month 7: 0.0
-2025-08-20 16:00:43,539 - app.api.routes.portfolio_funds - INFO - Month 8: 0.0
-2025-08-20 16:00:43,540 - app.api.routes.portfolio_funds - INFO - Month 9: 445.0
-2025-08-20 16:00:43,540 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-08-20 16:00:43,541 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: -0.03153275498962815      
-2025-08-20 16:00:43,541 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): -0.37839305987553784       
-2025-08-20 16:00:43,541 - app.api.routes.portfolio_funds - INFO - Days in period: 273
-2025-08-20 16:00:43,541 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-08-20 16:00:43,541 - app.api.routes.portfolio_funds - INFO - Monthly IRR: -3.1533%
-2025-08-20 16:00:43,542 - app.api.routes.portfolio_funds - INFO - Annualized IRR: -37.8393%
-2025-08-20 16:00:43,542 - app.api.routes.portfolio_funds - INFO - Months in period: 10
-2025-08-20 16:00:43,542 - app.api.routes.portfolio_funds - INFO - Array size used: 10
-2025-08-20 16:00:43,542 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: -37.8% over 273 days (4 cash flow periods)
-2025-08-20 16:00:43,542 - app.api.routes.portfolio_funds - ERROR - 🔴 ✅ MULTIPLE FUNDS IRR CALCULATION COMPLETE
-2025-08-20 16:00:43,543 - app.api.routes.portfolio_funds - ERROR - 🔴 🎯 FINAL RESULT: -37.8%
-2025-08-20 16:00:43,543 - app.api.routes.portfolio_funds - INFO - ✅ Successfully calculated aggregate IRR for 4 portfolio funds: -37.8%
-2025-08-20 16:00:43,544 - app.api.routes.portfolio_funds - INFO - 📊 Processing 1 activities across 1 funds
-2025-08-20 16:00:43,544 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Separated cash flows by date:
-2025-08-20 16:00:43,544 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-01-01: £-100.0
-2025-08-20 16:00:43,544 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-03-01: £80.0
-2025-08-20 16:00:43,544 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: About to call calculate_excel_style_irr with:       
-2025-08-20 16:00:43,544 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Dates: ['2023-01-01T00:00:00', '2023-03-01T00:00:00']
-2025-08-20 16:00:43,546 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Amounts: [-100.0, 80.0]
-2025-08-20 16:00:43,546 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: First amount: -100.0, Last amount: 80.0
-2025-08-20 16:00:43,547 - app.api.routes.portfolio_funds - INFO -
-Monthly cash flows:
-2025-08-20 16:00:43,547 - app.api.routes.portfolio_funds - INFO - Month 0: -100.0
-2025-08-20 16:00:43,547 - app.api.routes.portfolio_funds - INFO - Month 1: 0.0
-2025-08-20 16:00:43,548 - app.api.routes.portfolio_funds - INFO - Month 2: 80.0
-2025-08-20 16:00:43,548 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-08-20 16:00:43,549 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: -0.10557280900008414      
-2025-08-20 16:00:43,549 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): -1.2668737080010097        
-2025-08-20 16:00:43,549 - app.api.routes.portfolio_funds - INFO - Days in period: 59
-2025-08-20 16:00:43,549 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-08-20 16:00:43,549 - app.api.routes.portfolio_funds - INFO - Monthly IRR: -10.5573%
-2025-08-20 16:00:43,550 - app.api.routes.portfolio_funds - INFO - Annualized IRR: -126.6874%
-2025-08-20 16:00:43,550 - app.api.routes.portfolio_funds - INFO - Months in period: 3
-2025-08-20 16:00:43,550 - app.api.routes.portfolio_funds - INFO - Array size used: 3
-2025-08-20 16:00:43,550 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: -126.7% over 59 days (2 cash flow periods)
-2025-08-20 16:00:43,551 - app.api.routes.portfolio_funds - ERROR - 🔴 ✅ MULTIPLE FUNDS IRR CALCULATION COMPLETE
-2025-08-20 16:00:43,551 - app.api.routes.portfolio_funds - ERROR - 🔴 🎯 FINAL RESULT: -126.7%
-2025-08-20 16:00:43,551 - app.api.routes.portfolio_funds - INFO - ✅ Successfully calculated aggregate IRR for 1 portfolio funds: -126.7%
-2025-08-20 16:00:43,554 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:00:43,555 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2023-01-01
-2025-08-20 16:00:43,555 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 1 funds (eliminates 1 individual requests)
-2025-08-20 16:00:43,557 - app.api.routes.portfolio_funds - INFO - 📊 Processing 1 activities across 1 funds
-2025-08-20 16:00:43,558 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Separated cash flows by date:
-2025-08-20 16:00:43,559 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-01-01: £-100.0
-2025-08-20 16:00:43,560 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-03-01: £80.0
-2025-08-20 16:00:43,560 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: About to call calculate_excel_style_irr with:       
-2025-08-20 16:00:43,560 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Dates: ['2023-01-01T00:00:00', '2023-03-01T00:00:00']
-2025-08-20 16:00:43,561 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Amounts: [-100.0, 80.0]
-2025-08-20 16:00:43,562 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: First amount: -100.0, Last amount: 80.0
-2025-08-20 16:00:43,562 - app.api.routes.portfolio_funds - INFO -
-Monthly cash flows:
-2025-08-20 16:00:43,563 - app.api.routes.portfolio_funds - INFO - Month 0: -100.0
-2025-08-20 16:00:43,563 - app.api.routes.portfolio_funds - INFO - Month 1: 0.0
-2025-08-20 16:00:43,564 - app.api.routes.portfolio_funds - INFO - Month 2: 80.0
-2025-08-20 16:00:43,564 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-08-20 16:00:43,565 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: -0.10557280900008414      
-2025-08-20 16:00:43,565 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): -1.2668737080010097        
-2025-08-20 16:00:43,566 - app.api.routes.portfolio_funds - INFO - Days in period: 59
-2025-08-20 16:00:43,566 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-08-20 16:00:43,567 - app.api.routes.portfolio_funds - INFO - Monthly IRR: -10.5573%
-2025-08-20 16:00:43,567 - app.api.routes.portfolio_funds - INFO - Annualized IRR: -126.6874%
-2025-08-20 16:00:43,567 - app.api.routes.portfolio_funds - INFO - Months in period: 3
-2025-08-20 16:00:43,568 - app.api.routes.portfolio_funds - INFO - Array size used: 3
-2025-08-20 16:00:43,568 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: -126.7% over 59 days (2 cash flow periods)
-2025-08-20 16:00:43,568 - app.api.routes.portfolio_funds - ERROR - 🔴 ✅ MULTIPLE FUNDS IRR CALCULATION COMPLETE
-2025-08-20 16:00:43,568 - app.api.routes.portfolio_funds - ERROR - 🔴 🎯 FINAL RESULT: -126.7%
-2025-08-20 16:00:43,569 - app.api.routes.portfolio_funds - INFO - ✅ Successfully calculated aggregate IRR for 1 portfolio funds: -126.7%
-2025-08-20 16:00:43,571 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Valuation lookup for historical date 2023-01-01:
-2025-08-20 16:00:43,571 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Requested fund IDs: [1107]
-2025-08-20 16:00:43,571 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Found valuations: {1107: 90.0}
-2025-08-20 16:00:43,571 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1107 has valuation £90.0 as of 2023-01-01     
-2025-08-20 16:00:43,572 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {1107: 90.0}
-2025-08-20 16:00:43,572 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: 1 out of 1 funds have valuations as of 2023-01-01  
-2025-08-20 16:00:43,575 - app.api.routes.portfolio_funds - INFO - 📊 Processing 1 activities across 1 funds
-2025-08-20 16:00:43,575 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Separated cash flows by date:
-2025-08-20 16:00:43,583 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-01-01: £-100.0
-2025-08-20 16:00:43,584 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-02-01: £90.0
-2025-08-20 16:00:43,585 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: About to call calculate_excel_style_irr with:       
-2025-08-20 16:00:43,585 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Dates: ['2023-01-01T00:00:00', '2023-02-01T00:00:00']
-2025-08-20 16:00:43,585 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Amounts: [-100.0, 90.0]
-2025-08-20 16:00:43,585 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: First amount: -100.0, Last amount: 90.0
-2025-08-20 16:00:43,586 - app.api.routes.portfolio_funds - INFO -
-Monthly cash flows:
-2025-08-20 16:00:43,586 - app.api.routes.portfolio_funds - INFO - Month 0: -100.0
-2025-08-20 16:00:43,586 - app.api.routes.portfolio_funds - INFO - Month 1: 90.0
-2025-08-20 16:00:43,587 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-08-20 16:00:43,588 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: -0.10000000000000009      
-2025-08-20 16:00:43,588 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): -1.200000000000001
-2025-08-20 16:00:43,588 - app.api.routes.portfolio_funds - INFO - Days in period: 31
-2025-08-20 16:00:43,589 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-08-20 16:00:43,589 - app.api.routes.portfolio_funds - INFO - Monthly IRR: -10.0000%
-2025-08-20 16:00:43,589 - app.api.routes.portfolio_funds - INFO - Annualized IRR: -120.0000%
-2025-08-20 16:00:43,589 - app.api.routes.portfolio_funds - INFO - Months in period: 2
-2025-08-20 16:00:43,589 - app.api.routes.portfolio_funds - INFO - Array size used: 2
-2025-08-20 16:00:43,590 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: -120.0% over 31 days (2 cash flow periods)
-2025-08-20 16:00:43,590 - app.api.routes.portfolio_funds - ERROR - 🔴 ✅ MULTIPLE FUNDS IRR CALCULATION COMPLETE
-2025-08-20 16:00:43,590 - app.api.routes.portfolio_funds - ERROR - 🔴 🎯 FINAL RESULT: -120.0%
-2025-08-20 16:00:43,590 - app.api.routes.portfolio_funds - INFO - ✅ Successfully calculated aggregate IRR for 1 portfolio funds: -120.0%
-2025-08-20 16:00:43,592 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT DEBUG] Product 236 (portfolio 249) for date 2022-08-01: None% (from portfolio_historical_irr table)
-2025-08-20 16:00:43,592 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT RESULT] Product 236 for date 2022-08-01: storing irr_result = None% in response
-2025-08-20 16:00:43,596 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:00:43,596 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -126.7%
-2025-08-20 16:00:43,598 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:00:43,598 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -120.0%
-2025-08-20 16:00:43,600 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:00:43,601 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -120.0%
-2025-08-20 16:00:43,603 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:00:43,604 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -126.7%
-2025-08-20 16:00:43,606 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT DEBUG] Product 236 (portfolio 249) for date 2023-01-01: 40.0000% (from portfolio_historical_irr table)
-2025-08-20 16:00:43,607 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT RESULT] Product 236 for date 2023-01-01: storing irr_result = 40.0% in response
-2025-08-20 16:00:43,609 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT DEBUG] Product 236 (portfolio 249) for date 2023-02-01: 58.6000% (from portfolio_historical_irr table)
-2025-08-20 16:00:43,612 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT RESULT] Product 236 for date 2023-02-01: storing irr_result = 58.6% in response
-2025-08-20 16:00:43,617 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT DEBUG] Product 237 (portfolio 250) for date 2022-08-01: -120.0000% (from portfolio_historical_irr table)
-2025-08-20 16:00:43,620 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT RESULT] Product 237 for date 2022-08-01: storing irr_result = -120.0% in response
-2025-08-20 16:00:43,623 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:00:43,625 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -120.0%
-2025-08-20 16:00:43,628 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:00:43,629 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2022-08-01
-2025-08-20 16:00:43,629 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 1 funds (eliminates 1 individual requests)
-2025-08-20 16:00:43,630 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT DEBUG] Product 237 (portfolio 250) for date 2023-01-01: -367.1000% (from portfolio_historical_irr table)
-2025-08-20 16:00:43,631 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT RESULT] Product 237 for date 2023-01-01: storing irr_result = -367.1% in response
-2025-08-20 16:00:43,632 - app.api.routes.portfolio_funds - WARNING - No valuation found for fund 1107 as of 2022-08-01
-2025-08-20 16:00:43,632 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Valuation lookup for historical date 2022-08-01:   
-2025-08-20 16:00:43,632 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Requested fund IDs: [1107]
-2025-08-20 16:00:43,632 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Found valuations: {1107: None}
-2025-08-20 16:00:43,633 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1107 has NO valuation as of 2022-08-01        
-2025-08-20 16:00:43,633 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {1107: None}
-2025-08-20 16:00:43,633 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: 0 out of 1 funds have valuations as of 2022-08-01  
-2025-08-20 16:00:43,633 - app.api.routes.portfolio_funds - WARNING - 💰 DEBUG: ⚠️ No valuations found for any funds as of 2022-008-01, cannot calculate historical IRR
-2025-08-20 16:00:43,635 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:00:43,636 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -120.0%
-2025-08-20 16:00:43,638 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT DEBUG] Product 237 (portfolio 250) for date 2023-02-01: -316.1000% (from portfolio_historical_irr table)
-2025-08-20 16:00:43,638 - app.api.routes.historical_irr - INFO - 🔍 [SUMMARY ENDPOINT RESULT] Product 237 for date 2023-02-01: storing irr_result = -316.1% in response
-2025-08-20 16:00:43,657 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 5 portfolio funds  (BYPASSING CACHE)
-2025-08-20 16:00:43,658 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh calculation as requested
-2025-08-20 16:00:43,658 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2022-08-01
-2025-08-20 16:00:43,659 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 5 funds (eliminates 5 individual requests)
-2025-08-20 16:00:43,675 - app.api.routes.portfolio_funds - WARNING - No valuation found for fund 1108 as of 2022-08-01
-2025-08-20 16:00:43,675 - app.api.routes.portfolio_funds - WARNING - No valuation found for fund 1109 as of 2022-08-01
-2025-08-20 16:00:43,675 - app.api.routes.portfolio_funds - WARNING - No valuation found for fund 1107 as of 2022-08-01
-2025-08-20 16:00:43,676 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Valuation lookup for historical date 2022-08-01:   
-2025-08-20 16:00:43,676 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Requested fund IDs: [1108, 1109, 1107, 1110, 1111] 
-2025-08-20 16:00:43,676 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Found valuations: {1110: 0.0, 1111: 90.0, 1108: None, 1109: None, 1107: None}
-2025-08-20 16:00:43,676 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1110 has valuation £0.0 as of 2022-08-01      
-2025-08-20 16:00:43,677 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1111 has valuation £90.0 as of 2022-08-01     
-2025-08-20 16:00:43,677 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1108 has NO valuation as of 2022-08-01        
-2025-08-20 16:00:43,677 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1109 has NO valuation as of 2022-08-01        
-2025-08-20 16:00:43,677 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1107 has NO valuation as of 2022-08-01        
-2025-08-20 16:00:43,678 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {1110: 0.0, 1111: 90.0, 1108: None, 1109: None, 1107: None}
-2025-08-20 16:00:43,678 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: 2 out of 5 funds have valuations as of 2022-08-01  
-2025-08-20 16:00:43,679 - app.api.routes.portfolio_funds - WARNING - 💰 DEBUG: ⚠️ Excluding 3 funds without valuations from IRR  calculation: [1108, 1109, 1107]
-2025-08-20 16:00:43,679 - app.api.routes.portfolio_funds - WARNING - 💰 DEBUG: ✅ Including 2 funds with valuations: [1110, 1111]
-2025-08-20 16:00:43,702 - app.api.routes.portfolio_funds - INFO - 📊 Processing 1 activities across 2 funds
-2025-08-20 16:00:43,702 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Separated cash flows by date:
-2025-08-20 16:00:43,702 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2022-08-01: £-100.0
-2025-08-20 16:00:43,702 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2022-09-01: £90.0
-2025-08-20 16:00:43,703 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: About to call calculate_excel_style_irr with:       
-2025-08-20 16:00:43,703 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Dates: ['2022-08-01T00:00:00', '2022-09-01T00:00:00']
-2025-08-20 16:00:43,703 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Amounts: [-100.0, 90.0]
-2025-08-20 16:00:43,703 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: First amount: -100.0, Last amount: 90.0
-2025-08-20 16:00:43,704 - app.api.routes.portfolio_funds - INFO -
-Monthly cash flows:
-2025-08-20 16:00:43,704 - app.api.routes.portfolio_funds - INFO - Month 0: -100.0
-2025-08-20 16:00:43,704 - app.api.routes.portfolio_funds - INFO - Month 1: 90.0
-2025-08-20 16:00:43,704 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-08-20 16:00:43,704 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: -0.10000000000000009      
-2025-08-20 16:00:43,706 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): -1.200000000000001
-2025-08-20 16:00:43,706 - app.api.routes.portfolio_funds - INFO - Days in period: 31
-2025-08-20 16:00:43,707 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-08-20 16:00:43,707 - app.api.routes.portfolio_funds - INFO - Monthly IRR: -10.0000%
-2025-08-20 16:00:43,708 - app.api.routes.portfolio_funds - INFO - Annualized IRR: -120.0000%
-2025-08-20 16:00:43,708 - app.api.routes.portfolio_funds - INFO - Months in period: 2
-2025-08-20 16:00:43,708 - app.api.routes.portfolio_funds - INFO - Array size used: 2
-2025-08-20 16:00:43,708 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: -120.0% over 31 days (2 cash flow periods)
-2025-08-20 16:00:43,709 - app.api.routes.portfolio_funds - ERROR - 🔴 ✅ MULTIPLE FUNDS IRR CALCULATION COMPLETE
-2025-08-20 16:00:43,709 - app.api.routes.portfolio_funds - ERROR - 🔴 🎯 FINAL RESULT: -120.0%
-2025-08-20 16:00:43,709 - app.api.routes.portfolio_funds - INFO - ✅ Successfully calculated aggregate IRR for 2 portfolio funds: -120.0%
-2025-08-20 16:00:43,710 - app.api.routes.historical_irr - INFO - ✅ Calculated aggregated portfolio IRR for 2022-08-01: -120.0% 
-2025-08-20 16:00:43,713 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 5 portfolio funds  (BYPASSING CACHE)
-2025-08-20 16:00:43,713 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh calculation as requested
-2025-08-20 16:00:43,714 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2023-01-01
-2025-08-20 16:00:43,715 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 5 funds (eliminates 5 individual requests)
-2025-08-20 16:00:43,717 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Valuation lookup for historical date 2023-01-01:   
-2025-08-20 16:00:43,717 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Requested fund IDs: [1108, 1109, 1107, 1110, 1111] 
-2025-08-20 16:00:43,717 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Found valuations: {1107: 90.0, 1108: 110.0, 1109: 110.0, 1110: 0.0, 1111: 150.0}
-2025-08-20 16:00:43,718 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1107 has valuation £90.0 as of 2023-01-01     
-2025-08-20 16:00:43,718 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1108 has valuation £110.0 as of 2023-01-01    
-2025-08-20 16:00:43,718 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1109 has valuation £110.0 as of 2023-01-01    
-2025-08-20 16:00:43,718 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1110 has valuation £0.0 as of 2023-01-01      
-2025-08-20 16:00:43,719 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1111 has valuation £150.0 as of 2023-01-01    
-2025-08-20 16:00:43,719 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {1107: 90.0, 1108: 110.0, 1109: 110.0, 1110: 0.0, 1111: 150.0}
-2025-08-20 16:00:43,719 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: 5 out of 5 funds have valuations as of 2023-01-01  
-2025-08-20 16:00:43,722 - app.api.routes.portfolio_funds - INFO - 📊 Processing 5 activities across 5 funds
-2025-08-20 16:00:43,722 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Separated cash flows by date:
-2025-08-20 16:00:43,723 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2022-08-01: £-100.0
-2025-08-20 16:00:43,723 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-01-01: £-500.0
-2025-08-20 16:00:43,723 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-02-01: £460.0
-2025-08-20 16:00:43,724 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: About to call calculate_excel_style_irr with:       
-2025-08-20 16:00:43,724 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Dates: ['2022-08-01T00:00:00', '2023-01-01T00:00:00', '2023-02-01T00:00:00']
-2025-08-20 16:00:43,725 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Amounts: [-100.0, -500.0, 460.0]
-2025-08-20 16:00:43,725 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: First amount: -100.0, Last amount: 460.0
-2025-08-20 16:00:43,725 - app.api.routes.portfolio_funds - INFO -
-Monthly cash flows:
-2025-08-20 16:00:43,725 - app.api.routes.portfolio_funds - INFO - Month 0: -100.0
-2025-08-20 16:00:43,725 - app.api.routes.portfolio_funds - INFO - Month 1: 0.0
-2025-08-20 16:00:43,726 - app.api.routes.portfolio_funds - INFO - Month 2: 0.0
-2025-08-20 16:00:43,726 - app.api.routes.portfolio_funds - INFO - Month 3: 0.0
-2025-08-20 16:00:43,726 - app.api.routes.portfolio_funds - INFO - Month 4: 0.0
-2025-08-20 16:00:43,727 - app.api.routes.portfolio_funds - INFO - Month 5: -500.0
-2025-08-20 16:00:43,727 - app.api.routes.portfolio_funds - INFO - Month 6: 460.0
-2025-08-20 16:00:43,727 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-08-20 16:00:43,728 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: -0.15355614212050606      
-2025-08-20 16:00:43,728 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): -1.8426737054460727        
-2025-08-20 16:00:43,728 - app.api.routes.portfolio_funds - INFO - Days in period: 184
-2025-08-20 16:00:43,728 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-08-20 16:00:43,728 - app.api.routes.portfolio_funds - INFO - Monthly IRR: -15.3556%
-2025-08-20 16:00:43,729 - app.api.routes.portfolio_funds - INFO - Annualized IRR: -184.2674%
-2025-08-20 16:00:43,729 - app.api.routes.portfolio_funds - INFO - Months in period: 7
-2025-08-20 16:00:43,729 - app.api.routes.portfolio_funds - INFO - Array size used: 7
-2025-08-20 16:00:43,729 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: -184.3% over 184 days (3 cash flow periods)
-2025-08-20 16:00:43,730 - app.api.routes.portfolio_funds - ERROR - 🔴 ✅ MULTIPLE FUNDS IRR CALCULATION COMPLETE
-2025-08-20 16:00:43,730 - app.api.routes.portfolio_funds - ERROR - 🔴 🎯 FINAL RESULT: -184.3%
-2025-08-20 16:00:43,730 - app.api.routes.portfolio_funds - INFO - ✅ Successfully calculated aggregate IRR for 5 portfolio funds: -184.3%
-2025-08-20 16:00:43,730 - app.api.routes.historical_irr - INFO - ✅ Calculated aggregated portfolio IRR for 2023-01-01: -184.3% 
-2025-08-20 16:00:43,732 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 5 portfolio funds  (BYPASSING CACHE)
-2025-08-20 16:00:43,733 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh calculation as requested
-2025-08-20 16:00:43,733 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2023-02-01
-2025-08-20 16:00:43,733 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 5 funds (eliminates 5 individual requests)
-2025-08-20 16:00:43,735 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Valuation lookup for historical date 2023-02-01:   
-2025-08-20 16:00:43,735 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Requested fund IDs: [1108, 1109, 1107, 1110, 1111] 
-2025-08-20 16:00:43,736 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Found valuations: {1107: 80.0, 1108: 120.0, 1109: 130.0, 1110: 15.0, 1111: 120.0}
-2025-08-20 16:00:43,736 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1107 has valuation £80.0 as of 2023-02-01     
-2025-08-20 16:00:43,736 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1108 has valuation £120.0 as of 2023-02-01    
-2025-08-20 16:00:43,736 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1109 has valuation £130.0 as of 2023-02-01    
-2025-08-20 16:00:43,737 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1110 has valuation £15.0 as of 2023-02-01     
-2025-08-20 16:00:43,737 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1111 has valuation £120.0 as of 2023-02-01    
-2025-08-20 16:00:43,737 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {1107: 80.0, 1108: 120.0, 1109: 130.0, 1110: 15.0, 1111: 120.0}
-2025-08-20 16:00:43,737 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: 5 out of 5 funds have valuations as of 2023-02-01  
-2025-08-20 16:00:43,740 - app.api.routes.portfolio_funds - INFO - 📊 Processing 6 activities across 5 funds
-2025-08-20 16:00:43,740 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Separated cash flows by date:
-2025-08-20 16:00:43,741 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2022-08-01: £-100.0
-2025-08-20 16:00:43,741 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-01-01: £-500.0
-2025-08-20 16:00:43,741 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-02-01: £-20.0
-2025-08-20 16:00:43,742 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-03-01: £465.0
-2025-08-20 16:00:43,742 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: About to call calculate_excel_style_irr with:       
-2025-08-20 16:00:43,743 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Dates: ['2022-08-01T00:00:00', '2023-01-01T00:00:00', '2023-02-01T00:00:00', '2023-03-01T00:00:00']
-2025-08-20 16:00:43,744 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Amounts: [-100.0, -500.0, -20.0, 465.0]
-2025-08-20 16:00:43,745 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: First amount: -100.0, Last amount: 465.0
-2025-08-20 16:00:43,747 - app.api.routes.portfolio_funds - INFO -
-Monthly cash flows:
-2025-08-20 16:00:43,749 - app.api.routes.portfolio_funds - INFO - Month 0: -100.0
-2025-08-20 16:00:43,750 - app.api.routes.portfolio_funds - INFO - Month 1: 0.0
-2025-08-20 16:00:43,751 - app.api.routes.portfolio_funds - INFO - Month 2: 0.0
-2025-08-20 16:00:43,751 - app.api.routes.portfolio_funds - INFO - Month 3: 0.0
-2025-08-20 16:00:43,751 - app.api.routes.portfolio_funds - INFO - Month 4: 0.0
-2025-08-20 16:00:43,753 - app.api.routes.portfolio_funds - INFO - Month 5: -500.0
-2025-08-20 16:00:43,753 - app.api.routes.portfolio_funds - INFO - Month 6: -20.0
-2025-08-20 16:00:43,754 - app.api.routes.portfolio_funds - INFO - Month 7: 465.0
-2025-08-20 16:00:43,754 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-08-20 16:00:43,756 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: -0.1045397034354959       
-2025-08-20 16:00:43,756 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): -1.2544764412259508        
-2025-08-20 16:00:43,756 - app.api.routes.portfolio_funds - INFO - Days in period: 212
-2025-08-20 16:00:43,757 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-08-20 16:00:43,757 - app.api.routes.portfolio_funds - INFO - Monthly IRR: -10.4540%
-2025-08-20 16:00:43,757 - app.api.routes.portfolio_funds - INFO - Annualized IRR: -125.4476%
-2025-08-20 16:00:43,758 - app.api.routes.portfolio_funds - INFO - Months in period: 8
-2025-08-20 16:00:43,758 - app.api.routes.portfolio_funds - INFO - Array size used: 8
-2025-08-20 16:00:43,759 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: -125.4% over 212 days (4 cash flow periods)
-2025-08-20 16:00:43,759 - app.api.routes.portfolio_funds - ERROR - 🔴 ✅ MULTIPLE FUNDS IRR CALCULATION COMPLETE
-2025-08-20 16:00:43,759 - app.api.routes.portfolio_funds - ERROR - 🔴 🎯 FINAL RESULT: -125.4%
-2025-08-20 16:00:43,760 - app.api.routes.portfolio_funds - INFO - ✅ Successfully calculated aggregate IRR for 5 portfolio funds: -125.4%
-2025-08-20 16:00:43,760 - app.api.routes.historical_irr - INFO - ✅ Calculated aggregated portfolio IRR for 2023-02-01: -125.4%
-2025-08-20 16:00:43,761 - app.api.routes.historical_irr - INFO - Successfully fetched IRR history summary: 6 product rows, 3 date totals
-2025-08-20 16:00:50,975 - app.api.routes.client_groups - INFO - Fetching client groups with skip=0, limit=100, status=None, search=None
-2025-08-20 16:00:50,979 - app.api.routes.client_groups - INFO - Query executed successfully, found 39 client groups
-2025-08-20 16:00:51,114 - app.api.routes.client_products - INFO - Retrieved 91 client products using optimized products_list_view
-2025-08-20 16:00:54,844 - app.api.routes.client_products - INFO - Retrieved 2 client products using optimized products_list_view
-2025-08-20 16:00:54,892 - app.api.routes.historical_irr - INFO - Fetching combined historical IRR for product 236
-2025-08-20 16:00:54,896 - app.api.routes.historical_irr - INFO - Fetching portfolio historical IRR for product 236 (limit: 1000)
-2025-08-20 16:00:54,912 - app.api.routes.historical_irr - INFO - Found 4 portfolio IRR records for product 236
-2025-08-20 16:00:54,925 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 236 (limit: 1000)    
-2025-08-20 16:00:54,975 - app.api.routes.historical_irr - INFO - Found 8 fund IRR records for product 236
-2025-08-20 16:00:55,017 - app.api.routes.historical_irr - INFO - Fetching combined historical IRR for product 237
-2025-08-20 16:00:55,023 - app.api.routes.historical_irr - INFO - Fetching portfolio historical IRR for product 237 (limit: 1000)
-2025-08-20 16:00:55,048 - app.api.routes.historical_irr - INFO - Found 3 portfolio IRR records for product 237
-2025-08-20 16:00:55,056 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 237 (limit: 1000)    
-2025-08-20 16:00:55,075 - app.api.routes.historical_irr - INFO - Found 6 fund IRR records for product 237
-2025-08-20 16:01:19,436 - app.models.holding_activity_log - INFO - 🔍 DATE VALIDATOR (BASE): Input value=2023-04-01 00:00:00+00:00, Type=<class 'datetime.datetime'>, Repr=datetime.datetime(2023, 4, 1, 0, 0, tzinfo=datetime.timezone.utc)
-2025-08-20 16:01:19,436 - app.models.holding_activity_log - INFO - 🔍 DATE VALIDATOR (BASE): Converted datetime 2023-04-01 00:00:00+00:00 to date 2023-04-01
-2025-08-20 16:01:19,436 - app.models.holding_activity_log - INFO - 🔍 DATE VALIDATOR (BASE): Input value=2023-01-01 00:00:00+00:00, Type=<class 'datetime.datetime'>, Repr=datetime.datetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)
-2025-08-20 16:01:19,438 - app.models.holding_activity_log - INFO - 🔍 DATE VALIDATOR (BASE): Converted datetime 2023-01-01 00:00:00+00:00 to date 2023-01-01
-2025-08-20 16:01:19,438 - app.models.holding_activity_log - INFO - 🔍 DATE VALIDATOR (BASE): Input value=2023-01-01 00:00:00+00:00, Type=<class 'datetime.datetime'>, Repr=datetime.datetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)
-2025-08-20 16:01:19,440 - app.models.holding_activity_log - INFO - 🔍 DATE VALIDATOR (BASE): Converted datetime 2023-01-01 00:00:00+00:00 to date 2023-01-01
-2025-08-20 16:01:19,440 - app.models.holding_activity_log - INFO - 🔍 DATE VALIDATOR (BASE): Input value=2023-01-01 00:00:00+00:00, Type=<class 'datetime.datetime'>, Repr=datetime.datetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)
-2025-08-20 16:01:19,442 - app.models.holding_activity_log - INFO - 🔍 DATE VALIDATOR (BASE): Converted datetime 2023-01-01 00:00:00+00:00 to date 2023-01-01
-2025-08-20 16:01:19,460 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching ALL historical valuations for 3 funds
-2025-08-20 16:01:19,464 - app.api.routes.portfolio_funds - INFO - ✅ Batch historical valuation fetch complete: 12 total valuations for 3 funds
-2025-08-20 16:01:19,603 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:01:19,603 - app.api.routes.portfolio_funds - INFO - No IRR date provided, finding latest valuation date
-2025-08-20 16:01:19,607 - app.api.routes.portfolio_funds - INFO - Using latest valuation date: 2023-04-01
-2025-08-20 16:01:19,607 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2023-04-01
-2025-08-20 16:01:19,609 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 1 funds (eliminates 1 individual requests)
-2025-08-20 16:01:19,612 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Valuation lookup for historical date 2023-04-01:   
-2025-08-20 16:01:19,613 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Requested fund IDs: [1107]
-2025-08-20 16:01:19,613 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Found valuations: {1107: 0.0}
-2025-08-20 16:01:19,613 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1107 has valuation £0.0 as of 2023-04-01      
-2025-08-20 16:01:19,614 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {1107: 0.0}
-2025-08-20 16:01:19,614 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: 1 out of 1 funds have valuations as of 2023-04-01  
-2025-08-20 16:01:19,617 - app.api.routes.portfolio_funds - INFO - 📊 Processing 2 activities across 1 funds
-2025-08-20 16:01:19,617 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Separated cash flows by date:
-2025-08-20 16:01:19,618 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-01-01: £-100.0
-2025-08-20 16:01:19,618 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-04-01: £40.0
-2025-08-20 16:01:19,619 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: About to call calculate_excel_style_irr with:       
-2025-08-20 16:01:19,619 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Dates: ['2023-01-01T00:00:00', '2023-04-01T00:00:00']
-2025-08-20 16:01:19,619 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Amounts: [-100.0, 40.0]
-2025-08-20 16:01:19,620 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: First amount: -100.0, Last amount: 40.0
-2025-08-20 16:01:19,621 - app.api.routes.portfolio_funds - INFO -
-Monthly cash flows:
-2025-08-20 16:01:19,621 - app.api.routes.portfolio_funds - INFO - Month 0: -100.0
-2025-08-20 16:01:19,621 - app.api.routes.portfolio_funds - INFO - Month 1: 0.0
-2025-08-20 16:01:19,621 - app.api.routes.portfolio_funds - INFO - Month 2: 0.0
-2025-08-20 16:01:19,622 - app.api.routes.portfolio_funds - INFO - Month 3: 40.0
-2025-08-20 16:01:19,622 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-08-20 16:01:19,622 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: -0.26319370027192257      
-2025-08-20 16:01:19,623 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): -3.158324403263071
-2025-08-20 16:01:19,623 - app.api.routes.portfolio_funds - INFO - Days in period: 90
-2025-08-20 16:01:19,624 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-08-20 16:01:19,624 - app.api.routes.portfolio_funds - INFO - Monthly IRR: -26.3194%
-2025-08-20 16:01:19,624 - app.api.routes.portfolio_funds - INFO - Annualized IRR: -315.8324%
-2025-08-20 16:01:19,625 - app.api.routes.portfolio_funds - INFO - Months in period: 4
-2025-08-20 16:01:19,625 - app.api.routes.portfolio_funds - INFO - Array size used: 4
-2025-08-20 16:01:19,625 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: -315.8% over 90 days (2 cash flow periods)
-2025-08-20 16:01:19,625 - app.api.routes.portfolio_funds - ERROR - 🔴 ✅ MULTIPLE FUNDS IRR CALCULATION COMPLETE
-2025-08-20 16:01:19,625 - app.api.routes.portfolio_funds - ERROR - 🔴 🎯 FINAL RESULT: -315.8%
-2025-08-20 16:01:19,626 - app.api.routes.portfolio_funds - INFO - ✅ Successfully calculated aggregate IRR for 1 portfolio funds: -315.8%
-2025-08-20 16:01:19,710 - app.models.holding_activity_log - INFO - 🔍 DATE VALIDATOR (BASE): Input value=2023-02-01 00:00:00+00:00, Type=<class 'datetime.datetime'>, Repr=datetime.datetime(2023, 2, 1, 0, 0, tzinfo=datetime.timezone.utc)
-2025-08-20 16:01:19,712 - app.models.holding_activity_log - INFO - 🔍 DATE VALIDATOR (BASE): Converted datetime 2023-02-01 00:00:00+00:00 to date 2023-02-01
-2025-08-20 16:01:19,716 - app.models.holding_activity_log - INFO - 🔍 DATE VALIDATOR (BASE): Input value=2023-01-01 00:00:00+00:00, Type=<class 'datetime.datetime'>, Repr=datetime.datetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)
-2025-08-20 16:01:19,717 - app.models.holding_activity_log - INFO - 🔍 DATE VALIDATOR (BASE): Converted datetime 2023-01-01 00:00:00+00:00 to date 2023-01-01
-2025-08-20 16:01:19,719 - app.models.holding_activity_log - INFO - 🔍 DATE VALIDATOR (BASE): Input value=2022-08-01 00:00:00+00:00, Type=<class 'datetime.datetime'>, Repr=datetime.datetime(2022, 8, 1, 0, 0, tzinfo=datetime.timezone.utc)
-2025-08-20 16:01:19,720 - app.models.holding_activity_log - INFO - 🔍 DATE VALIDATOR (BASE): Converted datetime 2022-08-01 00:00:00+00:00 to date 2022-08-01
-2025-08-20 16:01:19,740 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching ALL historical valuations for 2 funds
-2025-08-20 16:01:19,743 - app.api.routes.portfolio_funds - INFO - ✅ Batch historical valuation fetch complete: 6 total valuations for 2 funds
-2025-08-20 16:01:19,950 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 5 portfolio funds
-2025-08-20 16:01:19,950 - app.api.routes.portfolio_funds - INFO - No IRR date provided, finding latest valuation date
-2025-08-20 16:01:19,953 - app.api.routes.portfolio_funds - INFO - Using latest valuation date: 2023-04-01
-2025-08-20 16:01:19,953 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2023-04-01
-2025-08-20 16:01:19,953 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 5 funds (eliminates 5 individual requests)
-2025-08-20 16:01:19,957 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Valuation lookup for historical date 2023-04-01:   
-2025-08-20 16:01:19,957 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Requested fund IDs: [1107, 1108, 1109, 1110, 1111] 
-2025-08-20 16:01:19,957 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Found valuations: {1107: 0.0, 1108: 150.0, 1109: 160.0, 1110: 15.0, 1111: 120.0}
-2025-08-20 16:01:19,959 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1107 has valuation £0.0 as of 2023-04-01      
-2025-08-20 16:01:19,959 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1108 has valuation £150.0 as of 2023-04-01    
-2025-08-20 16:01:19,959 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1109 has valuation £160.0 as of 2023-04-01    
-2025-08-20 16:01:19,960 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1110 has valuation £15.0 as of 2023-04-01     
-2025-08-20 16:01:19,960 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1111 has valuation £120.0 as of 2023-04-01    
-2025-08-20 16:01:19,961 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {1107: 0.0, 1108: 150.0, 1109: 160.0, 1110: 15.0, 1111: 120.0}
-2025-08-20 16:01:19,961 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: 5 out of 5 funds have valuations as of 2023-04-01  
-2025-08-20 16:01:19,964 - app.api.routes.portfolio_funds - INFO - 📊 Processing 7 activities across 5 funds
-2025-08-20 16:01:19,965 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Separated cash flows by date:
-2025-08-20 16:01:19,965 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2022-08-01: £-100.0
-2025-08-20 16:01:19,966 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-01-01: £-500.0
-2025-08-20 16:01:19,966 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-02-01: £-20.0
-2025-08-20 16:01:19,967 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-04-01: £40.0
-2025-08-20 16:01:19,967 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-05-01: £445.0
-2025-08-20 16:01:19,968 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: About to call calculate_excel_style_irr with:       
-2025-08-20 16:01:19,968 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Dates: ['2022-08-01T00:00:00', '2023-01-01T00:00:00', '2023-02-01T00:00:00', '2023-04-01T00:00:00', '2023-05-01T00:00:00']
-2025-08-20 16:01:19,968 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Amounts: [-100.0, -500.0, -20.0, 40.0, 445.0]       
-2025-08-20 16:01:19,969 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: First amount: -100.0, Last amount: 445.0
-2025-08-20 16:01:19,969 - app.api.routes.portfolio_funds - INFO -
-Monthly cash flows:
-2025-08-20 16:01:19,970 - app.api.routes.portfolio_funds - INFO - Month 0: -100.0
-2025-08-20 16:01:19,970 - app.api.routes.portfolio_funds - INFO - Month 1: 0.0
-2025-08-20 16:01:19,970 - app.api.routes.portfolio_funds - INFO - Month 2: 0.0
-2025-08-20 16:01:19,970 - app.api.routes.portfolio_funds - INFO - Month 3: 0.0
-2025-08-20 16:01:19,970 - app.api.routes.portfolio_funds - INFO - Month 4: 0.0
-2025-08-20 16:01:19,970 - app.api.routes.portfolio_funds - INFO - Month 5: -500.0
-2025-08-20 16:01:19,971 - app.api.routes.portfolio_funds - INFO - Month 6: -20.0
-2025-08-20 16:01:19,971 - app.api.routes.portfolio_funds - INFO - Month 7: 0.0
-2025-08-20 16:01:19,971 - app.api.routes.portfolio_funds - INFO - Month 8: 40.0
-2025-08-20 16:01:19,972 - app.api.routes.portfolio_funds - INFO - Month 9: 445.0
-2025-08-20 16:01:19,972 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-08-20 16:01:19,973 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: -0.051910931321284326
-2025-08-20 16:01:19,973 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): -0.6229311758554119        
-2025-08-20 16:01:19,974 - app.api.routes.portfolio_funds - INFO - Days in period: 273
-2025-08-20 16:01:19,974 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-08-20 16:01:19,975 - app.api.routes.portfolio_funds - INFO - Monthly IRR: -5.1911%
-2025-08-20 16:01:19,977 - app.api.routes.portfolio_funds - INFO - Annualized IRR: -62.2931%
-2025-08-20 16:01:19,978 - app.api.routes.portfolio_funds - INFO - Months in period: 10
-2025-08-20 16:01:19,979 - app.api.routes.portfolio_funds - INFO - Array size used: 10
-2025-08-20 16:01:19,981 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: -62.3% over 273 days (5 cash flow periods)
-2025-08-20 16:01:19,981 - app.api.routes.portfolio_funds - ERROR - 🔴 ✅ MULTIPLE FUNDS IRR CALCULATION COMPLETE
-2025-08-20 16:01:19,982 - app.api.routes.portfolio_funds - ERROR - 🔴 🎯 FINAL RESULT: -62.3%
-2025-08-20 16:01:19,982 - app.api.routes.portfolio_funds - INFO - ✅ Successfully calculated aggregate IRR for 5 portfolio funds: -62.3%
-2025-08-20 16:01:20,067 - app.api.routes.historical_irr - INFO - Fetching portfolio historical IRR for product 236 (limit: 24)
-2025-08-20 16:01:20,071 - app.api.routes.historical_irr - INFO - Fetching portfolio historical IRR for product 237 (limit: 24)
-2025-08-20 16:01:20,077 - app.api.routes.historical_irr - INFO - Found 4 portfolio IRR records for product 236
-2025-08-20 16:01:20,081 - app.api.routes.historical_irr - INFO - Found 3 portfolio IRR records for product 237
-2025-08-20 16:01:20,128 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:01:20,129 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -126.7%
-2025-08-20 16:01:20,136 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:01:20,137 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -126.7%
-2025-08-20 16:01:20,276 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:01:20,285 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -126.7%
-2025-08-20 16:01:20,294 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:01:20,294 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -120.0%
-2025-08-20 16:01:20,310 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:01:20,310 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -126.7%
-2025-08-20 16:01:20,335 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:01:20,342 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -120.0%
-2025-08-20 16:01:20,372 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:01:20,385 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -126.7%
-2025-08-20 16:01:20,410 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:01:20,413 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -126.7%
-2025-08-20 16:01:20,417 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:01:20,423 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -120.0%
-2025-08-20 16:01:20,425 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:01:20,435 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -126.7%
-2025-08-20 16:01:20,448 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:01:20,449 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -120.0%
-2025-08-20 16:01:20,458 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 4 portfolio funds
-2025-08-20 16:01:20,460 - app.api.routes.portfolio_funds - INFO - No IRR date provided, finding latest valuation date
-2025-08-20 16:01:20,464 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:01:20,472 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -126.7%
-2025-08-20 16:01:20,477 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:01:20,490 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -120.0%
-2025-08-20 16:01:20,519 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:01:20,529 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -126.7%
-2025-08-20 16:01:20,558 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:01:20,558 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -120.0%
-2025-08-20 16:01:20,562 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:01:20,562 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -120.0%
-2025-08-20 16:01:20,567 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:01:20,569 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2022-08-01
-2025-08-20 16:01:20,569 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 1 funds (eliminates 1 individual requests)
-2025-08-20 16:01:20,572 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:01:20,572 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -120.0%
-2025-08-20 16:01:20,591 - app.api.routes.portfolio_funds - INFO - Using latest valuation date: 2023-04-01
-2025-08-20 16:01:20,592 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2023-04-01
-2025-08-20 16:01:20,592 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 4 funds (eliminates 4 individual requests)
-2025-08-20 16:01:20,594 - app.api.routes.portfolio_funds - WARNING - No valuation found for fund 1107 as of 2022-08-01
-2025-08-20 16:01:20,596 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Valuation lookup for historical date 2022-08-01:   
-2025-08-20 16:01:20,598 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Requested fund IDs: [1107]
-2025-08-20 16:01:20,598 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Found valuations: {1107: None}
-2025-08-20 16:01:20,599 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1107 has NO valuation as of 2022-08-01        
-2025-08-20 16:01:20,599 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {1107: None}
-2025-08-20 16:01:20,601 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: 0 out of 1 funds have valuations as of 2022-08-01  
-2025-08-20 16:01:20,601 - app.api.routes.portfolio_funds - WARNING - 💰 DEBUG: ⚠️ No valuations found for any funds as of 2022-008-01, cannot calculate historical IRR
-2025-08-20 16:01:20,609 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Valuation lookup for historical date 2023-04-01:
-2025-08-20 16:01:20,612 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Requested fund IDs: [1108, 1109, 1111, 1110]       
-2025-08-20 16:01:20,613 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Found valuations: {1108: 150.0, 1109: 160.0, 1110: 15.0, 1111: 120.0}
-2025-08-20 16:01:20,614 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1108 has valuation £150.0 as of 2023-04-01    
-2025-08-20 16:01:20,615 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1109 has valuation £160.0 as of 2023-04-01    
-2025-08-20 16:01:20,615 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1110 has valuation £15.0 as of 2023-04-01     
-2025-08-20 16:01:20,615 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1111 has valuation £120.0 as of 2023-04-01    
-2025-08-20 16:01:20,615 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {1108: 150.0, 1109: 160.0, 1110: 15.0, 1111: 120.0}
-2025-08-20 16:01:20,616 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: 4 out of 4 funds have valuations as of 2023-04-01  
-2025-08-20 16:01:20,626 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:01:20,626 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: -120.0%
-2025-08-20 16:01:20,642 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:01:20,642 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2022-08-01
-2025-08-20 16:01:20,643 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 1 funds (eliminates 1 individual requests)
-2025-08-20 16:01:20,644 - app.api.routes.portfolio_funds - INFO - 📊 Processing 5 activities across 4 funds
-2025-08-20 16:01:20,645 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Separated cash flows by date:
-2025-08-20 16:01:20,646 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2022-08-01: £-100.0
-2025-08-20 16:01:20,646 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-01-01: £-400.0
-2025-08-20 16:01:20,647 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-02-01: £-20.0
-2025-08-20 16:01:20,647 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: 2023-05-01: £445.0
-2025-08-20 16:01:20,648 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: About to call calculate_excel_style_irr with:       
-2025-08-20 16:01:20,648 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Dates: ['2022-08-01T00:00:00', '2023-01-01T00:00:00', '2023-02-01T00:00:00', '2023-05-01T00:00:00']
-2025-08-20 16:01:20,649 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Amounts: [-100.0, -400.0, -20.0, 445.0]
-2025-08-20 16:01:20,651 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: First amount: -100.0, Last amount: 445.0
-2025-08-20 16:01:20,652 - app.api.routes.portfolio_funds - INFO -
-Monthly cash flows:
-2025-08-20 16:01:20,652 - app.api.routes.portfolio_funds - INFO - Month 0: -100.0
-2025-08-20 16:01:20,653 - app.api.routes.portfolio_funds - INFO - Month 1: 0.0
-2025-08-20 16:01:20,655 - app.api.routes.portfolio_funds - INFO - Month 2: 0.0
-2025-08-20 16:01:20,656 - app.api.routes.portfolio_funds - INFO - Month 3: 0.0
-2025-08-20 16:01:20,656 - app.api.routes.portfolio_funds - INFO - Month 4: 0.0
-2025-08-20 16:01:20,657 - app.api.routes.portfolio_funds - INFO - Month 5: -400.0
-2025-08-20 16:01:20,658 - app.api.routes.portfolio_funds - INFO - Month 6: -20.0
-2025-08-20 16:01:20,658 - app.api.routes.portfolio_funds - INFO - Month 7: 0.0
-2025-08-20 16:01:20,659 - app.api.routes.portfolio_funds - INFO - Month 8: 0.0
-2025-08-20 16:01:20,660 - app.api.routes.portfolio_funds - INFO - Month 9: 445.0
-2025-08-20 16:01:20,660 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-08-20 16:01:20,663 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: -0.03153275498962815      
-2025-08-20 16:01:20,664 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): -0.37839305987553784       
-2025-08-20 16:01:20,664 - app.api.routes.portfolio_funds - INFO - Days in period: 273
-2025-08-20 16:01:20,665 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-08-20 16:01:20,665 - app.api.routes.portfolio_funds - INFO - Monthly IRR: -3.1533%
-2025-08-20 16:01:20,665 - app.api.routes.portfolio_funds - INFO - Annualized IRR: -37.8393%
-2025-08-20 16:01:20,666 - app.api.routes.portfolio_funds - INFO - Months in period: 10
-2025-08-20 16:01:20,668 - app.api.routes.portfolio_funds - INFO - Array size used: 10
-2025-08-20 16:01:20,669 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: -37.8% over 273 days (4 cash flow periods)
-2025-08-20 16:01:20,670 - app.api.routes.portfolio_funds - ERROR - 🔴 ✅ MULTIPLE FUNDS IRR CALCULATION COMPLETE
-2025-08-20 16:01:20,670 - app.api.routes.portfolio_funds - ERROR - 🔴 🎯 FINAL RESULT: -37.8%
-2025-08-20 16:01:20,670 - app.api.routes.portfolio_funds - INFO - ✅ Successfully calculated aggregate IRR for 4 portfolio funds: -37.8%
-2025-08-20 16:01:20,675 - app.api.routes.portfolio_funds - WARNING - No valuation found for fund 1107 as of 2022-08-01
-2025-08-20 16:01:20,677 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Valuation lookup for historical date 2022-08-01:   
-2025-08-20 16:01:20,677 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Requested fund IDs: [1107]
-2025-08-20 16:01:20,677 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Found valuations: {1107: None}
-2025-08-20 16:01:20,679 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1107 has NO valuation as of 2022-08-01        
-2025-08-20 16:01:20,679 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {1107: None}
-2025-08-20 16:01:20,679 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: 0 out of 1 funds have valuations as of 2022-08-01  
-2025-08-20 16:01:20,679 - app.api.routes.portfolio_funds - WARNING - 💰 DEBUG: ⚠️ No valuations found for any funds as of 2022-008-01, cannot calculate historical IRR
-2025-08-20 16:01:20,895 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-08-20 16:01:20,896 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2022-08-01
-2025-08-20 16:01:20,897 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 1 funds (eliminates 1 individual requests)
-2025-08-20 16:01:20,999 - app.api.routes.portfolio_funds - WARNING - No valuation found for fund 1107 as of 2022-08-01
-2025-08-20 16:01:21,000 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Valuation lookup for historical date 2022-08-01:
-2025-08-20 16:01:21,000 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Requested fund IDs: [1107]
-2025-08-20 16:01:21,001 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Found valuations: {1107: None}
-2025-08-20 16:01:21,001 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: Fund 1107 has NO valuation as of 2022-08-01        
-2025-08-20 16:01:21,002 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {1107: None}
-2025-08-20 16:01:21,002 - app.api.routes.portfolio_funds - ERROR - 💰 DEBUG: 0 out of 1 funds have valuations as of 2022-08-01  
-2025-08-20 16:01:21,003 - app.api.routes.portfolio_funds - WARNING - 💰 DEBUG: ⚠️ No valuations found for any funds as of 2022-008-01, cannot calculate historical IRR
+2025-08-27 11:02:20,443 - app.api.routes.analytics - INFO -    Fund Categories in totals: 51
+2025-08-27 11:02:20,444 - app.api.routes.analytics - WARNING - ⚠️  Unassigned Provider: £27,311.00
+2025-08-27 11:02:23,265 - app.api.routes.client_groups - INFO - Fetching ultra-optimized client data with proper advisor_id foreign key relationships
+2025-08-27 11:02:23,276 - app.api.routes.client_groups - INFO - Retrieved 40 client groups from minimal summary view
+2025-08-27 11:02:23,277 - app.api.routes.client_groups - INFO - Transformed 40 client groups successfully
+2025-08-27 11:02:24,742 - app.api.routes.search - INFO - Performing global search with query: 'ste'
+2025-08-27 11:02:24,781 - app.api.routes.search - INFO - Found 20 results for query: 'ste'
+2025-08-27 11:02:27,631 - app.api.routes.client_groups - INFO - Fetching complete client group details for ID: 75
+2025-08-27 11:02:27,634 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
+2025-08-27 11:02:27,639 - app.api.routes.client_groups - INFO - Found client group: Downing, Stephen & Sarah
+2025-08-27 11:02:27,639 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
+2025-08-27 11:02:27,643 - app.api.routes.client_groups - INFO - Retrieved 6 available advisors from profiles table
+2025-08-27 11:02:27,653 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
+2025-08-27 11:02:27,655 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
+2025-08-27 11:02:27,657 - app.api.routes.client_groups - INFO - Retrieved 6 available advisors from profiles table
+2025-08-27 11:02:27,713 - app.api.routes.client_groups - INFO - Retrieved product owners for 4 products using ID-based matching
+2025-08-27 11:02:27,714 - app.api.routes.client_groups - INFO - Found 4 unique portfolios
+2025-08-27 11:02:27,774 - app.api.routes.client_groups - INFO - Fetched 28 funds across 4 portfolios
+2025-08-27 11:02:27,779 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 254 (portfolio 267): 3.8%
+2025-08-27 11:02:27,782 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 253 (portfolio 266): 4.3%
+2025-08-27 11:02:27,786 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 255 (portfolio 268): 4.7%
+2025-08-27 11:02:27,788 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 257 (portfolio 270): 2.6%
+2025-08-27 11:02:27,789 - app.api.routes.client_groups - INFO - Processed 4 products with complete fund data
+2025-08-27 11:02:27,790 - app.api.routes.client_groups - INFO - Found 2 unique product owners across all products
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 426, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 84, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\applications.py", line 1106, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\applications.py", line 122, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 184, in __call__
+    raise exc
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 162, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 79, in __call__
+    raise exc
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 68, in __call__
+    await self.app(scope, receive, sender)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 20, in __call__
+    raise e
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 17, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 718, in __call__
+    await route.handle(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 276, in handle 
+    await self.app(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 66, in app     
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\routing.py", line 303, in app      
+    response = actual_response_class(content, **response_args)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\responses.py", line 196, in __init__
+    super().__init__(content, status_code, headers, media_type, background)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\responses.py", line 55, in __init__
+    self.body = self.render(content)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\responses.py", line 199, in render
+    return json.dumps(
+           ^^^^^^^^^^^
+  File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 200, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 258, in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+ValueError: Out of range float values are not JSON compliant
+2025-08-27 11:02:28,825 - app.api.routes.client_groups - INFO - Fetching complete client group details for ID: 75
+2025-08-27 11:02:28,828 - app.api.routes.client_groups - INFO - Found client group: Downing, Stephen & Sarah 
+2025-08-27 11:02:28,847 - app.api.routes.client_groups - INFO - Retrieved product owners for 4 products using ID-based matching
+2025-08-27 11:02:28,848 - app.api.routes.client_groups - INFO - Found 4 unique portfolios
+2025-08-27 11:02:28,896 - app.api.routes.client_groups - INFO - Fetched 28 funds across 4 portfolios
+2025-08-27 11:02:28,899 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 254 (portfolio 267): 3.8%
+2025-08-27 11:02:28,903 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 253 (portfolio 266): 4.3%
+2025-08-27 11:02:28,906 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 255 (portfolio 268): 4.7%
+2025-08-27 11:02:28,909 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 257 (portfolio 270): 2.6%
+2025-08-27 11:02:28,909 - app.api.routes.client_groups - INFO - Processed 4 products with complete fund data
+2025-08-27 11:02:28,910 - app.api.routes.client_groups - INFO - Found 2 unique product owners across all products
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 426, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 84, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\applications.py", line 1106, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\applications.py", line 122, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 184, in __call__
+    raise exc
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 162, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 79, in __call__
+    raise exc
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 68, in __call__
+    await self.app(scope, receive, sender)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 20, in __call__
+    raise e
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 17, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 718, in __call__
+    await route.handle(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 276, in handle 
+    await self.app(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 66, in app     
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\routing.py", line 303, in app      
+    response = actual_response_class(content, **response_args)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\responses.py", line 196, in __init__
+    super().__init__(content, status_code, headers, media_type, background)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\responses.py", line 55, in __init__
+    self.body = self.render(content)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\responses.py", line 199, in render
+    return json.dumps(
+           ^^^^^^^^^^^
+  File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 200, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 258, in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+ValueError: Out of range float values are not JSON compliant
+2025-08-27 11:02:30,950 - app.api.routes.client_groups - INFO - Fetching complete client group details for ID: 75
+2025-08-27 11:02:30,955 - app.api.routes.client_groups - INFO - Found client group: Downing, Stephen & Sarah 
+2025-08-27 11:02:30,967 - app.api.routes.client_groups - INFO - Retrieved product owners for 4 products using ID-based matching
+2025-08-27 11:02:30,968 - app.api.routes.client_groups - INFO - Found 4 unique portfolios
+2025-08-27 11:02:31,013 - app.api.routes.client_groups - INFO - Fetched 28 funds across 4 portfolios
+2025-08-27 11:02:31,017 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 254 (portfolio 267): 3.8%
+2025-08-27 11:02:31,020 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 253 (portfolio 266): 4.3%
+2025-08-27 11:02:31,023 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 255 (portfolio 268): 4.7%
+2025-08-27 11:02:31,025 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 257 (portfolio 270): 2.6%
+2025-08-27 11:02:31,026 - app.api.routes.client_groups - INFO - Processed 4 products with complete fund data
+2025-08-27 11:02:31,027 - app.api.routes.client_groups - INFO - Found 2 unique product owners across all products
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 426, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 84, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\applications.py", line 1106, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\applications.py", line 122, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 184, in __call__
+    raise exc
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 162, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 79, in __call__
+    raise exc
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 68, in __call__
+    await self.app(scope, receive, sender)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 20, in __call__
+    raise e
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 17, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 718, in __call__
+    await route.handle(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 276, in handle 
+    await self.app(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 66, in app     
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\routing.py", line 303, in app      
+    response = actual_response_class(content, **response_args)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\responses.py", line 196, in __init__
+    super().__init__(content, status_code, headers, media_type, background)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\responses.py", line 55, in __init__
+    self.body = self.render(content)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\responses.py", line 199, in render
+    return json.dumps(
+           ^^^^^^^^^^^
+  File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 200, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 258, in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+ValueError: Out of range float values are not JSON compliant
+2025-08-27 11:02:35,066 - app.api.routes.client_groups - INFO - Fetching complete client group details for ID: 75
+2025-08-27 11:02:35,069 - app.api.routes.client_groups - INFO - Found client group: Downing, Stephen & Sarah 
+2025-08-27 11:02:35,078 - app.api.routes.client_groups - INFO - Retrieved product owners for 4 products using ID-based matching
+2025-08-27 11:02:35,078 - app.api.routes.client_groups - INFO - Found 4 unique portfolios
+2025-08-27 11:02:35,119 - app.api.routes.client_groups - INFO - Fetched 28 funds across 4 portfolios
+2025-08-27 11:02:35,122 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 254 (portfolio 267): 3.8%
+2025-08-27 11:02:35,124 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 253 (portfolio 266): 4.3%
+2025-08-27 11:02:35,126 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 255 (portfolio 268): 4.7%
+2025-08-27 11:02:35,128 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 257 (portfolio 270): 2.6%
+2025-08-27 11:02:35,128 - app.api.routes.client_groups - INFO - Processed 4 products with complete fund data
+2025-08-27 11:02:35,128 - app.api.routes.client_groups - INFO - Found 2 unique product owners across all products
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 426, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 84, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\applications.py", line 1106, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\applications.py", line 122, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 184, in __call__
+    raise exc
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 162, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 79, in __call__
+    raise exc
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 68, in __call__
+    await self.app(scope, receive, sender)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 20, in __call__
+    raise e
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 17, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 718, in __call__
+    await route.handle(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 276, in handle 
+    await self.app(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 66, in app     
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\routing.py", line 303, in app      
+    response = actual_response_class(content, **response_args)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\responses.py", line 196, in __init__
+    super().__init__(content, status_code, headers, media_type, background)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\responses.py", line 55, in __init__
+    self.body = self.render(content)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\responses.py", line 199, in render
+    return json.dumps(
+           ^^^^^^^^^^^
+  File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 200, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 258, in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+ValueError: Out of range float values are not JSON compliant
+2025-08-27 11:02:41,943 - app.api.routes.available_providers - INFO - Fetching available providers with skip=0, limit=100
+2025-08-27 11:02:41,945 - app.api.routes.available_providers - INFO - Query returned 19 providers
+2025-08-27 11:02:42,164 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
+2025-08-27 11:02:42,170 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
+2025-08-27 11:02:42,190 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
+2025-08-27 11:02:42,193 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
+2025-08-27 11:02:42,354 - app.api.routes.client_groups - INFO - Fetching complete client group details for ID: 75
+2025-08-27 11:02:42,356 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
+2025-08-27 11:02:42,356 - app.api.routes.client_groups - INFO - Found client group: Downing, Stephen & Sarah
+2025-08-27 11:02:42,358 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
+2025-08-27 11:02:42,360 - app.api.routes.client_groups - INFO - Retrieved 6 available advisors from profiles table
+2025-08-27 11:02:42,372 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
+2025-08-27 11:02:42,374 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
+2025-08-27 11:02:42,376 - app.api.routes.client_groups - INFO - Retrieved product owners for 4 products using ID-based matching
+2025-08-27 11:02:42,376 - app.api.routes.client_groups - INFO - Found 4 unique portfolios
+2025-08-27 11:02:42,377 - app.api.routes.client_groups - INFO - Retrieved 6 available advisors from profiles table
+2025-08-27 11:02:42,417 - app.api.routes.client_groups - INFO - Fetched 28 funds across 4 portfolios
+2025-08-27 11:02:42,422 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 254 (portfolio 267): 3.8%
+2025-08-27 11:02:42,424 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 253 (portfolio 266): 4.3%
+2025-08-27 11:02:42,425 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 255 (portfolio 268): 4.7%
+2025-08-27 11:02:42,427 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 257 (portfolio 270): 2.6%
+2025-08-27 11:02:42,427 - app.api.routes.client_groups - INFO - Processed 4 products with complete fund data
+2025-08-27 11:02:42,428 - app.api.routes.client_groups - INFO - Found 2 unique product owners across all products
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 426, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 84, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\applications.py", line 1106, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\applications.py", line 122, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 184, in __call__
+    raise exc
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 162, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 79, in __call__
+    raise exc
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 68, in __call__
+    await self.app(scope, receive, sender)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 20, in __call__
+    raise e
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 17, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 718, in __call__
+    await route.handle(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 276, in handle 
+    await self.app(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 66, in app     
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\routing.py", line 303, in app      
+    response = actual_response_class(content, **response_args)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\responses.py", line 196, in __init__
+    super().__init__(content, status_code, headers, media_type, background)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\responses.py", line 55, in __init__
+    self.body = self.render(content)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\responses.py", line 199, in render
+    return json.dumps(
+           ^^^^^^^^^^^
+  File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 200, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 258, in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+ValueError: Out of range float values are not JSON compliant
+2025-08-27 11:02:43,466 - app.api.routes.client_groups - INFO - Fetching complete client group details for ID: 75
+2025-08-27 11:02:43,468 - app.api.routes.client_groups - INFO - Found client group: Downing, Stephen & Sarah 
+2025-08-27 11:02:43,478 - app.api.routes.client_groups - INFO - Retrieved product owners for 4 products using ID-based matching
+2025-08-27 11:02:43,479 - app.api.routes.client_groups - INFO - Found 4 unique portfolios
+2025-08-27 11:02:43,512 - app.api.routes.client_groups - INFO - Fetched 28 funds across 4 portfolios
+2025-08-27 11:02:43,515 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 254 (portfolio 267): 3.8%
+2025-08-27 11:02:43,519 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 253 (portfolio 266): 4.3%
+2025-08-27 11:02:43,522 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 255 (portfolio 268): 4.7%
+2025-08-27 11:02:43,525 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 257 (portfolio 270): 2.6%
+2025-08-27 11:02:43,525 - app.api.routes.client_groups - INFO - Processed 4 products with complete fund data
+2025-08-27 11:02:43,526 - app.api.routes.client_groups - INFO - Found 2 unique product owners across all products
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 426, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 84, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\applications.py", line 1106, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\applications.py", line 122, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 184, in __call__
+    raise exc
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 162, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 79, in __call__
+    raise exc
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 68, in __call__
+    await self.app(scope, receive, sender)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 20, in __call__
+    raise e
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 17, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 718, in __call__
+    await route.handle(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 276, in handle 
+    await self.app(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 66, in app     
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\routing.py", line 303, in app      
+    response = actual_response_class(content, **response_args)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\responses.py", line 196, in __init__
+    super().__init__(content, status_code, headers, media_type, background)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\responses.py", line 55, in __init__
+    self.body = self.render(content)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\responses.py", line 199, in render
+    return json.dumps(
+           ^^^^^^^^^^^
+  File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 200, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 258, in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+ValueError: Out of range float values are not JSON compliant
+2025-08-27 11:02:45,556 - app.api.routes.client_groups - INFO - Fetching complete client group details for ID: 75
+2025-08-27 11:02:45,560 - app.api.routes.client_groups - INFO - Found client group: Downing, Stephen & Sarah 
+2025-08-27 11:02:45,565 - app.api.routes.client_groups - INFO - Retrieved product owners for 4 products using ID-based matching
+2025-08-27 11:02:45,566 - app.api.routes.client_groups - INFO - Found 4 unique portfolios
+2025-08-27 11:02:45,608 - app.api.routes.client_groups - INFO - Fetched 28 funds across 4 portfolios
+2025-08-27 11:02:45,611 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 254 (portfolio 267): 3.8%
+2025-08-27 11:02:45,614 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 253 (portfolio 266): 4.3%
+2025-08-27 11:02:45,616 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 255 (portfolio 268): 4.7%
+2025-08-27 11:02:45,618 - app.api.routes.client_groups - INFO - Retrieved latest portfolio IRR for product 257 (portfolio 270): 2.6%
+2025-08-27 11:02:45,619 - app.api.routes.client_groups - INFO - Processed 4 products with complete fund data
+2025-08-27 11:02:45,620 - app.api.routes.client_groups - INFO - Found 2 unique product owners across all products
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 426, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 84, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\applications.py", line 1106, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\applications.py", line 122, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 184, in __call__
+    raise exc
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 162, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 79, in __call__
+    raise exc
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 68, in __call__
+    await self.app(scope, receive, sender)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 20, in __call__
+    raise e
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 17, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 718, in __call__
+    await route.handle(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 276, in handle 
+    await self.app(scope, receive, send)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 66, in app     
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\routing.py", line 303, in app      
+    response = actual_response_class(content, **response_args)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\responses.py", line 196, in __init__
+    super().__init__(content, status_code, headers, media_type, background)
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\responses.py", line 55, in __init__
+    self.body = self.render(content)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\responses.py", line 199, in render
+    return json.dumps(
+           ^^^^^^^^^^^
+  File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 200, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py", line 258, in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+ValueError: Out of range float values are not JSON compliant

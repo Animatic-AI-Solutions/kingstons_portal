@@ -408,6 +408,12 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
             logger.error(error_msg)
             raise ValueError(error_msg)
         
+        # CRITICAL: Check for NaN and infinity values that cannot be JSON serialized
+        if np.isnan(monthly_irr) or np.isinf(monthly_irr):
+            error_msg = f"IRR calculation produced invalid value: {monthly_irr}. This indicates problematic cash flow data."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        
         # Check for extreme IRR values that might indicate an error
         if abs(monthly_irr) > 1:  # More than 100% monthly return
             logger.warning(f"Extreme IRR value detected: {monthly_irr}. This may indicate incorrect cash flow data.")
@@ -415,6 +421,12 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
         # Annualize the monthly IRR by multiplying by 12
         annualized_irr = monthly_irr * 12
         logger.info(f"Annualized IRR (monthly_irr * 12): {annualized_irr}")
+        
+        # CRITICAL: Final validation of annualized IRR to prevent database corruption
+        if np.isnan(annualized_irr) or np.isinf(annualized_irr):
+            error_msg = f"Annualized IRR calculation produced invalid value: {annualized_irr}. Cannot save to database."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
             
         days_in_period = (end_date - start_date).days
         logger.info(f"Days in period: {days_in_period}")

@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional
 import logging
 from datetime import datetime
+import math
+import json
 
 from app.models.client_group import (
     ClientGroup, 
@@ -18,6 +20,25 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+def safe_float(value, default=None):
+    """
+    Safely convert a value to float, handling None, NaN, and infinity cases.
+    Returns None for invalid values that cannot be JSON serialized.
+    """
+    if value is None:
+        return default
+    
+    try:
+        float_val = float(value)
+        # Check for JSON-incompatible float values
+        if math.isnan(float_val) or math.isinf(float_val):
+            logger.warning(f"Found invalid float value {float_val}, converting to {default}")
+            return default
+        return float_val
+    except (ValueError, TypeError):
+        logger.warning(f"Could not convert {value} to float, returning {default}")
+        return default
 
 @router.get("/client_groups/bulk_client_data")
 async def get_bulk_client_data(
@@ -136,7 +157,7 @@ async def get_bulk_client_data(
                     "portfolio_name": row["portfolio_name"],
                     "active_fund_count": row.get("active_fund_count", 0),
                     "inactive_fund_count": row.get("inactive_fund_count", 0),
-                    "product_total_value": float(row.get("product_total_value") or 0) if row.get("product_total_value") is not None and str(row.get("product_total_value")).strip() != '' else 0
+                    "product_total_value": safe_float(row.get("product_total_value"), default=0)
                 }
                 
                 client_group["products"].append(product_data)
@@ -1069,7 +1090,7 @@ async def get_client_group_fum_summary(db = Depends(get_db)):
                         # Sum all valuations
                         if valuations_result:
                             for valuation in valuations_result:
-                                total_fum += float(valuation["valuation"] or 0)
+                                total_fum += safe_float(valuation["valuation"], default=0)
             
             # Combine the data
             combined_record = {
@@ -1137,7 +1158,7 @@ async def get_client_group_fum_by_id(client_group_id: int, db = Depends(get_db))
                     # Sum all valuations
                     if valuations_result:
                         for valuation in valuations_result:
-                            total_fum += float(valuation["valuation"] or 0)
+                            total_fum += safe_float(valuation["valuation"], default=0)
         
         logger.info(f"Calculated FUM for client group {client_group_id}: {total_fum}")
         return {"client_group_id": client_group_id, "fum": total_fum}
@@ -1333,20 +1354,20 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                     "isin_number": fund["isin_number"] or "N/A", 
                     "risk_factor": fund["risk_factor"],
                     "amount_invested": fund["amount_invested"] or 0,
-                    "market_value": float(fund["market_value"]) if fund["market_value"] is not None and str(fund["market_value"]).strip() != '' else 0,
+                    "market_value": safe_float(fund["market_value"], default=0),
                     # For client details product cards, combine all investment types
                     "investments": (
-                        (float(fund["total_investments"]) if fund["total_investments"] is not None else 0) +
-                        (float(fund["total_regular_investments"]) if fund["total_regular_investments"] is not None else 0) +
-                        (float(fund["total_tax_uplift"]) if fund["total_tax_uplift"] is not None else 0)
+                        safe_float(fund["total_investments"], default=0) +
+                        safe_float(fund["total_regular_investments"], default=0) +
+                        safe_float(fund["total_tax_uplift"], default=0)
                     ),
-                    "tax_uplift": float(fund["total_tax_uplift"]) if fund["total_tax_uplift"] is not None else 0,
-                    "withdrawals": float(fund["total_withdrawals"]) if fund["total_withdrawals"] is not None else 0,
-                    "fund_switch_in": float(fund["total_fund_switch_in"]) if fund["total_fund_switch_in"] is not None else 0,
-                    "fund_switch_out": float(fund["total_fund_switch_out"]) if fund["total_fund_switch_out"] is not None else 0,
-                    "product_switch_in": float(fund["total_product_switch_in"]) if fund["total_product_switch_in"] is not None else 0,
-                    "product_switch_out": float(fund["total_product_switch_out"]) if fund["total_product_switch_out"] is not None else 0,
-                    "irr": float(fund["irr"]) if fund["irr"] is not None else None,
+                    "tax_uplift": safe_float(fund["total_tax_uplift"], default=0),
+                    "withdrawals": safe_float(fund["total_withdrawals"], default=0),
+                    "fund_switch_in": safe_float(fund["total_fund_switch_in"], default=0),
+                    "fund_switch_out": safe_float(fund["total_fund_switch_out"], default=0),
+                    "product_switch_in": safe_float(fund["total_product_switch_in"], default=0),
+                    "product_switch_out": safe_float(fund["total_product_switch_out"], default=0),
+                    "irr": safe_float(fund["irr"], default=None),
                     "valuation_date": fund["valuation_date"],
                     "status": "active"
                 }
@@ -1356,22 +1377,18 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
             if inactive_funds:
                 # Combine all investment types for Previous Funds
                 total_investments = sum(
-                    (float(f["total_investments"]) if f["total_investments"] is not None else 0) +
-                    (float(f["total_regular_investments"]) if f["total_regular_investments"] is not None else 0) +
-                    (float(f["total_tax_uplift"]) if f["total_tax_uplift"] is not None else 0)
+                    safe_float(f["total_investments"], default=0) +
+                    safe_float(f["total_regular_investments"], default=0) +
+                    safe_float(f["total_tax_uplift"], default=0)
                     for f in inactive_funds
                 )
-                total_tax_uplift = sum(float(f["total_tax_uplift"]) if f["total_tax_uplift"] is not None else 0 for f in inactive_funds)
-                total_withdrawals = sum(float(f["total_withdrawals"]) if f["total_withdrawals"] is not None else 0 for f in inactive_funds)
-                total_fund_switch_in = sum(float(f["total_fund_switch_in"]) if f["total_fund_switch_in"] is not None else 0 for f in inactive_funds)
-                total_fund_switch_out = sum(float(f["total_fund_switch_out"]) if f["total_fund_switch_out"] is not None else 0 for f in inactive_funds)
-                total_product_switch_in = sum(float(f["total_product_switch_in"]) if f["total_product_switch_in"] is not None else 0 for f in inactive_funds)
-                total_product_switch_out = sum(float(f["total_product_switch_out"]) if f["total_product_switch_out"] is not None else 0 for f in inactive_funds)
-                total_market_value = sum(
-                    float(f["market_value"]) if f["market_value"] is not None and str(f["market_value"]).strip() != '' 
-                    else 0 
-                    for f in inactive_funds
-                )
+                total_tax_uplift = sum(safe_float(f["total_tax_uplift"], default=0) for f in inactive_funds)
+                total_withdrawals = sum(safe_float(f["total_withdrawals"], default=0) for f in inactive_funds)
+                total_fund_switch_in = sum(safe_float(f["total_fund_switch_in"], default=0) for f in inactive_funds)
+                total_fund_switch_out = sum(safe_float(f["total_fund_switch_out"], default=0) for f in inactive_funds)
+                total_product_switch_in = sum(safe_float(f["total_product_switch_in"], default=0) for f in inactive_funds)
+                total_product_switch_out = sum(safe_float(f["total_product_switch_out"], default=0) for f in inactive_funds)
+                total_market_value = sum(safe_float(f["market_value"], default=0) for f in inactive_funds)
                 
                 previous_funds_entry = {
                     "id": -1,  # Virtual ID
@@ -1412,11 +1429,7 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                 "provider_name": product["provider_name"],
                 "provider_theme_color": product.get("provider_theme_color"),
                 "plan_number": product.get("plan_number"),
-                "total_value": sum(
-                    float(fund.get("market_value") or 0) if fund.get("market_value") is not None and str(fund.get("market_value")).strip() != '' 
-                    else 0 
-                    for fund in portfolio_funds
-                ),
+                "total_value": sum(safe_float(fund.get("market_value"), default=0) for fund in portfolio_funds),
                 "irr": None,  # Will be calculated using standardized method below
                 "active_fund_count": product.get("active_fund_count", 0),
                 "inactive_fund_count": product.get("inactive_fund_count", 0),
@@ -1444,8 +1457,8 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                     
                     if portfolio_irr_result and portfolio_irr_result.get("irr_result") is not None:
                         irr_value = portfolio_irr_result.get("irr_result")
-                        # Convert to float to ensure proper type handling
-                        processed_product["irr"] = float(irr_value) if irr_value is not None else None
+                        # Use safe_float to handle NaN, infinity, and other invalid values
+                        processed_product["irr"] = safe_float(irr_value, default=None)
                         
                         logger.info(f"Retrieved latest portfolio IRR for product {product['id']} (portfolio {portfolio_id}): {processed_product['irr']}%")
                     else:

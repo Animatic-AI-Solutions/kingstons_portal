@@ -9,6 +9,7 @@ from app.db.database import get_db
 from app.models.holding_activity_log import HoldingActivityLog, HoldingActivityLogUpdate
 from app.api.routes.portfolio_funds import calculate_excel_style_irr
 from app.api.routes.portfolio_funds import calculate_multiple_portfolio_funds_irr
+from app.services.irr_cascade_service import safe_irr_value
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -871,7 +872,7 @@ async def calculate_portfolio_irr(
                         # Update existing
                         await db.execute(
                             "UPDATE portfolio_fund_irr_values SET irr_result = $1 WHERE id = $2",
-                            float(irr_percentage), existing_irr["id"]
+                            safe_irr_value(irr_percentage), existing_irr["id"]
                         )
                     else:
                         # Insert new - Build dynamic INSERT query
@@ -997,7 +998,7 @@ async def calculate_portfolio_irr(
                 logger.info(f"🔍 DEBUG: calculate_multiple_portfolio_funds_irr returned: {portfolio_irr_response}")
                 
                 if portfolio_irr_response.get("success"):
-                    portfolio_irr_percentage = portfolio_irr_response.get("irr_percentage", 0.0)
+                    portfolio_irr_percentage = safe_irr_value(portfolio_irr_response.get("irr_percentage", 0.0))
                     logger.info(f"Portfolio IRR calculated (all funds): {portfolio_irr_percentage}%")
                     
                     # Step 4: Store portfolio IRR value
@@ -1218,7 +1219,7 @@ async def calculate_portfolio_irr_for_date(
                         # Update existing
                         await db.execute(
                             "UPDATE portfolio_fund_irr_values SET irr_result = $1 WHERE id = $2",
-                            float(irr_percentage), existing_irr["id"]
+                            safe_irr_value(irr_percentage), existing_irr["id"]
                         )
                     else:
                         # Insert new - Build dynamic INSERT query

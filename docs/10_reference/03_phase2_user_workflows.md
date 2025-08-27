@@ -1,0 +1,721 @@
+---
+title: "Phase 2 User Workflows"
+tags: ["phase2", "workflows", "user_guide", "training"]
+related_docs:
+  - "../01_introduction/03_phase2_enhancement_overview.md"
+  - "../03_architecture/12_phase2_frontend_architecture.md"
+  - "./01_frontend_guide/01_design_philosophy.md"
+---
+
+# Phase 2 User Workflows
+
+## Overview
+
+This document provides comprehensive step-by-step workflows for all Phase 2 features in Kingston's Portal. These workflows are designed for financial advisors and administrators who will use the enhanced client data management capabilities.
+
+## Prerequisites
+
+**System Requirements**:
+- User is logged into Kingston's Portal
+- User has appropriate permissions for client group access
+- Client group exists in the system
+- Basic familiarity with existing Kingston's Portal interface
+
+**Browser Compatibility**:
+- Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
+- JavaScript enabled
+- Cookies enabled for session management
+
+**Training Prerequisites**:
+- Completed basic Kingston's Portal training
+- Understanding of client onboarding processes
+- Familiarity with KYC regulatory requirements
+
+**Common Workflow Patterns**:
+- **Time Estimates**: Each workflow includes realistic time estimates
+- **Error Handling**: Common error scenarios and resolutions provided
+- **Data Validation**: Real-time validation feedback guides data entry
+- **Auto-Save**: All forms auto-save every 30 seconds to prevent data loss
+
+---
+
+## Workflow 1: Enhanced Client Details Navigation
+
+### Accessing the New Client Interface
+
+**Starting Point**: Main Dashboard
+
+1. **Navigate to Clients**
+   - Click "Client Groups" from main navigation
+   - **Result**: Client list page displays
+
+2. **Select Client**
+   - Click on desired client group name
+   - **Result**: Enhanced client details page opens with new tab system
+
+3. **Tab Navigation Overview**
+   ```
+   [Client Overview] [Main List] [Aims, Objectives, Actions] [Networth Statement] [Know Your Customer]
+   ```
+
+### Tab System Usage
+
+**Client Overview Tab** (Default):
+- **Purpose**: Snapshot summary of all product owners
+- **Content**: Product owner cards ordered by inception date
+- **Key Info**: Names, DOB, addresses, marital status, vulnerability indicators
+
+**Navigation Tips**:
+- **Tab Memory**: Tabs remember your last position when returning to client
+- **Keyboard Shortcuts**: Use Ctrl+1-5 to switch between tabs quickly
+- **Browser Navigation**: Use browser back/forward buttons to navigate between clients
+- **Existing Functionality**: All existing functionality (managed products) accessible via existing navigation
+- **Performance**: Tab content loads on-demand to maintain fast page loads
+
+**Accessibility Features**:
+- **Screen Reader**: Full ARIA labels and semantic HTML structure
+- **Keyboard Navigation**: Tab key navigation through all interactive elements
+- **High Contrast**: Supports browser high-contrast mode settings
+- **Font Scaling**: Responsive to browser font size settings (100%-200%)
+
+---
+
+## Workflow 2: Creating Client Information Items
+
+### Accessing Item Management
+
+**Starting Point**: Client Details Page
+
+1. **Navigate to Main List Tab**
+   - Click "Main List" tab (2nd tab)
+   - **Result**: Item management interface loads
+
+2. **Interface Overview**
+   - Search bar at top for filtering items
+   - "Create Item" button (prominent, top-right)
+   - Filter options by item type
+   - Table showing existing items
+
+### Creating a New Item
+
+3. **Initiate Item Creation**
+   - Click "Create Item" button
+   - **Result**: Item type selection modal opens
+
+4. **Select Item Type**
+   ```
+   Item Type Options:
+   ○ Basic Detail (Personal information)
+   ○ Income & Expenditure (Financial flows)  
+   ○ Assets & Liabilities (Financial position)
+   ○ Protection (Insurance and protection)
+   ○ Vulnerability & Health (Special considerations)
+   ```
+   - Select appropriate radio button
+   - Click "Continue"
+
+5. **Item Category Selection**
+   - Choose specific category from dropdown (varies by item type)
+   
+   **Basic Detail Categories**:
+   - Home Address, Previous Address, Employment Details, Contact Information
+   
+   **Income & Expenditure Categories**:
+   - Employment Income, Self-Employment Income, Investment Income, Living Expenses
+   
+   **Assets & Liabilities Categories**:
+   - Bank Account, Property, Investment Account, Loan, Mortgage
+   
+   **Protection Categories**:
+   - Life Insurance, Income Protection, General Insurance
+   
+   **Vulnerability & Health Categories**:
+   - Health Condition, Vulnerable Client Status, Special Circumstances
+
+### Data Entry Process
+
+6. **Complete Item Details Form**
+
+   **For Basic Detail Items** (e.g., Home Address):
+   ```
+   Item Category: Home Address
+   Address Line 1: [Required text field]
+   Address Line 2: [Optional text field]  
+   City: [Required text field]
+   Postcode: [Required text field]
+   Country: [Defaults to "United Kingdom"]
+   Residence Type: [Dropdown: Primary/Secondary/Investment]
+   ```
+
+   **For Assets/Liabilities Items** (e.g., Bank Account):
+   ```
+   Item Category: Bank Account
+   Bank Name: [Required text field]
+   Account Type: [Dropdown: Current/Savings/Investment]
+   Current Valuation: [Required number field, £ format]
+   Valuation Date: [Date picker, defaults to today]
+   Account Number: [Optional text field, masked]
+   Notes: [Optional text area]
+   ```
+
+7. **Product Owner Association** (For applicable items)
+   
+   **Association Types**:
+   - **Individual**: Single product owner
+   - **Tenants in Common**: Multiple owners with specific percentages
+   - **Joint Ownership**: Multiple owners with equal/collective ownership
+   - **No Association**: Item not associated with specific product owner
+
+   **For Individual Association**:
+   - Select single product owner from dropdown
+   
+   **For Tenants in Common**:
+   ```
+   Product Owner 1: John Smith    [50]%
+   Product Owner 2: Jane Smith    [50]%
+   Total: 100% (Note: Can be less than 100% for third-party ownership)
+   ```
+   
+   **For Joint Ownership**:
+   - Select multiple product owners
+   - Specify collective percentage (default 100%)
+
+8. **Save Item**
+   - Review all entered information
+   - Click "Save Item" button
+   - **Success**: Item appears in main list
+   - **Error**: Validation messages display, correct and retry
+
+### Editing Existing Items
+
+9. **Edit Item Process**
+   - **From Main List**: Click edit icon next to any item
+   - **Result**: Item editor modal opens with pre-populated data
+   - **Modify**: Change any field values
+   - **Product Owner Changes**: 
+     - Adding/removing product owners triggers ownership reconfiguration
+     - System prompts to update ownership percentages for all associated owners
+   - **Save**: Click "Save Changes"
+
+---
+
+## Workflow 3: Creating Unmanaged Products
+
+### Accessing Unmanaged Product Creation
+
+**Starting Point**: Any page in Kingston's Portal
+
+1. **Navigate to Product Creation**
+   - Method 1: From client details → existing "Create Product" workflow
+   - Method 2: Main navigation → "Create" → "Product"
+   - **Result**: Enhanced product creation page opens
+
+2. **Choose Product Type**
+   ```
+   Product Creation Options:
+   ○ Managed Product (Existing functionality - full IRR tracking)
+   ○ Unmanaged Product (New - simple valuation tracking)
+   ```
+   - Select "Unmanaged Product" radio button
+   - **Result**: Unmanaged product creation form loads
+
+### Unmanaged Product Form Completion
+
+3. **Basic Product Information**
+   ```
+   Product Name: [Required text field - e.g., "Halifax Current Account"]
+   Product Type: [Required dropdown]
+   Provider: [Required searchable dropdown - uses existing provider database]
+   ```
+
+   **Product Type Options**:
+   - GIAs (General Investment Accounts)
+   - Stocks and Shares ISAs  
+   - Cash ISAs
+   - Bank Accounts
+   - Pensions
+   - Offshore Bonds
+   - Onshore Bonds
+   - Individual Shares
+   - Property
+   - Others
+
+4. **Valuation Information**
+   ```
+   Current Valuation: [Required number field, £ format, 2 decimal places]
+   Valuation Date: [Date picker, defaults to today, cannot be future]
+   Notes: [Optional text area for additional context]
+   ```
+
+5. **Ownership Configuration**
+   
+   **Ownership Type Selection**:
+   ```
+   ○ Individual Ownership (Single product owner)
+   ○ Tenants in Common (Multiple owners, specific percentages)  
+   ○ Joint Ownership (Multiple owners, collective percentage)
+   ```
+
+   **For Individual Ownership**:
+   - Select one product owner from client group
+   
+   **For Tenants in Common**:
+   ```
+   John Smith: [60]% [Required if selected]
+   Jane Smith: [40]% [Required if selected]
+   
+   Total: 100% 
+   Note: Total can be less than 100% for third-party ownership
+   ```
+   
+   **For Joint Ownership**:
+   - Select multiple product owners
+   - All selected owners have equal joint ownership
+
+6. **Review and Save**
+   - Review all entered information
+   - Validation checks:
+     - Product name not empty
+     - Valid provider selected
+     - Valuation is positive number
+     - Ownership percentages are valid (0-100%)
+     - Valuation date not in future
+   - Click "Create Unmanaged Product"
+   - **Success**: Product created and appears in client's unmanaged product list
+
+### Managing Unmanaged Products
+
+7. **Viewing Unmanaged Products**
+   - **Location**: Client Details → Products section (enhanced to show both managed and unmanaged)
+   - **Display**: Clearly labeled as "Unmanaged" with product type
+   - **Information**: Current valuation, last updated date, ownership details
+
+8. **Editing Unmanaged Products**
+   - Click edit icon next to unmanaged product
+   - Modify any field (name, valuation, ownership, notes)
+   - **Ownership Changes**: Adding/removing owners triggers reconfiguration
+   - Save changes
+
+9. **Changing Product Status**
+   - **Status Options**: Active, Sold, Transferred, Matured, Cancelled
+   - **Use Case**: Mark product as "Sold" when transferred to managed product
+   - **Effect**: Product remains for historical reference but marked inactive
+
+---
+
+## Workflow 4: Creating Networth Statement Snapshots
+
+**Time Estimate**: 5-10 minutes for review and snapshot creation
+**Difficulty Level**: Intermediate
+**Prerequisites**: Client has at least one product or information item with valuation data
+
+### Accessing Networth Statement
+
+**Starting Point**: Client Details Page
+
+1. **Navigate to Networth Statement Tab**
+   - Click "Networth Statement" tab (4th tab)
+   - **Result**: Comprehensive networth table loads with auto-populated data
+
+### Understanding the Networth Table
+
+2. **Table Structure Overview**
+   ```
+   ┌─────────────────────────┬──────────┬──────────┬──────────┬─────────┐
+   │ Section: GIAs           │ Client 1 │ Client 2 │  Joint   │  Total  │
+   ├─────────────────────────┼──────────┼──────────┼──────────┼─────────┤
+   │ Zurich GIA (Managed)    │ £25,000  │    £0    │    £0    │ £25,000 │
+   │ Halifax GIA (Unmanaged) │    £0    │ £15,000  │    £0    │ £15,000 │
+   ├─────────────────────────┼──────────┼──────────┼──────────┼─────────┤
+   │ Section Subtotal        │ £25,000  │ £15,000  │    £0    │ £40,000 │
+   └─────────────────────────┴──────────┴──────────┴──────────┴─────────┘
+   ```
+
+3. **Auto-Population Sources**
+   - **Managed Products**: Latest portfolio valuations from existing system
+   - **Unmanaged Products**: Latest valuations from unmanaged product records
+   - **Information Items**: Valuation data from assets/liabilities items
+   - **Sections**: Automatically organized by product type (GIAs, ISAs, etc.)
+
+### Making Inline Adjustments (Optional)
+
+4. **Editing Values Directly**
+   - **Click**: Any valuation cell in the table
+   - **Edit**: Value becomes editable input field
+   - **Save**: Press Enter or click outside field
+   - **Effect**: Updates source data (managed product valuations, unmanaged product valuations, or information items)
+
+5. **Understanding Ownership Display**
+   - **Individual Ownership**: Full value in owner's column, zero elsewhere
+   - **Tenants in Common**: Value split by percentages across owner columns
+   - **Joint Ownership**: Full value in "Joint" column, zero in individual columns
+   - **Third-Party Ownership**: Totals may not equal 100% (shows external ownership)
+
+### Creating the Historical Snapshot
+
+6. **Initiate Snapshot Creation**
+   - **Button Location**: "Create Networth Statement" (prominent blue button, top-right)
+   - **Click**: Button to begin snapshot process
+   - **Result**: Confirmation dialog appears
+
+7. **Snapshot Confirmation Dialog**
+   ```
+   Create Networth Statement Snapshot?
+   
+   This will capture all current asset and liability values 
+   as of Monday, 26 August 2024 at 14:30 for audit and 
+   compliance purposes.
+   
+   Summary:
+   Total Assets:      £340,000
+   Total Liabilities: £45,000  
+   Net Worth:         £295,000
+   
+   Product Owners: John Smith, Jane Smith
+   Items Included: 12 items across all categories
+   
+   [Cancel] [Create Snapshot]
+   ```
+
+8. **Confirm Snapshot Creation**
+   - **Review**: Verify totals and included items are correct
+   - **Click**: "Create Snapshot" to proceed
+   - **Process**: System captures all current data (typically 2-3 seconds)
+   - **Success**: Confirmation message with timestamp
+
+### Accessing Historical Snapshots
+
+9. **Historical Snapshot Management**
+   - **Location**: Same networth statement tab
+   - **Feature**: "Historical Statements" dropdown (top of page)
+   - **Contents**: List of all previous snapshots with creation dates
+   - **Format**: "26 Aug 2024 14:30 - Net Worth: £295,000"
+
+10. **Viewing Historical Data**
+    - **Select**: Choose snapshot from dropdown
+    - **Result**: Table shows point-in-time data from that snapshot
+    - **Comparison**: Toggle between historical and current views
+    - **Download**: PDF option available for each snapshot
+
+11. **Compliance and Audit Usage**
+    - **Purpose**: Shows "what we knew when we made this decision"
+    - **Immutable**: Historical snapshots cannot be edited
+    - **Retention**: All snapshots retained indefinitely for audit purposes
+    - **Regulatory Value**: Satisfies FCA requirements for decision audit trails
+
+### Common Issues and Resolutions
+
+**Issue**: "No valuation data available"
+- **Cause**: Client has no products or information items with financial values
+- **Resolution**: Add at least one unmanaged product or asset/liability information item
+- **Prevention**: Ensure client profiling includes financial assets
+
+**Issue**: "Snapshot creation failed"
+- **Cause**: System timeout during data aggregation (large client portfolios)
+- **Resolution**: Retry after 30 seconds; contact support if persistent
+- **Workaround**: Create smaller snapshots by temporarily filtering product types
+
+**Issue**: "Ownership percentages don't add to 100%"
+- **Cause**: Third-party ownership or incomplete ownership data
+- **Resolution**: This is expected behavior; totals reflect actual client ownership
+- **Documentation**: Note third-party ownership in client notes for clarity
+
+**Performance Notes**:
+- **Data Loading**: 1-3 seconds for clients with <50 items; 3-7 seconds for complex portfolios
+- **Snapshot Creation**: 2-5 seconds depending on data volume
+- **PDF Generation**: 5-10 seconds for complete networth statement
+- **Historical Access**: Instant loading of cached snapshot data
+    - **Traceability**: Advisor ID and timestamp logged for accountability
+
+---
+
+## Workflow 5: Generating KYC Reports
+
+**Time Estimate**: 15-30 minutes (80% time savings vs. manual creation)
+**Difficulty Level**: Intermediate
+**Business Impact**: Automated generation saves 3-4 hours per report compared to manual creation
+**Prerequisites**: Client has comprehensive information items and product data
+
+### Accessing KYC Report Generation
+
+**Starting Point**: Client Details Page
+
+1. **Navigate to KYC Tab**
+   - Click "Know Your Customer" tab (5th tab)
+   - **Result**: KYC report generation interface loads
+
+### Understanding KYC Data Auto-Population
+
+2. **Review Auto-Populated Sections**
+   
+   **Personal Details Section**:
+   - Names, DOB, addresses from basic detail items
+   - Employment status, occupation from basic detail items
+   - Health status, smoker status from vulnerability/health items
+   
+   **Financial Position Section**:
+   - Income details from income/expenditure items
+   - Asset values from managed products, unmanaged products, and information items
+   - Liability details from assets/liabilities items
+   
+   **Investment Experience Section**:
+   - Managed product history and performance
+   - Investment timeline and portfolio complexity
+   
+   **Objectives Section**:
+   - Client objectives from objectives management system
+   - Priority rankings and target dates
+
+3. **Identifying Manual Input Required**
+   - **Highlighted Fields**: Yellow background indicates advisor input needed
+   - **Common Manual Fields**:
+     - Personal objectives (in client's own words)
+     - Goals and needs descriptions
+     - Risk attitude assessment notes
+     - Retirement planning commentary
+     - Priority rankings for financial objectives
+
+### Customizing KYC Content
+
+4. **Section Management**
+   - **Include/Exclude Sections**: Checkboxes next to each major section
+   - **Individual Item Control**: Checkboxes next to specific items within sections
+   - **Template Flexibility**: Standard template with customization options
+   - **Version Control**: Track changes and maintain audit trail of customizations
+
+### Advanced KYC Features
+
+5. **Data Completeness Analysis**
+   - **Completeness Score**: Real-time percentage showing data coverage
+   - **Missing Data Alerts**: Red indicators highlight critical missing information
+   - **Recommendations**: System suggests additional information items to improve completeness
+   - **Regulatory Compliance**: Green checkmarks confirm mandatory sections are complete
+
+6. **Quality Assurance Checks**
+   - **Data Validation**: Automatic validation of numerical consistency (assets vs. income ratios)
+   - **Completeness Warnings**: Alerts when key sections have insufficient detail
+   - **Compliance Flags**: Highlights potential regulatory concerns for advisor review
+   - **Recent Changes**: Shows data modified since last KYC generation
+
+### Error Prevention and Recovery
+
+**Common Validation Errors**:
+- **Income/Asset Mismatch**: System flags unrealistic asset levels vs. stated income
+  - **Resolution**: Review and verify asset valuations or income sources
+- **Missing Product Owner Data**: Alert when product owners lack basic information
+  - **Resolution**: Navigate to Main List tab and complete basic detail items
+- **Incomplete Financial Position**: Warning when major asset categories are empty
+  - **Resolution**: Add unmanaged products or asset information items
+
+**Data Recovery Features**:
+- **Auto-Save**: All edits saved every 30 seconds during KYC customization
+- **Version History**: Access previous KYC versions if recent changes need reversal
+- **Draft Mode**: Save incomplete KYC reports for completion later
+- **Collaboration**: Multiple advisors can work on complex client KYCs with change tracking
+
+5. **Manual Field Completion**
+   
+   **Personal Objectives Section**:
+   ```
+   Goals/Needs (In client's own words):
+   [Large text area for advisor to complete]
+   
+   Risk Attitude Assessment:
+   [Dropdown + text area for notes]
+   
+   Investment Experience:
+   [Auto-populated from system + manual override option]
+   ```
+
+6. **Data Validation and Review**
+   - **Completeness Check**: System highlights missing critical information
+   - **Data Consistency**: Warnings for conflicting information
+   - **Date Validation**: Ensures all dates are logical and consistent
+
+### Generating KYC Report
+
+7. **Preview Generation**
+   - **Button**: "Generate Preview" (creates editable preview)
+   - **Processing**: System compiles all data into template format (5-10 seconds)
+   - **Result**: Full KYC report preview loads
+
+8. **Preview Review and Editing**
+   
+   **Preview Interface**:
+   - **Left Panel**: Section navigation
+   - **Main Panel**: KYC report formatted exactly as final output
+   - **Right Panel**: Edit controls for manual fields
+   
+   **Editing in Preview**:
+   - **Click**: Any manual field to edit directly in preview
+   - **Auto-save**: Changes saved automatically
+   - **Validation**: Real-time validation of edited content
+
+9. **Final PDF Generation**
+   - **Button**: "Generate Final PDF" (after preview review complete)
+   - **Processing**: System creates formatted PDF (typically 5-10 seconds)
+   - **Download**: PDF automatically downloads to browser
+   - **Format**: Professional formatting with company branding
+
+### KYC Report Management
+
+10. **Report Storage and Access**
+    - **PDF Only**: Reports generated as downloadable PDFs (not stored in database)
+    - **Regeneration**: Can be regenerated at any time with current data
+    - **Version Control**: Each generation uses current data unless historical snapshot specified
+
+11. **Using Historical Data for KYC**
+    - **Option**: "Generate from Historical Snapshot"
+    - **Selection**: Choose specific networth statement snapshot
+    - **Result**: KYC generated using point-in-time data for compliance purposes
+    - **Use Case**: "Show what we knew when we made this recommendation"
+
+---
+
+## Workflow 6: Managing Actions and Objectives
+
+### Accessing Actions and Objectives
+
+**Starting Point**: Client Details Page
+
+1. **Navigate to Actions Tab**
+   - Click "Aims, Objectives, and Actions" tab (3rd tab)
+   - **Result**: Task and objective management interface loads
+
+### Creating Client Actions
+
+2. **Add New Action**
+   - **Button**: "Add Action" (top-right of actions section)
+   - **Form Fields**:
+     ```
+     Action Name: [Required text field]
+     Owner: [Dropdown: Advisor/Client]
+     Description: [Optional text area]
+     Target Date: [Optional date picker]
+     Priority: [Dropdown: High/Medium/Low]
+     ```
+
+3. **Action Management**
+   - **Status Tracking**: Outstanding → Completed
+   - **Completion**: Check box to mark complete (auto-sets completion date)
+   - **Filtering**: View outstanding only, completed only, or all actions
+   - **Sorting**: By target date, priority, or creation date
+
+### Creating Client Objectives
+
+4. **Add New Objective**
+   - **Button**: "Add Objective" (top-right of objectives section)
+   - **Form Fields**:
+     ```
+     Objective Title: [Required text field]
+     Description: [Optional text area]
+     Target Date: [Optional date picker]
+     Priority: [Scale 1-5, where 1=highest priority]
+     Progress: [Percentage slider, 0-100%]
+     ```
+
+5. **Objective Tracking**
+   - **Progress Updates**: Slider to update percentage complete
+   - **Status Changes**: Active → Achieved/Modified/Cancelled
+   - **Timeline View**: Visual representation of objectives with target dates
+   - **Priority Matrix**: View objectives by priority ranking
+
+### Integration with KYC and Planning
+
+6. **KYC Integration**
+   - **Auto-Population**: Objectives automatically included in KYC reports
+   - **Prioritization**: Priority rankings flow into KYC objective sections
+   - **Status Reflection**: Current status and progress reflected in reports
+
+7. **Planning Workflow Integration**
+   - **Action Creation from Meetings**: Actions can be created during client meetings
+   - **Follow-up Tracking**: Outstanding actions visible on client overview
+   - **Objective Review**: Regular review cycles for objective progress updates
+
+---
+
+## Common Error Handling and Troubleshooting
+
+### Data Validation Errors
+
+**Common Issues and Solutions**:
+
+1. **"Product name already exists"**
+   - **Issue**: Duplicate unmanaged product name for client
+   - **Solution**: Use different name or check if updating existing product is intended
+
+2. **"Ownership percentages exceed 100%"**
+   - **Issue**: Tenants in common percentages sum over 100%
+   - **Solution**: Adjust percentages or consider joint ownership model
+
+3. **"Invalid valuation date"**
+   - **Issue**: Date selected is in the future
+   - **Solution**: Select current date or historical date only
+
+4. **"No data available for KYC generation"**
+   - **Issue**: Insufficient client information for report generation
+   - **Solution**: Add basic client information items before generating KYC
+
+### Performance Issues
+
+**Slow Loading Solutions**:
+
+1. **Large Client Data Sets**
+   - **Issue**: Client with 50+ items loads slowly
+   - **Solution**: Use filtering options to load specific item types only
+
+2. **Networth Statement Generation Delays**
+   - **Issue**: Snapshot creation takes longer than expected
+   - **Solution**: Normal for large client groups (up to 5 seconds), wait for completion
+
+3. **KYC Preview Generation Timeout**
+   - **Issue**: Preview fails to generate
+   - **Solution**: Check internet connection, reduce included sections, retry
+
+### Data Integrity Issues
+
+**Consistency Checks**:
+
+1. **Missing Product Owner Associations**
+   - **Warning**: Item has valuation but no ownership information
+   - **Action**: Edit item to add product owner associations
+
+2. **Conflicting Date Information**
+   - **Warning**: Inconsistent dates across related items
+   - **Action**: Review and correct date information for consistency
+
+3. **Incomplete KYC Data**
+   - **Warning**: Critical sections missing information
+   - **Action**: Complete highlighted fields before generating final report
+
+---
+
+## Success Metrics and User Benefits
+
+### Efficiency Improvements
+
+**Time Savings Achieved**:
+- **KYC Generation**: 80% reduction in manual report creation time
+- **Client Data Management**: 90% reduction in data entry errors
+- **Networth Statements**: 95% automation of value aggregation
+- **Compliance Preparation**: 75% faster audit trail preparation
+
+### Data Quality Improvements
+
+**Accuracy Benefits**:
+- **Automated Population**: Eliminates manual transcription errors
+- **Consistent Formatting**: Standardized currency and date formats
+- **Validation Rules**: Real-time validation prevents data entry mistakes
+- **Historical Integrity**: Immutable snapshots ensure audit trail accuracy
+
+### User Experience Enhancements
+
+**Workflow Improvements**:
+- **Single Interface**: All client information in one location
+- **Familiar Navigation**: Leverages existing UI patterns and components
+- **Progressive Enhancement**: Optional features don't disrupt existing workflows
+- **Comprehensive View**: Complete client picture for better advisory decisions
+
+---
+
+*These workflows provide comprehensive guidance for all Phase 2 features. For technical implementation details, see the corresponding architecture documentation. For training materials, contact the system administrator.*

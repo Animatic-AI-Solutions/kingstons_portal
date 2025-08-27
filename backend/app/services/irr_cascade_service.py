@@ -12,10 +12,33 @@ Core Principles:
 """
 
 import logging
+import math
 from typing import List, Dict, Set, Optional, Tuple
 from datetime import datetime, date
 
 logger = logging.getLogger(__name__)
+
+def safe_irr_value(value, default=0.0):
+    """
+    Safely validate an IRR value to ensure it can be JSON serialized and stored in database.
+    Returns the validated float value or raises an error for critical failures.
+    """
+    if value is None:
+        logger.warning(f"IRR value is None, using default: {default}")
+        return default
+    
+    try:
+        float_val = float(value)
+        # Check for JSON-incompatible float values that corrupt the database
+        if math.isnan(float_val) or math.isinf(float_val):
+            error_msg = f"CRITICAL: IRR calculation produced invalid value {float_val}. This would corrupt the database."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        return float_val
+    except (ValueError, TypeError) as e:
+        error_msg = f"CRITICAL: Could not convert IRR value {value} to valid float: {str(e)}"
+        logger.error(error_msg)
+        raise ValueError(error_msg)
 
 class IRRCascadeService:
     """
@@ -656,7 +679,7 @@ class IRRCascadeService:
                 logger.warning(f"📊 Failed to calculate fund IRR for fund {portfolio_fund_id} on {date}")
                 return False
             
-            irr_percentage = irr_result.get("irr_percentage", 0.0)
+            irr_percentage = safe_irr_value(irr_result.get("irr_percentage", 0.0))
             
             # Get fund valuation ID for this date
             valuation_result = await self.db.fetchrow(
@@ -676,7 +699,7 @@ class IRRCascadeService:
                 # Update existing IRR
                 await self.db.execute(
                     "UPDATE portfolio_fund_irr_values SET irr_result = $1, fund_valuation_id = $2 WHERE id = $3",
-                    float(irr_percentage), fund_valuation_id, existing_irr["id"]
+                    irr_percentage, fund_valuation_id, existing_irr["id"]
                 )
                 logger.info(f"📊 Updated fund IRR for fund {portfolio_fund_id} on {date}: {irr_percentage}%")
             else:
@@ -684,7 +707,7 @@ class IRRCascadeService:
                 try:
                     await self.db.execute(
                         "INSERT INTO portfolio_fund_irr_values (fund_id, irr_result, date, fund_valuation_id) VALUES ($1, $2, $3, $4)",
-                        portfolio_fund_id, float(irr_percentage), date_obj, fund_valuation_id
+                        portfolio_fund_id, irr_percentage, date_obj, fund_valuation_id
                     )
                     logger.info(f"📊 Created fund IRR for fund {portfolio_fund_id} on {date}: {irr_percentage}%")
                 except Exception as insert_error:
@@ -693,7 +716,7 @@ class IRRCascadeService:
                         logger.warning(f"Race condition detected, attempting update for fund {portfolio_fund_id} on {date}")
                         await self.db.execute(
                             "UPDATE portfolio_fund_irr_values SET irr_result = $1, fund_valuation_id = $2 WHERE fund_id = $3 AND date = $4",
-                            float(irr_percentage), fund_valuation_id, portfolio_fund_id, date_obj
+                            irr_percentage, fund_valuation_id, portfolio_fund_id, date_obj
                         )
                         logger.info(f"📊 Updated fund IRR (race condition) for fund {portfolio_fund_id} on {date}: {irr_percentage}%")
                     else:
@@ -810,7 +833,7 @@ class IRRCascadeService:
                 logger.warning(f"📊 Failed to calculate portfolio IRR for portfolio {portfolio_id} on {date}")
                 return False
             
-            irr_percentage = irr_result.get("irr_percentage", 0.0)
+            irr_percentage = safe_irr_value(irr_result.get("irr_percentage", 0.0))
             
             # Get portfolio valuation ID for this date
             valuation_result = await self.db.fetchrow(
@@ -830,7 +853,7 @@ class IRRCascadeService:
                 # Update existing portfolio IRR
                 await self.db.execute(
                     "UPDATE portfolio_irr_values SET irr_result = $1, portfolio_valuation_id = $2 WHERE id = $3",
-                    float(irr_percentage), portfolio_valuation_id, existing_irr["id"]
+                    irr_percentage, portfolio_valuation_id, existing_irr["id"]
                 )
                 logger.info(f"📊 Updated portfolio IRR for portfolio {portfolio_id} on {date}: {irr_percentage}%")
             else:
@@ -838,7 +861,7 @@ class IRRCascadeService:
                 try:
                     await self.db.execute(
                         "INSERT INTO portfolio_irr_values (portfolio_id, irr_result, date, portfolio_valuation_id) VALUES ($1, $2, $3, $4)",
-                        portfolio_id, float(irr_percentage), date_obj, portfolio_valuation_id
+                        portfolio_id, irr_percentage, date_obj, portfolio_valuation_id
                     )
                     logger.info(f"📊 Created portfolio IRR for portfolio {portfolio_id} on {date}: {irr_percentage}%")
                 except Exception as insert_error:
@@ -847,7 +870,7 @@ class IRRCascadeService:
                         logger.warning(f"Race condition detected, attempting update for portfolio {portfolio_id} on {date}")
                         await self.db.execute(
                             "UPDATE portfolio_irr_values SET irr_result = $1, portfolio_valuation_id = $2 WHERE portfolio_id = $3 AND date = $4",
-                            float(irr_percentage), portfolio_valuation_id, portfolio_id, date_obj
+                            irr_percentage, portfolio_valuation_id, portfolio_id, date_obj
                         )
                         logger.info(f"📊 Updated portfolio IRR (race condition) for portfolio {portfolio_id} on {date}: {irr_percentage}%")
                     else:
