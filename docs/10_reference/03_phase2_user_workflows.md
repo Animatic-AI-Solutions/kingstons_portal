@@ -36,6 +36,9 @@ This document provides comprehensive step-by-step workflows for all Phase 2 feat
 - **Error Handling**: Common error scenarios and resolutions provided
 - **Data Validation**: Real-time validation feedback guides data entry
 - **Auto-Save**: All forms auto-save every 30 seconds to prevent data loss
+- **Concurrent User Support**: Real-time conflict detection and resolution for 4 simultaneous users
+- **Performance Expectations**: All operations complete within documented time ranges
+- **Data Recovery**: Comprehensive backup and restore procedures for data loss scenarios
 
 ---
 
@@ -91,10 +94,11 @@ This document provides comprehensive step-by-step workflows for all Phase 2 feat
    - **Result**: Item management interface loads
 
 2. **Interface Overview**
-   - Search bar at top for filtering items
+   - **Universal Search Bar**: Search across item types, product owners, and content simultaneously
    - "Create Item" button (prominent, top-right)
-   - Filter options by item type
-   - Table showing existing items
+   - Filter options by item type and product owner
+   - Table showing existing items with sortable columns
+   - **Search Capability**: Type "Bank Account John" to find bank accounts owned by John
 
 ### Creating a New Item
 
@@ -306,7 +310,9 @@ This document provides comprehensive step-by-step workflows for all Phase 2 feat
 ## Workflow 4: Creating Networth Statement Snapshots
 
 **Time Estimate**: 5-10 minutes for review and snapshot creation
-**Difficulty Level**: Intermediate
+**Difficulty Level**: Intermediate  
+**Usage Frequency**: Every few months per client, aligned with client meeting schedule
+**Business Purpose**: Manual snapshots created at advisor discretion for compliance and audit trails
 **Prerequisites**: Client has at least one product or information item with valuation data
 
 ### Accessing Networth Statement
@@ -403,28 +409,106 @@ This document provides comprehensive step-by-step workflows for all Phase 2 feat
     - **Retention**: All snapshots retained indefinitely for audit purposes
     - **Regulatory Value**: Satisfies FCA requirements for decision audit trails
 
+### Concurrent User Management
+
+**Real-Time Conflict Resolution**:
+- **Edit Conflicts**: When two users edit the same item simultaneously:
+  - First user's changes save normally
+  - Second user receives "Item modified by [Username] at [Time]" warning
+  - Second user can choose: "Overwrite changes", "Merge changes", or "Cancel edit"
+  - System highlights conflicting fields for easy comparison
+
+**User Presence Indicators**:
+- **Active Users Display**: Shows who else is viewing the same client
+- **Edit Locks**: 30-second soft lock prevents simultaneous editing of same item
+- **Recent Changes**: "Last modified by [Username] 2 minutes ago" on all items
+- **Real-Time Updates**: Changes appear for other users within 5 seconds
+
+### Data Recovery Procedures
+
+**Auto-Save Recovery**:
+- **Automatic Recovery**: Browser crash recovery restores last auto-saved state
+- **Recovery Dialog**: "Unsaved changes detected. Restore previous session?"
+- **Recovery Scope**: Up to 30 seconds of work can be recovered
+- **Manual Backup**: Users can manually trigger "Save Draft" for complex edits
+
+**System-Level Data Recovery**:
+- **Item-Level Restore**: Individual items can be restored from daily backups
+- **Client-Level Restore**: Complete client data restoration (requires admin)
+- **Snapshot Recovery**: Historical snapshots remain immutable and always accessible
+- **Version History**: Last 10 versions of each item retained for 90 days
+
+### Advanced Error Scenarios
+
+**Database Connection Issues**:
+- **Symptoms**: "Unable to save changes" or infinite loading
+- **User Action**: Wait 30 seconds, then refresh page
+- **Data Protection**: All unsaved changes preserved in browser storage
+- **Recovery**: System automatically retries failed saves every 15 seconds
+
+**Performance Degradation**:
+- **Symptoms**: Loading times >10 seconds, laggy interface
+- **Immediate Actions**: Close unnecessary browser tabs, clear browser cache
+- **System Response**: Automatic load balancing redirects users to less busy servers
+- **Escalation**: Contact support if performance doesn't improve within 5 minutes
+
 ### Common Issues and Resolutions
 
 **Issue**: "No valuation data available"
 - **Cause**: Client has no products or information items with financial values
 - **Resolution**: Add at least one unmanaged product or asset/liability information item
 - **Prevention**: Ensure client profiling includes financial assets
+- **Recovery Time**: 2-3 minutes to add basic asset information
 
 **Issue**: "Snapshot creation failed"
 - **Cause**: System timeout during data aggregation (large client portfolios)
 - **Resolution**: Retry after 30 seconds; contact support if persistent
 - **Workaround**: Create smaller snapshots by temporarily filtering product types
+- **Data Recovery**: Failed snapshots don't affect existing data or snapshots
 
 **Issue**: "Ownership percentages don't add to 100%"
 - **Cause**: Third-party ownership or incomplete ownership data
 - **Resolution**: This is expected behavior; totals reflect actual client ownership
 - **Documentation**: Note third-party ownership in client notes for clarity
+- **Validation**: System validates percentages sum to 100% ±0.01% for shared ownership
 
-**Performance Notes**:
+**Issue**: "Another user is editing this item"
+- **Cause**: Concurrent user accessing same item within 30-second edit window
+- **Resolution**: Wait for edit lock to expire or coordinate with other user
+- **Override**: Admin users can force unlock after 2 minutes
+- **Prevention**: Check user presence indicators before starting complex edits
+
+### Performance Expectations
+
+**Standard Performance Benchmarks**:
 - **Data Loading**: 1-3 seconds for clients with <50 items; 3-7 seconds for complex portfolios
-- **Snapshot Creation**: 2-5 seconds depending on data volume
+- **Snapshot Creation**: 2-5 seconds depending on data volume (up to 10s for 100+ items)
 - **PDF Generation**: 5-10 seconds for complete networth statement
-- **Historical Access**: Instant loading of cached snapshot data
+- **Historical Access**: Instant loading of cached snapshot data (<1 second)
+- **Search Operations**: <2 seconds for cross-field searches across all client data
+- **Concurrent Operations**: No performance impact with up to 4 simultaneous users
+
+**Performance Alerts**:
+- **Yellow Warning**: Operations taking 2x expected time (user notified)
+- **Red Alert**: Operations taking 5x expected time (automatic retry initiated)
+- **System Status**: Real-time performance indicator in top-right corner
+
+### Quality Assurance Integration
+
+**Pre-Production Testing Requirements**:
+- **User Acceptance Testing**: 2-week UAT period with 3 advisors testing all workflows
+- **Performance Testing**: Load testing with 4 concurrent users and full client dataset
+- **Data Integrity Testing**: Migration testing with full production data copy
+- **Rollback Testing**: Complete rollback simulation in staging environment
+- **Integration Testing**: All handoffs to existing system features validated
+
+**Go-Live Validation Checklist**:
+- ✅ All existing functionality works identically pre and post-migration
+- ✅ New ownership model displays correctly for all existing products
+- ✅ Performance benchmarks met within 25% tolerance
+- ✅ Concurrent user testing successful with 4 simultaneous users
+- ✅ Data recovery procedures tested and validated
+- ✅ User training completed and sign-off received
     - **Traceability**: Advisor ID and timestamp logged for accountability
 
 ---
@@ -433,8 +517,11 @@ This document provides comprehensive step-by-step workflows for all Phase 2 feat
 
 **Time Estimate**: 15-30 minutes (80% time savings vs. manual creation)
 **Difficulty Level**: Intermediate
+**Usage Frequency**: At least annually per client group + when doing product transfers
+**Scope**: Single client group only (never multiple client groups simultaneously)
 **Business Impact**: Automated generation saves 3-4 hours per report compared to manual creation
 **Prerequisites**: Client has comprehensive information items and product data
+**Customization**: KYC template changes handled by software engineers, not end users
 
 ### Accessing KYC Report Generation
 
@@ -512,6 +599,39 @@ This document provides comprehensive step-by-step workflows for all Phase 2 feat
 - **Version History**: Access previous KYC versions if recent changes need reversal
 - **Draft Mode**: Save incomplete KYC reports for completion later
 - **Collaboration**: Multiple advisors can work on complex client KYCs with change tracking
+
+### Integration with Existing System Features
+
+**Seamless Handoffs to Current Functionality**:
+- **From Enhanced Client Details**: Click product name → opens existing product management interface
+- **From Networth Statement**: Click managed product → access existing portfolio analytics
+- **From KYC Report**: "View Full Portfolio" → opens existing client dashboard
+- **Data Consistency**: All valuations sync with existing managed product calculations
+
+**Navigation Preservation**:
+- **Breadcrumb Trail**: Always shows path back to existing system features
+- **Tab Memory**: New tabs remember position when navigating to existing features
+- **Search Integration**: Universal search includes existing managed product data
+- **Permission Consistency**: New features respect existing user permission model
+
+### Edge Case Handling
+
+**Complex Ownership Scenarios**:
+- **Scenario**: Client owns 33.33% of property, spouse owns 33.33%, third party owns 33.34%
+- **System Response**: Displays all ownership clearly, flags non-100% client group ownership
+- **Advisor Action**: Document third-party ownership in notes for compliance
+
+**Data Migration Edge Cases**:
+- **Scenario**: Legacy product with unclear ownership in old system
+- **System Response**: Defaults to 100% individual ownership for primary client
+- **Advisor Action**: Review and correct ownership within 30 days of go-live
+- **Audit Trail**: All ownership corrections logged with advisor identity and timestamp
+
+**System Performance Edge Cases**:
+- **Scenario**: Client with 200+ information items (unusually complex)
+- **System Response**: Paginated loading (50 items per page) with infinite scroll
+- **Performance**: Maintains <3 second load times through lazy loading
+- **User Experience**: Progress bar shows loading status for large datasets
 
 5. **Manual Field Completion**
    

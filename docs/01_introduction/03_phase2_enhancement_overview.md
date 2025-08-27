@@ -158,17 +158,19 @@ graph TD
 ### Cost-Benefit Analysis
 
 **Investment Requirements**:
-- **Development**: ~160 hours (4 weeks) based on 5 new database tables, 8 API endpoints, 12 new components
+- **Development**: ~200 hours (5 weeks) including major ownership model refactor
 - **Training**: 10 hours total advisor time (2 × 5-hour sessions)
 - **Infrastructure**: ~15% database storage increase, negligible compute overhead
-- **Total Estimated Cost**: £25,000-35,000 development + £2,000 training
+- **Deployment**: Up to 1 week system downtime allowed for major refactor
+- **Rollback Budget**: Additional 20% contingency (£6,000-8,000) for rollback scenarios
+- **Total Estimated Cost**: £30,000-40,000 development + £2,000 training + contingency
 
 **Return on Investment**:
 - **Time Savings**: 80% reduction in KYC generation (4 hours → 45 minutes per report)
 - **Compliance Cost Avoidance**: Estimated £50,000+ annual reduction in audit preparation
 - **Revenue Protection**: Complete audit trails reduce regulatory risk exposure
 - **Efficiency Gains**: 30% faster client onboarding through automated data collection
-- **Payback Period**: 6-8 months based on time savings and compliance benefits
+- **Payback Period**: 8-10 months based on time savings and compliance benefits (adjusted for refactor complexity)
 
 ### Compliance Enhancement
 
@@ -250,14 +252,58 @@ graph TD
 
 ## Technical Overview
 
+### Deployment & Rollback Strategy
+
+**Migration Phases**:
+1. **Pre-Migration** (Day 1-2): Database backup, schema validation, dry-run migration testing
+2. **Core Migration** (Day 3-4): Schema changes, data migration from product_owner_products to JSON
+3. **Validation** (Day 5): Data integrity checks, performance testing, user acceptance testing
+4. **Go-Live** (Day 6-7): Frontend deployment, final testing, monitoring activation
+
+**Rollback Procedures**:
+- **Immediate Rollback** (0-24 hours): Restore from pre-migration backup, minimal data loss
+- **Emergency Rollback** (24-72 hours): Reverse migration script, reconstruct product_owner_products table
+- **Extended Rollback** (72+ hours): Manual data reconciliation, client notification required
+- **Rollback Testing**: Full rollback simulation required in staging environment
+
+**Migration Validation Checkpoints**:
+- ✅ All existing managed product relationships preserved
+- ✅ Ownership percentages total 100% (±0.01%) for all shared products
+- ✅ No orphaned product owner references
+- ✅ All historical IRR calculations remain unchanged
+- ✅ Performance benchmarks met (queries <2s, backup time <60min)
+
+### Performance Baseline & Monitoring
+
+**Current System Benchmarks** (to be maintained post-migration):
+- **Client List Load**: 0.8s for 130 clients
+- **Product Detail Load**: 1.2s average
+- **Analytics Dashboard**: 2.1s (current fast implementation)
+- **Database Backup**: 45 minutes nightly
+- **Concurrent User Response**: <1.5s under 4-user load
+
+**Post-Migration Performance Targets**:
+- **Client List Load**: <1.0s (25% tolerance)
+- **New JSON Queries**: <2.0s for complex ownership filtering
+- **Backup Time**: <60 minutes (33% increase acceptable)
+- **Memory Usage**: <105% of current baseline
+
+**Integration Testing Requirements**:
+- **Ownership Model Testing**: All existing product relationships must function identically
+- **Cross-System Validation**: IRR calculations, analytics, and reporting remain unchanged
+- **Concurrent User Testing**: 4-user simultaneous access with conflict resolution
+- **Performance Regression Testing**: All baseline metrics maintained within tolerance
+
 ### Architecture Components
 
-**New Database Tables**:
-- `client_information_items`: Flexible JSON-based client data storage
-- `client_unmanaged_products`: Simple unmanaged product tracking
-- `client_actions`: Action item and objective management
-- `client_objectives`: Client goal tracking
-- `networth_statements`: Historical snapshot storage
+**Database Changes**:
+- `client_products`: ENHANCED with ownership_details JSONB field
+- `product_owner_products`: REMOVED (ownership moved to JSON)
+- `client_information_items`: NEW - Flexible JSON-based client data storage
+- `client_unmanaged_products`: NEW - Simple unmanaged product tracking (excluded from analytics)
+- `client_actions`: NEW - Action item and objective management
+- `client_objectives`: NEW - Client goal tracking
+- `networth_statements`: NEW - Historical snapshot storage
 
 **New API Endpoints**:
 - Client information item management (`/api/client_groups/{id}/items`)
@@ -320,6 +366,11 @@ graph TD
 - [ ] All new APIs follow existing authentication and security models
 - [ ] Complete test coverage for new functionality (70% minimum)
 - [ ] Documentation complete and up-to-date for all new features
+- [ ] Migration rollback procedures tested and documented
+- [ ] Performance benchmarks maintained within 25% tolerance
+- [ ] Data integrity validation passes 100% on ownership migration
+- [ ] Concurrent user conflict resolution implemented and tested
+- [ ] Edge case handling documented for all ownership model scenarios
 
 ---
 

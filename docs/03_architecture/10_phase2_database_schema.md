@@ -22,21 +22,21 @@ Phase 2 enhances Kingston's Portal with **supplementary tables** that work along
 - Current IRR calculations and analytics infrastructure maintained
 
 **Storage & Performance Impact**:
-- **Database Size**: +15% (estimated 2GB for 130 clients × 30 items average)
+- **Database Size**: +15% (estimated 2GB for 130 clients × 30 items, 5% annual growth)
 - **Query Performance**: <2s response time with GIN indexes on JSONB fields
-- **Memory Usage**: <5% increase through optimized JSON indexing
+- **Concurrent Users**: System designed for 4 concurrent users maximum
 - **Backup Impact**: +10 minutes to nightly backup routine
-- **Migration Time**: <30 minutes downtime for schema deployment
+- **Migration Time**: Up to 1 week downtime allowed for Phase 2 refactor deployment
 
 **New Data Architecture**:
 ```
-Existing Infrastructure (PRESERVED)
+Existing Infrastructure (ENHANCED)
 ├── client_groups (enhanced with inception_date)
-├── client_products (unchanged - managed products)  
-├── product_owner_products (unchanged - existing ownership model)
+├── client_products (ENHANCED - adds ownership_details JSONB field)
+├── product_owner_products (REMOVED - replaced by JSON ownership in client_products)
 ├── portfolios, portfolio_funds, portfolio_valuations (unchanged)
 ├── portfolio_irr_values, portfolio_fund_irr_values (unchanged)
-└── All existing analytics views (unchanged)
+└── All existing analytics views (updated for new ownership model)
 
 New Phase 2 Infrastructure (ADDED)
 ├── client_information_items (flexible client data)
@@ -50,10 +50,10 @@ New Phase 2 Infrastructure (ADDED)
 
 ```mermaid
 erDiagram
-    %% Existing Core Entities (Preserved)
-    client_groups ||--o{ client_products : "has managed products"
-    client_groups ||--o{ product_owner_products : "through"
-    product_owners ||--o{ product_owner_products : "owns"
+    %% Existing Core Entities (Enhanced)
+    client_groups ||--o{ client_products : "has managed products with JSON ownership"
+    %% product_owner_products table REMOVED - replaced by JSON ownership
+    product_owners }|--|| client_group_product_owners : "linked through"
     
     %% New Phase 2 Entities (Added)
     client_groups ||--o{ client_information_items : "has information"
@@ -142,7 +142,9 @@ CREATE INDEX idx_client_items_type_client ON client_information_items
   "address_line_two": "Neverland", 
   "postcode": "N0TH 3R3",
   "country": "United Kingdom",
-  "residence_type": "Primary"
+  "residence_type": "Primary",
+  "date_from": "2020-01-01",
+  "current_residence": true
 }
 
 -- Assets/Liabilities: Bank Account with Ownership
@@ -169,10 +171,105 @@ CREATE INDEX idx_client_items_type_client ON client_information_items
 }
 ```
 
-### 2. client_unmanaged_products
+### Standardized JSON Structure Requirements
 
-**Purpose**: Track unmanaged financial products for KYC and networth purposes
-**Integration**: Complements existing managed products, no conflicts
+**Design Philosophy**: Maintain consistent JSON structures across item types while allowing flexibility
+
+**Common JSON Fields** (used across multiple item types):
+```json
+{
+  // Standard valuation fields (for assets/liabilities)
+  "latest_valuation": 25000.00,
+  "valuation_date": "2024-08-26",
+  "currency": "GBP",
+  
+  // Standard ownership fields (when applicable)
+  "associated_product_owners": {
+    "association_type": "tenants_in_common",
+    "123": 33.33,
+    "456": 33.33,
+    "789": 33.34
+  },
+  
+  // Standard contact fields (for addresses, employment)
+  "address_line_one": "string",
+  "address_line_two": "string",
+  "postcode": "string",
+  "country": "United Kingdom",
+  
+  // Configurable dropdown fields (advisor-maintainable)
+  "gender": "Male",  // Options: Male, Female, Non-binary, Prefer not to say, [Custom: Pineapple]
+  "marital_status": "Married",  // Options: Single, Married, Divorced, Widowed, [Custom additions]
+  "employment_status": "Employed"  // Options: Employed, Self-employed, Retired, Unemployed, [Custom additions]
+}
+```
+
+**Validation Rules**:
+- **User Input Validation**: Frontend validates all data before saving to ensure clean JSON storage
+- **Precision**: All percentages stored to 0.01% precision (33.33%)
+- **Required Fields**: Each item type has mandatory fields defined in frontend validation
+- **Dropdown Maintenance**: Advisors can add custom options to predetermined dropdown lists
+- **Data Integrity**: No automatic ownership transfers - changes require explicit advisor action
+```
+
+### 2. Enhanced client_products Table
+
+**Purpose**: Extend existing managed products table with ownership details using JSON
+**Change Type**: SCHEMA ENHANCEMENT (adds new column, removes product_owner_products dependency)
+**Migration Impact**: Requires data migration from product_owner_products to ownership_details JSONB
+
+```sql
+-- Add ownership details to existing client_products table
+ALTER TABLE client_products 
+ADD COLUMN ownership_details JSONB DEFAULT '{"association_type": "individual"}',
+ADD CONSTRAINT valid_product_ownership_details CHECK (
+    jsonb_typeof(ownership_details) = 'object' AND 
+    ownership_details ? 'association_type' AND 
+    ownership_details->>'association_type' IN ('individual', 'tenants_in_common', 'joint_ownership') AND
+    -- Validate percentage totals for shared ownership (0.01% precision)
+    CASE 
+        WHEN ownership_details->>'association_type' IN ('tenants_in_common', 'joint_ownership') 
+        THEN (
+            SELECT SUM((value::numeric * 100)::integer / 100.0)  -- Round to 0.01% precision
+            FROM jsonb_each_text(ownership_details) 
+            WHERE key ~ '^[0-9]+$'
+        ) BETWEEN 99.99 AND 100.01
+        ELSE true
+    END
+);
+
+-- Create index for JSON queries on managed products
+CREATE INDEX idx_client_products_ownership_gin ON client_products 
+USING GIN (ownership_details);
+
+-- Migration script to transfer existing ownership data
+-- This will be part of the Phase 2 deployment migration
+INSERT INTO temp_ownership_migration 
+SELECT 
+    cp.id as product_id,
+    jsonb_build_object(
+        'association_type', 
+        CASE 
+            WHEN COUNT(pop.product_owner_id) = 1 THEN 'individual'
+            ELSE 'tenants_in_common'  -- Default assumption for multiple owners
+        END
+    ) || 
+    CASE 
+        WHEN COUNT(pop.product_owner_id) > 1 THEN
+            jsonb_object_agg(pop.product_owner_id::text, (100.0 / COUNT(pop.product_owner_id))::numeric(5,2))
+        ELSE 
+            jsonb_object_agg(pop.product_owner_id::text, 100.0)
+    END as ownership_details
+FROM client_products cp
+JOIN product_owner_products pop ON cp.id = pop.product_id
+GROUP BY cp.id;
+```
+
+### 3. client_unmanaged_products
+
+**Purpose**: Track unmanaged financial products for KYC and networth purposes only
+**Integration**: Complements existing managed products, excluded from analytics/dashboards
+**Analytics Exclusion**: These products will NOT appear in any performance analytics or business dashboards
 
 ```sql
 CREATE TABLE client_unmanaged_products (
@@ -206,7 +303,7 @@ CREATE TABLE client_unmanaged_products (
     CONSTRAINT fk_unmanaged_products_editor 
         FOREIGN KEY (last_edited_by) REFERENCES profiles(id) ON DELETE RESTRICT,
     
-    -- Enhanced JSON Schema Validation
+    -- Enhanced JSON Schema Validation with 0.01% precision
     CONSTRAINT valid_ownership_details CHECK (
         jsonb_typeof(ownership_details) = 'object' AND 
         pg_column_size(ownership_details) <= 8192 AND  -- Max 8KB per ownership object
@@ -214,14 +311,14 @@ CREATE TABLE client_unmanaged_products (
             ownership_details = '{}' OR
             (ownership_details ? 'association_type' AND 
              ownership_details->>'association_type' IN ('individual', 'tenants_in_common', 'joint_ownership') AND
-             -- Validate percentage totals for shared ownership
+             -- Validate percentage totals for shared ownership (0.01% precision)
              CASE 
                  WHEN ownership_details->>'association_type' IN ('tenants_in_common', 'joint_ownership') 
                  THEN (
-                     SELECT SUM(value::numeric) 
+                     SELECT SUM((value::numeric * 100)::integer / 100.0)  -- Round to 0.01% precision
                      FROM jsonb_each_text(ownership_details) 
                      WHERE key ~ '^[0-9]+$'
-                 ) BETWEEN 99.99 AND 100.01  -- Allow for rounding
+                 ) BETWEEN 99.99 AND 100.01
                  ELSE true
              END)
         )
@@ -766,6 +863,86 @@ DROP FUNCTION IF EXISTS refresh_client_complete_summary();
 4. **JSON Validation**: Test all JSON schema constraints and functions
 5. **Integration Testing**: Verify compatibility with existing system queries
 6. **Rollback Testing**: Validate complete rollback procedures
+7. **Migration Validation**: Full ownership data migration testing
+8. **Concurrent User Testing**: 4-user simultaneous access testing
+
+### Post-Migration Monitoring Framework
+
+**Index Performance Monitoring**:
+```sql
+-- Monitor index usage and performance
+CREATE OR REPLACE VIEW index_usage_monitoring AS
+SELECT 
+    schemaname,
+    tablename,
+    indexname,
+    idx_tup_read,
+    idx_tup_fetch,
+    idx_scan,
+    ROUND((idx_tup_fetch::numeric / NULLIF(idx_tup_read, 0)) * 100, 2) as efficiency_percent
+FROM pg_stat_user_indexes 
+WHERE tablename IN ('client_products', 'client_information_items', 'client_unmanaged_products')
+ORDER BY idx_scan DESC;
+
+-- Weekly maintenance script
+CREATE OR REPLACE FUNCTION weekly_index_maintenance()
+RETURNS void AS $$
+BEGIN
+    -- Rebuild GIN indexes on JSON columns
+    REINDEX INDEX CONCURRENTLY idx_client_items_content_gin;
+    REINDEX INDEX CONCURRENTLY idx_unmanaged_products_ownership_gin;
+    REINDEX INDEX CONCURRENTLY idx_client_products_ownership_gin;
+    
+    -- Update table statistics
+    ANALYZE client_products;
+    ANALYZE client_information_items;
+    ANALYZE client_unmanaged_products;
+    
+    -- Log maintenance completion
+    INSERT INTO maintenance_log (operation, completed_at, notes)
+    VALUES ('weekly_index_maintenance', NOW(), 'GIN indexes rebuilt and statistics updated');
+END;
+$$ LANGUAGE plpgsql;
+```
+
+**Backup Validation Enhancement**:
+```sql
+-- Enhanced backup validation for JSON data integrity
+CREATE OR REPLACE FUNCTION validate_backup_json_integrity()
+RETURNS TABLE(table_name TEXT, invalid_json_count BIGINT, issues TEXT) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        'client_information_items'::TEXT,
+        COUNT(*) as invalid_count,
+        'Invalid JSON in data_content field' as issues
+    FROM client_information_items 
+    WHERE NOT (data_content IS NOT NULL AND jsonb_typeof(data_content) = 'object')
+    
+    UNION ALL
+    
+    SELECT 
+        'client_unmanaged_products'::TEXT,
+        COUNT(*) as invalid_count,
+        'Invalid JSON in ownership_details field' as issues
+    FROM client_unmanaged_products 
+    WHERE NOT (ownership_details IS NOT NULL AND jsonb_typeof(ownership_details) = 'object')
+    
+    UNION ALL
+    
+    SELECT 
+        'client_products'::TEXT,
+        COUNT(*) as invalid_count,
+        'Invalid JSON in ownership_details field' as issues
+    FROM client_products 
+    WHERE NOT (ownership_details IS NOT NULL AND jsonb_typeof(ownership_details) = 'object');
+END;
+$$ LANGUAGE plpgsql;
+
+-- Run after each backup to ensure data integrity
+-- Should be integrated into backup scripts
+SELECT * FROM validate_backup_json_integrity() WHERE invalid_json_count > 0;
+```
 
 ---
 
