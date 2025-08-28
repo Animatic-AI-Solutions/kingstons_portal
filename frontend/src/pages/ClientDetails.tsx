@@ -1662,136 +1662,21 @@ const ClientDetails: React.FC = () => {
         handleDelete={handleDelete}
       />
 
-      {/* Phase 2: Enhanced 5-Tab Navigation System */}
-      <Phase2TabNavigation client={client} clientAccounts={clientAccounts} />
-
-      {/* Original Client Products Section - Now in Client Overview Tab */}
-      <div className="mb-6" id="client-overview-content">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-normal text-gray-900 font-sans tracking-wide">Client Products</h2>
-          
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={() => setShowRevenueModal(true)}
-              className="inline-flex items-center px-4 py-2 text-sm font-medium text-primary-700 bg-white border border-primary-300 rounded-lg hover:bg-primary-50 hover:border-primary-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 shadow-sm"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-              </svg>
-              Assign Fees
-            </button>
-            
-            <Link
-              to={`/create-client-group-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.name}`)}&returnTo=${encodeURIComponent(`/client_groups/${clientId}`)}`}
-            >
-              <AddButton
-                context="Product"
-                design="balanced"
-                size="md"
-              />
-            </Link>
-          </div>
-        </div>
-        
-        {!isLoading ? (
-          clientAccounts.length > 0 ? (
-            <div className="space-y-6">
-              {/* Organize products by type */}
-              {organizeProductsByType(clientAccounts.filter(account => account.status === 'active')).map(group => (
-                <div key={group.type}>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
-                    {group.type === 'ISA' ? 'ISAs' : 
-                     group.type === 'GIA' ? 'GIAs' : 
-                     group.type === 'Onshore Bond' ? 'Onshore Bonds' : 
-                     group.type === 'Offshore Bond' ? 'Offshore Bonds' : 
-                     group.type === 'Pension' ? 'Pensions' : 
-                     'Other'}
-                  </h3>
-                  <div className="grid grid-cols-1 gap-4">
-                    {group.products.map((account: ClientAccount) => (
-                      <ProductCard 
-                        key={account.id} 
-                        account={account} 
-                        isExpanded={expandedProducts.includes(account.id)}
-                        onToggleExpand={() => toggleProductExpand(account.id)}
-                        funds={expandedProductFunds[account.id] || []}
-                        isLoadingFunds={isLoadingFunds[account.id] || false}
-                        client={client}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
-              
-              {/* Lapsed Products - Show separately at the bottom */}
-              {clientAccounts.filter(account => account.status === 'inactive').length > 0 && (
-                <div>
-                  <h3 className="text-lg font-medium text-gray-500 mb-4">Lapsed Products</h3>
-                  <div className="grid grid-cols-1 gap-4 opacity-60">
-                    {clientAccounts
-                      .filter(account => account.status === 'inactive')
-                      .map(account => (
-                        <div key={account.id} className="filter grayscale relative">
-                          <ProductCard 
-                            account={account} 
-                            isExpanded={expandedProducts.includes(account.id)}
-                            onToggleExpand={() => toggleProductExpand(account.id)}
-                            funds={expandedProductFunds[account.id] || []}
-                            isLoadingFunds={isLoadingFunds[account.id] || false}
-                            client={client}
-                          />
-                          {/* Reactivate Button Overlay */}
-                          <div className="absolute top-4 right-4 z-10">
-                            <button
-                              onClick={() => handleReactivateProduct(account.id, account.product_name)}
-                              className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 shadow-sm flex items-center space-x-1 opacity-100"
-                              title="Reactivate this product"
-                            >
-                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                              </svg>
-                              <span>Reactivate</span>
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="bg-gray-50 p-6 rounded-lg text-center border border-gray-200">
-              <div className="text-gray-500 mb-4">No products found for this client.</div>
-              <div className="flex justify-center">
-                <Link 
-                  to={`/create-client-group-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.name}`)}&returnTo=${encodeURIComponent(`/client_groups/${clientId}`)}`}
-                >
-                  <AddButton
-                    context="Product"
-                    design="descriptive"
-                    size="md"
-                  >
-                    Add First Product
-                  </AddButton>
-                </Link>
-              </div>
-            </div>
-          )
-        ) : (
-          <div className="text-gray-500 p-6 text-center">Loading client products...</div>
-        )}
-      </div>
-      
-
-      {/* Revenue Assignment Modal */}
-      {showRevenueModal && (
-        <RevenueAssignmentModal
-          isOpen={showRevenueModal}
-          onClose={() => setShowRevenueModal(false)}
-          clientAccounts={clientAccounts}
-          onSave={handleRevenueAssignmentSave}
-        />
-      )}
+      {/* Phase 2: Enhanced 6-Tab Navigation System - Fixed isLoading prop */}
+      <Phase2TabNavigation 
+        client={client} 
+        clientAccounts={clientAccounts}
+        isLoading={isLoading}
+        expandedProducts={expandedProducts}
+        toggleProductExpand={toggleProductExpand}
+        expandedProductFunds={expandedProductFunds}
+        isLoadingFunds={isLoadingFunds}
+        organizeProductsByType={organizeProductsByType}
+        handleReactivateProduct={handleReactivateProduct}
+        showRevenueModal={showRevenueModal}
+        setShowRevenueModal={setShowRevenueModal}
+        handleRevenueAssignmentSave={handleRevenueAssignmentSave}
+      />
     </DynamicPageContainer>
   );
 };
@@ -2144,7 +2029,33 @@ const RevenueAssignmentModal: React.FC<{
 };
 
 // Phase 2: Enhanced 5-Tab Navigation Component
-const Phase2TabNavigation: React.FC<{ client: Client | null; clientAccounts: ClientAccount[] }> = ({ client, clientAccounts }) => {
+const Phase2TabNavigation: React.FC<{ 
+  client: Client | null; 
+  clientAccounts: ClientAccount[];
+  isLoading: boolean;
+  expandedProducts: number[];
+  toggleProductExpand: (productId: number) => void;
+  expandedProductFunds: Record<number, ProductFund[]>;
+  isLoadingFunds: Record<number, boolean>;
+  organizeProductsByType: (accounts: ClientAccount[]) => { type: string; products: ClientAccount[] }[];
+  handleReactivateProduct: (productId: number, productName: string) => void;
+  showRevenueModal: boolean;
+  setShowRevenueModal: (show: boolean) => void;
+  handleRevenueAssignmentSave: (updates: Record<number, { fixed_cost: number | null; percentage_fee: number | null }>) => void;
+}> = ({ 
+  client, 
+  clientAccounts, 
+  isLoading,
+  expandedProducts,
+  toggleProductExpand,
+  expandedProductFunds,
+  isLoadingFunds,
+  organizeProductsByType,
+  handleReactivateProduct,
+  showRevenueModal,
+  setShowRevenueModal,
+  handleRevenueAssignmentSave
+}) => {
   const [activeTab, setActiveTab] = useState('overview');
 
   // Mock data for demonstration
@@ -2218,7 +2129,8 @@ const Phase2TabNavigation: React.FC<{ client: Client | null; clientAccounts: Cli
     { id: 'mainlist', label: 'Main List', icon: '📋', badge: mockInformationItems.length },
     { id: 'objectives', label: 'Aims, Objectives, Actions', icon: '🎯' },
     { id: 'networth', label: 'Networth Statement', icon: '📊' },
-    { id: 'kyc', label: 'Know Your Customer', icon: '📄' }
+    { id: 'kyc', label: 'Know Your Customer', icon: '📄' },
+    { id: 'managed', label: 'Managed Products', icon: '💼', badge: clientAccounts?.length || 0 }
   ];
 
   return (
@@ -2255,6 +2167,22 @@ const Phase2TabNavigation: React.FC<{ client: Client | null; clientAccounts: Cli
         {activeTab === 'objectives' && <ObjectivesTab />}
         {activeTab === 'networth' && <NetworthTab client={client} unmanagedProducts={mockUnmanagedProducts} />}
         {activeTab === 'kyc' && <KYCTab client={client} />}
+        {activeTab === 'managed' && (
+          <ManagedProductsTab 
+            client={client} 
+            clientAccounts={clientAccounts}
+            isLoading={isLoading}
+            expandedProducts={expandedProducts}
+            toggleProductExpand={toggleProductExpand}
+            expandedProductFunds={expandedProductFunds}
+            isLoadingFunds={isLoadingFunds}
+            organizeProductsByType={organizeProductsByType}
+            handleReactivateProduct={handleReactivateProduct}
+            showRevenueModal={showRevenueModal}
+            setShowRevenueModal={setShowRevenueModal}
+            handleRevenueAssignmentSave={handleRevenueAssignmentSave}
+          />
+        )}
       </div>
     </div>
   );
@@ -2271,10 +2199,10 @@ const ClientOverviewTab: React.FC<{ client: Client | null; clientAccounts: Clien
       
       {/* Product Owner Cards Preview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        {/* Mock Product Owner Cards */}
+        {/* John Smith Product Owner Card */}
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
-          <div className="flex items-center space-x-3 mb-3">
-            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
               JS
             </div>
             <div>
@@ -2282,25 +2210,74 @@ const ClientOverviewTab: React.FC<{ client: Client | null; clientAccounts: Clien
               <p className="text-sm text-gray-600">Primary Client</p>
             </div>
           </div>
+          
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-600">DOB:</span>
-              <span>15/03/1975</span>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <span className="text-gray-600 font-medium">Email:</span>
+                <div className="text-gray-900">john.smith@email.com</div>
+              </div>
+              <div>
+                <span className="text-gray-600 font-medium">Phone:</span>
+                <div className="text-gray-900">07700 900123</div>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Address:</span>
-              <span>SW1A 1AA</span>
+            
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <span className="text-gray-600 font-medium">DOB:</span>
+                <div className="text-gray-900">15/03/1975</div>
+              </div>
+              <div>
+                <span className="text-gray-600 font-medium">Known As:</span>
+                <div className="text-gray-900">John</div>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Status:</span>
-              <span className="text-green-600 font-medium">Active</span>
+            
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <span className="text-gray-600 font-medium">Title:</span>
+                <div className="text-gray-900">Mr</div>
+              </div>
+              <div>
+                <span className="text-gray-600 font-medium">NI Number:</span>
+                <div className="text-gray-900">AB123456C</div>
+              </div>
+            </div>
+            
+            <div className="mt-3 pt-2 border-t border-blue-200">
+              <div className="mb-2">
+                <span className="text-gray-600 font-medium">Security Words:</span>
+                <div className="text-gray-900">Summer, London, Football</div>
+              </div>
+              
+              <div className="mb-2">
+                <span className="text-gray-600 font-medium">Notes:</span>
+                <div className="text-gray-900 text-xs">Prefers morning appointments. Retired teacher.</div>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-1">
+                <div>
+                  <span className="text-gray-600 font-medium">Next Meeting:</span>
+                  <div className="text-gray-900 text-xs">15/09/2024 10:00 AM</div>
+                </div>
+                <div>
+                  <span className="text-gray-600 font-medium">Last T&Cs:</span>
+                  <div className="text-gray-900 text-xs">12/01/2024</div>
+                </div>
+                <div>
+                  <span className="text-gray-600 font-medium">Last Fee Agreement:</span>
+                  <div className="text-gray-900 text-xs">12/01/2024</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
+        {/* Mary Smith Product Owner Card */}
         <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200">
-          <div className="flex items-center space-x-3 mb-3">
-            <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
               MS
             </div>
             <div>
@@ -2308,18 +2285,66 @@ const ClientOverviewTab: React.FC<{ client: Client | null; clientAccounts: Clien
               <p className="text-sm text-gray-600">Spouse</p>
             </div>
           </div>
+          
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-600">DOB:</span>
-              <span>22/07/1978</span>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <span className="text-gray-600 font-medium">Email:</span>
+                <div className="text-gray-900">mary.smith@email.com</div>
+              </div>
+              <div>
+                <span className="text-gray-600 font-medium">Phone:</span>
+                <div className="text-gray-900">07700 900124</div>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Address:</span>
-              <span>SW1A 1AA</span>
+            
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <span className="text-gray-600 font-medium">DOB:</span>
+                <div className="text-gray-900">22/07/1978</div>
+              </div>
+              <div>
+                <span className="text-gray-600 font-medium">Known As:</span>
+                <div className="text-gray-900">Mary</div>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Status:</span>
-              <span className="text-green-600 font-medium">Active</span>
+            
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <span className="text-gray-600 font-medium">Title:</span>
+                <div className="text-gray-900">Mrs</div>
+              </div>
+              <div>
+                <span className="text-gray-600 font-medium">NI Number:</span>
+                <div className="text-gray-900">CD789012F</div>
+              </div>
+            </div>
+            
+            <div className="mt-3 pt-2 border-t border-purple-200">
+              <div className="mb-2">
+                <span className="text-gray-600 font-medium">Security Words:</span>
+                <div className="text-gray-900">Garden, Paris, Reading</div>
+              </div>
+              
+              <div className="mb-2">
+                <span className="text-gray-600 font-medium">Notes:</span>
+                <div className="text-gray-900 text-xs">Works from home. Architect. Prefers video calls.</div>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-1">
+                <div>
+                  <span className="text-gray-600 font-medium">Next Meeting:</span>
+                  <div className="text-gray-900 text-xs">15/09/2024 10:00 AM</div>
+                </div>
+                <div>
+                  <span className="text-gray-600 font-medium">Last T&Cs:</span>
+                  <div className="text-gray-900 text-xs">12/01/2024</div>
+                </div>
+                <div>
+                  <span className="text-gray-600 font-medium">Last Fee Agreement:</span>
+                  <div className="text-gray-900 text-xs">12/01/2024</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -2482,24 +2507,30 @@ const ObjectivesTab: React.FC = () => {
       title: 'Retirement Planning', 
       description: 'Build a comprehensive retirement portfolio targeting £750,000 by age 65. Focus on maximizing pension contributions and ISA allowances while maintaining appropriate risk levels for long-term growth.',
       priority: 'high', 
-      target_date: '2030-12-31', 
-      status: 'in_progress' 
+      start_date: '2024-01-15',
+      target_date: '2030-12-31',
+      last_discussed: '2024-08-20',
+      status: 'on-target' 
     },
     { 
       id: 2, 
       title: 'House Purchase', 
       description: 'Save for deposit on family home in Surrey area. Target property value £450,000 requiring £90,000 deposit plus stamp duty and legal costs. Maintain funds in accessible investments.',
       priority: 'medium', 
-      target_date: '2026-06-30', 
-      status: 'planning' 
+      start_date: '2024-03-10',
+      target_date: '2026-06-30',
+      last_discussed: '2024-08-15',
+      status: 'needs revision' 
     },
     { 
       id: 3, 
       title: 'Children\'s Education Fund', 
       description: 'Establish education savings for two children currently aged 8 and 10. Target £40,000 per child for university costs including accommodation. Utilize Junior ISAs and education-specific savings products.',
       priority: 'medium', 
-      target_date: '2032-09-01', 
-      status: 'planning' 
+      start_date: '2024-02-01',
+      target_date: '2032-09-01',
+      last_discussed: '2024-08-25',
+      status: 'on-target' 
     }
   ];
 
@@ -2508,7 +2539,10 @@ const ObjectivesTab: React.FC = () => {
       id: 1, 
       title: 'Review pension contributions', 
       description: 'Analyze current pension contributions across all schemes including workplace pension and SIPP. Consider increasing contributions to maximize annual allowance and tax efficiency. Review provider performance and fees.',
-      due_date: '2024-09-15', 
+      objective_id: 1,
+      date_created: '2024-08-15',
+      target_date: '2024-09-15',
+      drop_dead_date: '2024-09-20',
       status: 'todo', 
       assigned_to: 'John Advisor',
       assignment_type: 'advisor'
@@ -2517,7 +2551,10 @@ const ObjectivesTab: React.FC = () => {
       id: 2, 
       title: 'Update risk assessment', 
       description: 'Complete comprehensive risk tolerance questionnaire and capacity for loss assessment. Update client risk profile to reflect recent salary increase and changing family circumstances.',
-      due_date: '2024-08-30', 
+      objective_id: null,
+      date_created: '2024-08-10',
+      target_date: '2024-08-30',
+      drop_dead_date: '2024-09-05',
       status: 'completed', 
       assigned_to: 'Jane Smith',
       assignment_type: 'advisor'
@@ -2526,7 +2563,10 @@ const ObjectivesTab: React.FC = () => {
       id: 3, 
       title: 'Provide salary documentation', 
       description: 'Gather and provide recent P60s, last 3 months payslips, and employment contract. Client to collect these documents from HR department and scan for secure upload.',
-      due_date: '2024-09-20', 
+      objective_id: 2,
+      date_created: '2024-08-20',
+      target_date: '2024-09-20',
+      drop_dead_date: '2024-09-25',
       status: 'todo', 
       assigned_to: 'John Smith (Client)',
       assignment_type: 'client'
@@ -2535,7 +2575,10 @@ const ObjectivesTab: React.FC = () => {
       id: 4, 
       title: 'Complete risk questionnaire', 
       description: 'Fill out comprehensive attitude to risk questionnaire online. Client to complete all sections including capacity for loss assessment and investment experience details.',
-      due_date: '2024-09-25', 
+      objective_id: null,
+      date_created: '2024-08-18',
+      target_date: '2024-09-25',
+      drop_dead_date: '2024-09-30',
       status: 'todo', 
       assigned_to: 'Mary Smith (Client)',
       assignment_type: 'client'
@@ -2544,7 +2587,10 @@ const ObjectivesTab: React.FC = () => {
       id: 5, 
       title: 'Property valuation report', 
       description: 'Independent surveyor to conduct full structural survey and valuation of current property for refinancing purposes. Third-party appointment arranged through mortgage broker.',
-      due_date: '2024-10-10', 
+      objective_id: 2,
+      date_created: '2024-08-25',
+      target_date: '2024-10-10',
+      drop_dead_date: '2024-10-15',
       status: 'todo', 
       assigned_to: 'ABC Surveyors Ltd',
       assignment_type: 'other'
@@ -2553,7 +2599,10 @@ const ObjectivesTab: React.FC = () => {
       id: 6, 
       title: 'Set up Junior ISAs', 
       description: 'Open Junior ISA accounts for both children and set up monthly contributions. Research education-specific savings products and compare with standard Junior ISA options for optimal tax-efficient growth.',
-      due_date: '2024-11-01', 
+      objective_id: 3,
+      date_created: '2024-08-22',
+      target_date: '2024-11-01',
+      drop_dead_date: '2024-11-10',
       status: 'todo', 
       assigned_to: 'Sarah Williams',
       assignment_type: 'advisor'
@@ -2562,7 +2611,10 @@ const ObjectivesTab: React.FC = () => {
       id: 7, 
       title: 'Gather bank statements', 
       description: 'Collect and provide last 6 months bank statements for all current accounts, savings accounts, and credit cards. Required for mortgage application and financial planning review.',
-      due_date: '2024-08-25', 
+      objective_id: 2,
+      date_created: '2024-08-05',
+      target_date: '2024-08-25',
+      drop_dead_date: '2024-08-30',
       status: 'completed', 
       assigned_to: 'John Smith (Client)',
       assignment_type: 'client'
@@ -2571,7 +2623,10 @@ const ObjectivesTab: React.FC = () => {
       id: 8, 
       title: 'Initial portfolio review', 
       description: 'Comprehensive review of existing investment portfolio including performance analysis, risk assessment, and alignment with client objectives. Identified opportunities for optimization.',
-      due_date: '2024-08-20', 
+      objective_id: 1,
+      date_created: '2024-08-01',
+      target_date: '2024-08-20',
+      drop_dead_date: '2024-08-25',
       status: 'completed', 
       assigned_to: 'John Advisor',
       assignment_type: 'advisor'
@@ -2581,6 +2636,24 @@ const ObjectivesTab: React.FC = () => {
   // Filter actions by status
   const todoActions = mockActions.filter(action => action.status === 'todo');
   const completedActions = mockActions.filter(action => action.status === 'completed');
+
+  // Get actions for each objective
+  const getActionsForObjective = (objectiveId: number) => {
+    return mockActions.filter(action => action.objective_id === objectiveId);
+  };
+
+  // Get unlinked actions (not associated with any objective)
+  const unlinkedActions = mockActions.filter(action => action.objective_id === null);
+
+  // State for collapsible sections
+  const [expandedObjectives, setExpandedObjectives] = React.useState<Record<number, boolean>>({});
+
+  const toggleObjectiveExpansion = (objectiveId: number) => {
+    setExpandedObjectives(prev => ({
+      ...prev,
+      [objectiveId]: !prev[objectiveId]
+    }));
+  };
 
   return (
     <div>
@@ -2599,57 +2672,134 @@ const ObjectivesTab: React.FC = () => {
           Client Objectives
         </h4>
         <div className="space-y-4">
-          {mockObjectives.map((objective) => (
-            <div key={objective.id} className="bg-white border border-gray-200 rounded-lg p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h5 className="font-medium text-gray-900">{objective.title}</h5>
-                  <p className="mt-2 text-sm text-gray-600 leading-relaxed">{objective.description}</p>
-                  <div className="flex items-center space-x-4 mt-3 text-sm text-gray-500">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                      objective.priority === 'high' ? 'bg-red-100 text-red-800' :
-                      objective.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-green-100 text-green-800'
-                    }`}>
-                      {objective.priority} priority
-                    </span>
-                    <span>Target: {new Date(objective.target_date).toLocaleDateString()}</span>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                      objective.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {objective.status.replace('_', ' ')}
-                    </span>
+          {mockObjectives.map((objective) => {
+            const objectiveActions = getActionsForObjective(objective.id);
+            const isExpanded = expandedObjectives[objective.id] || false;
+            
+            return (
+              <div key={objective.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h5 className="font-medium text-gray-900">{objective.title}</h5>
+                    <p className="mt-2 text-sm text-gray-600 leading-relaxed">{objective.description}</p>
+                    
+                    {/* Objective Details */}
+                    <div className="grid grid-cols-2 gap-4 mt-3 text-sm text-gray-500">
+                      <div className="space-y-1">
+                        <span>Started: {new Date(objective.start_date).toLocaleDateString()}</span>
+                        <span>Target: {new Date(objective.target_date).toLocaleDateString()}</span>
+                      </div>
+                      <div className="space-y-1">
+                        <span>Last Discussed: {new Date(objective.last_discussed).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-4 mt-3 text-sm text-gray-500">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        objective.priority === 'high' ? 'bg-red-100 text-red-800' :
+                        objective.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-green-100 text-green-800'
+                      }`}>
+                        {objective.priority} priority
+                      </span>
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        objective.status === 'on-target' ? 'bg-green-100 text-green-800' :
+                        objective.status === 'needs revision' ? 'bg-orange-100 text-orange-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {objective.status === 'on-target' ? 'On Target' : 
+                         objective.status === 'needs revision' ? 'Needs Revision' : 
+                         objective.status}
+                      </span>
+                    </div>
+
+                    {/* Linked Actions Section */}
+                    {objectiveActions.length > 0 && (
+                      <div className="mt-4">
+                        <button
+                          onClick={() => toggleObjectiveExpansion(objective.id)}
+                          className="flex items-center space-x-2 text-sm text-primary-600 hover:text-primary-700"
+                        >
+                          <span className={`transform transition-transform ${isExpanded ? 'rotate-90' : 'rotate-0'}`}>
+                            ▶
+                          </span>
+                          <span>{objectiveActions.length} Linked Action{objectiveActions.length !== 1 ? 's' : ''}</span>
+                        </button>
+                        
+                        {isExpanded && (
+                          <div className="mt-3 space-y-3 pl-4 border-l-2 border-primary-100">
+                            {objectiveActions.map((action) => (
+                              <div key={action.id} className="bg-gray-50 rounded-lg p-3">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <h6 className="font-medium text-gray-900 text-sm">{action.title}</h6>
+                                    <p className="mt-1 text-xs text-gray-600">{action.description}</p>
+                                    <div className="flex items-center space-x-3 mt-2 text-xs text-gray-500">
+                                      <span>Created: {new Date(action.date_created).toLocaleDateString()}</span>
+                                      <span>Target: {new Date(action.target_date).toLocaleDateString()}</span>
+                                      <span className="text-red-600 font-medium">Drop Dead: {new Date(action.drop_dead_date).toLocaleDateString()}</span>
+                                    </div>
+                                    <div className="flex items-center space-x-3 mt-1 text-xs text-gray-500">
+                                      <span>Assigned to: {action.assigned_to}</span>
+                                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${
+                                        action.assignment_type === 'advisor' ? 'bg-blue-100 text-blue-800' :
+                                        action.assignment_type === 'client' ? 'bg-purple-100 text-purple-800' :
+                                        'bg-gray-100 text-gray-800'
+                                      }`}>
+                                        {action.assignment_type === 'advisor' ? '👨‍💼 Advisor' : 
+                                         action.assignment_type === 'client' ? '👤 Client' : 
+                                         '🏢 Third Party'}
+                                      </span>
+                                      {action.status === 'completed' && (
+                                        <span className="text-green-600">✓ Completed</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex space-x-1 ml-2">
+                                    <EditButton size="xs" />
+                                    <DeleteButton size="xs" />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex space-x-2 ml-4">
+                    <EditButton size="sm" />
+                    <DeleteButton size="sm" />
                   </div>
                 </div>
-                <div className="flex space-x-2 ml-4">
-                  <EditButton size="sm" />
-                  <DeleteButton size="sm" />
-                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      {/* To-Do Actions Section */}
+      {/* Unlinked To-Do Actions Section */}
       <div className="mb-8">
         <h4 className="text-md font-medium text-gray-900 mb-4 flex items-center">
           <span className="text-lg mr-2">📋</span>
-          To-Do Actions
+          Unlinked To-Do Actions
           <span className="ml-3 bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-1 rounded-full">
-            {todoActions.length}
+            {unlinkedActions.filter(action => action.status === 'todo').length}
           </span>
         </h4>
         <div className="space-y-4">
-          {todoActions.map((action) => (
+          {unlinkedActions.filter(action => action.status === 'todo').map((action) => (
             <div key={action.id} className="bg-white border border-gray-200 rounded-lg p-4">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <h5 className="font-medium text-gray-900">{action.title}</h5>
                   <p className="mt-2 text-sm text-gray-600 leading-relaxed">{action.description}</p>
                   <div className="flex items-center space-x-4 mt-3 text-sm text-gray-500">
-                    <span>Due: {new Date(action.due_date).toLocaleDateString()}</span>
+                    <span>Created: {new Date(action.date_created).toLocaleDateString()}</span>
+                    <span>Target: {new Date(action.target_date).toLocaleDateString()}</span>
+                    <span className="text-red-600 font-medium">Drop Dead: {new Date(action.drop_dead_date).toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
                     <span>Assigned to: {action.assigned_to}</span>
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                       action.assignment_type === 'advisor' ? 'bg-blue-100 text-blue-800' :
@@ -2672,17 +2822,17 @@ const ObjectivesTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Completed Actions Section */}
+      {/* Unlinked Completed Actions Section */}
       <div>
         <h4 className="text-md font-medium text-gray-900 mb-4 flex items-center">
           <span className="text-lg mr-2">✅</span>
-          Completed Actions
+          Unlinked Completed Actions
           <span className="ml-3 bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
-            {completedActions.length}
+            {unlinkedActions.filter(action => action.status === 'completed').length}
           </span>
         </h4>
         <div className="space-y-4">
-          {completedActions.map((action) => (
+          {unlinkedActions.filter(action => action.status === 'completed').map((action) => (
             <div key={action.id} className="bg-white border border-gray-200 rounded-lg p-4 opacity-75">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -2692,7 +2842,11 @@ const ObjectivesTab: React.FC = () => {
                   </h5>
                   <p className="mt-2 text-sm text-gray-600 leading-relaxed">{action.description}</p>
                   <div className="flex items-center space-x-4 mt-3 text-sm text-gray-500">
-                    <span>Completed: {new Date(action.due_date).toLocaleDateString()}</span>
+                    <span>Created: {new Date(action.date_created).toLocaleDateString()}</span>
+                    <span>Target: {new Date(action.target_date).toLocaleDateString()}</span>
+                    <span className="text-red-600 font-medium">Drop Dead: {new Date(action.drop_dead_date).toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
                     <span>Assigned to: {action.assigned_to}</span>
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                       action.assignment_type === 'advisor' ? 'bg-blue-100 text-blue-800' :
@@ -2840,6 +2994,10 @@ const NetworthTab: React.FC<{ client: Client | null; unmanagedProducts: any[] }>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="text-sm font-medium text-blue-900">Net Worth</div>
+          <div className="text-2xl font-bold text-blue-900">£{mockNetworthData.summary.net_worth.toLocaleString()}</div>
+        </div>
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="text-sm font-medium text-green-900">Total Assets</div>
           <div className="text-2xl font-bold text-green-900">£{mockNetworthData.summary.total_assets.toLocaleString()}</div>
@@ -2848,13 +3006,11 @@ const NetworthTab: React.FC<{ client: Client | null; unmanagedProducts: any[] }>
           <div className="text-sm font-medium text-red-900">Total Liabilities</div>
           <div className="text-2xl font-bold text-red-900">£{mockNetworthData.summary.total_liabilities.toLocaleString()}</div>
         </div>
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="text-sm font-medium text-blue-900">Net Worth</div>
-          <div className="text-2xl font-bold text-blue-900">£{mockNetworthData.summary.net_worth.toLocaleString()}</div>
-        </div>
         <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-          <div className="text-sm font-medium text-purple-900">Change</div>
-          <div className="text-lg font-bold text-green-600">+2.8%</div>
+          <div className="text-sm font-medium text-purple-900">Change Since Last Snapshot</div>
+          <div className="text-lg font-bold text-green-600">+£12,500</div>
+          <div className="text-sm font-medium text-green-600">+2.8%</div>
+          <div className="text-xs text-purple-700 mt-1">Apr 24 to Aug 25</div>
         </div>
       </div>
 
@@ -2869,8 +3025,8 @@ const NetworthTab: React.FC<{ client: Client | null; unmanagedProducts: any[] }>
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset Type & Items</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">John Smith</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Mary Smith</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">John</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Mary</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Joint</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
               </tr>
@@ -3096,7 +3252,19 @@ const NetworthTab: React.FC<{ client: Client | null; unmanagedProducts: any[] }>
 
 const KYCTab: React.FC<{ client: Client | null }> = ({ client }) => {
   const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [showKYCReport, setShowKYCReport] = useState(false);
   const [completeness, setCompleteness] = useState(78);
+  const [selectedSections, setSelectedSections] = useState({
+    personalDetails: true,
+    financialPosition: true,
+    investmentExperience: false,
+    objectives: true
+  });
+
+  const handleGenerateReport = () => {
+    setShowGenerateModal(false);
+    setShowKYCReport(true);
+  };
 
   return (
     <div>
@@ -3229,19 +3397,39 @@ const KYCTab: React.FC<{ client: Client | null }> = ({ client }) => {
 
                 <div className="space-y-3">
                   <label className="flex items-center">
-                    <input type="checkbox" className="rounded border-gray-300" defaultChecked />
+                    <input 
+                      type="checkbox" 
+                      className="rounded border-gray-300" 
+                      checked={selectedSections.personalDetails}
+                      onChange={(e) => setSelectedSections(prev => ({...prev, personalDetails: e.target.checked}))}
+                    />
                     <span className="ml-2 text-sm text-gray-700">Include personal details section</span>
                   </label>
                   <label className="flex items-center">
-                    <input type="checkbox" className="rounded border-gray-300" defaultChecked />
+                    <input 
+                      type="checkbox" 
+                      className="rounded border-gray-300" 
+                      checked={selectedSections.financialPosition}
+                      onChange={(e) => setSelectedSections(prev => ({...prev, financialPosition: e.target.checked}))}
+                    />
                     <span className="ml-2 text-sm text-gray-700">Include financial position section</span>
                   </label>
                   <label className="flex items-center">
-                    <input type="checkbox" className="rounded border-gray-300" />
+                    <input 
+                      type="checkbox" 
+                      className="rounded border-gray-300" 
+                      checked={selectedSections.investmentExperience}
+                      onChange={(e) => setSelectedSections(prev => ({...prev, investmentExperience: e.target.checked}))}
+                    />
                     <span className="ml-2 text-sm text-gray-700">Include investment experience section</span>
                   </label>
                   <label className="flex items-center">
-                    <input type="checkbox" className="rounded border-gray-300" defaultChecked />
+                    <input 
+                      type="checkbox" 
+                      className="rounded border-gray-300" 
+                      checked={selectedSections.objectives}
+                      onChange={(e) => setSelectedSections(prev => ({...prev, objectives: e.target.checked}))}
+                    />
                     <span className="ml-2 text-sm text-gray-700">Include objectives section</span>
                   </label>
                 </div>
@@ -3251,12 +3439,394 @@ const KYCTab: React.FC<{ client: Client | null }> = ({ client }) => {
               <ActionButton variant="cancel" onClick={() => setShowGenerateModal(false)}>
                 Cancel
               </ActionButton>
-              <ActionButton variant="save" onClick={() => setShowGenerateModal(false)}>
+              <ActionButton variant="save" onClick={handleGenerateReport}>
                 Generate Report
               </ActionButton>
             </div>
           </div>
         </div>
+      )}
+
+      {/* KYC Report Display Modal */}
+      {showKYCReport && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">Know Your Customer (KYC) Report</h3>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => window.print()}
+                  className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  🖨️ Print
+                </button>
+                <button
+                  onClick={() => setShowKYCReport(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
+              <div className="px-8 py-6 space-y-8" style={{fontFamily: 'serif'}}>
+                
+                {/* Report Header */}
+                <div className="text-center border-b border-gray-300 pb-6">
+                  <h1 className="text-2xl font-bold text-gray-900 mb-2">KNOW YOUR CUSTOMER REPORT</h1>
+                  <div className="text-gray-600">
+                    <p className="font-semibold">{client?.name || 'John & Mary Smith'}</p>
+                    <p className="text-sm">Generated: {new Date().toLocaleDateString('en-GB', { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}</p>
+                    <p className="text-sm">Advisor: John Advisor</p>
+                  </div>
+                </div>
+
+                {/* Personal Details Section */}
+                {selectedSections.personalDetails && (
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-2">1. PERSONAL DETAILS</h2>
+                    <div className="grid grid-cols-2 gap-6 text-sm">
+                      <div>
+                        <h3 className="font-semibold text-gray-800 mb-3">Primary Client</h3>
+                        <div className="space-y-2">
+                          <div><span className="font-medium">Full Name:</span> John Smith</div>
+                          <div><span className="font-medium">Date of Birth:</span> 15th March 1978</div>
+                          <div><span className="font-medium">Nationality:</span> British</div>
+                          <div><span className="font-medium">Marital Status:</span> Married</div>
+                          <div><span className="font-medium">Employment:</span> Senior Software Engineer</div>
+                          <div><span className="font-medium">Employer:</span> TechCorp Ltd</div>
+                        </div>
+                        <h4 className="font-semibold text-gray-800 mt-4 mb-2">Address</h4>
+                        <div className="space-y-1 text-sm">
+                          <div>123 Main Street</div>
+                          <div>Surrey, England</div>
+                          <div>SW1A 1AA</div>
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-800 mb-3">Spouse/Partner</h3>
+                        <div className="space-y-2">
+                          <div><span className="font-medium">Full Name:</span> Mary Smith</div>
+                          <div><span className="font-medium">Date of Birth:</span> 22nd July 1980</div>
+                          <div><span className="font-medium">Nationality:</span> British</div>
+                          <div><span className="font-medium">Employment:</span> Marketing Manager</div>
+                          <div><span className="font-medium">Employer:</span> Creative Agency Ltd</div>
+                        </div>
+                        <h4 className="font-semibold text-gray-800 mt-4 mb-2">Contact Information</h4>
+                        <div className="space-y-1 text-sm">
+                          <div><span className="font-medium">Email:</span> john.smith@email.com</div>
+                          <div><span className="font-medium">Phone:</span> +44 7700 900123</div>
+                          <div><span className="font-medium">Alternative:</span> mary.smith@email.com</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Financial Position Section */}
+                {selectedSections.financialPosition && (
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-2">2. FINANCIAL POSITION</h2>
+                    <div className="grid grid-cols-2 gap-6 text-sm">
+                      <div>
+                        <h3 className="font-semibold text-gray-800 mb-3">Income & Employment</h3>
+                        <div className="space-y-2">
+                          <div><span className="font-medium">John's Salary:</span> £75,000 per annum</div>
+                          <div><span className="font-medium">Mary's Salary:</span> £52,000 per annum</div>
+                          <div><span className="font-medium">Bonus/Other Income:</span> £8,000 per annum</div>
+                          <div><span className="font-medium">Total Household Income:</span> £135,000 per annum</div>
+                        </div>
+                        <h3 className="font-semibold text-gray-800 mt-4 mb-3">Monthly Expenditure</h3>
+                        <div className="space-y-2">
+                          <div><span className="font-medium">Mortgage:</span> £2,100</div>
+                          <div><span className="font-medium">Household Expenses:</span> £1,800</div>
+                          <div><span className="font-medium">Insurance:</span> £450</div>
+                          <div><span className="font-medium">Other:</span> £650</div>
+                          <div><span className="font-medium">Total Monthly:</span> £5,000</div>
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-800 mb-3">Assets</h3>
+                        <div className="space-y-2">
+                          <div><span className="font-medium">Main Residence:</span> £450,000</div>
+                          <div><span className="font-medium">Managed Investments:</span> £425,000</div>
+                          <div><span className="font-medium">Bank Accounts:</span> £13,000</div>
+                          <div><span className="font-medium">Other Assets:</span> £35,000</div>
+                          <div className="font-semibold border-t pt-2"><span className="font-medium">Total Assets:</span> £923,000</div>
+                        </div>
+                        <h3 className="font-semibold text-gray-800 mt-4 mb-3">Liabilities</h3>
+                        <div className="space-y-2">
+                          <div><span className="font-medium">Outstanding Mortgage:</span> £275,000</div>
+                          <div><span className="font-medium">Credit Cards:</span> £3,500</div>
+                          <div><span className="font-medium">Other Loans:</span> £8,500</div>
+                          <div className="font-semibold border-t pt-2"><span className="font-medium">Total Liabilities:</span> £287,000</div>
+                        </div>
+                        <div className="font-bold text-lg mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                          <span className="font-medium">Net Worth:</span> £636,000
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Investment Experience Section */}
+                {selectedSections.investmentExperience && (
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-2">3. INVESTMENT EXPERIENCE & RISK PROFILE</h2>
+                    <div className="space-y-4 text-sm">
+                      <div>
+                        <h3 className="font-semibold text-gray-800 mb-2">Investment Experience</h3>
+                        <p className="mb-2">Both clients have moderate investment experience, having held ISAs and workplace pensions for over 10 years. John has some experience with direct equity investments through a stocks and shares ISA.</p>
+                        <div className="space-y-1">
+                          <div><span className="font-medium">Investment Period:</span> 10+ years</div>
+                          <div><span className="font-medium">Product Knowledge:</span> ISAs, Pensions, Unit Trusts, Some Direct Equities</div>
+                          <div><span className="font-medium">Previous Advisor Experience:</span> Yes, 3 years</div>
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-800 mb-2">Attitude to Risk</h3>
+                        <p className="mb-2">The clients have been assessed as having a <span className="font-semibold">Balanced (5 out of 10)</span> attitude to risk. They understand that investments can fall as well as rise and are comfortable with moderate volatility for potentially higher long-term returns.</p>
+                        <div className="space-y-1">
+                          <div><span className="font-medium">Risk Rating:</span> 5/10 (Balanced)</div>
+                          <div><span className="font-medium">Capacity for Loss:</span> High (due to strong income and asset base)</div>
+                          <div><span className="font-medium">Time Horizon:</span> Long-term (15+ years to retirement)</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Objectives Section */}
+                {selectedSections.objectives && (
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-2">4. OBJECTIVES & FINANCIAL GOALS</h2>
+                    <div className="space-y-4 text-sm">
+                      <div>
+                        <h3 className="font-semibold text-gray-800 mb-2">Primary Objectives</h3>
+                        <div className="space-y-3">
+                          <div className="border border-gray-200 rounded p-3">
+                            <div className="font-semibold text-gray-700">1. Retirement Planning</div>
+                            <p className="text-sm mt-1">Build a comprehensive retirement portfolio targeting £750,000 by age 65. Focus on maximizing pension contributions and ISA allowances while maintaining appropriate risk levels for long-term growth.</p>
+                            <div className="text-xs text-gray-600 mt-2">
+                              <span className="font-medium">Target Date:</span> 2030 • 
+                              <span className="font-medium">Priority:</span> High • 
+                              <span className="font-medium">Status:</span> <span className="text-green-600 font-semibold">On Target</span>
+                            </div>
+                          </div>
+                          <div className="border border-gray-200 rounded p-3">
+                            <div className="font-semibold text-gray-700">2. Children's Education Fund</div>
+                            <p className="text-sm mt-1">Establish education savings for two children currently aged 8 and 10. Target £40,000 per child for university costs including accommodation. Utilize Junior ISAs and education-specific savings products.</p>
+                            <div className="text-xs text-gray-600 mt-2">
+                              <span className="font-medium">Target Date:</span> 2032 • 
+                              <span className="font-medium">Priority:</span> Medium • 
+                              <span className="font-medium">Status:</span> <span className="text-green-600 font-semibold">On Target</span>
+                            </div>
+                          </div>
+                          <div className="border border-gray-200 rounded p-3">
+                            <div className="font-semibold text-gray-700">3. House Purchase</div>
+                            <p className="text-sm mt-1">Save for deposit on family home in Surrey area. Target property value £450,000 requiring £90,000 deposit plus stamp duty and legal costs. Maintain funds in accessible investments.</p>
+                            <div className="text-xs text-gray-600 mt-2">
+                              <span className="font-medium">Target Date:</span> 2026 • 
+                              <span className="font-medium">Priority:</span> Medium • 
+                              <span className="font-medium">Status:</span> <span className="text-orange-600 font-semibold">Needs Revision</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Regulatory Declaration */}
+                <div className="border-t border-gray-300 pt-6 space-y-4 text-xs">
+                  <h2 className="text-lg font-bold text-gray-900">REGULATORY DECLARATIONS</h2>
+                  <div className="space-y-2 text-gray-700">
+                    <p>This Know Your Customer report has been prepared in accordance with the Financial Conduct Authority (FCA) rules and regulations.</p>
+                    <p>The information contained in this report has been gathered through client meetings, questionnaires, and supporting documentation provided by the client(s).</p>
+                    <p>This report forms part of the client's permanent record and will be updated as circumstances change.</p>
+                  </div>
+                  <div className="flex justify-between items-end pt-8">
+                    <div>
+                      <div className="border-b border-gray-400 w-48 mb-2"></div>
+                      <p className="text-xs">Client Signature & Date</p>
+                    </div>
+                    <div>
+                      <div className="border-b border-gray-400 w-48 mb-2"></div>
+                      <p className="text-xs">Advisor Signature & Date</p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Managed Products Tab Component - Contains the original client products section
+const ManagedProductsTab: React.FC<{ 
+  client: Client | null; 
+  clientAccounts: ClientAccount[];
+  isLoading: boolean;
+  expandedProducts: number[];
+  toggleProductExpand: (productId: number) => void;
+  expandedProductFunds: Record<number, ProductFund[]>;
+  isLoadingFunds: Record<number, boolean>;
+  organizeProductsByType: (accounts: ClientAccount[]) => { type: string; products: ClientAccount[] }[];
+  handleReactivateProduct: (productId: number, productName: string) => void;
+  showRevenueModal: boolean;
+  setShowRevenueModal: (show: boolean) => void;
+  handleRevenueAssignmentSave: (updates: Record<number, { fixed_cost: number | null; percentage_fee: number | null }>) => void;
+}> = ({ 
+  client, 
+  clientAccounts, 
+  isLoading,
+  expandedProducts, 
+  toggleProductExpand, 
+  expandedProductFunds, 
+  isLoadingFunds, 
+  organizeProductsByType, 
+  handleReactivateProduct, 
+  showRevenueModal, 
+  setShowRevenueModal, 
+  handleRevenueAssignmentSave 
+}) => {
+  // Get client ID from URL params
+  const { id: clientId } = useParams<{ id: string }>();
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-lg font-medium text-gray-900">Managed Products</h3>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setShowRevenueModal(true)}
+            className="inline-flex items-center px-4 py-2 text-sm font-medium text-primary-700 bg-white border border-primary-300 rounded-lg hover:bg-primary-50 hover:border-primary-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 shadow-sm"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+            </svg>
+            Assign Fees
+          </button>
+          
+          <Link
+            to={`/create-client-group-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.name}`)}&returnTo=${encodeURIComponent(`/client_groups/${clientId}`)}`}
+          >
+            <AddButton
+              context="Product"
+              design="balanced"
+              size="md"
+            />
+          </Link>
+        </div>
+      </div>
+      
+      {!isLoading ? (
+        clientAccounts.length > 0 ? (
+          <div className="space-y-6">
+            {/* Organize products by type */}
+            {organizeProductsByType(clientAccounts.filter(account => account.status === 'active')).map(group => (
+              <div key={group.type}>
+                <h4 className="text-lg font-medium text-gray-900 mb-4">
+                  {group.type === 'ISA' ? 'ISAs' : 
+                   group.type === 'GIA' ? 'GIAs' : 
+                   group.type === 'Onshore Bond' ? 'Onshore Bonds' : 
+                   group.type === 'Offshore Bond' ? 'Offshore Bonds' : 
+                   group.type === 'Pension' ? 'Pensions' : 
+                   'Other'}
+                </h4>
+                <div className="grid grid-cols-1 gap-4">
+                  {group.products.map((account: ClientAccount) => (
+                    <ProductCard 
+                      key={account.id} 
+                      account={account} 
+                      isExpanded={expandedProducts.includes(account.id)}
+                      onToggleExpand={() => toggleProductExpand(account.id)}
+                      funds={expandedProductFunds[account.id] || []}
+                      isLoadingFunds={isLoadingFunds[account.id] || false}
+                      client={client}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+            
+            {/* Lapsed Products - Show separately at the bottom */}
+            {clientAccounts.filter(account => account.status === 'inactive').length > 0 && (
+              <div>
+                <h4 className="text-lg font-medium text-gray-500 mb-4">Lapsed Products</h4>
+                <div className="grid grid-cols-1 gap-4 opacity-60">
+                  {clientAccounts
+                    .filter(account => account.status === 'inactive')
+                    .map(account => (
+                      <div key={account.id} className="filter grayscale relative">
+                        <ProductCard 
+                          account={account} 
+                          isExpanded={expandedProducts.includes(account.id)}
+                          onToggleExpand={() => toggleProductExpand(account.id)}
+                          funds={expandedProductFunds[account.id] || []}
+                          isLoadingFunds={isLoadingFunds[account.id] || false}
+                          client={client}
+                        />
+                        {/* Reactivate Button Overlay */}
+                        <div className="absolute top-4 right-4 z-10">
+                          <button
+                            onClick={() => handleReactivateProduct(account.id, account.product_name)}
+                            className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 shadow-sm flex items-center space-x-1 opacity-100"
+                            title="Reactivate this product"
+                          >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            <span>Reactivate</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="bg-gray-50 p-8 rounded-lg text-center border border-gray-200">
+            <div className="text-gray-500 mb-4">No products found for this client.</div>
+            <div className="flex justify-center">
+              <Link 
+                to={`/create-client-group-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.name}`)}&returnTo=${encodeURIComponent(`/client_groups/${clientId}`)}`}
+              >
+                <AddButton
+                  context="Product"
+                  design="descriptive"
+                  size="md"
+                >
+                  Add First Product
+                </AddButton>
+              </Link>
+            </div>
+          </div>
+        )
+      ) : (
+        <div className="text-gray-500 p-6 text-center">Loading client products...</div>
+      )}
+
+      {/* Revenue Assignment Modal */}
+      {showRevenueModal && (
+        <RevenueAssignmentModal
+          isOpen={showRevenueModal}
+          onClose={() => setShowRevenueModal(false)}
+          clientAccounts={clientAccounts}
+          onSave={handleRevenueAssignmentSave}
+        />
       )}
     </div>
   );
