@@ -458,6 +458,39 @@ const MainListTab: React.FC<MainListTabProps> = ({
 ```
 
 #### Networth Tab Implementation
+
+**Table Structure Requirements:**
+The networth statement displays data in a hierarchical structure organized by item types with individual items and subtotals:
+
+```typescript
+interface NetworthData {
+  item_types: Array<{
+    type: string;                    // "GIAs", "Bank Accounts", etc.
+    is_managed: boolean;             // true/false for managed vs unmanaged
+    items: Array<{
+      name: string;                  // "Halifax Current Account"
+      john: number;                  // Individual ownership amounts
+      mary: number;
+      joint: number;
+      total: number;                 // Calculated total
+    }>;
+  }>;
+  summary: {
+    total_assets: number;
+    total_liabilities: number;
+    net_worth: number;
+  };
+}
+```
+
+**Professional Styling Standards:**
+- **Monochromatic Color Scheme**: Gray-based colors for professional financial documents
+- **Section Headers**: Bold uppercase text with dark gray borders, no background colors
+- **Individual Items**: Clean indentation, light gray text, subtle hover effects  
+- **Section Subtotals**: Light gray backgrounds, semibold italic text, clear borders
+- **Grand Totals**: Prominent borders, bold text, professional hierarchy
+- **Typography**: Consistent font weights, right-aligned monetary values, em dashes for zero values
+
 ```typescript
 // NetworthTab.tsx - Interactive networth statement generation
 const NetworthTab: React.FC<NetworthTabProps> = ({
@@ -471,7 +504,7 @@ const NetworthTab: React.FC<NetworthTabProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentStatement, setCurrentStatement] = useState<NetworthStatement | null>(null);
 
-  // Real-time networth data
+  // Real-time networth data with hierarchical structure
   const { data: networthData, isLoading } = useQuery(
     ['networth', clientGroupId, selectedSections, groupBy],
     () => apiService.generateNetworthStatement(clientGroupId, {

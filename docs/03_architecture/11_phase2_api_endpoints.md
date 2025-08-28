@@ -387,9 +387,68 @@ Same as POST response with updated timestamps.
 
 ### GET /api/client_groups/{client_group_id}/networth/current
 
-**Purpose**: Generate real-time networth statement data
+**Purpose**: Generate real-time networth statement data organized by item types with individual items and subtotals
 **Authentication**: Required
 **Method**: GET
+
+#### Response Format - Hierarchical Structure
+```json
+{
+  "networth_data": {
+    "item_types": [
+      {
+        "type": "GIAs",
+        "is_managed": true,
+        "items": [
+          {
+            "name": "Zurich Vista GIA",
+            "john": 125000,
+            "mary": 95000,
+            "joint": 0,
+            "total": 220000,
+            "valuation_date": "2024-08-26"
+          }
+        ]
+      },
+      {
+        "type": "Bank Accounts",
+        "is_managed": false, 
+        "items": [
+          {
+            "name": "Halifax Current Account",
+            "john": 2250,
+            "mary": 1750,
+            "joint": 0,
+            "total": 4000,
+            "valuation_date": "2024-08-26"
+          },
+          {
+            "name": "Barclays Joint Savings", 
+            "john": 0,
+            "mary": 0,
+            "joint": 4500,
+            "total": 4500,
+            "valuation_date": "2024-08-26"
+          }
+        ]
+      }
+    ],
+    "summary": {
+      "managed_total": 425000,
+      "unmanaged_total": 48000, 
+      "total_assets": 473000,
+      "total_liabilities": 25000,
+      "net_worth": 448000
+    }
+  },
+  "display_requirements": {
+    "table_structure": "hierarchical_by_item_type",
+    "styling": "professional_monochromatic",
+    "subtotals_required": true,
+    "ownership_breakdown": ["john", "mary", "joint"],
+    "zero_value_display": "em_dash"
+  }
+}
 
 #### Query Parameters
 
@@ -1851,6 +1910,106 @@ ALERT_THRESHOLDS = {
 - New endpoints deployed alongside existing system
 - Feature flags control access to new functionality
 - Rollback capability maintains existing API functionality
+
+---
+
+## Client Objectives and Actions Management
+
+### GET /api/client_groups/{client_group_id}/objectives
+
+**Purpose**: Retrieve all objectives for a specific client group
+
+#### Response Format
+```json
+{
+  "objectives": [
+    {
+      "id": 1,
+      "client_group_id": 123,
+      "title": "Retirement Planning",
+      "description": "Build a comprehensive retirement portfolio targeting £750,000 by age 65. Focus on maximizing pension contributions and ISA allowances while maintaining appropriate risk levels for long-term growth.",
+      "priority": "high",
+      "target_date": "2030-12-31",
+      "status": "in_progress",
+      "created_at": "2024-08-26T10:00:00Z",
+      "updated_at": "2024-08-26T10:00:00Z"
+    }
+  ],
+  "total_count": 3,
+  "performance": {
+    "query_time_ms": 45
+  }
+}
+```
+
+### POST /api/client_groups/{client_group_id}/objectives
+
+**Purpose**: Create a new client objective
+
+#### Request Format
+```json
+{
+  "title": "House Purchase",
+  "description": "Save for deposit on family home in Surrey area. Target property value £450,000 requiring £90,000 deposit plus stamp duty and legal costs. Maintain funds in accessible investments.",
+  "priority": "medium",
+  "target_date": "2026-06-30",
+  "status": "planning"
+}
+```
+
+### PUT /api/client_groups/{client_group_id}/objectives/{objective_id}
+
+**Purpose**: Update existing objective with enhanced description and priority tracking
+
+### GET /api/client_groups/{client_group_id}/actions
+
+**Purpose**: Retrieve all action items for a specific client group
+
+#### Response Format
+```json
+{
+  "actions": [
+    {
+      "id": 1,
+      "client_group_id": 123,
+      "objective_id": 1,
+      "title": "Review pension contributions",
+      "description": "Analyze current pension contributions across all schemes including workplace pension and SIPP. Consider increasing contributions to maximize annual allowance and tax efficiency. Review provider performance and fees.",
+      "due_date": "2024-09-15",
+      "assigned_to": "John Advisor",
+      "assignment_type": "advisor",
+      "status": "todo",
+      "created_at": "2024-08-26T10:00:00Z",
+      "updated_at": "2024-08-26T10:00:00Z"
+    }
+  ],
+  "total_count": 4,
+  "performance": {
+    "query_time_ms": 38
+  }
+}
+```
+
+### POST /api/client_groups/{client_group_id}/actions
+
+**Purpose**: Create a new action item with detailed description
+
+#### Request Format
+```json
+{
+  "objective_id": 2,
+  "title": "Provide salary documentation",
+  "description": "Gather and provide recent P60s, last 3 months payslips, and employment contract. Client to collect these documents from HR department and scan for secure upload.",
+  "due_date": "2024-09-20",
+  "assigned_to": "John Smith (Client)",
+  "assignment_type": "client",
+  "status": "todo"
+}
+```
+
+### PUT /api/client_groups/{client_group_id}/actions/{action_id}
+
+**Purpose**: Update existing action item including status changes and description updates
 
 ---
 

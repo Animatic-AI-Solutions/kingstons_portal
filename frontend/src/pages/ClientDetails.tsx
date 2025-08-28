@@ -1662,9 +1662,11 @@ const ClientDetails: React.FC = () => {
         handleDelete={handleDelete}
       />
 
+      {/* Phase 2: Enhanced 5-Tab Navigation System */}
+      <Phase2TabNavigation client={client} clientAccounts={clientAccounts} />
 
-      {/* Client Products Section */}
-      <div className="mb-6">
+      {/* Original Client Products Section - Now in Client Overview Tab */}
+      <div className="mb-6" id="client-overview-content">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-normal text-gray-900 font-sans tracking-wide">Client Products</h2>
           
@@ -2137,6 +2139,1125 @@ const RevenueAssignmentModal: React.FC<{
           />
         </div>
       </div>
+    </div>
+  );
+};
+
+// Phase 2: Enhanced 5-Tab Navigation Component
+const Phase2TabNavigation: React.FC<{ client: Client | null; clientAccounts: ClientAccount[] }> = ({ client, clientAccounts }) => {
+  const [activeTab, setActiveTab] = useState('overview');
+
+  // Mock data for demonstration
+  const mockInformationItems = [
+    {
+      id: 1,
+      item_type: 'basic_detail',
+      item_category: 'Home Address',
+      data_content: {
+        address_line_one: '123 Main Street',
+        address_line_two: 'Apartment 4B',
+        postcode: 'SW1A 1AA',
+        country: 'United Kingdom',
+        residence_type: 'Primary'
+      },
+      updated_at: '2024-08-26T14:15:00Z',
+      last_edited_by_name: 'John Advisor'
+    },
+    {
+      id: 2,
+      item_type: 'assets_liabilities',
+      item_category: 'Bank Account',
+      data_content: {
+        bank: 'Barclays',
+        account_type: 'Current Account',
+        latest_valuation: 15000,
+        valuation_date: '2024-08-26',
+        associated_product_owners: {
+          association_type: 'joint_ownership',
+          '123': 50,
+          '456': 50
+        }
+      },
+      updated_at: '2024-08-25T10:30:00Z',
+      last_edited_by_name: 'Jane Smith'
+    }
+  ];
+
+  const mockUnmanagedProducts = [
+    {
+      id: 1,
+      product_name: 'Halifax Cash ISA',
+      product_type: 'Cash_ISAs',
+      provider_name: 'Halifax',
+      latest_valuation: 20000,
+      valuation_date: '2024-08-26',
+      ownership_details: {
+        association_type: 'individual',
+        '123': 100
+      },
+      status: 'active'
+    },
+    {
+      id: 2,
+      product_name: 'Santander Current Account',
+      product_type: 'Bank_Accounts',
+      provider_name: 'Santander',
+      latest_valuation: 8500,
+      valuation_date: '2024-08-26',
+      ownership_details: {
+        association_type: 'joint_ownership',
+        '123': 50,
+        '456': 50
+      },
+      status: 'active'
+    }
+  ];
+
+  const tabs = [
+    { id: 'overview', label: 'Client Overview', icon: '👤' },
+    { id: 'mainlist', label: 'Main List', icon: '📋', badge: mockInformationItems.length },
+    { id: 'objectives', label: 'Aims, Objectives, Actions', icon: '🎯' },
+    { id: 'networth', label: 'Networth Statement', icon: '📊' },
+    { id: 'kyc', label: 'Know Your Customer', icon: '📄' }
+  ];
+
+  return (
+    <div className="mb-8">
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-200 bg-white rounded-t-lg shadow-sm">
+        <nav className="-mb-px flex space-x-8 px-6" aria-label="Tabs">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`${
+                activeTab === tab.id
+                  ? 'border-primary-500 text-primary-600 bg-primary-50'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-3 border-b-2 font-medium text-sm rounded-t-md transition-all duration-200 flex items-center space-x-2`}
+            >
+              <span className="text-base">{tab.icon}</span>
+              <span>{tab.label}</span>
+              {tab.badge && (
+                <span className="ml-2 bg-primary-100 text-primary-800 text-xs font-medium px-2 py-1 rounded-full">
+                  {tab.badge}
+                </span>
+              )}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {/* Tab Content */}
+      <div className="bg-white rounded-b-lg shadow-sm border border-t-0 border-gray-200 p-6">
+        {activeTab === 'overview' && <ClientOverviewTab client={client} clientAccounts={clientAccounts} />}
+        {activeTab === 'mainlist' && <MainListTab informationItems={mockInformationItems} />}
+        {activeTab === 'objectives' && <ObjectivesTab />}
+        {activeTab === 'networth' && <NetworthTab client={client} unmanagedProducts={mockUnmanagedProducts} />}
+        {activeTab === 'kyc' && <KYCTab client={client} />}
+      </div>
+    </div>
+  );
+};
+
+// Tab Components
+const ClientOverviewTab: React.FC<{ client: Client | null; clientAccounts: ClientAccount[] }> = ({ client, clientAccounts }) => {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-lg font-medium text-gray-900">Enhanced Client Overview</h3>
+        <span className="text-sm text-gray-500">Phase 2 Preview - Enhanced with product owner cards</span>
+      </div>
+      
+      {/* Product Owner Cards Preview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        {/* Mock Product Owner Cards */}
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
+          <div className="flex items-center space-x-3 mb-3">
+            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
+              JS
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900">John Smith</h4>
+              <p className="text-sm text-gray-600">Primary Client</p>
+            </div>
+          </div>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-600">DOB:</span>
+              <span>15/03/1975</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Address:</span>
+              <span>SW1A 1AA</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Status:</span>
+              <span className="text-green-600 font-medium">Active</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200">
+          <div className="flex items-center space-x-3 mb-3">
+            <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
+              MS
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900">Mary Smith</h4>
+              <p className="text-sm text-gray-600">Spouse</p>
+            </div>
+          </div>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-600">DOB:</span>
+              <span>22/07/1978</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Address:</span>
+              <span>SW1A 1AA</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Status:</span>
+              <span className="text-green-600 font-medium">Active</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Note about existing functionality */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start space-x-3">
+          <div className="flex-shrink-0">
+            <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <h4 className="text-sm font-medium text-blue-900">Client Overview Enhancement</h4>
+            <p className="text-sm text-blue-700 mt-1">
+              This tab will display enhanced product owner cards with detailed information, inception dates, and vulnerability indicators. 
+              Your existing client products functionality remains unchanged below.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const MainListTab: React.FC<{ informationItems: any[] }> = ({ informationItems }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedType, setSelectedType] = useState('all');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const itemTypes = [
+    { value: 'all', label: 'All Items' },
+    { value: 'basic_detail', label: 'Basic Details' },
+    { value: 'income_expenditure', label: 'Income & Expenditure' },
+    { value: 'assets_liabilities', label: 'Assets & Liabilities' },
+    { value: 'protection', label: 'Protection' },
+    { value: 'vulnerability_health', label: 'Vulnerability & Health' }
+  ];
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-lg font-medium text-gray-900">Client Information Items</h3>
+        <AddButton onClick={() => setShowCreateModal(true)} context="Information Item" />
+      </div>
+
+      {/* Search and Filter */}
+      <div className="flex items-center space-x-4 mb-6">
+        <div className="flex-1 max-w-md">
+          <BaseInput
+            placeholder="Search across item types, categories, and content..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full"
+          />
+        </div>
+        <BaseDropdown
+          options={itemTypes}
+          value={selectedType}
+          onChange={setSelectedType}
+          className="min-w-40"
+        />
+      </div>
+
+      {/* Information Items Table */}
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-between">
+            <h4 className="font-medium text-gray-900">Information Items</h4>
+            <span className="text-sm text-gray-500">{informationItems.length} items</span>
+          </div>
+        </div>
+        
+        <div className="divide-y divide-gray-200">
+          {informationItems.map((item) => (
+            <div key={item.id} className="px-6 py-4 hover:bg-gray-50">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      item.item_type === 'basic_detail' ? 'bg-blue-100 text-blue-800' :
+                      item.item_type === 'assets_liabilities' ? 'bg-green-100 text-green-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {item.item_type.replace('_', ' ')}
+                    </span>
+                    <h5 className="font-medium text-gray-900">{item.item_category}</h5>
+                  </div>
+                  
+                  <div className="mt-2 text-sm text-gray-600">
+                    {item.item_type === 'basic_detail' && (
+                      <p>{item.data_content.address_line_one}, {item.data_content.postcode}</p>
+                    )}
+                    {item.item_type === 'assets_liabilities' && (
+                      <p>{item.data_content.bank} - £{item.data_content.latest_valuation?.toLocaleString()}</p>
+                    )}
+                  </div>
+                  
+                  <div className="mt-2 flex items-center space-x-4 text-xs text-gray-500">
+                    <span>Updated: {new Date(item.updated_at).toLocaleDateString()}</span>
+                    <span>By: {item.last_edited_by_name}</span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <EditButton size="sm" />
+                  <DeleteButton size="sm" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Create Item Modal Preview */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Create Information Item</h3>
+            </div>
+            <div className="px-6 py-4">
+              <p className="text-sm text-gray-600 mb-4">
+                This modal will allow creation of new client information items with structured JSON data.
+              </p>
+              <div className="space-y-4">
+                <BaseDropdown
+                  options={itemTypes.slice(1)}
+                  value=""
+                  onChange={() => {}}
+                  placeholder="Select item type..."
+                />
+                <BaseInput
+                  placeholder="Item category (e.g., Home Address, Bank Account)"
+                  value=""
+                  onChange={() => {}}
+                />
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+              <ActionButton variant="cancel" onClick={() => setShowCreateModal(false)}>
+                Cancel
+              </ActionButton>
+              <ActionButton variant="save" onClick={() => setShowCreateModal(false)}>
+                Create Item
+              </ActionButton>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ObjectivesTab: React.FC = () => {
+  const mockObjectives = [
+    { 
+      id: 1, 
+      title: 'Retirement Planning', 
+      description: 'Build a comprehensive retirement portfolio targeting £750,000 by age 65. Focus on maximizing pension contributions and ISA allowances while maintaining appropriate risk levels for long-term growth.',
+      priority: 'high', 
+      target_date: '2030-12-31', 
+      status: 'in_progress' 
+    },
+    { 
+      id: 2, 
+      title: 'House Purchase', 
+      description: 'Save for deposit on family home in Surrey area. Target property value £450,000 requiring £90,000 deposit plus stamp duty and legal costs. Maintain funds in accessible investments.',
+      priority: 'medium', 
+      target_date: '2026-06-30', 
+      status: 'planning' 
+    },
+    { 
+      id: 3, 
+      title: 'Children\'s Education Fund', 
+      description: 'Establish education savings for two children currently aged 8 and 10. Target £40,000 per child for university costs including accommodation. Utilize Junior ISAs and education-specific savings products.',
+      priority: 'medium', 
+      target_date: '2032-09-01', 
+      status: 'planning' 
+    }
+  ];
+
+  const mockActions = [
+    { 
+      id: 1, 
+      title: 'Review pension contributions', 
+      description: 'Analyze current pension contributions across all schemes including workplace pension and SIPP. Consider increasing contributions to maximize annual allowance and tax efficiency. Review provider performance and fees.',
+      due_date: '2024-09-15', 
+      status: 'todo', 
+      assigned_to: 'John Advisor',
+      assignment_type: 'advisor'
+    },
+    { 
+      id: 2, 
+      title: 'Update risk assessment', 
+      description: 'Complete comprehensive risk tolerance questionnaire and capacity for loss assessment. Update client risk profile to reflect recent salary increase and changing family circumstances.',
+      due_date: '2024-08-30', 
+      status: 'completed', 
+      assigned_to: 'Jane Smith',
+      assignment_type: 'advisor'
+    },
+    { 
+      id: 3, 
+      title: 'Provide salary documentation', 
+      description: 'Gather and provide recent P60s, last 3 months payslips, and employment contract. Client to collect these documents from HR department and scan for secure upload.',
+      due_date: '2024-09-20', 
+      status: 'todo', 
+      assigned_to: 'John Smith (Client)',
+      assignment_type: 'client'
+    },
+    { 
+      id: 4, 
+      title: 'Complete risk questionnaire', 
+      description: 'Fill out comprehensive attitude to risk questionnaire online. Client to complete all sections including capacity for loss assessment and investment experience details.',
+      due_date: '2024-09-25', 
+      status: 'todo', 
+      assigned_to: 'Mary Smith (Client)',
+      assignment_type: 'client'
+    },
+    { 
+      id: 5, 
+      title: 'Property valuation report', 
+      description: 'Independent surveyor to conduct full structural survey and valuation of current property for refinancing purposes. Third-party appointment arranged through mortgage broker.',
+      due_date: '2024-10-10', 
+      status: 'todo', 
+      assigned_to: 'ABC Surveyors Ltd',
+      assignment_type: 'other'
+    },
+    { 
+      id: 6, 
+      title: 'Set up Junior ISAs', 
+      description: 'Open Junior ISA accounts for both children and set up monthly contributions. Research education-specific savings products and compare with standard Junior ISA options for optimal tax-efficient growth.',
+      due_date: '2024-11-01', 
+      status: 'todo', 
+      assigned_to: 'Sarah Williams',
+      assignment_type: 'advisor'
+    },
+    { 
+      id: 7, 
+      title: 'Gather bank statements', 
+      description: 'Collect and provide last 6 months bank statements for all current accounts, savings accounts, and credit cards. Required for mortgage application and financial planning review.',
+      due_date: '2024-08-25', 
+      status: 'completed', 
+      assigned_to: 'John Smith (Client)',
+      assignment_type: 'client'
+    },
+    { 
+      id: 8, 
+      title: 'Initial portfolio review', 
+      description: 'Comprehensive review of existing investment portfolio including performance analysis, risk assessment, and alignment with client objectives. Identified opportunities for optimization.',
+      due_date: '2024-08-20', 
+      status: 'completed', 
+      assigned_to: 'John Advisor',
+      assignment_type: 'advisor'
+    }
+  ];
+
+  // Filter actions by status
+  const todoActions = mockActions.filter(action => action.status === 'todo');
+  const completedActions = mockActions.filter(action => action.status === 'completed');
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-lg font-medium text-gray-900">Client Aims, Objectives & Actions</h3>
+        <div className="flex space-x-2">
+          <AddButton context="Objective" size="sm" />
+          <AddButton context="Action" size="sm" />
+        </div>
+      </div>
+
+      {/* Objectives Section */}
+      <div className="mb-8">
+        <h4 className="text-md font-medium text-gray-900 mb-4 flex items-center">
+          <span className="text-lg mr-2">🎯</span>
+          Client Objectives
+        </h4>
+        <div className="space-y-4">
+          {mockObjectives.map((objective) => (
+            <div key={objective.id} className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h5 className="font-medium text-gray-900">{objective.title}</h5>
+                  <p className="mt-2 text-sm text-gray-600 leading-relaxed">{objective.description}</p>
+                  <div className="flex items-center space-x-4 mt-3 text-sm text-gray-500">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      objective.priority === 'high' ? 'bg-red-100 text-red-800' :
+                      objective.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-green-100 text-green-800'
+                    }`}>
+                      {objective.priority} priority
+                    </span>
+                    <span>Target: {new Date(objective.target_date).toLocaleDateString()}</span>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      objective.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {objective.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex space-x-2 ml-4">
+                  <EditButton size="sm" />
+                  <DeleteButton size="sm" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* To-Do Actions Section */}
+      <div className="mb-8">
+        <h4 className="text-md font-medium text-gray-900 mb-4 flex items-center">
+          <span className="text-lg mr-2">📋</span>
+          To-Do Actions
+          <span className="ml-3 bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-1 rounded-full">
+            {todoActions.length}
+          </span>
+        </h4>
+        <div className="space-y-4">
+          {todoActions.map((action) => (
+            <div key={action.id} className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h5 className="font-medium text-gray-900">{action.title}</h5>
+                  <p className="mt-2 text-sm text-gray-600 leading-relaxed">{action.description}</p>
+                  <div className="flex items-center space-x-4 mt-3 text-sm text-gray-500">
+                    <span>Due: {new Date(action.due_date).toLocaleDateString()}</span>
+                    <span>Assigned to: {action.assigned_to}</span>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      action.assignment_type === 'advisor' ? 'bg-blue-100 text-blue-800' :
+                      action.assignment_type === 'client' ? 'bg-purple-100 text-purple-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {action.assignment_type === 'advisor' ? '👨‍💼 Advisor' : 
+                       action.assignment_type === 'client' ? '👤 Client' : 
+                       '🏢 Third Party'}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex space-x-2 ml-4">
+                  <EditButton size="sm" />
+                  <DeleteButton size="sm" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Completed Actions Section */}
+      <div>
+        <h4 className="text-md font-medium text-gray-900 mb-4 flex items-center">
+          <span className="text-lg mr-2">✅</span>
+          Completed Actions
+          <span className="ml-3 bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
+            {completedActions.length}
+          </span>
+        </h4>
+        <div className="space-y-4">
+          {completedActions.map((action) => (
+            <div key={action.id} className="bg-white border border-gray-200 rounded-lg p-4 opacity-75">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h5 className="font-medium text-gray-900 flex items-center">
+                    {action.title}
+                    <span className="ml-2 text-green-600">✓</span>
+                  </h5>
+                  <p className="mt-2 text-sm text-gray-600 leading-relaxed">{action.description}</p>
+                  <div className="flex items-center space-x-4 mt-3 text-sm text-gray-500">
+                    <span>Completed: {new Date(action.due_date).toLocaleDateString()}</span>
+                    <span>Assigned to: {action.assigned_to}</span>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      action.assignment_type === 'advisor' ? 'bg-blue-100 text-blue-800' :
+                      action.assignment_type === 'client' ? 'bg-purple-100 text-purple-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {action.assignment_type === 'advisor' ? '👨‍💼 Advisor' : 
+                       action.assignment_type === 'client' ? '👤 Client' : 
+                       '🏢 Third Party'}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex space-x-2 ml-4">
+                  <EditButton size="sm" />
+                  <DeleteButton size="sm" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const NetworthTab: React.FC<{ client: Client | null; unmanagedProducts: any[] }> = ({ client, unmanagedProducts }) => {
+  const [showCreateSnapshot, setShowCreateSnapshot] = useState(false);
+
+  // Mock networth data structured by item types and individual items
+  const mockNetworthData = {
+    item_types: [
+      {
+        type: 'GIAs',
+        items: [
+          {
+            name: 'Zurich Vista GIA',
+            is_managed: true,
+            john: 125000,
+            mary: 95000,
+            joint: 0,
+            total: 220000
+          }
+        ]
+      },
+      {
+        type: 'Cash ISAs',
+        items: [
+          {
+            name: 'Halifax Instant Saver ISA',
+            is_managed: false,
+            john: 20000,
+            mary: 0,
+            joint: 0,
+            total: 20000
+          },
+          {
+            name: 'Santander Easy Access ISA',
+            is_managed: false,
+            john: 0,
+            mary: 15000,
+            joint: 0,
+            total: 15000
+          }
+        ]
+      },
+      {
+        type: 'Bank Accounts',
+        items: [
+          {
+            name: 'Natwest Current Account',
+            is_managed: true,
+            john: 2250,
+            mary: 1750,
+            joint: 0,
+            total: 4000
+          },
+          {
+            name: 'Barclays (unmanaged)',
+            is_managed: false,
+            john: 0,
+            mary: 0,
+            joint: 4500,
+            total: 4500
+          },
+          {
+            name: 'Nationwide FlexDirect',
+            is_managed: false,
+            john: 2000,
+            mary: 2500,
+            joint: 0,
+            total: 4500
+          }
+        ]
+      },
+      {
+        type: 'Pensions',
+        items: [
+          {
+            name: 'John Workplace Pension',
+            is_managed: true,
+            john: 85000,
+            mary: 0,
+            joint: 0,
+            total: 85000
+          },
+          {
+            name: 'Mary SIPP',
+            is_managed: true,
+            john: 0,
+            mary: 120000,
+            joint: 0,
+            total: 120000
+          }
+        ]
+      }
+    ],
+    summary: {
+      managed_total: 425000,
+      unmanaged_total: 48000,
+      total_assets: 473000,
+      total_liabilities: 25000,
+      net_worth: 448000
+    }
+  };
+
+  const mockHistoricalSnapshots = [
+    { id: 1, created_at: '2024-08-26T14:30:00Z', net_worth: 475000, created_by: 'John Advisor' },
+    { id: 2, created_at: '2024-07-26T10:15:00Z', net_worth: 462000, created_by: 'John Advisor' },
+    { id: 3, created_at: '2024-06-26T16:45:00Z', net_worth: 445000, created_by: 'Jane Smith' }
+  ];
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-lg font-medium text-gray-900">Networth Statement</h3>
+        <div className="flex gap-3">
+          <ActionButton variant="edit" onClick={() => window.print()}>
+            🖨️ Print Statement
+          </ActionButton>
+          <ActionButton variant="add" onClick={() => setShowCreateSnapshot(true)}>
+            📸 Create Snapshot
+          </ActionButton>
+        </div>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="text-sm font-medium text-green-900">Total Assets</div>
+          <div className="text-2xl font-bold text-green-900">£{mockNetworthData.summary.total_assets.toLocaleString()}</div>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="text-sm font-medium text-red-900">Total Liabilities</div>
+          <div className="text-2xl font-bold text-red-900">£{mockNetworthData.summary.total_liabilities.toLocaleString()}</div>
+        </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="text-sm font-medium text-blue-900">Net Worth</div>
+          <div className="text-2xl font-bold text-blue-900">£{mockNetworthData.summary.net_worth.toLocaleString()}</div>
+        </div>
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+          <div className="text-sm font-medium text-purple-900">Change</div>
+          <div className="text-lg font-bold text-green-600">+2.8%</div>
+        </div>
+      </div>
+
+      {/* Networth Table Preview */}
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden mb-8">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <h4 className="font-medium text-gray-900">Current Networth Breakdown</h4>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset Type & Items</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">John Smith</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Mary Smith</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Joint</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white">
+              {mockNetworthData.item_types.map((itemType, index) => {
+                const typeTotal = itemType.items.reduce((acc, item) => ({
+                  john: acc.john + item.john,
+                  mary: acc.mary + item.mary,
+                  joint: acc.joint + item.joint,
+                  total: acc.total + item.total
+                }), { john: 0, mary: 0, joint: 0, total: 0 });
+
+                return (
+                  <React.Fragment key={index}>
+                    {/* Section Header */}
+                    <tr className="border-t-2 border-gray-400">
+                      <td className="px-6 py-4 text-sm font-bold text-gray-800 uppercase tracking-wide" colSpan={5}>
+                        {itemType.type}
+                      </td>
+                    </tr>
+                    
+                    {/* Individual Items */}
+                    {itemType.items.map((item, itemIndex) => (
+                      <tr key={itemIndex} className="border-b border-gray-200 hover:bg-gray-50">
+                        <td className="px-6 py-3 text-sm text-gray-700 pl-8">
+                          <div className="flex items-center gap-2">
+                            {item.name}
+                            {item.is_managed ? (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Managed
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                Unmanaged
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-3 text-sm text-gray-700 text-right">
+                          {item.john > 0 ? `£${item.john.toLocaleString()}` : '—'}
+                        </td>
+                        <td className="px-6 py-3 text-sm text-gray-700 text-right">
+                          {item.mary > 0 ? `£${item.mary.toLocaleString()}` : '—'}
+                        </td>
+                        <td className="px-6 py-3 text-sm text-gray-700 text-right">
+                          {item.joint > 0 ? `£${item.joint.toLocaleString()}` : '—'}
+                        </td>
+                        <td className="px-6 py-3 text-sm font-medium text-gray-900 text-right">
+                          £{item.total.toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                    
+                    {/* Section Total */}
+                    <tr className="bg-gray-100 border-b-2 border-gray-300 font-medium">
+                      <td className="px-6 py-3 text-sm font-semibold text-gray-900 pl-8 italic">
+                        {itemType.type} Total
+                      </td>
+                      <td className="px-6 py-3 text-sm font-semibold text-gray-900 text-right">
+                        {typeTotal.john > 0 ? `£${typeTotal.john.toLocaleString()}` : '—'}
+                      </td>
+                      <td className="px-6 py-3 text-sm font-semibold text-gray-900 text-right">
+                        {typeTotal.mary > 0 ? `£${typeTotal.mary.toLocaleString()}` : '—'}
+                      </td>
+                      <td className="px-6 py-3 text-sm font-semibold text-gray-900 text-right">
+                        {typeTotal.joint > 0 ? `£${typeTotal.joint.toLocaleString()}` : '—'}
+                      </td>
+                      <td className="px-6 py-3 text-sm font-semibold text-gray-900 text-right">
+                        £{typeTotal.total.toLocaleString()}
+                      </td>
+                    </tr>
+                  </React.Fragment>
+                );
+              })}
+              
+              {/* Grand Total */}
+              <tr className="border-t-4 border-gray-600 bg-gray-50">
+                <td className="px-6 py-5 text-base font-bold text-gray-900 uppercase tracking-wide">
+                  TOTAL ASSETS
+                </td>
+                <td className="px-6 py-5 text-base font-bold text-gray-900 text-right">
+                  £{mockNetworthData.item_types.reduce((acc, type) => 
+                    acc + type.items.reduce((itemAcc, item) => itemAcc + item.john, 0), 0
+                  ).toLocaleString()}
+                </td>
+                <td className="px-6 py-5 text-base font-bold text-gray-900 text-right">
+                  £{mockNetworthData.item_types.reduce((acc, type) => 
+                    acc + type.items.reduce((itemAcc, item) => itemAcc + item.mary, 0), 0
+                  ).toLocaleString()}
+                </td>
+                <td className="px-6 py-5 text-base font-bold text-gray-900 text-right">
+                  £{mockNetworthData.item_types.reduce((acc, type) => 
+                    acc + type.items.reduce((itemAcc, item) => itemAcc + item.joint, 0), 0
+                  ).toLocaleString()}
+                </td>
+                <td className="px-6 py-5 text-base font-bold text-gray-900 text-right">
+                  £{mockNetworthData.summary.total_assets.toLocaleString()}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Historical Snapshots */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="text-md font-medium text-gray-900">Historical Snapshots</h4>
+          <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+            📋 Full table data preserved for each snapshot
+          </div>
+        </div>
+        <div className="space-y-3">
+          {mockHistoricalSnapshots.map((snapshot) => (
+            <div key={snapshot.id} className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
+              <div className="flex-1">
+                <div className="flex items-center gap-3">
+                  <div className="font-medium text-gray-900">
+                    {new Date(snapshot.created_at).toLocaleString()}
+                  </div>
+                  <div className="text-sm font-semibold text-green-700">
+                    Net Worth: £{snapshot.net_worth.toLocaleString()}
+                  </div>
+                </div>
+                <div className="text-sm text-gray-500 mt-1">
+                  Created by: {snapshot.created_by} • Complete table breakdown preserved
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <ActionButton variant="edit" size="sm">
+                  👁️ View Full Table
+                </ActionButton>
+                <ActionButton variant="add" size="sm">
+                  🖨️ Print PDF
+                </ActionButton>
+                <ActionButton variant="cancel" size="sm">
+                  📊 Compare
+                </ActionButton>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        {/* Snapshot Info Box */}
+        <div className="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <div className="text-blue-500 mt-0.5">ℹ️</div>
+            <div>
+              <h5 className="text-sm font-medium text-gray-900 mb-1">About Historical Snapshots</h5>
+              <p className="text-xs text-gray-600">
+                Each snapshot preserves the complete networth statement table as it appeared at that moment, including all individual items, ownership breakdown, managed/unmanaged status, and section subtotals. This enables accurate historical comparison and compliance reporting.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Create Snapshot Modal */}
+      {showCreateSnapshot && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Create Networth Snapshot</h3>
+            </div>
+            <div className="px-6 py-4">
+              <p className="text-sm text-gray-600 mb-4">
+                This will capture the <strong>complete networth statement table</strong> including all asset categories, individual items, ownership breakdown, and management status as of {new Date().toLocaleString()} for audit and compliance purposes.
+              </p>
+              
+              {/* What gets saved */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <h4 className="text-sm font-semibold text-blue-900 mb-2">📊 Complete Data Capture Includes:</h4>
+                <ul className="text-xs text-blue-800 space-y-1 ml-4">
+                  <li>• Full hierarchical table structure by asset type</li>
+                  <li>• Individual item details and managed/unmanaged status</li>
+                  <li>• Ownership breakdown (John, Mary, Joint holdings)</li>
+                  <li>• Section subtotals and grand totals</li>
+                  <li>• Historical comparison capability</li>
+                </ul>
+              </div>
+              
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Current Statement Summary:</h4>
+                <div className="text-sm space-y-2">
+                  <div className="flex justify-between">
+                    <span>Asset Categories:</span>
+                    <span className="font-medium">{mockNetworthData.item_types.length} types</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Individual Items:</span>
+                    <span className="font-medium">{mockNetworthData.item_types.reduce((acc, type) => acc + type.items.length, 0)} items</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Total Assets:</span>
+                    <span className="font-medium">£{mockNetworthData.summary.total_assets.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Total Liabilities:</span>
+                    <span className="font-medium">£{mockNetworthData.summary.total_liabilities.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold border-t pt-2">
+                    <span>Net Worth:</span>
+                    <span>£{mockNetworthData.summary.net_worth.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+              <ActionButton variant="cancel" onClick={() => setShowCreateSnapshot(false)}>
+                Cancel
+              </ActionButton>
+              <ActionButton variant="save" onClick={() => setShowCreateSnapshot(false)}>
+                Create Snapshot
+              </ActionButton>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const KYCTab: React.FC<{ client: Client | null }> = ({ client }) => {
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [completeness, setCompleteness] = useState(78);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-lg font-medium text-gray-900">Know Your Customer Report</h3>
+        <ActionButton variant="add" onClick={() => setShowGenerateModal(true)} className="bg-green-600 hover:bg-green-700">
+          Generate KYC Report
+        </ActionButton>
+      </div>
+
+      {/* Data Completeness */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+        <h4 className="font-medium text-gray-900 mb-4">Data Completeness</h4>
+        <div className="flex items-center space-x-4">
+          <div className="flex-1">
+            <div className="flex justify-between text-sm text-gray-600 mb-2">
+              <span>Overall completeness</span>
+              <span>{completeness}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className={`h-2 rounded-full ${completeness >= 80 ? 'bg-green-500' : completeness >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                style={{ width: `${completeness}%` }}
+              ></div>
+            </div>
+          </div>
+          <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+            completeness >= 80 ? 'bg-green-100 text-green-800' : 
+            completeness >= 60 ? 'bg-yellow-100 text-yellow-800' : 
+            'bg-red-100 text-red-800'
+          }`}>
+            {completeness >= 80 ? 'Good' : completeness >= 60 ? 'Fair' : 'Needs work'}
+          </div>
+        </div>
+      </div>
+
+      {/* KYC Sections Preview */}
+      <div className="space-y-4">
+        <div className="bg-white border border-gray-200 rounded-lg">
+          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+            <h5 className="font-medium text-gray-900">Personal Details</h5>
+          </div>
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Basic information, addresses, employment</p>
+                <div className="flex items-center space-x-2 mt-1">
+                  <span className="text-xs text-green-600">✓ Complete</span>
+                </div>
+              </div>
+              <div className="text-green-500">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-lg">
+          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+            <h5 className="font-medium text-gray-900">Financial Position</h5>
+          </div>
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Income, assets, liabilities from managed and unmanaged products</p>
+                <div className="flex items-center space-x-2 mt-1">
+                  <span className="text-xs text-yellow-600">⚠ Missing some income details</span>
+                </div>
+              </div>
+              <div className="text-yellow-500">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-lg">
+          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+            <h5 className="font-medium text-gray-900">Investment Experience</h5>
+          </div>
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Investment history, risk tolerance, experience level</p>
+                <div className="flex items-center space-x-2 mt-1">
+                  <span className="text-xs text-red-600">✗ Incomplete</span>
+                </div>
+              </div>
+              <div className="text-red-500">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Generate KYC Modal */}
+      {showGenerateModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Generate KYC Report</h3>
+            </div>
+            <div className="px-6 py-4">
+              <p className="text-sm text-gray-600 mb-4">
+                Generate a comprehensive KYC report using structured client data with template-based auto-population.
+              </p>
+              
+              <div className="space-y-4">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-yellow-800">
+                        Data completeness is {completeness}%. Some sections may require manual input.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="flex items-center">
+                    <input type="checkbox" className="rounded border-gray-300" defaultChecked />
+                    <span className="ml-2 text-sm text-gray-700">Include personal details section</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input type="checkbox" className="rounded border-gray-300" defaultChecked />
+                    <span className="ml-2 text-sm text-gray-700">Include financial position section</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input type="checkbox" className="rounded border-gray-300" />
+                    <span className="ml-2 text-sm text-gray-700">Include investment experience section</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input type="checkbox" className="rounded border-gray-300" defaultChecked />
+                    <span className="ml-2 text-sm text-gray-700">Include objectives section</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+              <ActionButton variant="cancel" onClick={() => setShowGenerateModal(false)}>
+                Cancel
+              </ActionButton>
+              <ActionButton variant="save" onClick={() => setShowGenerateModal(false)}>
+                Generate Report
+              </ActionButton>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -100,28 +100,69 @@ client_information_items (
 client_actions (
   id BIGINT PRIMARY KEY,
   client_group_id BIGINT FK,
-  name VARCHAR(255),
-  description TEXT,
-  owner ENUM('advisor', 'client'),
-  status ENUM('outstanding', 'completed'),
+  objective_id BIGINT FK NULLABLE, -- Optional link to related objective
+  title VARCHAR(255),
+  description TEXT, -- Detailed description of action, steps, and expected outcomes
+  due_date DATE,
+  assigned_to VARCHAR(255), -- User ID or name of person responsible
+  assignment_type ENUM('advisor', 'client', 'other'), -- Who is responsible for the action
+  status ENUM('todo', 'completed'),
   active BOOLEAN DEFAULT true,
   created_at TIMESTAMP,
-  completed_at TIMESTAMP
+  updated_at TIMESTAMP
 )
 ```
 
-#### Objectives Table
+**Example Action Items:**
+**To-Do Actions:**
+1. **Review Pension Contributions** (*👨‍💼 Advisor*)
+   - *Description*: "Analyze current pension contributions across all schemes including workplace pension and SIPP. Consider increasing contributions to maximize annual allowance and tax efficiency. Review provider performance and fees."
+   - *Due Date*: 2024-09-15, *Assigned To*: John Advisor, *Status*: To-Do
+
+2. **Provide Salary Documentation** (*👤 Client*)
+   - *Description*: "Gather and provide recent P60s, last 3 months payslips, and employment contract. Client to collect these documents from HR department and scan for secure upload."
+   - *Due Date*: 2024-09-20, *Assigned To*: John Smith (Client), *Status*: To-Do
+
+3. **Complete Risk Questionnaire** (*👤 Client*)  
+   - *Description*: "Fill out comprehensive attitude to risk questionnaire online. Client to complete all sections including capacity for loss assessment and investment experience details."
+   - *Due Date*: 2024-09-25, *Assigned To*: Mary Smith (Client), *Status*: To-Do
+
+**Completed Actions:**
+4. **Initial Portfolio Review** (*👨‍💼 Advisor*)
+   - *Description*: "Comprehensive review of existing investment portfolio including performance analysis, risk assessment, and alignment with client objectives. Identified opportunities for optimization."
+   - *Completed Date*: 2024-08-20, *Assigned To*: John Advisor, *Status*: Completed
+
+5. **Gather Bank Statements** (*👤 Client*)
+   - *Description*: "Collect and provide last 6 months bank statements for all current accounts, savings accounts, and credit cards. Required for mortgage application and financial planning review."
+   - *Completed Date*: 2024-08-25, *Assigned To*: John Smith (Client), *Status*: Completed
+
+#### Objectives Table  
 ```sql
 client_objectives (
   id BIGINT PRIMARY KEY,
   client_group_id BIGINT FK,
   title VARCHAR(255),
-  description TEXT,
+  description TEXT, -- Detailed description explaining objective, target amounts, strategy
+  priority ENUM('high', 'medium', 'low'),
   target_date DATE,
-  status VARCHAR(50),
-  created_at TIMESTAMP
+  status ENUM('planning', 'in_progress', 'completed', 'cancelled'),
+  created_at TIMESTAMP,
+  updated_at TIMESTAMP
 )
 ```
+
+**Example Client Objectives:**
+1. **Retirement Planning** (*Priority: High*)
+   - *Description*: "Build a comprehensive retirement portfolio targeting £750,000 by age 65. Focus on maximizing pension contributions and ISA allowances while maintaining appropriate risk levels for long-term growth."
+   - *Target Date*: 2030-12-31, *Status*: In Progress
+
+2. **House Purchase** (*Priority: Medium*)
+   - *Description*: "Save for deposit on family home in Surrey area. Target property value £450,000 requiring £90,000 deposit plus stamp duty and legal costs. Maintain funds in accessible investments."
+   - *Target Date*: 2026-06-30, *Status*: Planning
+
+3. **Children's Education Fund** (*Priority: Medium*)  
+   - *Description*: "Establish education savings for two children currently aged 8 and 10. Target £40,000 per child for university costs including accommodation. Utilize Junior ISAs and education-specific savings products."
+   - *Target Date*: 2032-09-01, *Status*: Planning
 
 #### Networth Statement Snapshots
 ```sql
@@ -133,6 +174,96 @@ networth_statements (
   snapshot_data JSONB -- Complete snapshot of all items and values at creation time
 )
 ```
+
+### Networth Statement Table Structure and Styling
+
+#### Table Organization
+The networth statement table follows a hierarchical structure organized by item types with individual items and subtotals:
+
+**Hierarchical Layout:**
+```
+ITEM TYPE HEADER (e.g., "GIAS")
+  Individual Item 1        £amount  £amount  £amount  £total
+  Individual Item 2        £amount  £amount  £amount  £total
+Item Type Total           £subtotal £subtotal £subtotal £subtotal
+
+ITEM TYPE HEADER (e.g., "BANK ACCOUNTS")  
+  Individual Item 1        £amount  £amount  £amount  £total
+  Individual Item 2        £amount  £amount  £amount  £total
+Item Type Total           £subtotal £subtotal £subtotal £subtotal
+
+TOTAL ASSETS              £grand   £grand   £grand   £grand
+```
+
+#### Data Structure Requirements
+```json
+{
+  "item_types": [
+    {
+      "type": "GIAs",
+      "is_managed": true,
+      "items": [
+        {
+          "name": "Zurich Vista GIA",
+          "john": 125000,
+          "mary": 95000, 
+          "joint": 0,
+          "total": 220000
+        }
+      ]
+    },
+    {
+      "type": "Bank Accounts",
+      "is_managed": false,
+      "items": [
+        {
+          "name": "Halifax Current Account",
+          "john": 2250,
+          "mary": 1750,
+          "joint": 0,
+          "total": 4000
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### Professional Styling Specifications
+
+**Section Headers:**
+- Dark gray top borders (`border-t-2 border-gray-400`)
+- Bold uppercase text with letter tracking
+- No background color - clean monochromatic appearance
+- Full-width spanning across all columns
+
+**Individual Items:**
+- Clean indentation (left padding of 2rem)
+- Light gray text (`text-gray-700`) for readability
+- Subtle hover effects (`hover:bg-gray-50`)
+- Light borders between rows (`border-b border-gray-200`)
+- Em dashes (—) for zero values instead of £0
+
+**Section Subtotals:**
+- Light gray background (`bg-gray-100`)
+- Semibold font weight with italic styling for "Total" labels
+- Thicker bottom borders (`border-b-2 border-gray-300`)
+- Clear visual separation from individual items
+
+**Grand Total Row:**
+- Prominent top border (`border-t-4 border-gray-600`)
+- Light gray background (`bg-gray-50`)
+- Bold uppercase text with increased padding
+- Larger text size for visual hierarchy
+- Professional financial document appearance
+
+**Typography Standards:**
+- Regular weight for data values
+- Semibold for section totals
+- Bold for grand totals
+- Right-aligned monetary values
+- Consistent spacing and padding
+- Monochromatic gray color scheme throughout
 
 #### Unmanaged Products Table (NEW)
 ```sql
