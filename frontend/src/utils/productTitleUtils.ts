@@ -210,6 +210,11 @@ export const generateProductDisplayName = (product: any): string => {
   // 1. Provider name
   if (product.provider_name) {
     parts.push(product.provider_name);
+  } else {
+    // Fallback: try to get provider name from available_providers object
+    if (product.available_providers?.name) {
+      parts.push(product.available_providers.name);
+    }
   }
 
   // 2. Product name (basic product description from database)

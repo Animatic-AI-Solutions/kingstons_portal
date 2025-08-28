@@ -91,6 +91,7 @@ export const usePortfolioTemplateDetails = (portfolioId: string | undefined) => 
         api.get(`/available_portfolios/${portfolioId}/linked-products`, { signal }).catch(() => ({ data: [] }))
       ]);
 
+
       return {
         template: templateResponse.data,
         generations: generationsResponse.data || [],

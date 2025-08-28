@@ -1,1176 +1,344 @@
 chunk-QYFCA5BS.js?v=cc98fab4:21609 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
 providerColors.ts:75 Provider color service initialized {providersLoaded: 19, colorsInCache: 19}
-Products.tsx:102 Fetching active template portfolio generations...
-Products.tsx:67 Fetching products data with optimized endpoint...
-Products.tsx:102 Fetching active template portfolio generations...
-Products.tsx:67 Fetching products data with optimized endpoint...
-Products.tsx:75 Received 84 products with portfolio type information
-Products.tsx:78 Sample product: {id: 168, name: 'TEST Prudential Offshore Bond Audrey Barnett', client: 'Z TEST Kingston Cuba Barnett Family', portfolioType: 'Portfolio', ownerCount: 1, …}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 46, firstname: 'Audrey', surname: 'Barnett', known_as: 'Nanny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Audrey', surname: 'Barnett', knownAs: 'Nanny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Audrey Barnett
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 45, firstname: 'Daniel', surname: 'Cuba', known_as: 'Danny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Daniel', surname: 'Cuba', knownAs: 'Danny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Daniel Cuba
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Gabriella', surname: 'Cuba', knownAs: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Gabriella Cuba
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 49, firstname: 'Stella', surname: 'Dobson', known_as: 'Stella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Stella', surname: 'Dobson', knownAs: 'Stella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Stella Dobson
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Gabriella', surname: 'Cuba', knownAs: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Gabriella Cuba
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 50, firstname: 'Suzanne', surname: 'Cole', known_as: 'Sue'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Suzanne', surname: 'Cole', knownAs: 'Sue'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Suzanne Cole
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 50, firstname: 'Suzanne', surname: 'Cole', known_as: 'Sue'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Suzanne', surname: 'Cole', knownAs: 'Sue'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Suzanne Cole
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 50, firstname: 'Suzanne', surname: 'Cole', known_as: 'Sue'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Suzanne', surname: 'Cole', knownAs: 'Sue'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Suzanne Cole
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 51, firstname: 'Jacqueline', surname: 'Norman', known_as: 'Jackie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jacqueline', surname: 'Norman', knownAs: 'Jackie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jacqueline Norman
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 53, firstname: 'Alan', surname: 'McArthur', known_as: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Alan', surname: 'McArthur', knownAs: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Alan McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 54, firstname: 'Josie', surname: 'McArthur', known_as: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Josie', surname: 'McArthur', knownAs: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Josie McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 55, firstname: 'Jayne', surname: 'McKie', known_as: 'Jayne'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jayne', surname: 'McKie', knownAs: 'Jayne'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jayne McKie
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 56, firstname: 'Carter', surname: 'Fitzgerald', known_as: 'Carter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Carter', surname: 'Fitzgerald', knownAs: 'Carter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Carter Fitzgerald
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 57, firstname: 'Jaxon', surname: 'Fitzgerald', known_as: 'Jaxon'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jaxon', surname: 'Fitzgerald', knownAs: 'Jaxon'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jaxon Fitzgerald
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 58, firstname: 'Lacey', surname: 'Johnson', known_as: 'Lacey'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Lacey', surname: 'Johnson', knownAs: 'Lacey'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Lacey Johnson
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 59, firstname: 'Archie', surname: 'Johnson', known_as: 'Archie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Archie', surname: 'Johnson', knownAs: 'Archie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Archie Johnson
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 60, firstname: 'Peter', surname: 'Batchelor', known_as: 'Peter'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Peter', surname: 'Batchelor', knownAs: 'Peter'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Peter Batchelor
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 53, firstname: 'Alan', surname: 'McArthur', known_as: 'Alan'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Alan', surname: 'McArthur', knownAs: 'Alan'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Alan McArthur
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 54, firstname: 'Josie', surname: 'McArthur', known_as: 'Josie'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Josie', surname: 'McArthur', knownAs: 'Josie'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Josie McArthur
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 54, firstname: 'Josie', surname: 'McArthur', known_as: 'Josie'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Josie', surname: 'McArthur', knownAs: 'Josie'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Josie McArthur
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Gabriella', surname: 'Cuba', knownAs: 'Ella'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Gabriella Cuba
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 52, firstname: 'Georgina', surname: 'Christie', known_as: 'Gina'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Georgina', surname: 'Christie', knownAs: 'Gina'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Georgina Christie
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 61, firstname: 'Peter', surname: 'Christie', known_as: 'Peter'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Peter', surname: 'Christie', knownAs: 'Peter'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Peter Christie
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 52, firstname: 'Georgina', surname: 'Christie', known_as: 'Gina'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Georgina', surname: 'Christie', knownAs: 'Gina'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Georgina Christie
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 61, firstname: 'Peter', surname: 'Christie', known_as: 'Peter'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Peter', surname: 'Christie', knownAs: 'Peter'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Peter Christie
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 52, firstname: 'Georgina', surname: 'Christie', known_as: 'Gina'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Georgina', surname: 'Christie', knownAs: 'Gina'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Georgina Christie
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 54, firstname: 'Josie', surname: 'McArthur', known_as: 'Josie'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Josie', surname: 'McArthur', knownAs: 'Josie'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Josie McArthur
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Andrew', surname: 'Plumb', knownAs: 'Andrew'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Andrew Plumb
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 64, firstname: 'Rosalind', surname: 'Plumb', known_as: 'Ros'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosalind', surname: 'Plumb', knownAs: 'Ros'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosalind Plumb
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 53, firstname: 'Alan', surname: 'McArthur', known_as: 'Alan'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Alan', surname: 'McArthur', knownAs: 'Alan'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Alan McArthur
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 54, firstname: 'Josie', surname: 'McArthur', known_as: 'Josie'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Josie', surname: 'McArthur', knownAs: 'Josie'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Josie McArthur
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Andrew', surname: 'Plumb', knownAs: 'Andrew'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Andrew Plumb
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 64, firstname: 'Rosalind', surname: 'Plumb', known_as: 'Ros'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosalind', surname: 'Plumb', knownAs: 'Ros'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosalind Plumb
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Andrew', surname: 'Plumb', knownAs: 'Andrew'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Andrew Plumb
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 64, firstname: 'Rosalind', surname: 'Plumb', known_as: 'Ros'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosalind', surname: 'Plumb', knownAs: 'Ros'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosalind Plumb
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 3, firstname: 'David', surname: 'Allan', known_as: 'David'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'David', surname: 'Allan', knownAs: 'David'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): David Allan
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 4, firstname: 'Murial', surname: 'Allan', known_as: 'Muriel'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Murial', surname: 'Allan', knownAs: 'Muriel'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Murial Allan
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 3, firstname: 'David', surname: 'Allan', known_as: 'David'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'David', surname: 'Allan', knownAs: 'David'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): David Allan
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 5, firstname: 'Anita', surname: 'Munford', known_as: 'Anita'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Anita', surname: 'Munford', knownAs: 'Anita'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Anita Munford
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 6, firstname: 'Louis', surname: 'Munford', known_as: 'Louis'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Louis', surname: 'Munford', knownAs: 'Louis'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Louis Munford
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 7, firstname: 'Natasha', surname: 'Munford', known_as: 'Natasha'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Natasha', surname: 'Munford', knownAs: 'Natasha'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Natasha Munford
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 8, firstname: 'Steven', surname: 'Munford', known_as: 'Steven'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Steven', surname: 'Munford', knownAs: 'Steven'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Steven Munford
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 10, firstname: 'Michael', surname: 'Meddle', known_as: 'Michael'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Michael', surname: 'Meddle', knownAs: 'Michael'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Michael Meddle
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 12, firstname: 'Julian', surname: 'Franklin', known_as: 'Julian'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Julian', surname: 'Franklin', knownAs: 'Julian'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Julian Franklin
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 13, firstname: 'Tracie', surname: 'Franklin', known_as: 'Tracie'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Tracie', surname: 'Franklin', knownAs: 'Tracie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Tracie Franklin
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 12, firstname: 'Julian', surname: 'Franklin', known_as: 'Julian'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Julian', surname: 'Franklin', knownAs: 'Julian'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Julian Franklin
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 13, firstname: 'Tracie', surname: 'Franklin', known_as: 'Tracie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Tracie', surname: 'Franklin', knownAs: 'Tracie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Tracie Franklin
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 14, firstname: 'Alison', surname: 'Sear', known_as: 'Alison'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Alison', surname: 'Sear', knownAs: 'Alison'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Alison Sear
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 15, firstname: 'Terence', surname: 'Scarborough', known_as: 'Terry'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Terence', surname: 'Scarborough', knownAs: 'Terry'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Terence Scarborough
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 16, firstname: 'Angela', surname: 'Scarborough', known_as: 'Angela'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Angela', surname: 'Scarborough', knownAs: 'Angela'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Angela Scarborough
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 15, firstname: 'Terence', surname: 'Scarborough', known_as: 'Terry'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Terence', surname: 'Scarborough', knownAs: 'Terry'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Terence Scarborough
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 16, firstname: 'Angela', surname: 'Scarborough', known_as: 'Angela'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Angela', surname: 'Scarborough', knownAs: 'Angela'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Angela Scarborough
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 17, firstname: 'Michael', surname: 'Bullock', known_as: 'Mike'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Michael', surname: 'Bullock', knownAs: 'Mike'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Michael Bullock
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 18, firstname: 'Jennifer', surname: 'Bullock', known_as: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jennifer', surname: 'Bullock', knownAs: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jennifer Bullock
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 19, firstname: 'Stephen', surname: 'Meddle', known_as: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Stephen', surname: 'Meddle', knownAs: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Stephen Meddle
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 19, firstname: 'Stephen', surname: 'Meddle', known_as: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Stephen', surname: 'Meddle', knownAs: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Stephen Meddle
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 19, firstname: 'Stephen', surname: 'Meddle', known_as: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Stephen', surname: 'Meddle', knownAs: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Stephen Meddle
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 20, firstname: 'SJ Meddle', surname: 'Limited', known_as: 'SJ Meddle Limited'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'SJ Meddle', surname: 'Limited', knownAs: 'SJ Meddle Limited'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): SJ Meddle Limited
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 53, firstname: 'Alan', surname: 'McArthur', known_as: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Alan', surname: 'McArthur', knownAs: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Alan McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 18, firstname: 'Jennifer', surname: 'Bullock', known_as: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jennifer', surname: 'Bullock', knownAs: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jennifer Bullock
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 17, firstname: 'Michael', surname: 'Bullock', known_as: 'Mike'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Michael', surname: 'Bullock', knownAs: 'Mike'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Michael Bullock
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 18, firstname: 'Jennifer', surname: 'Bullock', known_as: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jennifer', surname: 'Bullock', knownAs: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jennifer Bullock
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 18, firstname: 'Jennifer', surname: 'Bullock', known_as: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jennifer', surname: 'Bullock', knownAs: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jennifer Bullock
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 21, firstname: 'Rosemary', surname: 'Merry', known_as: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosemary', surname: 'Merry', knownAs: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosemary Merry
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 22, firstname: 'John', surname: 'Merry', known_as: 'John'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Merry', knownAs: 'John'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Merry
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 21, firstname: 'Rosemary', surname: 'Merry', known_as: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosemary', surname: 'Merry', knownAs: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosemary Merry
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 22, firstname: 'John', surname: 'Merry', known_as: 'John'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Merry', knownAs: 'John'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Merry
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 21, firstname: 'Rosemary', surname: 'Merry', known_as: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosemary', surname: 'Merry', knownAs: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosemary Merry
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 66, firstname: 'Dawn', surname: 'Purkiss', known_as: 'Dawn'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Dawn', surname: 'Purkiss', knownAs: 'Dawn'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Dawn Purkiss
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 66, firstname: 'Dawn', surname: 'Purkiss', known_as: 'Dawn'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Dawn', surname: 'Purkiss', knownAs: 'Dawn'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Dawn Purkiss
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 67, firstname: 'Kathleen', surname: 'Mills', known_as: 'Maggie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Kathleen', surname: 'Mills', knownAs: 'Maggie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Kathleen Mills
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 71, firstname: 'Jaime', surname: 'Whistler', known_as: 'Jaime'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jaime', surname: 'Whistler', knownAs: 'Jaime'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jaime Whistler
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 71, firstname: 'Jaime', surname: 'Whistler', known_as: 'Jaime'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jaime', surname: 'Whistler', knownAs: 'Jaime'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jaime Whistler
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 71, firstname: 'Jaime', surname: 'Whistler', known_as: 'Jaime'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jaime', surname: 'Whistler', knownAs: 'Jaime'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jaime Whistler
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 72, firstname: 'Christopher', surname: 'Mills', known_as: 'Chris'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Christopher', surname: 'Mills', knownAs: 'Chris'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Christopher Mills
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 71, firstname: 'Jaime', surname: 'Whistler', known_as: 'Jaime'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jaime', surname: 'Whistler', knownAs: 'Jaime'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jaime Whistler
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 73, firstname: 'Dermot', surname: 'Kavanagh', known_as: 'Dermot'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Dermot', surname: 'Kavanagh', knownAs: 'Dermot'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Dermot Kavanagh
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 73, firstname: 'Dermot', surname: 'Kavanagh', known_as: 'Dermot'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Dermot', surname: 'Kavanagh', knownAs: 'Dermot'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Dermot Kavanagh
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 68, firstname: 'Elizabeth', surname: 'Dunlop', known_as: 'Elizabeth'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Elizabeth', surname: 'Dunlop', knownAs: 'Elizabeth'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Elizabeth Dunlop
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 68, firstname: 'Elizabeth', surname: 'Dunlop', known_as: 'Elizabeth'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Elizabeth', surname: 'Dunlop', knownAs: 'Elizabeth'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Elizabeth Dunlop
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 68, firstname: 'Elizabeth', surname: 'Dunlop', known_as: 'Elizabeth'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Elizabeth', surname: 'Dunlop', knownAs: 'Elizabeth'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Elizabeth Dunlop
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 68, firstname: 'Elizabeth', surname: 'Dunlop', known_as: 'Elizabeth'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Elizabeth', surname: 'Dunlop', knownAs: 'Elizabeth'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Elizabeth Dunlop
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 75, firstname: 'Philip', surname: 'Cairns', known_as: 'Phil'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Philip', surname: 'Cairns', knownAs: 'Phil'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Philip Cairns
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 69, firstname: 'John', surname: 'Turpin', known_as: 'Ben'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Turpin', knownAs: 'Ben'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Turpin
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 69, firstname: 'John', surname: 'Turpin', known_as: 'Ben'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Turpin', knownAs: 'Ben'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Turpin
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Andrew', surname: 'Plumb', knownAs: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Andrew Plumb
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Gabriella', surname: 'Cuba', knownAs: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Gabriella Cuba
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 69, firstname: 'John', surname: 'Turpin', known_as: 'Ben'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Turpin', knownAs: 'Ben'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Turpin
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 76, firstname: 'Karen', surname: 'Hardy', known_as: 'Karen Hardy'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Karen', surname: 'Hardy', knownAs: 'Karen Hardy'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Karen Hardy
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 76, firstname: 'Karen', surname: 'Hardy', known_as: 'Karen Hardy'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Karen', surname: 'Hardy', knownAs: 'Karen Hardy'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Karen Hardy
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 69, firstname: 'John', surname: 'Turpin', known_as: 'Ben'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Turpin', knownAs: 'Ben'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Turpin
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 70, firstname: 'Anne', surname: 'Wade', known_as: 'Anne'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Anne', surname: 'Wade', knownAs: 'Anne'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Anne Wade
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 70, firstname: 'Anne', surname: 'Wade', known_as: 'Anne'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Anne', surname: 'Wade', knownAs: 'Anne'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Anne Wade
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 77, firstname: 'Christopher', surname: 'Wade', known_as: 'Cristopher'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Christopher', surname: 'Wade', knownAs: 'Cristopher'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Christopher Wade
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 79, firstname: 'Frances', surname: 'White', known_as: 'Frances'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Frances', surname: 'White', knownAs: 'Frances'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Frances White
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 79, firstname: 'Frances', surname: 'White', known_as: 'Frances'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Frances', surname: 'White', knownAs: 'Frances'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Frances White
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 79, firstname: 'Frances', surname: 'White', known_as: 'Frances'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Frances', surname: 'White', knownAs: 'Frances'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Frances White
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 46, firstname: 'Audrey', surname: 'Barnett', known_as: 'Nanny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Audrey', surname: 'Barnett', knownAs: 'Nanny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Audrey Barnett
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 45, firstname: 'Daniel', surname: 'Cuba', known_as: 'Danny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Daniel', surname: 'Cuba', knownAs: 'Danny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Daniel Cuba
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Gabriella', surname: 'Cuba', knownAs: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Gabriella Cuba
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 49, firstname: 'Stella', surname: 'Dobson', known_as: 'Stella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Stella', surname: 'Dobson', knownAs: 'Stella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Stella Dobson
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Gabriella', surname: 'Cuba', knownAs: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Gabriella Cuba
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 50, firstname: 'Suzanne', surname: 'Cole', known_as: 'Sue'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Suzanne', surname: 'Cole', knownAs: 'Sue'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Suzanne Cole
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 50, firstname: 'Suzanne', surname: 'Cole', known_as: 'Sue'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Suzanne', surname: 'Cole', knownAs: 'Sue'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Suzanne Cole
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 50, firstname: 'Suzanne', surname: 'Cole', known_as: 'Sue'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Suzanne', surname: 'Cole', knownAs: 'Sue'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Suzanne Cole
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 51, firstname: 'Jacqueline', surname: 'Norman', known_as: 'Jackie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jacqueline', surname: 'Norman', knownAs: 'Jackie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jacqueline Norman
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 53, firstname: 'Alan', surname: 'McArthur', known_as: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Alan', surname: 'McArthur', knownAs: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Alan McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 54, firstname: 'Josie', surname: 'McArthur', known_as: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Josie', surname: 'McArthur', knownAs: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Josie McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 55, firstname: 'Jayne', surname: 'McKie', known_as: 'Jayne'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jayne', surname: 'McKie', knownAs: 'Jayne'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jayne McKie
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 56, firstname: 'Carter', surname: 'Fitzgerald', known_as: 'Carter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Carter', surname: 'Fitzgerald', knownAs: 'Carter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Carter Fitzgerald
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 57, firstname: 'Jaxon', surname: 'Fitzgerald', known_as: 'Jaxon'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jaxon', surname: 'Fitzgerald', knownAs: 'Jaxon'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jaxon Fitzgerald
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 58, firstname: 'Lacey', surname: 'Johnson', known_as: 'Lacey'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Lacey', surname: 'Johnson', knownAs: 'Lacey'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Lacey Johnson
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 59, firstname: 'Archie', surname: 'Johnson', known_as: 'Archie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Archie', surname: 'Johnson', knownAs: 'Archie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Archie Johnson
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 60, firstname: 'Peter', surname: 'Batchelor', known_as: 'Peter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Peter', surname: 'Batchelor', knownAs: 'Peter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Peter Batchelor
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 53, firstname: 'Alan', surname: 'McArthur', known_as: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Alan', surname: 'McArthur', knownAs: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Alan McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 54, firstname: 'Josie', surname: 'McArthur', known_as: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Josie', surname: 'McArthur', knownAs: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Josie McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 54, firstname: 'Josie', surname: 'McArthur', known_as: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Josie', surname: 'McArthur', knownAs: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Josie McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Gabriella', surname: 'Cuba', knownAs: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Gabriella Cuba
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 52, firstname: 'Georgina', surname: 'Christie', known_as: 'Gina'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Georgina', surname: 'Christie', knownAs: 'Gina'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Georgina Christie
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 61, firstname: 'Peter', surname: 'Christie', known_as: 'Peter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Peter', surname: 'Christie', knownAs: 'Peter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Peter Christie
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 52, firstname: 'Georgina', surname: 'Christie', known_as: 'Gina'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Georgina', surname: 'Christie', knownAs: 'Gina'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Georgina Christie
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 61, firstname: 'Peter', surname: 'Christie', known_as: 'Peter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Peter', surname: 'Christie', knownAs: 'Peter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Peter Christie
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 52, firstname: 'Georgina', surname: 'Christie', known_as: 'Gina'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Georgina', surname: 'Christie', knownAs: 'Gina'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Georgina Christie
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 54, firstname: 'Josie', surname: 'McArthur', known_as: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Josie', surname: 'McArthur', knownAs: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Josie McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Andrew', surname: 'Plumb', knownAs: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Andrew Plumb
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 64, firstname: 'Rosalind', surname: 'Plumb', known_as: 'Ros'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosalind', surname: 'Plumb', knownAs: 'Ros'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosalind Plumb
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 53, firstname: 'Alan', surname: 'McArthur', known_as: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Alan', surname: 'McArthur', knownAs: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Alan McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 54, firstname: 'Josie', surname: 'McArthur', known_as: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Josie', surname: 'McArthur', knownAs: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Josie McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Andrew', surname: 'Plumb', knownAs: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Andrew Plumb
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 64, firstname: 'Rosalind', surname: 'Plumb', known_as: 'Ros'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosalind', surname: 'Plumb', knownAs: 'Ros'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosalind Plumb
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Andrew', surname: 'Plumb', knownAs: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Andrew Plumb
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 64, firstname: 'Rosalind', surname: 'Plumb', known_as: 'Ros'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosalind', surname: 'Plumb', knownAs: 'Ros'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosalind Plumb
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 3, firstname: 'David', surname: 'Allan', known_as: 'David'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'David', surname: 'Allan', knownAs: 'David'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): David Allan
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 4, firstname: 'Murial', surname: 'Allan', known_as: 'Muriel'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Murial', surname: 'Allan', knownAs: 'Muriel'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Murial Allan
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 3, firstname: 'David', surname: 'Allan', known_as: 'David'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'David', surname: 'Allan', knownAs: 'David'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): David Allan
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 5, firstname: 'Anita', surname: 'Munford', known_as: 'Anita'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Anita', surname: 'Munford', knownAs: 'Anita'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Anita Munford
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 6, firstname: 'Louis', surname: 'Munford', known_as: 'Louis'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Louis', surname: 'Munford', knownAs: 'Louis'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Louis Munford
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 7, firstname: 'Natasha', surname: 'Munford', known_as: 'Natasha'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Natasha', surname: 'Munford', knownAs: 'Natasha'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Natasha Munford
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 8, firstname: 'Steven', surname: 'Munford', known_as: 'Steven'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Steven', surname: 'Munford', knownAs: 'Steven'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Steven Munford
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 10, firstname: 'Michael', surname: 'Meddle', known_as: 'Michael'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Michael', surname: 'Meddle', knownAs: 'Michael'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Michael Meddle
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 12, firstname: 'Julian', surname: 'Franklin', known_as: 'Julian'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Julian', surname: 'Franklin', knownAs: 'Julian'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Julian Franklin
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 13, firstname: 'Tracie', surname: 'Franklin', known_as: 'Tracie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Tracie', surname: 'Franklin', knownAs: 'Tracie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Tracie Franklin
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 12, firstname: 'Julian', surname: 'Franklin', known_as: 'Julian'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Julian', surname: 'Franklin', knownAs: 'Julian'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Julian Franklin
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 13, firstname: 'Tracie', surname: 'Franklin', known_as: 'Tracie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Tracie', surname: 'Franklin', knownAs: 'Tracie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Tracie Franklin
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 14, firstname: 'Alison', surname: 'Sear', known_as: 'Alison'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Alison', surname: 'Sear', knownAs: 'Alison'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Alison Sear
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 15, firstname: 'Terence', surname: 'Scarborough', known_as: 'Terry'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Terence', surname: 'Scarborough', knownAs: 'Terry'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Terence Scarborough
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 16, firstname: 'Angela', surname: 'Scarborough', known_as: 'Angela'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Angela', surname: 'Scarborough', knownAs: 'Angela'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Angela Scarborough
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 15, firstname: 'Terence', surname: 'Scarborough', known_as: 'Terry'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Terence', surname: 'Scarborough', knownAs: 'Terry'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Terence Scarborough
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 16, firstname: 'Angela', surname: 'Scarborough', known_as: 'Angela'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Angela', surname: 'Scarborough', knownAs: 'Angela'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Angela Scarborough
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 17, firstname: 'Michael', surname: 'Bullock', known_as: 'Mike'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Michael', surname: 'Bullock', knownAs: 'Mike'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Michael Bullock
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 18, firstname: 'Jennifer', surname: 'Bullock', known_as: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jennifer', surname: 'Bullock', knownAs: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jennifer Bullock
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 19, firstname: 'Stephen', surname: 'Meddle', known_as: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Stephen', surname: 'Meddle', knownAs: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Stephen Meddle
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 19, firstname: 'Stephen', surname: 'Meddle', known_as: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Stephen', surname: 'Meddle', knownAs: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Stephen Meddle
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 19, firstname: 'Stephen', surname: 'Meddle', known_as: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Stephen', surname: 'Meddle', knownAs: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Stephen Meddle
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 20, firstname: 'SJ Meddle', surname: 'Limited', known_as: 'SJ Meddle Limited'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'SJ Meddle', surname: 'Limited', knownAs: 'SJ Meddle Limited'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): SJ Meddle Limited
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 53, firstname: 'Alan', surname: 'McArthur', known_as: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Alan', surname: 'McArthur', knownAs: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Alan McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 18, firstname: 'Jennifer', surname: 'Bullock', known_as: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jennifer', surname: 'Bullock', knownAs: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jennifer Bullock
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 17, firstname: 'Michael', surname: 'Bullock', known_as: 'Mike'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Michael', surname: 'Bullock', knownAs: 'Mike'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Michael Bullock
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 18, firstname: 'Jennifer', surname: 'Bullock', known_as: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jennifer', surname: 'Bullock', knownAs: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jennifer Bullock
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 18, firstname: 'Jennifer', surname: 'Bullock', known_as: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jennifer', surname: 'Bullock', knownAs: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jennifer Bullock
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 21, firstname: 'Rosemary', surname: 'Merry', known_as: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosemary', surname: 'Merry', knownAs: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosemary Merry
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 22, firstname: 'John', surname: 'Merry', known_as: 'John'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Merry', knownAs: 'John'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Merry
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 21, firstname: 'Rosemary', surname: 'Merry', known_as: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosemary', surname: 'Merry', knownAs: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosemary Merry
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 22, firstname: 'John', surname: 'Merry', known_as: 'John'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Merry', knownAs: 'John'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Merry
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 21, firstname: 'Rosemary', surname: 'Merry', known_as: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosemary', surname: 'Merry', knownAs: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosemary Merry
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 66, firstname: 'Dawn', surname: 'Purkiss', known_as: 'Dawn'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Dawn', surname: 'Purkiss', knownAs: 'Dawn'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Dawn Purkiss
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 66, firstname: 'Dawn', surname: 'Purkiss', known_as: 'Dawn'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Dawn', surname: 'Purkiss', knownAs: 'Dawn'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Dawn Purkiss
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 67, firstname: 'Kathleen', surname: 'Mills', known_as: 'Maggie'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Kathleen', surname: 'Mills', knownAs: 'Maggie'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Kathleen Mills
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 71, firstname: 'Jaime', surname: 'Whistler', known_as: 'Jaime'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jaime', surname: 'Whistler', knownAs: 'Jaime'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jaime Whistler
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 71, firstname: 'Jaime', surname: 'Whistler', known_as: 'Jaime'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jaime', surname: 'Whistler', knownAs: 'Jaime'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jaime Whistler
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 71, firstname: 'Jaime', surname: 'Whistler', known_as: 'Jaime'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jaime', surname: 'Whistler', knownAs: 'Jaime'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jaime Whistler
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 72, firstname: 'Christopher', surname: 'Mills', known_as: 'Chris'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Christopher', surname: 'Mills', knownAs: 'Chris'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Christopher Mills
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 71, firstname: 'Jaime', surname: 'Whistler', known_as: 'Jaime'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jaime', surname: 'Whistler', knownAs: 'Jaime'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jaime Whistler
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 73, firstname: 'Dermot', surname: 'Kavanagh', known_as: 'Dermot'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Dermot', surname: 'Kavanagh', knownAs: 'Dermot'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Dermot Kavanagh
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 73, firstname: 'Dermot', surname: 'Kavanagh', known_as: 'Dermot'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Dermot', surname: 'Kavanagh', knownAs: 'Dermot'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Dermot Kavanagh
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 68, firstname: 'Elizabeth', surname: 'Dunlop', known_as: 'Elizabeth'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Elizabeth', surname: 'Dunlop', knownAs: 'Elizabeth'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Elizabeth Dunlop
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 68, firstname: 'Elizabeth', surname: 'Dunlop', known_as: 'Elizabeth'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Elizabeth', surname: 'Dunlop', knownAs: 'Elizabeth'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Elizabeth Dunlop
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 68, firstname: 'Elizabeth', surname: 'Dunlop', known_as: 'Elizabeth'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Elizabeth', surname: 'Dunlop', knownAs: 'Elizabeth'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Elizabeth Dunlop
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 68, firstname: 'Elizabeth', surname: 'Dunlop', known_as: 'Elizabeth'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Elizabeth', surname: 'Dunlop', knownAs: 'Elizabeth'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Elizabeth Dunlop
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 75, firstname: 'Philip', surname: 'Cairns', known_as: 'Phil'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Philip', surname: 'Cairns', knownAs: 'Phil'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Philip Cairns
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 69, firstname: 'John', surname: 'Turpin', known_as: 'Ben'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Turpin', knownAs: 'Ben'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Turpin
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 69, firstname: 'John', surname: 'Turpin', known_as: 'Ben'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Turpin', knownAs: 'Ben'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Turpin
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Andrew', surname: 'Plumb', knownAs: 'Andrew'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Andrew Plumb
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Gabriella', surname: 'Cuba', knownAs: 'Ella'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Gabriella Cuba
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 69, firstname: 'John', surname: 'Turpin', known_as: 'Ben'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Turpin', knownAs: 'Ben'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Turpin
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 76, firstname: 'Karen', surname: 'Hardy', known_as: 'Karen Hardy'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Karen', surname: 'Hardy', knownAs: 'Karen Hardy'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Karen Hardy
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 76, firstname: 'Karen', surname: 'Hardy', known_as: 'Karen Hardy'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Karen', surname: 'Hardy', knownAs: 'Karen Hardy'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Karen Hardy
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 69, firstname: 'John', surname: 'Turpin', known_as: 'Ben'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Turpin', knownAs: 'Ben'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Turpin
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 70, firstname: 'Anne', surname: 'Wade', known_as: 'Anne'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Anne', surname: 'Wade', knownAs: 'Anne'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Anne Wade
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 70, firstname: 'Anne', surname: 'Wade', known_as: 'Anne'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Anne', surname: 'Wade', knownAs: 'Anne'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Anne Wade
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 77, firstname: 'Christopher', surname: 'Wade', known_as: 'Cristopher'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Christopher', surname: 'Wade', knownAs: 'Cristopher'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Christopher Wade
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 79, firstname: 'Frances', surname: 'White', known_as: 'Frances'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Frances', surname: 'White', knownAs: 'Frances'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Frances White
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 79, firstname: 'Frances', surname: 'White', known_as: 'Frances'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Frances', surname: 'White', knownAs: 'Frances'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Frances White
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 79, firstname: 'Frances', surname: 'White', known_as: 'Frances'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Frances', surname: 'White', knownAs: 'Frances'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Frances White
- Active template generations response: (17) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
- Received 84 products with portfolio type information
- Sample product: {id: 168, name: 'TEST Prudential Offshore Bond Audrey Barnett', client: 'Z TEST Kingston Cuba Barnett Family', portfolioType: 'Portfolio', ownerCount: 1, …}
- Active template generations response: (17) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 53, firstname: 'Alan', surname: 'McArthur', known_as: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Alan', surname: 'McArthur', knownAs: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Alan McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Andrew', surname: 'Plumb', knownAs: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Andrew Plumb
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 53, firstname: 'Alan', surname: 'McArthur', known_as: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Alan', surname: 'McArthur', knownAs: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Alan McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 10, firstname: 'Michael', surname: 'Meddle', known_as: 'Michael'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Michael', surname: 'Meddle', knownAs: 'Michael'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Michael Meddle
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 76, firstname: 'Karen', surname: 'Hardy', known_as: 'Karen Hardy'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Karen', surname: 'Hardy', knownAs: 'Karen Hardy'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Karen Hardy
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 3, firstname: 'David', surname: 'Allan', known_as: 'David'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'David', surname: 'Allan', knownAs: 'David'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): David Allan
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 19, firstname: 'Stephen', surname: 'Meddle', known_as: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Stephen', surname: 'Meddle', knownAs: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Stephen Meddle
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 68, firstname: 'Elizabeth', surname: 'Dunlop', known_as: 'Elizabeth'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Elizabeth', surname: 'Dunlop', knownAs: 'Elizabeth'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Elizabeth Dunlop
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 79, firstname: 'Frances', surname: 'White', known_as: 'Frances'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Frances', surname: 'White', knownAs: 'Frances'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Frances White
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 19, firstname: 'Stephen', surname: 'Meddle', known_as: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Stephen', surname: 'Meddle', knownAs: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Stephen Meddle
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 69, firstname: 'John', surname: 'Turpin', known_as: 'Ben'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Turpin', knownAs: 'Ben'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Turpin
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 52, firstname: 'Georgina', surname: 'Christie', known_as: 'Gina'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Georgina', surname: 'Christie', knownAs: 'Gina'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Georgina Christie
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 49, firstname: 'Stella', surname: 'Dobson', known_as: 'Stella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Stella', surname: 'Dobson', knownAs: 'Stella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Stella Dobson
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 51, firstname: 'Jacqueline', surname: 'Norman', known_as: 'Jackie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jacqueline', surname: 'Norman', knownAs: 'Jackie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jacqueline Norman
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 15, firstname: 'Terence', surname: 'Scarborough', known_as: 'Terry'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Terence', surname: 'Scarborough', knownAs: 'Terry'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Terence Scarborough
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 16, firstname: 'Angela', surname: 'Scarborough', known_as: 'Angela'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Angela', surname: 'Scarborough', knownAs: 'Angela'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Angela Scarborough
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 17, firstname: 'Michael', surname: 'Bullock', known_as: 'Mike'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Michael', surname: 'Bullock', knownAs: 'Mike'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Michael Bullock
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 18, firstname: 'Jennifer', surname: 'Bullock', known_as: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jennifer', surname: 'Bullock', knownAs: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jennifer Bullock
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 15, firstname: 'Terence', surname: 'Scarborough', known_as: 'Terry'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Terence', surname: 'Scarborough', knownAs: 'Terry'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Terence Scarborough
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 16, firstname: 'Angela', surname: 'Scarborough', known_as: 'Angela'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Angela', surname: 'Scarborough', knownAs: 'Angela'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Angela Scarborough
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 17, firstname: 'Michael', surname: 'Bullock', known_as: 'Mike'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Michael', surname: 'Bullock', knownAs: 'Mike'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Michael Bullock
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 18, firstname: 'Jennifer', surname: 'Bullock', known_as: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jennifer', surname: 'Bullock', knownAs: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jennifer Bullock
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 20, firstname: 'SJ Meddle', surname: 'Limited', known_as: 'SJ Meddle Limited'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'SJ Meddle', surname: 'Limited', knownAs: 'SJ Meddle Limited'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): SJ Meddle Limited
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 18, firstname: 'Jennifer', surname: 'Bullock', known_as: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jennifer', surname: 'Bullock', knownAs: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jennifer Bullock
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 66, firstname: 'Dawn', surname: 'Purkiss', known_as: 'Dawn'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Dawn', surname: 'Purkiss', knownAs: 'Dawn'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Dawn Purkiss
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 68, firstname: 'Elizabeth', surname: 'Dunlop', known_as: 'Elizabeth'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Elizabeth', surname: 'Dunlop', knownAs: 'Elizabeth'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Elizabeth Dunlop
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 22, firstname: 'John', surname: 'Merry', known_as: 'John'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Merry', knownAs: 'John'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Merry
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 21, firstname: 'Rosemary', surname: 'Merry', known_as: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosemary', surname: 'Merry', knownAs: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosemary Merry
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 22, firstname: 'John', surname: 'Merry', known_as: 'John'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Merry', knownAs: 'John'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Merry
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 21, firstname: 'Rosemary', surname: 'Merry', known_as: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosemary', surname: 'Merry', knownAs: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosemary Merry
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 56, firstname: 'Carter', surname: 'Fitzgerald', known_as: 'Carter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Carter', surname: 'Fitzgerald', knownAs: 'Carter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Carter Fitzgerald
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 57, firstname: 'Jaxon', surname: 'Fitzgerald', known_as: 'Jaxon'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jaxon', surname: 'Fitzgerald', knownAs: 'Jaxon'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jaxon Fitzgerald
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 58, firstname: 'Lacey', surname: 'Johnson', known_as: 'Lacey'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Lacey', surname: 'Johnson', knownAs: 'Lacey'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Lacey Johnson
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 59, firstname: 'Archie', surname: 'Johnson', known_as: 'Archie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Archie', surname: 'Johnson', knownAs: 'Archie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Archie Johnson
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Andrew', surname: 'Plumb', knownAs: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Andrew Plumb
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 64, firstname: 'Rosalind', surname: 'Plumb', known_as: 'Ros'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosalind', surname: 'Plumb', knownAs: 'Ros'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosalind Plumb
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 54, firstname: 'Josie', surname: 'McArthur', known_as: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Josie', surname: 'McArthur', knownAs: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Josie McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 54, firstname: 'Josie', surname: 'McArthur', known_as: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Josie', surname: 'McArthur', knownAs: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Josie McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 54, firstname: 'Josie', surname: 'McArthur', known_as: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Josie', surname: 'McArthur', knownAs: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Josie McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 54, firstname: 'Josie', surname: 'McArthur', known_as: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Josie', surname: 'McArthur', knownAs: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Josie McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 70, firstname: 'Anne', surname: 'Wade', known_as: 'Anne'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Anne', surname: 'Wade', knownAs: 'Anne'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Anne Wade
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 77, firstname: 'Christopher', surname: 'Wade', known_as: 'Cristopher'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Christopher', surname: 'Wade', knownAs: 'Cristopher'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Christopher Wade
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 50, firstname: 'Suzanne', surname: 'Cole', known_as: 'Sue'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Suzanne', surname: 'Cole', knownAs: 'Sue'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Suzanne Cole
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 71, firstname: 'Jaime', surname: 'Whistler', known_as: 'Jaime'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jaime', surname: 'Whistler', knownAs: 'Jaime'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jaime Whistler
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 53, firstname: 'Alan', surname: 'McArthur', known_as: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Alan', surname: 'McArthur', knownAs: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Alan McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 54, firstname: 'Josie', surname: 'McArthur', known_as: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Josie', surname: 'McArthur', knownAs: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Josie McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 71, firstname: 'Jaime', surname: 'Whistler', known_as: 'Jaime'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jaime', surname: 'Whistler', knownAs: 'Jaime'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jaime Whistler
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 55, firstname: 'Jayne', surname: 'McKie', known_as: 'Jayne'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jayne', surname: 'McKie', knownAs: 'Jayne'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jayne McKie
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 4, firstname: 'Murial', surname: 'Allan', known_as: 'Muriel'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Murial', surname: 'Allan', knownAs: 'Muriel'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Murial Allan
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 3, firstname: 'David', surname: 'Allan', known_as: 'David'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'David', surname: 'Allan', knownAs: 'David'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): David Allan
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 52, firstname: 'Georgina', surname: 'Christie', known_as: 'Gina'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Georgina', surname: 'Christie', knownAs: 'Gina'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Georgina Christie
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 61, firstname: 'Peter', surname: 'Christie', known_as: 'Peter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Peter', surname: 'Christie', knownAs: 'Peter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Peter Christie
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 52, firstname: 'Georgina', surname: 'Christie', known_as: 'Gina'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Georgina', surname: 'Christie', knownAs: 'Gina'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Georgina Christie
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 61, firstname: 'Peter', surname: 'Christie', known_as: 'Peter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Peter', surname: 'Christie', knownAs: 'Peter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Peter Christie
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 14, firstname: 'Alison', surname: 'Sear', known_as: 'Alison'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Alison', surname: 'Sear', knownAs: 'Alison'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Alison Sear
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 50, firstname: 'Suzanne', surname: 'Cole', known_as: 'Sue'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Suzanne', surname: 'Cole', knownAs: 'Sue'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Suzanne Cole
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 69, firstname: 'John', surname: 'Turpin', known_as: 'Ben'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Turpin', knownAs: 'Ben'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Turpin
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 79, firstname: 'Frances', surname: 'White', known_as: 'Frances'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Frances', surname: 'White', knownAs: 'Frances'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Frances White
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 8, firstname: 'Steven', surname: 'Munford', known_as: 'Steven'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Steven', surname: 'Munford', knownAs: 'Steven'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Steven Munford
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 64, firstname: 'Rosalind', surname: 'Plumb', known_as: 'Ros'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosalind', surname: 'Plumb', knownAs: 'Ros'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosalind Plumb
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 64, firstname: 'Rosalind', surname: 'Plumb', known_as: 'Ros'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosalind', surname: 'Plumb', knownAs: 'Ros'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosalind Plumb
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Andrew', surname: 'Plumb', knownAs: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Andrew Plumb
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 70, firstname: 'Anne', surname: 'Wade', known_as: 'Anne'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Anne', surname: 'Wade', knownAs: 'Anne'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Anne Wade
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 68, firstname: 'Elizabeth', surname: 'Dunlop', known_as: 'Elizabeth'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Elizabeth', surname: 'Dunlop', knownAs: 'Elizabeth'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Elizabeth Dunlop
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Gabriella', surname: 'Cuba', knownAs: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Gabriella Cuba
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 19, firstname: 'Stephen', surname: 'Meddle', known_as: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Stephen', surname: 'Meddle', knownAs: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Stephen Meddle
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 21, firstname: 'Rosemary', surname: 'Merry', known_as: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosemary', surname: 'Merry', knownAs: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosemary Merry
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 66, firstname: 'Dawn', surname: 'Purkiss', known_as: 'Dawn'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Dawn', surname: 'Purkiss', knownAs: 'Dawn'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Dawn Purkiss
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 67, firstname: 'Kathleen', surname: 'Mills', known_as: 'Maggie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Kathleen', surname: 'Mills', knownAs: 'Maggie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Kathleen Mills
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 72, firstname: 'Christopher', surname: 'Mills', known_as: 'Chris'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Christopher', surname: 'Mills', knownAs: 'Chris'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Christopher Mills
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 69, firstname: 'John', surname: 'Turpin', known_as: 'Ben'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Turpin', knownAs: 'Ben'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Turpin
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 50, firstname: 'Suzanne', surname: 'Cole', known_as: 'Sue'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Suzanne', surname: 'Cole', knownAs: 'Sue'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Suzanne Cole
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 5, firstname: 'Anita', surname: 'Munford', known_as: 'Anita'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Anita', surname: 'Munford', knownAs: 'Anita'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Anita Munford
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 53, firstname: 'Alan', surname: 'McArthur', known_as: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Alan', surname: 'McArthur', knownAs: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Alan McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 18, firstname: 'Jennifer', surname: 'Bullock', known_as: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jennifer', surname: 'Bullock', knownAs: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jennifer Bullock
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 68, firstname: 'Elizabeth', surname: 'Dunlop', known_as: 'Elizabeth'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Elizabeth', surname: 'Dunlop', knownAs: 'Elizabeth'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Elizabeth Dunlop
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 75, firstname: 'Philip', surname: 'Cairns', known_as: 'Phil'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Philip', surname: 'Cairns', knownAs: 'Phil'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Philip Cairns
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 69, firstname: 'John', surname: 'Turpin', known_as: 'Ben'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Turpin', knownAs: 'Ben'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Turpin
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Andrew', surname: 'Plumb', knownAs: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Andrew Plumb
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Gabriella', surname: 'Cuba', knownAs: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Gabriella Cuba
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 79, firstname: 'Frances', surname: 'White', known_as: 'Frances'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Frances', surname: 'White', knownAs: 'Frances'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Frances White
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 6, firstname: 'Louis', surname: 'Munford', known_as: 'Louis'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Louis', surname: 'Munford', knownAs: 'Louis'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Louis Munford
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 7, firstname: 'Natasha', surname: 'Munford', known_as: 'Natasha'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Natasha', surname: 'Munford', knownAs: 'Natasha'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Natasha Munford
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 45, firstname: 'Daniel', surname: 'Cuba', known_as: 'Danny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Daniel', surname: 'Cuba', knownAs: 'Danny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Daniel Cuba
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Gabriella', surname: 'Cuba', knownAs: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Gabriella Cuba
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Gabriella', surname: 'Cuba', knownAs: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Gabriella Cuba
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 46, firstname: 'Audrey', surname: 'Barnett', known_as: 'Nanny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Audrey', surname: 'Barnett', knownAs: 'Nanny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Audrey Barnett
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 73, firstname: 'Dermot', surname: 'Kavanagh', known_as: 'Dermot'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Dermot', surname: 'Kavanagh', knownAs: 'Dermot'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Dermot Kavanagh
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 71, firstname: 'Jaime', surname: 'Whistler', known_as: 'Jaime'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jaime', surname: 'Whistler', knownAs: 'Jaime'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jaime Whistler
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 12, firstname: 'Julian', surname: 'Franklin', known_as: 'Julian'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Julian', surname: 'Franklin', knownAs: 'Julian'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Julian Franklin
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 12, firstname: 'Julian', surname: 'Franklin', known_as: 'Julian'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Julian', surname: 'Franklin', knownAs: 'Julian'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Julian Franklin
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 13, firstname: 'Tracie', surname: 'Franklin', known_as: 'Tracie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Tracie', surname: 'Franklin', knownAs: 'Tracie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Tracie Franklin
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 13, firstname: 'Tracie', surname: 'Franklin', known_as: 'Tracie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Tracie', surname: 'Franklin', knownAs: 'Tracie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Tracie Franklin
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 71, firstname: 'Jaime', surname: 'Whistler', known_as: 'Jaime'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jaime', surname: 'Whistler', knownAs: 'Jaime'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jaime Whistler
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 76, firstname: 'Karen', surname: 'Hardy', known_as: 'Karen Hardy'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Karen', surname: 'Hardy', knownAs: 'Karen Hardy'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Karen Hardy
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 73, firstname: 'Dermot', surname: 'Kavanagh', known_as: 'Dermot'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Dermot', surname: 'Kavanagh', knownAs: 'Dermot'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Dermot Kavanagh
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 60, firstname: 'Peter', surname: 'Batchelor', known_as: 'Peter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Peter', surname: 'Batchelor', knownAs: 'Peter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Peter Batchelor
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 53, firstname: 'Alan', surname: 'McArthur', known_as: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Alan', surname: 'McArthur', knownAs: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Alan McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Andrew', surname: 'Plumb', knownAs: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Andrew Plumb
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 53, firstname: 'Alan', surname: 'McArthur', known_as: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Alan', surname: 'McArthur', knownAs: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Alan McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 10, firstname: 'Michael', surname: 'Meddle', known_as: 'Michael'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Michael', surname: 'Meddle', knownAs: 'Michael'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Michael Meddle
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 76, firstname: 'Karen', surname: 'Hardy', known_as: 'Karen Hardy'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Karen', surname: 'Hardy', knownAs: 'Karen Hardy'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Karen Hardy
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 3, firstname: 'David', surname: 'Allan', known_as: 'David'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'David', surname: 'Allan', knownAs: 'David'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): David Allan
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 19, firstname: 'Stephen', surname: 'Meddle', known_as: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Stephen', surname: 'Meddle', knownAs: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Stephen Meddle
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 68, firstname: 'Elizabeth', surname: 'Dunlop', known_as: 'Elizabeth'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Elizabeth', surname: 'Dunlop', knownAs: 'Elizabeth'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Elizabeth Dunlop
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 79, firstname: 'Frances', surname: 'White', known_as: 'Frances'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Frances', surname: 'White', knownAs: 'Frances'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Frances White
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 19, firstname: 'Stephen', surname: 'Meddle', known_as: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Stephen', surname: 'Meddle', knownAs: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Stephen Meddle
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 69, firstname: 'John', surname: 'Turpin', known_as: 'Ben'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Turpin', knownAs: 'Ben'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Turpin
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 52, firstname: 'Georgina', surname: 'Christie', known_as: 'Gina'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Georgina', surname: 'Christie', knownAs: 'Gina'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Georgina Christie
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 49, firstname: 'Stella', surname: 'Dobson', known_as: 'Stella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Stella', surname: 'Dobson', knownAs: 'Stella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Stella Dobson
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 51, firstname: 'Jacqueline', surname: 'Norman', known_as: 'Jackie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jacqueline', surname: 'Norman', knownAs: 'Jackie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jacqueline Norman
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 15, firstname: 'Terence', surname: 'Scarborough', known_as: 'Terry'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Terence', surname: 'Scarborough', knownAs: 'Terry'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Terence Scarborough
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 16, firstname: 'Angela', surname: 'Scarborough', known_as: 'Angela'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Angela', surname: 'Scarborough', knownAs: 'Angela'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Angela Scarborough
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 17, firstname: 'Michael', surname: 'Bullock', known_as: 'Mike'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Michael', surname: 'Bullock', knownAs: 'Mike'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Michael Bullock
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 18, firstname: 'Jennifer', surname: 'Bullock', known_as: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jennifer', surname: 'Bullock', knownAs: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jennifer Bullock
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 15, firstname: 'Terence', surname: 'Scarborough', known_as: 'Terry'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Terence', surname: 'Scarborough', knownAs: 'Terry'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Terence Scarborough
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 16, firstname: 'Angela', surname: 'Scarborough', known_as: 'Angela'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Angela', surname: 'Scarborough', knownAs: 'Angela'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Angela Scarborough
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 17, firstname: 'Michael', surname: 'Bullock', known_as: 'Mike'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Michael', surname: 'Bullock', knownAs: 'Mike'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Michael Bullock
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 18, firstname: 'Jennifer', surname: 'Bullock', known_as: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jennifer', surname: 'Bullock', knownAs: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jennifer Bullock
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 20, firstname: 'SJ Meddle', surname: 'Limited', known_as: 'SJ Meddle Limited'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'SJ Meddle', surname: 'Limited', knownAs: 'SJ Meddle Limited'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): SJ Meddle Limited
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 18, firstname: 'Jennifer', surname: 'Bullock', known_as: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jennifer', surname: 'Bullock', knownAs: 'Jenny'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jennifer Bullock
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 66, firstname: 'Dawn', surname: 'Purkiss', known_as: 'Dawn'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Dawn', surname: 'Purkiss', knownAs: 'Dawn'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Dawn Purkiss
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 68, firstname: 'Elizabeth', surname: 'Dunlop', known_as: 'Elizabeth'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Elizabeth', surname: 'Dunlop', knownAs: 'Elizabeth'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Elizabeth Dunlop
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 22, firstname: 'John', surname: 'Merry', known_as: 'John'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Merry', knownAs: 'John'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Merry
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 21, firstname: 'Rosemary', surname: 'Merry', known_as: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosemary', surname: 'Merry', knownAs: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosemary Merry
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 22, firstname: 'John', surname: 'Merry', known_as: 'John'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Merry', knownAs: 'John'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Merry
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 21, firstname: 'Rosemary', surname: 'Merry', known_as: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosemary', surname: 'Merry', knownAs: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosemary Merry
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 56, firstname: 'Carter', surname: 'Fitzgerald', known_as: 'Carter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Carter', surname: 'Fitzgerald', knownAs: 'Carter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Carter Fitzgerald
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 57, firstname: 'Jaxon', surname: 'Fitzgerald', known_as: 'Jaxon'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jaxon', surname: 'Fitzgerald', knownAs: 'Jaxon'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jaxon Fitzgerald
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 58, firstname: 'Lacey', surname: 'Johnson', known_as: 'Lacey'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Lacey', surname: 'Johnson', knownAs: 'Lacey'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Lacey Johnson
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 59, firstname: 'Archie', surname: 'Johnson', known_as: 'Archie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Archie', surname: 'Johnson', knownAs: 'Archie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Archie Johnson
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Andrew', surname: 'Plumb', knownAs: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Andrew Plumb
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 64, firstname: 'Rosalind', surname: 'Plumb', known_as: 'Ros'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosalind', surname: 'Plumb', knownAs: 'Ros'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosalind Plumb
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 54, firstname: 'Josie', surname: 'McArthur', known_as: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Josie', surname: 'McArthur', knownAs: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Josie McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 54, firstname: 'Josie', surname: 'McArthur', known_as: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Josie', surname: 'McArthur', knownAs: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Josie McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 54, firstname: 'Josie', surname: 'McArthur', known_as: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Josie', surname: 'McArthur', knownAs: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Josie McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 54, firstname: 'Josie', surname: 'McArthur', known_as: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Josie', surname: 'McArthur', knownAs: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Josie McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 70, firstname: 'Anne', surname: 'Wade', known_as: 'Anne'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Anne', surname: 'Wade', knownAs: 'Anne'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Anne Wade
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 77, firstname: 'Christopher', surname: 'Wade', known_as: 'Cristopher'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Christopher', surname: 'Wade', knownAs: 'Cristopher'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Christopher Wade
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 50, firstname: 'Suzanne', surname: 'Cole', known_as: 'Sue'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Suzanne', surname: 'Cole', knownAs: 'Sue'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Suzanne Cole
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 71, firstname: 'Jaime', surname: 'Whistler', known_as: 'Jaime'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jaime', surname: 'Whistler', knownAs: 'Jaime'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jaime Whistler
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 53, firstname: 'Alan', surname: 'McArthur', known_as: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Alan', surname: 'McArthur', knownAs: 'Alan'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Alan McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 54, firstname: 'Josie', surname: 'McArthur', known_as: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Josie', surname: 'McArthur', knownAs: 'Josie'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Josie McArthur
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 71, firstname: 'Jaime', surname: 'Whistler', known_as: 'Jaime'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jaime', surname: 'Whistler', knownAs: 'Jaime'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jaime Whistler
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 55, firstname: 'Jayne', surname: 'McKie', known_as: 'Jayne'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jayne', surname: 'McKie', knownAs: 'Jayne'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jayne McKie
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 4, firstname: 'Murial', surname: 'Allan', known_as: 'Muriel'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Murial', surname: 'Allan', knownAs: 'Muriel'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Murial Allan
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 3, firstname: 'David', surname: 'Allan', known_as: 'David'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'David', surname: 'Allan', knownAs: 'David'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): David Allan
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 52, firstname: 'Georgina', surname: 'Christie', known_as: 'Gina'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Georgina', surname: 'Christie', knownAs: 'Gina'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Georgina Christie
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 61, firstname: 'Peter', surname: 'Christie', known_as: 'Peter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Peter', surname: 'Christie', knownAs: 'Peter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Peter Christie
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 52, firstname: 'Georgina', surname: 'Christie', known_as: 'Gina'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Georgina', surname: 'Christie', knownAs: 'Gina'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Georgina Christie
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 61, firstname: 'Peter', surname: 'Christie', known_as: 'Peter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Peter', surname: 'Christie', knownAs: 'Peter'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Peter Christie
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 14, firstname: 'Alison', surname: 'Sear', known_as: 'Alison'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Alison', surname: 'Sear', knownAs: 'Alison'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Alison Sear
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 50, firstname: 'Suzanne', surname: 'Cole', known_as: 'Sue'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Suzanne', surname: 'Cole', knownAs: 'Sue'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Suzanne Cole
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 69, firstname: 'John', surname: 'Turpin', known_as: 'Ben'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Turpin', knownAs: 'Ben'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Turpin
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 79, firstname: 'Frances', surname: 'White', known_as: 'Frances'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Frances', surname: 'White', knownAs: 'Frances'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Frances White
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 8, firstname: 'Steven', surname: 'Munford', known_as: 'Steven'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Steven', surname: 'Munford', knownAs: 'Steven'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Steven Munford
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 64, firstname: 'Rosalind', surname: 'Plumb', known_as: 'Ros'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosalind', surname: 'Plumb', knownAs: 'Ros'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosalind Plumb
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 64, firstname: 'Rosalind', surname: 'Plumb', known_as: 'Ros'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosalind', surname: 'Plumb', knownAs: 'Ros'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosalind Plumb
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Andrew', surname: 'Plumb', knownAs: 'Andrew'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Andrew Plumb
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 70, firstname: 'Anne', surname: 'Wade', known_as: 'Anne'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Anne', surname: 'Wade', knownAs: 'Anne'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Anne Wade
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 68, firstname: 'Elizabeth', surname: 'Dunlop', known_as: 'Elizabeth'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Elizabeth', surname: 'Dunlop', knownAs: 'Elizabeth'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Elizabeth Dunlop
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Gabriella', surname: 'Cuba', knownAs: 'Ella'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Gabriella Cuba
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 19, firstname: 'Stephen', surname: 'Meddle', known_as: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Stephen', surname: 'Meddle', knownAs: 'Steve'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Stephen Meddle
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 21, firstname: 'Rosemary', surname: 'Merry', known_as: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Rosemary', surname: 'Merry', knownAs: 'Rosemary'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Rosemary Merry
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 66, firstname: 'Dawn', surname: 'Purkiss', known_as: 'Dawn'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Dawn', surname: 'Purkiss', knownAs: 'Dawn'}
- 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Dawn Purkiss
- 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 67, firstname: 'Kathleen', surname: 'Mills', known_as: 'Maggie'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Kathleen', surname: 'Mills', knownAs: 'Maggie'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Kathleen Mills
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 72, firstname: 'Christopher', surname: 'Mills', known_as: 'Chris'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Christopher', surname: 'Mills', knownAs: 'Chris'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Christopher Mills
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 69, firstname: 'John', surname: 'Turpin', known_as: 'Ben'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Turpin', knownAs: 'Ben'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Turpin
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 50, firstname: 'Suzanne', surname: 'Cole', known_as: 'Sue'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Suzanne', surname: 'Cole', knownAs: 'Sue'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Suzanne Cole
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 5, firstname: 'Anita', surname: 'Munford', known_as: 'Anita'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Anita', surname: 'Munford', knownAs: 'Anita'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Anita Munford
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 53, firstname: 'Alan', surname: 'McArthur', known_as: 'Alan'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Alan', surname: 'McArthur', knownAs: 'Alan'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Alan McArthur
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 18, firstname: 'Jennifer', surname: 'Bullock', known_as: 'Jenny'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jennifer', surname: 'Bullock', knownAs: 'Jenny'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jennifer Bullock
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 68, firstname: 'Elizabeth', surname: 'Dunlop', known_as: 'Elizabeth'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Elizabeth', surname: 'Dunlop', knownAs: 'Elizabeth'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Elizabeth Dunlop
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 75, firstname: 'Philip', surname: 'Cairns', known_as: 'Phil'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Philip', surname: 'Cairns', knownAs: 'Phil'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Philip Cairns
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 69, firstname: 'John', surname: 'Turpin', known_as: 'Ben'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'John', surname: 'Turpin', knownAs: 'Ben'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): John Turpin
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 63, firstname: 'Andrew', surname: 'Plumb', known_as: 'Andrew'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Andrew', surname: 'Plumb', knownAs: 'Andrew'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Andrew Plumb
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Gabriella', surname: 'Cuba', knownAs: 'Ella'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Gabriella Cuba
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 79, firstname: 'Frances', surname: 'White', known_as: 'Frances'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Frances', surname: 'White', knownAs: 'Frances'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Frances White
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 6, firstname: 'Louis', surname: 'Munford', known_as: 'Louis'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Louis', surname: 'Munford', knownAs: 'Louis'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Louis Munford
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 7, firstname: 'Natasha', surname: 'Munford', known_as: 'Natasha'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Natasha', surname: 'Munford', knownAs: 'Natasha'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Natasha Munford
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 45, firstname: 'Daniel', surname: 'Cuba', known_as: 'Danny'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Daniel', surname: 'Cuba', knownAs: 'Danny'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Daniel Cuba
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Gabriella', surname: 'Cuba', knownAs: 'Ella'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Gabriella Cuba
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 43, firstname: 'Gabriella', surname: 'Cuba', known_as: 'Ella'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Gabriella', surname: 'Cuba', knownAs: 'Ella'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Gabriella Cuba
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 46, firstname: 'Audrey', surname: 'Barnett', known_as: 'Nanny'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Audrey', surname: 'Barnett', knownAs: 'Nanny'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Audrey Barnett
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 73, firstname: 'Dermot', surname: 'Kavanagh', known_as: 'Dermot'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Dermot', surname: 'Kavanagh', knownAs: 'Dermot'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Dermot Kavanagh
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 71, firstname: 'Jaime', surname: 'Whistler', known_as: 'Jaime'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jaime', surname: 'Whistler', knownAs: 'Jaime'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jaime Whistler
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 12, firstname: 'Julian', surname: 'Franklin', known_as: 'Julian'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Julian', surname: 'Franklin', knownAs: 'Julian'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Julian Franklin
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 12, firstname: 'Julian', surname: 'Franklin', known_as: 'Julian'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Julian', surname: 'Franklin', knownAs: 'Julian'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Julian Franklin
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 13, firstname: 'Tracie', surname: 'Franklin', known_as: 'Tracie'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Tracie', surname: 'Franklin', knownAs: 'Tracie'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Tracie Franklin
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 13, firstname: 'Tracie', surname: 'Franklin', known_as: 'Tracie'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Tracie', surname: 'Franklin', knownAs: 'Tracie'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Tracie Franklin
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 71, firstname: 'Jaime', surname: 'Whistler', known_as: 'Jaime'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Jaime', surname: 'Whistler', knownAs: 'Jaime'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Jaime Whistler
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 76, firstname: 'Karen', surname: 'Hardy', known_as: 'Karen Hardy'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Karen', surname: 'Hardy', knownAs: 'Karen Hardy'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Karen Hardy
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 73, firstname: 'Dermot', surname: 'Kavanagh', known_as: 'Dermot'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Dermot', surname: 'Kavanagh', knownAs: 'Dermot'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Dermot Kavanagh
-productOwnerUtils.ts:20 🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal): {id: 60, firstname: 'Peter', surname: 'Batchelor', known_as: 'Peter'}
-productOwnerUtils.ts:31 🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal): {firstname: 'Peter', surname: 'Batchelor', knownAs: 'Peter'}
-productOwnerUtils.ts:40 🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname): Peter Batchelor
+usePortfolioTemplates.ts:84 Fetching portfolio template details for ID: 32
+PortfolioTemplateDetails.tsx:142 🔄 Refreshing portfolio template data...
+usePortfolioTemplates.ts:84 Fetching portfolio template details for ID: 32
+PortfolioTemplateDetails.tsx:142 🔄 Refreshing portfolio template data...
+PortfolioTemplateDetails.tsx:144 ✅ Portfolio template data refreshed successfully
+usePortfolioTemplates.ts:94 🔍 [DEBUG] Linked Products API Response: {portfolioId: '32', responseData: Array(13), sampleProduct: {…}}
+ ✅ Portfolio template data refreshed successfully
+ calculateWeightedRisk called with: {template: {…}, weighted_risk: 4.35, typeof_weighted_risk: 'number'}
+ Returning weighted risk: 4.35
+ calculateWeightedRisk called with: {template: {…}, weighted_risk: 4.35, typeof_weighted_risk: 'number'}
+ Returning weighted risk: 4.35
+ 🎯 Auto-selected generation: Medium Plus - November 2024
+ 🔄 Setting selected generation: Medium Plus - November 2024
+ calculateWeightedRisk called with: {template: {…}, weighted_risk: 4.35, typeof_weighted_risk: 'number'}
+ Returning weighted risk: 4.35
+ Product data for generateProductDisplayName: {id: 262, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000050301', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 262, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000050301', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: Fidelity
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: Fidelity - Personal Pension - 2000050301
+ Product data for generateProductDisplayName: {id: 231, product_name: 'Stocks & Shares ISA', provider_name: undefined, plan_number: 'CARX006149', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 231, product_name: 'Stocks & Shares ISA', provider_name: undefined, plan_number: 'CARX006149', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: Fidelity
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: Fidelity - Stocks & Shares ISA - CARX006149
+ Product data for generateProductDisplayName: {id: 183, product_name: 'Personal Pension', provider_name: undefined, plan_number: '80972825', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 183, product_name: 'Personal Pension', provider_name: undefined, plan_number: '80972825', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: Aegon
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: Aegon - Personal Pension - 80972825
+ Product data for generateProductDisplayName: {id: 265, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC886641', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 265, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC886641', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: AJBell
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: AJBell - Stocks & Shares - SCC886641
+ Product data for generateProductDisplayName: {id: 254, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000049202', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 254, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000049202', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: Fidelity
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: Fidelity - Personal Pension - 2000049202
+ Product data for generateProductDisplayName: {id: 250, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC906722', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 250, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC906722', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: AJBell
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: AJBell - Stocks & Shares - SCC906722
+ Product data for generateProductDisplayName: {id: 199, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896240', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 199, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896240', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: AJBell
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896240
+ Product data for generateProductDisplayName: {id: 196, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896993', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 196, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896993', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: AJBell
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896993
+ Product data for generateProductDisplayName: {id: 198, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896239', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 198, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896239', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: AJBell
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896239
+ Product data for generateProductDisplayName: {id: 197, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC915000', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 197, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC915000', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: AJBell
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC915000
+ Product data for generateProductDisplayName: {id: 29, product_name: 'GIA', provider_name: undefined, plan_number: 'SCC955813', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 29, product_name: 'GIA', provider_name: undefined, plan_number: 'SCC955813', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: AJBell
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: AJBell - GIA - SCC955813
+ Product data for generateProductDisplayName: {id: 243, product_name: 'Onshore Bond', provider_name: undefined, plan_number: '1000997543', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 243, product_name: 'Onshore Bond', provider_name: undefined, plan_number: '1000997543', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: Transact
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: Transact - Onshore Bond - 1000997543
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 238, product_name: 'GIA', provider_name: undefined, plan_number: 'TURQ000688', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 238, product_name: 'GIA', provider_name: undefined, plan_number: 'TURQ000688', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Fidelity
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Fidelity - GIA - TURQ000688
+PortfolioTemplateDetails.tsx:494 calculateWeightedRisk called with: {template: {…}, weighted_risk: 4.35, typeof_weighted_risk: 'number'}
+PortfolioTemplateDetails.tsx:502 Returning weighted risk: 4.35
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 262, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000050301', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 262, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000050301', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Fidelity
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Fidelity - Personal Pension - 2000050301
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 231, product_name: 'Stocks & Shares ISA', provider_name: undefined, plan_number: 'CARX006149', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 231, product_name: 'Stocks & Shares ISA', provider_name: undefined, plan_number: 'CARX006149', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Fidelity
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Fidelity - Stocks & Shares ISA - CARX006149
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 183, product_name: 'Personal Pension', provider_name: undefined, plan_number: '80972825', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 183, product_name: 'Personal Pension', provider_name: undefined, plan_number: '80972825', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Aegon
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Aegon - Personal Pension - 80972825
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 265, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC886641', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 265, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC886641', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - Stocks & Shares - SCC886641
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 254, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000049202', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 254, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000049202', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Fidelity
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Fidelity - Personal Pension - 2000049202
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 250, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC906722', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 250, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC906722', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - Stocks & Shares - SCC906722
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 199, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896240', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 199, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896240', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896240
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 196, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896993', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 196, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896993', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896993
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 198, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896239', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 198, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896239', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896239
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 197, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC915000', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 197, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC915000', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC915000
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 29, product_name: 'GIA', provider_name: undefined, plan_number: 'SCC955813', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 29, product_name: 'GIA', provider_name: undefined, plan_number: 'SCC955813', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - GIA - SCC955813
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 243, product_name: 'Onshore Bond', provider_name: undefined, plan_number: '1000997543', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 243, product_name: 'Onshore Bond', provider_name: undefined, plan_number: '1000997543', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Transact
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Transact - Onshore Bond - 1000997543
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 238, product_name: 'GIA', provider_name: undefined, plan_number: 'TURQ000688', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 238, product_name: 'GIA', provider_name: undefined, plan_number: 'TURQ000688', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Fidelity
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Fidelity - GIA - TURQ000688
+ Found 13 portfolios using generation Medium Plus - November 2024
+ Total portfolios using this template: 13
+ Fetching funds for generation 48
+ 🎯 Auto-selected generation: Medium Plus - November 2024
+ calculateWeightedRisk called with: {template: {…}, weighted_risk: 4.35, typeof_weighted_risk: 'number'}
+ Returning weighted risk: 4.35
+ Product data for generateProductDisplayName: {id: 262, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000050301', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 262, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000050301', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: Fidelity
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: Fidelity - Personal Pension - 2000050301
+ Product data for generateProductDisplayName: {id: 231, product_name: 'Stocks & Shares ISA', provider_name: undefined, plan_number: 'CARX006149', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 231, product_name: 'Stocks & Shares ISA', provider_name: undefined, plan_number: 'CARX006149', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: Fidelity
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: Fidelity - Stocks & Shares ISA - CARX006149
+ Product data for generateProductDisplayName: {id: 183, product_name: 'Personal Pension', provider_name: undefined, plan_number: '80972825', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 183, product_name: 'Personal Pension', provider_name: undefined, plan_number: '80972825', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: Aegon
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: Aegon - Personal Pension - 80972825
+ Product data for generateProductDisplayName: {id: 265, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC886641', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 265, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC886641', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: AJBell
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: AJBell - Stocks & Shares - SCC886641
+ Product data for generateProductDisplayName: {id: 254, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000049202', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 254, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000049202', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: Fidelity
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: Fidelity - Personal Pension - 2000049202
+ Product data for generateProductDisplayName: {id: 250, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC906722', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 250, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC906722', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: AJBell
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: AJBell - Stocks & Shares - SCC906722
+ Product data for generateProductDisplayName: {id: 199, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896240', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 199, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896240', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: AJBell
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896240
+ Product data for generateProductDisplayName: {id: 196, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896993', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 196, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896993', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: AJBell
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896993
+ Product data for generateProductDisplayName: {id: 198, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896239', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 198, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896239', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: AJBell
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896239
+ Product data for generateProductDisplayName: {id: 197, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC915000', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 197, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC915000', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: AJBell
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC915000
+ Product data for generateProductDisplayName: {id: 29, product_name: 'GIA', provider_name: undefined, plan_number: 'SCC955813', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 29, product_name: 'GIA', provider_name: undefined, plan_number: 'SCC955813', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: AJBell
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: AJBell - GIA - SCC955813
+ Product data for generateProductDisplayName: {id: 243, product_name: 'Onshore Bond', provider_name: undefined, plan_number: '1000997543', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 243, product_name: 'Onshore Bond', provider_name: undefined, plan_number: '1000997543', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+ 🔍 [DEBUG] Using provider name from available_providers: Transact
+ 🔍 [DEBUG] No product_owners found
+ 🔍 [DEBUG] Final product display name: Transact - Onshore Bond - 1000997543
+ Product data for generateProductDisplayName: {id: 238, product_name: 'GIA', provider_name: undefined, plan_number: 'TURQ000688', product_owners: undefined}
+ 🔍 [DEBUG] generateProductDisplayName called with product: {id: 238, product_name: 'GIA', provider_name: undefined, plan_number: 'TURQ000688', product_owners: undefined, …}
+ 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Fidelity
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Fidelity - GIA - TURQ000688
+PortfolioTemplateDetails.tsx:494 calculateWeightedRisk called with: {template: {…}, weighted_risk: 4.35, typeof_weighted_risk: 'number'}
+PortfolioTemplateDetails.tsx:502 Returning weighted risk: 4.35
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 262, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000050301', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 262, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000050301', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Fidelity
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Fidelity - Personal Pension - 2000050301
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 231, product_name: 'Stocks & Shares ISA', provider_name: undefined, plan_number: 'CARX006149', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 231, product_name: 'Stocks & Shares ISA', provider_name: undefined, plan_number: 'CARX006149', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Fidelity
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Fidelity - Stocks & Shares ISA - CARX006149
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 183, product_name: 'Personal Pension', provider_name: undefined, plan_number: '80972825', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 183, product_name: 'Personal Pension', provider_name: undefined, plan_number: '80972825', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Aegon
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Aegon - Personal Pension - 80972825
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 265, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC886641', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 265, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC886641', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - Stocks & Shares - SCC886641
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 254, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000049202', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 254, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000049202', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Fidelity
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Fidelity - Personal Pension - 2000049202
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 250, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC906722', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 250, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC906722', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - Stocks & Shares - SCC906722
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 199, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896240', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 199, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896240', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896240
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 196, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896993', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 196, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896993', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896993
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 198, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896239', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 198, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896239', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896239
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 197, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC915000', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 197, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC915000', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC915000
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 29, product_name: 'GIA', provider_name: undefined, plan_number: 'SCC955813', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 29, product_name: 'GIA', provider_name: undefined, plan_number: 'SCC955813', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - GIA - SCC955813
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 243, product_name: 'Onshore Bond', provider_name: undefined, plan_number: '1000997543', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 243, product_name: 'Onshore Bond', provider_name: undefined, plan_number: '1000997543', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Transact
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Transact - Onshore Bond - 1000997543
+PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 238, product_name: 'GIA', provider_name: undefined, plan_number: 'TURQ000688', product_owners: undefined}
+productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 238, product_name: 'GIA', provider_name: undefined, plan_number: 'TURQ000688', product_owners: undefined, …}
+productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
+productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Fidelity
+productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
+productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Fidelity - GIA - TURQ000688
+PortfolioTemplateDetails.tsx:299 Response from fetchFundsForGeneration: {id: 32, created_at: '2025-07-15T13:33:29.798699Z', name: 'Medium Plus', generation_id: 48, generation_name: 'Medium Plus - November 2024', …}
+PortfolioTemplateDetails.tsx:300 Weighted risk in generation response: 4.35
+usePortfolioTemplates.ts:84 Fetching portfolio template details for ID: 32
+usePortfolioTemplates.ts:94 🔍 [DEBUG] Linked Products API Response: {portfolioId: '32', responseData: Array(13), sampleProduct: {…}}
+PortfolioTemplateDetails.tsx:305 Template updated with generation data

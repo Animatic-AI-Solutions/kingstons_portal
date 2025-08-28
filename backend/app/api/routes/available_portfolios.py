@@ -1463,7 +1463,11 @@ async def get_products_linked_to_template(portfolio_id: int, db = Depends(get_db
                     "SELECT id, name, theme_color FROM available_providers WHERE id = $1",
                     product['provider_id']
                 )
-                product['available_providers'] = dict(provider_response) if provider_response else None
+                if provider_response:
+                    provider_data = dict(provider_response)
+                    product['available_providers'] = provider_data
+                    # Also add provider_name directly for generateProductDisplayName
+                    product['provider_name'] = provider_data['name']
             
             # Fetch portfolio
             if product.get('portfolio_id'):
@@ -1472,6 +1476,18 @@ async def get_products_linked_to_template(portfolio_id: int, db = Depends(get_db
                     product['portfolio_id']
                 )
                 product['portfolios'] = dict(portfolio_response) if portfolio_response else None
+            
+            # Fetch product owners through the correct relationship
+            product_owners_response = await db.fetch(
+                """
+                SELECT po.id, po.firstname, po.surname, po.known_as
+                FROM product_owners po
+                JOIN product_owner_products pop ON po.id = pop.product_owner_id
+                WHERE pop.product_id = $1 AND po.status = 'active'
+                """,
+                product['id']
+            )
+            product['product_owners'] = [dict(owner) for owner in product_owners_response] if product_owners_response else []
             
             return product
         

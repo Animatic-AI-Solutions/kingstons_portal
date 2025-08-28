@@ -1739,3 +1739,4 @@ async def get_portfolio_activity_logs(
     except Exception as e:
         logger.error(f"Error fetching portfolio activity logs: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
