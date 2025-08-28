@@ -40,6 +40,36 @@ This document provides comprehensive step-by-step workflows for all Phase 2 feat
 - **Performance Expectations**: All operations complete within documented time ranges
 - **Data Recovery**: Comprehensive backup and restore procedures for data loss scenarios
 
+## Visual Overview - System Architecture
+
+```mermaid
+graph TB
+    A[Main Dashboard] --> B[Client Groups List]
+    B --> C[Enhanced Client Details Page]
+    
+    C --> D[Client Overview Tab]
+    C --> E[Main List Tab]
+    C --> F[Aims, Objectives, Actions Tab]
+    C --> G[Networth Statement Tab]
+    C --> H[Know Your Customer Tab]
+    
+    E --> I[Information Items Management]
+    E --> J[Unmanaged Products]
+    
+    G --> K[Real-time Data Aggregation]
+    G --> L[Historical Snapshots]
+    
+    H --> M[KYC Report Generation]
+    H --> N[PDF Output]
+    
+    style C fill:#e1f5fe
+    style D fill:#f3e5f5
+    style E fill:#f3e5f5
+    style F fill:#f3e5f5
+    style G fill:#f3e5f5
+    style H fill:#f3e5f5
+```
+
 ---
 
 ## Workflow 1: Enhanced Client Details Navigation
@@ -57,9 +87,64 @@ This document provides comprehensive step-by-step workflows for all Phase 2 feat
    - **Result**: Enhanced client details page opens with new tab system
 
 3. **Tab Navigation Overview**
-   ```
-   [Client Overview] [Main List] [Aims, Objectives, Actions] [Networth Statement] [Know Your Customer]
-   ```
+
+### 5-Tab Navigation System Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                        Enhanced Client Details Interface                            │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│  [1. Client Overview] [2. Main List] [3. Aims, Objectives, Actions]               │
+│                      [4. Networth Statement] [5. Know Your Customer]               │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                     │
+│  ┌─ Tab 1: Client Overview ────────────────────────────────────────────────────────┐│
+│  │  • Product owner cards (ordered by inception date)                              ││
+│  │  • Quick summary: Names, DOB, addresses, marital status                        ││
+│  │  • Vulnerability indicators and key alerts                                     ││
+│  │  • Direct navigation to detailed information                                   ││
+│  └─────────────────────────────────────────────────────────────────────────────────┘│
+│                                                                                     │
+│  ┌─ Tab 2: Main List ──────────────────────────────────────────────────────────────┐│
+│  │  • Universal search across all client information                              ││
+│  │  • Information items creation and management                                   ││
+│  │  • Unmanaged products with ownership tracking                                  ││
+│  │  • Filter by item type, product owner, or content                             ││
+│  └─────────────────────────────────────────────────────────────────────────────────┘│
+│                                                                                     │
+│  ┌─ Tab 3: Aims, Objectives, Actions ──────────────────────────────────────────────┐│
+│  │  • Client actions with ownership tracking (Advisor/Client)                     ││
+│  │  • Objectives with progress tracking and prioritization                        ││
+│  │  • Integration with KYC report generation                                      ││
+│  │  • Timeline view and priority matrix display                                   ││
+│  └─────────────────────────────────────────────────────────────────────────────────┘│
+│                                                                                     │
+│  ┌─ Tab 4: Networth Statement ─────────────────────────────────────────────────────┐│
+│  │  • Real-time aggregation from all sources                                      ││
+│  │  • Historical snapshot creation and management                                 ││
+│  │  • Ownership breakdown (Individual/Joint/Tenants in Common)                    ││
+│  │  • Inline editing with source data updates                                     ││
+│  └─────────────────────────────────────────────────────────────────────────────────┘│
+│                                                                                     │
+│  ┌─ Tab 5: Know Your Customer ─────────────────────────────────────────────────────┐│
+│  │  • Automated KYC report generation from all client data                        ││
+│  │  • Data completeness analysis and validation                                   ││
+│  │  • Manual field completion for regulatory requirements                         ││
+│  │  • PDF generation with professional formatting                                 ││
+│  └─────────────────────────────────────────────────────────────────────────────────┘│
+│                                                                                     │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Navigation Flow**:
+```
+Main Dashboard → Client Groups → Select Client → Enhanced Client Details (5 Tabs)
+                                                        ↓
+                          ┌─────────────────────────────┴─────────────────────────────┐
+                          ↓                                                           ↓
+                  Existing System Features                              New Phase 2 Features
+                  (Managed Products, etc.)                              (Information Items, etc.)
+```
 
 ### Tab System Usage
 
@@ -101,6 +186,56 @@ This document provides comprehensive step-by-step workflows for all Phase 2 feat
    - **Search Capability**: Type "Bank Account John" to find bank accounts owned by John
 
 ### Creating a New Item
+
+### Information Item Creation Flowchart
+
+```mermaid
+flowchart TD
+    A[Navigate to Main List Tab] --> B[Click 'Create Item' Button]
+    B --> C[Item Type Selection Modal Opens]
+    
+    C --> D{Select Item Type}
+    D -->|Basic Detail| E[Basic Detail Categories<br/>Home Address, Employment, etc.]
+    D -->|Income & Expenditure| F[Financial Flow Categories<br/>Employment Income, Expenses, etc.]
+    D -->|Assets & Liabilities| G[Financial Position Categories<br/>Bank Account, Property, etc.]
+    D -->|Protection| H[Insurance Categories<br/>Life Insurance, General Insurance, etc.]
+    D -->|Vulnerability & Health| I[Special Circumstances<br/>Health Conditions, Vulnerabilities, etc.]
+    
+    E --> J[Select Specific Category]
+    F --> J
+    G --> J
+    H --> J
+    I --> J
+    
+    J --> K[Complete Item Details Form]
+    K --> L{Requires Product Owner<br/>Association?}
+    
+    L -->|Yes| M[Choose Association Type]
+    L -->|No| N[Skip Ownership]
+    
+    M --> O{Association Type}
+    O -->|Individual| P[Select Single Product Owner]
+    O -->|Tenants in Common| Q[Set Ownership Percentages<br/>for Multiple Owners]
+    O -->|Joint Ownership| R[Select Multiple Owners<br/>Equal/Collective Ownership]
+    
+    P --> S[Validate Data]
+    Q --> S
+    R --> S
+    N --> S
+    
+    S --> T{Validation<br/>Passed?}
+    T -->|No| U[Show Validation Errors<br/>Correct and Retry]
+    T -->|Yes| V[Save Item]
+    
+    U --> K
+    V --> W[Item Appears in Main List<br/>Success Confirmation]
+    
+    style A fill:#e3f2fd
+    style B fill:#e8f5e8
+    style W fill:#e8f5e8
+    style T fill:#fff3e0
+    style U fill:#ffebee
+```
 
 3. **Initiate Item Creation**
    - Click "Create Item" button
@@ -359,6 +494,55 @@ This document provides comprehensive step-by-step workflows for all Phase 2 feat
 
 ### Creating the Historical Snapshot
 
+### Networth Statement Generation Process
+
+```mermaid
+flowchart TD
+    A[Navigate to Networth Statement Tab] --> B[System auto-populates table]
+    
+    B --> C[Data Sources Aggregation]
+    C --> D[Managed Products<br/>Latest Portfolio Valuations]
+    C --> E[Unmanaged Products<br/>Current Valuations]
+    C --> F[Information Items<br/>Asset/Liability Values]
+    
+    D --> G[Organize by Product Type]
+    E --> G
+    F --> G
+    
+    G --> H[Display Ownership Breakdown]
+    H --> I[Individual Columns]
+    H --> J[Joint Column]
+    H --> K[Calculate Totals]
+    
+    I --> L{User wants to<br/>make adjustments?}
+    J --> L
+    K --> L
+    
+    L -->|Yes| M[Click cell to edit]
+    L -->|No| N[Ready for snapshot]
+    
+    M --> O[Update source data]
+    O --> P[Recalculate totals]
+    P --> N
+    
+    N --> Q[Click 'Create Networth Statement']
+    Q --> R[Snapshot Confirmation Dialog]
+    
+    R --> S{User confirms<br/>creation?}
+    S -->|No| T[Cancel - return to table]
+    S -->|Yes| U[System captures data]
+    
+    U --> V[Generate timestamp]
+    V --> W[Create immutable record]
+    W --> X[Success confirmation]
+    X --> Y[Snapshot available in<br/>Historical Statements dropdown]
+    
+    style A fill:#e3f2fd
+    style C fill:#fff3e0
+    style U fill:#e8f5e8
+    style Y fill:#e8f5e8
+```
+
 6. **Initiate Snapshot Creation**
    - **Button Location**: "Create Networth Statement" (prominent blue button, top-right)
    - **Click**: Button to begin snapshot process
@@ -389,6 +573,38 @@ This document provides comprehensive step-by-step workflows for all Phase 2 feat
    - **Process**: System captures all current data (typically 2-3 seconds)
    - **Success**: Confirmation message with timestamp
 
+**Snapshot Data Flow Visualization**:
+```
+┌─ Data Sources ──────────────────────────────────────────────────────┐
+│                                                                     │
+│  Managed Products → [Latest Valuations] ────┐                      │
+│                                              │                      │
+│  Unmanaged Products → [Current Values] ─────┼─→ [Aggregation] ──┐  │
+│                                              │                   │  │
+│  Information Items → [Asset/Liability] ──────┘                   │  │
+│                                                                  │  │
+└──────────────────────────────────────────────────────────────────┼──┘
+                                                                   │
+                                                                   ↓
+┌─ Networth Table ─────────────────────────────────────────────────┼──┐
+│                                                                  │  │
+│  ┌─ Individual ─┐  ┌─ Individual ─┐  ┌─── Joint ───┐  ┌─Total──┐ │  │
+│  │   Owner A    │  │   Owner B    │  │  Ownership  │  │ Values │ │  │
+│  │   £125,000   │  │   £95,000    │  │   £120,000  │  │£340,000│ │  │
+│  └──────────────┘  └──────────────┘  └─────────────┘  └────────┘ │  │
+│                                                                  │  │
+└──────────────────────────────────────────────────────────────────┼──┘
+                                                                   │
+                                                                   ↓
+┌─ Historical Snapshot ────────────────────────────────────────────┼──┐
+│                                                                  │  │
+│  [Timestamp: 26 Aug 2024 14:30]                                 │  │
+│  [Immutable Record]                                              │  │
+│  [Audit Trail Preserved]                                        │  │
+│                                                                  │  │
+└──────────────────────────────────────────────────────────────────┼──┘
+```
+
 ### Accessing Historical Snapshots
 
 9. **Historical Snapshot Management**
@@ -411,6 +627,47 @@ This document provides comprehensive step-by-step workflows for all Phase 2 feat
 
 ### Concurrent User Management
 
+### Concurrent User Conflict Resolution Diagram
+
+```mermaid
+graph TD
+    A[User A starts editing Item X] --> B[30-second soft lock applied]
+    C[User B attempts to edit Item X] --> D{Is Item X locked?}
+    
+    D -->|Yes| E[Show warning:<br/>"Item being edited by User A"]
+    D -->|No| F[Allow edit - apply new lock]
+    
+    E --> G[User B chooses action]
+    G --> H[Wait for lock to expire]
+    G --> I[Request immediate access]
+    G --> J[Edit different item]
+    
+    H --> K[Lock expires after 30s]
+    K --> L[User B can now edit]
+    
+    I --> M[System notifies User A]
+    M --> N{User A response}
+    N -->|Save and release| O[User B can edit]
+    N -->|Continue editing| P[Extend lock - User B waits]
+    
+    Q[User A saves changes] --> R[Real-time update to User B]
+    R --> S[User B sees:<br/>"Modified by User A 2 min ago"]
+    
+    T[User B modifies same field<br/>User A modified] --> U[Conflict detection]
+    U --> V[Show conflict resolution options]
+    
+    V --> W[Overwrite User A's changes]
+    V --> X[Merge changes together]
+    V --> Y[Cancel edit - keep User A's changes]
+    V --> Z[View side-by-side comparison]
+    
+    style A fill:#e3f2fd
+    style C fill:#e3f2fd
+    style E fill:#fff3e0
+    style U fill:#ffebee
+    style R fill:#e8f5e8
+```
+
 **Real-Time Conflict Resolution**:
 - **Edit Conflicts**: When two users edit the same item simultaneously:
   - First user's changes save normally
@@ -423,6 +680,25 @@ This document provides comprehensive step-by-step workflows for all Phase 2 feat
 - **Edit Locks**: 30-second soft lock prevents simultaneous editing of same item
 - **Recent Changes**: "Last modified by [Username] 2 minutes ago" on all items
 - **Real-Time Updates**: Changes appear for other users within 5 seconds
+
+**Conflict Resolution Decision Tree**:
+```
+Conflict Detected
+       │
+       ├── Same field, different values
+       │   ├── Show side-by-side comparison
+       │   ├── Allow manual merge
+       │   └── Highlight differences
+       │
+       ├── Different fields, same item
+       │   ├── Auto-merge (no conflict)
+       │   └── Notify both users of changes
+       │
+       └── Simultaneous saves
+           ├── First save wins
+           ├── Second user notified
+           └── Option to retry with latest data
+```
 
 ### Data Recovery Procedures
 
@@ -654,6 +930,69 @@ This document provides comprehensive step-by-step workflows for all Phase 2 feat
 
 ### Generating KYC Report
 
+### KYC Report Generation Flowchart
+
+```mermaid
+flowchart TD
+    A[Navigate to KYC Tab] --> B[System auto-populates sections]
+    
+    B --> C[Data Sources Integration]
+    C --> D[Personal Details<br/>from Basic Items]
+    C --> E[Financial Position<br/>from Products & Items]
+    C --> F[Investment Experience<br/>from Managed Products]
+    C --> G[Objectives<br/>from Management System]
+    
+    D --> H[Completeness Analysis]
+    E --> H
+    F --> H
+    G --> H
+    
+    H --> I{Data Complete<br/>for KYC?}
+    I -->|No| J[Show missing data alerts<br/>Recommendations for improvement]
+    I -->|Yes| K[Ready for manual inputs]
+    
+    J --> L[User adds missing information]
+    L --> H
+    
+    K --> M[Complete highlighted manual fields]
+    M --> N[Personal objectives, Risk attitude, etc.]
+    N --> O[Section management - Include/Exclude]
+    
+    O --> P[Click 'Generate Preview']
+    P --> Q[System compiles data<br/>5-10 seconds processing]
+    Q --> R[KYC Preview Interface Loads]
+    
+    R --> S[Three-Panel Layout]
+    S --> T[Left: Section Navigation]
+    S --> U[Center: Formatted Report]
+    S --> V[Right: Edit Controls]
+    
+    T --> W[User reviews content]
+    U --> W
+    V --> W
+    
+    W --> X{Needs editing?}
+    X -->|Yes| Y[Click fields to edit directly]
+    X -->|No| Z[Ready for final PDF]
+    
+    Y --> AA[Auto-save changes]
+    AA --> BB[Real-time validation]
+    BB --> W
+    
+    Z --> CC[Click 'Generate Final PDF']
+    CC --> DD[System creates formatted PDF<br/>5-10 seconds processing]
+    DD --> EE[Professional PDF with branding]
+    EE --> FF[Automatic download to browser]
+    FF --> GG[KYC Report Complete]
+    
+    style A fill:#e3f2fd
+    style I fill:#fff3e0
+    style J fill:#ffebee
+    style P fill:#e8f5e8
+    style CC fill:#e8f5e8
+    style GG fill:#c8e6c9
+```
+
 7. **Preview Generation**
    - **Button**: "Generate Preview" (creates editable preview)
    - **Processing**: System compiles all data into template format (5-10 seconds)
@@ -676,6 +1015,44 @@ This document provides comprehensive step-by-step workflows for all Phase 2 feat
    - **Processing**: System creates formatted PDF (typically 5-10 seconds)
    - **Download**: PDF automatically downloads to browser
    - **Format**: Professional formatting with company branding
+
+**KYC Data Integration Map**:
+```
+┌─ Auto-Populated Sections ────────────────────────────────────────────┐
+│                                                                      │
+│  Personal Details ←── Basic Detail Items                            │
+│      ├── Names, DOB, Addresses                                      │
+│      ├── Employment Status                                          │
+│      └── Health/Smoker Status                                       │
+│                                                                      │
+│  Financial Position ←── Multiple Sources                            │
+│      ├── Income ←── Income/Expenditure Items                        │
+│      ├── Assets ←── Managed Products + Unmanaged + Information      │
+│      └── Liabilities ←── Assets/Liabilities Items                   │
+│                                                                      │
+│  Investment Experience ←── Managed Products                         │
+│      ├── Portfolio History                                          │
+│      ├── Performance Data                                           │
+│      └── Complexity Assessment                                      │
+│                                                                      │
+│  Objectives ←── Objectives Management System                        │
+│      ├── Client Goals                                               │
+│      ├── Priority Rankings                                          │
+│      └── Target Dates                                               │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+                                   │
+                                   ↓
+┌─ Manual Input Required ──────────────────────────────────────────────┐
+│                                                                      │
+│  • Personal objectives (in client's own words)                      │
+│  • Risk attitude assessment notes                                   │
+│  • Goals and needs descriptions                                     │
+│  • Investment experience commentary                                 │
+│  • Retirement planning notes                                        │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+```
 
 ### KYC Report Management
 
@@ -756,6 +1133,63 @@ This document provides comprehensive step-by-step workflows for all Phase 2 feat
 
 ## Common Error Handling and Troubleshooting
 
+### Error Recovery Decision Tree
+
+```mermaid
+graph TD
+    A[Error Encountered] --> B{Error Type?}
+    
+    B -->|Data Validation| C[Data Validation Errors]
+    B -->|Performance| D[Performance Issues]
+    B -->|Data Integrity| E[Data Integrity Issues]
+    B -->|System| F[System Errors]
+    
+    C --> G{Specific Validation Error?}
+    G -->|Duplicate Product Name| H[Use different name or<br/>update existing product]
+    G -->|Ownership > 100%| I[Adjust percentages or<br/>use joint ownership]
+    G -->|Future Date| J[Select current or<br/>historical date only]
+    G -->|Insufficient KYC Data| K[Add required client<br/>information items]
+    
+    D --> L{Performance Issue Type?}
+    L -->|Slow Loading| M[Use filtering options<br/>Clear browser cache]
+    L -->|Snapshot Delays| N[Wait up to 5 seconds<br/>Normal for large datasets]
+    L -->|KYC Timeout| O[Check connection<br/>Reduce included sections]
+    
+    E --> P{Data Issue Type?}
+    P -->|Missing Ownership| Q[Edit item to add<br/>product owner associations]
+    P -->|Date Conflicts| R[Review and correct<br/>inconsistent dates]
+    P -->|Incomplete KYC| S[Complete highlighted<br/>required fields]
+    
+    F --> T{System Error Type?}
+    T -->|Connection Lost| U[Wait 30 seconds<br/>Refresh page]
+    T -->|Save Failed| V[Check unsaved changes<br/>Retry save operation]
+    T -->|Access Denied| W[Contact administrator<br/>Check permissions]
+    
+    H --> X[Retry Operation]
+    I --> X
+    J --> X
+    K --> X
+    M --> X
+    N --> X
+    O --> X
+    Q --> X
+    R --> X
+    S --> X
+    U --> X
+    V --> X
+    W --> X
+    
+    X --> Y{Issue Resolved?}
+    Y -->|Yes| Z[Continue Workflow]
+    Y -->|No| AA[Contact Support<br/>Document Error Details]
+    
+    style A fill:#ffebee
+    style B fill:#fff3e0
+    style X fill:#e8f5e8
+    style Z fill:#c8e6c9
+    style AA fill:#ff5722,color:#fff
+```
+
 ### Data Validation Errors
 
 **Common Issues and Solutions**:
@@ -808,6 +1242,35 @@ This document provides comprehensive step-by-step workflows for all Phase 2 feat
    - **Warning**: Critical sections missing information
    - **Action**: Complete highlighted fields before generating final report
 
+### Quick Reference - Common Error Codes
+
+```
+┌─ Error Code Reference ──────────────────────────────────────────────┐
+│                                                                     │
+│  VAL-001: Product name already exists                              │
+│           → Use unique name or update existing                     │
+│                                                                     │
+│  VAL-002: Ownership percentages exceed 100%                        │
+│           → Adjust percentages or change ownership type            │
+│                                                                     │
+│  VAL-003: Invalid date (future date not allowed)                   │
+│           → Select current or historical date                      │
+│                                                                     │
+│  DATA-001: Insufficient KYC data                                   │
+│            → Add required information items                        │
+│                                                                     │
+│  PERF-001: Large dataset loading slowly                            │
+│            → Use filters or pagination                             │
+│                                                                     │
+│  CONN-001: Connection timeout                                      │
+│            → Check internet, retry after 30 seconds               │
+│                                                                     │
+│  AUTH-001: Access denied                                           │
+│            → Contact administrator for permissions                 │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
 ---
 
 ## Success Metrics and User Benefits
@@ -838,4 +1301,177 @@ This document provides comprehensive step-by-step workflows for all Phase 2 feat
 
 ---
 
-*These workflows provide comprehensive guidance for all Phase 2 features. For technical implementation details, see the corresponding architecture documentation. For training materials, contact the system administrator.*
+## Visual Workflow Summary
+
+### Complete Phase 2 User Journey Map
+
+```mermaid
+journey
+    title User Journey Through Phase 2 Features
+    section Client Access
+        Login to Portal: 5: User
+        Navigate to Client Groups: 5: User
+        Select Client: 5: User
+        
+    section Enhanced Interface
+        View Client Overview Tab: 5: User
+        Navigate to Main List Tab: 5: User
+        Create Information Items: 4: User
+        Manage Unmanaged Products: 4: User
+        
+    section Financial Reporting
+        Access Networth Statement: 5: User
+        Review Auto-populated Data: 5: User
+        Create Historical Snapshot: 4: User
+        
+    section Compliance
+        Generate KYC Report: 4: User
+        Complete Manual Fields: 3: User
+        Export Professional PDF: 5: User
+        
+    section Collaboration
+        Handle Concurrent Edits: 3: User
+        Resolve Data Conflicts: 3: User
+        Track Change History: 5: User
+```
+
+### Feature Integration Overview
+
+```
+┌─ Phase 2 Feature Ecosystem ─────────────────────────────────────────┐
+│                                                                     │
+│   ┌─ Enhanced Client Interface ─────────────────────────────────────┐│
+│   │                                                                 ││
+│   │  Tab 1: Overview ──→ Product Owner Cards & Quick Summary       ││
+│   │  Tab 2: Main List ──→ Information Items & Unmanaged Products   ││
+│   │  Tab 3: Objectives ─→ Actions & Goals with Progress Tracking   ││
+│   │  Tab 4: Networth ───→ Real-time Aggregation & Snapshots       ││
+│   │  Tab 5: KYC ────────→ Automated Report Generation              ││
+│   │                                                                 ││
+│   └─────────────────────────────────────────────────────────────────┘│
+│                                 │                                   │
+│                                 ↓                                   │
+│   ┌─ Core Capabilities ─────────────────────────────────────────────┐│
+│   │                                                                 ││
+│   │  • Universal search across all client information              ││
+│   │  • Real-time concurrent user collaboration                     ││
+│   │  • Comprehensive ownership tracking (Individual/Joint/TIC)     ││
+│   │  • Auto-save with 30-second intervals                          ││
+│   │  • Data validation with real-time feedback                     ││
+│   │  • Historical snapshots for audit trails                       ││
+│   │                                                                 ││
+│   └─────────────────────────────────────────────────────────────────┘│
+│                                 │                                   │
+│                                 ↓                                   │
+│   ┌─ Business Benefits ─────────────────────────────────────────────┐│
+│   │                                                                 ││
+│   │  • 80% reduction in KYC report creation time                   ││
+│   │  • 90% reduction in data entry errors                          ││
+│   │  • 95% automation of networth value aggregation                ││
+│   │  • 75% faster audit trail preparation                          ││
+│   │  • Single interface for all client information                 ││
+│   │                                                                 ││
+│   └─────────────────────────────────────────────────────────────────┘│
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Quick Reference - Workflow Time Estimates
+
+```
+┌─ Task Completion Times (Typical User) ──────────────────────────────┐
+│                                                                     │
+│  Enhanced Client Navigation                                         │
+│  ├── Initial access and tab orientation        : 1-2 minutes       │
+│  └── Switching between tabs                    : < 5 seconds        │
+│                                                                     │
+│  Information Item Creation                                          │
+│  ├── Simple item (Basic Detail)                : 2-3 minutes       │
+│  ├── Complex item (Assets/Liabilities)         : 5-8 minutes       │
+│  └── Ownership configuration                   : 1-2 minutes        │
+│                                                                     │
+│  Unmanaged Product Creation                                         │
+│  ├── Basic product setup                       : 3-5 minutes       │
+│  └── Multiple ownership configuration          : 2-3 minutes       │
+│                                                                     │
+│  Networth Statement Generation                                      │
+│  ├── Review and adjustment                     : 5-10 minutes      │
+│  ├── Snapshot creation                         : 2-5 seconds       │
+│  └── Historical access                         : < 1 second        │
+│                                                                     │
+│  KYC Report Generation                                              │
+│  ├── Data review and manual input              : 10-20 minutes     │
+│  ├── Preview generation                        : 5-10 seconds      │
+│  ├── Final PDF creation                        : 5-10 seconds      │
+│  └── Total time vs. manual creation           : 80% time savings   │
+│                                                                     │
+│  Actions and Objectives Management                                  │
+│  ├── Create new action                         : 1-2 minutes       │
+│  ├── Create new objective                      : 2-3 minutes       │
+│  └── Progress updates                          : 30 seconds        │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Training Progression Path
+
+```
+Phase 2 Training Journey
+│
+├── Week 1: Foundation
+│   ├── Enhanced Interface Navigation (2 hours)
+│   ├── Information Items Creation (3 hours)
+│   └── Basic Ownership Concepts (1 hour)
+│
+├── Week 2: Advanced Features  
+│   ├── Networth Statements & Snapshots (2 hours)
+│   ├── Concurrent User Management (1 hour)
+│   └── Error Handling & Recovery (1 hour)
+│
+├── Week 3: Reporting & Compliance
+│   ├── KYC Report Generation (3 hours)
+│   ├── Data Validation & Quality (2 hours)
+│   └── Historical Data & Audit Trails (1 hour)
+│
+└── Week 4: Integration & Optimization
+    ├── Existing System Integration (2 hours)
+    ├── Performance Optimization Tips (1 hour)
+    └── Advanced Troubleshooting (2 hours)
+
+Total Training Time: 20 hours over 4 weeks
+Success Metrics: 95% user adoption within 30 days
+```
+
+### Accessibility Features Summary
+
+```
+┌─ Accessibility & Usability Features ────────────────────────────────┐
+│                                                                     │
+│  Screen Reader Support                                              │
+│  ├── Full ARIA labels on all interactive elements                  │
+│  ├── Semantic HTML structure throughout                            │
+│  └── Screen reader compatible navigation                           │
+│                                                                     │
+│  Keyboard Navigation                                                │
+│  ├── Tab key navigation through all interfaces                     │
+│  ├── Keyboard shortcuts (Ctrl+1-5 for tab switching)               │
+│  └── Focus indicators on all interactive elements                  │
+│                                                                     │
+│  Visual Accessibility                                               │
+│  ├── High contrast mode support                                    │
+│  ├── Responsive font scaling (100%-200%)                           │
+│  ├── Color-blind friendly design patterns                          │
+│  └── Clear visual hierarchy and spacing                            │
+│                                                                     │
+│  Performance Accessibility                                          │
+│  ├── Lazy loading for large datasets                               │
+│  ├── Progressive enhancement                                        │
+│  ├── Offline capability for form data                              │
+│  └── Connection status indicators                                   │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+*These enhanced workflows with visual diagrams provide comprehensive guidance for all Phase 2 features. The visual elements are designed to reduce training time and improve user comprehension. For technical implementation details, see the corresponding architecture documentation. For training materials, contact the system administrator.*
