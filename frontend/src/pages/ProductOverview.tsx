@@ -323,6 +323,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   const [providers, setProviders] = useState<Provider[]>([]);
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [allProductOwners, setAllProductOwners] = useState<ProductOwner[]>([]);
+  const [availableTemplates, setAvailableTemplates] = useState<any[]>([]);
   
   // Create product owner modal state
   const [showCreateProductOwnerModal, setShowCreateProductOwnerModal] = useState(false);
@@ -334,7 +335,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     target_risk: '',
     start_date: null as Dayjs | null,
     fixed_cost: '' as string,
-    percentage_fee: '' as string
+    percentage_fee: '' as string,
+    template_generation_id: '' as string
   });
   const [editOwnersFormData, setEditOwnersFormData] = useState({
     portfolio_id: '',
@@ -419,13 +421,15 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   useEffect(() => {
     const fetchFormOptions = async () => {
       try {
-        const [providersRes, portfoliosRes] = await Promise.all([
+        const [providersRes, portfoliosRes, templatesRes] = await Promise.all([
           api.get('/available_providers'),
-          api.get('/portfolios')
+          api.get('/portfolios'),
+          api.get('/api/available_portfolios/template-portfolio-generations/active')
         ]);
         
         setProviders(providersRes.data || []);
         setPortfolios(portfoliosRes.data || []);
+        setAvailableTemplates(templatesRes.data || []);
       } catch (err) {
         console.error('Error fetching form options:', err);
       }
@@ -1761,7 +1765,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         target_risk: account.target_risk?.toString() || '',
         start_date: account.start_date ? dayjs(account.start_date) : null,
         fixed_cost: account.fixed_cost?.toString() ?? '',
-        percentage_fee: account.percentage_fee?.toString() ?? ''
+        percentage_fee: account.percentage_fee?.toString() ?? '',
+        template_generation_id: account.template_generation_id?.toString() || ''
       });
       
       // Also populate product owners form data
@@ -1924,6 +1929,22 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         : null;
 
       await api.patch(`/api/client_products/${accountId}`, updateData);
+      
+      // Handle portfolio template change if changed
+      const currentTemplateId = account?.template_generation_id?.toString() || '';
+      const newTemplateId = editFormData.template_generation_id;
+      
+      if (currentTemplateId !== newTemplateId && account?.portfolio_id) {
+        try {
+          const templateUpdateData = {
+            template_generation_id: newTemplateId ? parseInt(newTemplateId) : null
+          };
+          await api.patch(`/api/portfolios/${account.portfolio_id}/template`, templateUpdateData);
+        } catch (templateErr: any) {
+          console.error('Error updating portfolio template:', templateErr);
+          // Don't fail the whole update if template change fails
+        }
+      }
       
       // Also update product owners if they have been modified
       if (editOwnersFormData.selected_owner_ids !== undefined) {
@@ -2216,12 +2237,31 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                     )}
                   </div>
 
-                  {/* Portfolio Template - Read Only */}
+                  {/* Portfolio Template - Editable in edit mode */}
                   <div>
-                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Portfolio Template</div>
-                    <div className="text-sm font-medium text-gray-900">
-                      {account.template_info?.generation_name || 'Bespoke'}
-                    </div>
+                    {isEditMode ? (
+                      <BaseDropdown
+                        label="Portfolio Template"
+                        value={editFormData.template_generation_id}
+                        onChange={handleDropdownChange('template_generation_id')}
+                        options={[
+                          { value: '', label: 'Bespoke Portfolio' },
+                          ...availableTemplates.map(template => ({
+                            value: template.id.toString(),
+                            label: template.generation_name
+                          }))
+                        ]}
+                        placeholder="Select template"
+                        size="sm"
+                      />
+                    ) : (
+                      <>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Portfolio Template</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {account.template_info?.generation_name || 'Bespoke'}
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Product Owners - Editable in edit mode */}

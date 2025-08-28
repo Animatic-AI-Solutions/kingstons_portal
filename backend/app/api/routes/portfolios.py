@@ -375,6 +375,56 @@ async def update_portfolio(portfolio_id: int, portfolio_update: PortfolioUpdate,
         logger.error(f"Error updating portfolio: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
+class PortfolioTemplateUpdate(BaseModel):
+    template_generation_id: Optional[int] = None
+
+@router.patch("/portfolios/{portfolio_id}/template", response_model=Portfolio)
+async def update_portfolio_template(
+    portfolio_id: int,
+    template_update: PortfolioTemplateUpdate,
+    db = Depends(get_db)
+):
+    """
+    Updates a portfolio's template generation ID
+    """
+    try:
+        # Check if portfolio exists
+        portfolio_result = await db.fetchrow("SELECT id, portfolio_name FROM portfolios WHERE id = $1", portfolio_id)
+        if not portfolio_result:
+            raise HTTPException(status_code=404, detail=f"Portfolio with ID {portfolio_id} not found")
+        
+        # Validate template generation if provided (None means Bespoke)
+        template_generation_id = template_update.template_generation_id
+        
+        if template_generation_id is not None:
+            template_result = await db.fetchrow(
+                "SELECT id, generation_name, status FROM template_portfolio_generations WHERE id = $1",
+                template_generation_id
+            )
+            if not template_result:
+                raise HTTPException(status_code=404, detail=f"Template generation with ID {template_generation_id} not found")
+            
+            if template_result['status'] == 'inactive':
+                raise HTTPException(status_code=400, detail="Cannot assign inactive template generation to portfolio")
+        
+        # Update the portfolio
+        update_result = await db.fetchrow(
+            "UPDATE portfolios SET template_generation_id = $1 WHERE id = $2 RETURNING *",
+            template_generation_id, portfolio_id
+        )
+        
+        if update_result:
+            logger.info(f"Updated portfolio {portfolio_id} template to generation {template_generation_id}")
+            return dict(update_result)
+        
+        raise HTTPException(status_code=400, detail="Failed to update portfolio template")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating portfolio template: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
 @router.delete("/portfolios/{portfolio_id}", response_model=dict)
 async def delete_portfolio(portfolio_id: int, db = Depends(get_db)):
     """
