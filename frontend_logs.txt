@@ -1,344 +1,570 @@
-chunk-QYFCA5BS.js?v=cc98fab4:21609 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
-providerColors.ts:75 Provider color service initialized {providersLoaded: 19, colorsInCache: 19}
-usePortfolioTemplates.ts:84 Fetching portfolio template details for ID: 32
+PortfolioTemplateDetails.tsx:173 🔄 Window focused - checking if refresh needed
+PortfolioTemplateDetails.tsx:324 🔄 Window focused - checking if refresh needed
+PortfolioTemplateDetails.tsx:928 🗑️ Delete button clicked: {hasProductsUsingTemplate: false, isCheckingProducts: false, generationProductCounts: {…}, totalProducts: 0}
+PortfolioTemplateDetails.tsx:570 calculateWeightedRisk called with: {template: {…}, weighted_risk: null, typeof_weighted_risk: 'object'}
+PortfolioTemplateDetails.tsx:582 Weighted risk is null/undefined, returning null
+PortfolioTemplateDetails.tsx:570 calculateWeightedRisk called with: {template: {…}, weighted_risk: null, typeof_weighted_risk: 'object'}
+PortfolioTemplateDetails.tsx:582 Weighted risk is null/undefined, returning null
 PortfolioTemplateDetails.tsx:142 🔄 Refreshing portfolio template data...
-usePortfolioTemplates.ts:84 Fetching portfolio template details for ID: 32
+usePortfolioTemplates.ts:84 Fetching portfolio template details for ID: 16
 PortfolioTemplateDetails.tsx:142 🔄 Refreshing portfolio template data...
+usePortfolioTemplates.ts:84 Fetching portfolio template details for ID: 16
 PortfolioTemplateDetails.tsx:144 ✅ Portfolio template data refreshed successfully
-usePortfolioTemplates.ts:94 🔍 [DEBUG] Linked Products API Response: {portfolioId: '32', responseData: Array(13), sampleProduct: {…}}
- ✅ Portfolio template data refreshed successfully
- calculateWeightedRisk called with: {template: {…}, weighted_risk: 4.35, typeof_weighted_risk: 'number'}
- Returning weighted risk: 4.35
- calculateWeightedRisk called with: {template: {…}, weighted_risk: 4.35, typeof_weighted_risk: 'number'}
- Returning weighted risk: 4.35
- 🎯 Auto-selected generation: Medium Plus - November 2024
- 🔄 Setting selected generation: Medium Plus - November 2024
- calculateWeightedRisk called with: {template: {…}, weighted_risk: 4.35, typeof_weighted_risk: 'number'}
- Returning weighted risk: 4.35
- Product data for generateProductDisplayName: {id: 262, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000050301', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 262, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000050301', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: Fidelity
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: Fidelity - Personal Pension - 2000050301
- Product data for generateProductDisplayName: {id: 231, product_name: 'Stocks & Shares ISA', provider_name: undefined, plan_number: 'CARX006149', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 231, product_name: 'Stocks & Shares ISA', provider_name: undefined, plan_number: 'CARX006149', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: Fidelity
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: Fidelity - Stocks & Shares ISA - CARX006149
- Product data for generateProductDisplayName: {id: 183, product_name: 'Personal Pension', provider_name: undefined, plan_number: '80972825', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 183, product_name: 'Personal Pension', provider_name: undefined, plan_number: '80972825', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: Aegon
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: Aegon - Personal Pension - 80972825
- Product data for generateProductDisplayName: {id: 265, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC886641', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 265, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC886641', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: AJBell
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: AJBell - Stocks & Shares - SCC886641
- Product data for generateProductDisplayName: {id: 254, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000049202', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 254, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000049202', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: Fidelity
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: Fidelity - Personal Pension - 2000049202
- Product data for generateProductDisplayName: {id: 250, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC906722', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 250, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC906722', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: AJBell
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: AJBell - Stocks & Shares - SCC906722
- Product data for generateProductDisplayName: {id: 199, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896240', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 199, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896240', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: AJBell
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896240
- Product data for generateProductDisplayName: {id: 196, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896993', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 196, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896993', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: AJBell
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896993
- Product data for generateProductDisplayName: {id: 198, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896239', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 198, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896239', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: AJBell
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896239
- Product data for generateProductDisplayName: {id: 197, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC915000', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 197, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC915000', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: AJBell
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC915000
- Product data for generateProductDisplayName: {id: 29, product_name: 'GIA', provider_name: undefined, plan_number: 'SCC955813', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 29, product_name: 'GIA', provider_name: undefined, plan_number: 'SCC955813', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: AJBell
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: AJBell - GIA - SCC955813
- Product data for generateProductDisplayName: {id: 243, product_name: 'Onshore Bond', provider_name: undefined, plan_number: '1000997543', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 243, product_name: 'Onshore Bond', provider_name: undefined, plan_number: '1000997543', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: Transact
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: Transact - Onshore Bond - 1000997543
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 238, product_name: 'GIA', provider_name: undefined, plan_number: 'TURQ000688', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 238, product_name: 'GIA', provider_name: undefined, plan_number: 'TURQ000688', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Fidelity
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Fidelity - GIA - TURQ000688
-PortfolioTemplateDetails.tsx:494 calculateWeightedRisk called with: {template: {…}, weighted_risk: 4.35, typeof_weighted_risk: 'number'}
-PortfolioTemplateDetails.tsx:502 Returning weighted risk: 4.35
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 262, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000050301', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 262, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000050301', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Fidelity
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Fidelity - Personal Pension - 2000050301
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 231, product_name: 'Stocks & Shares ISA', provider_name: undefined, plan_number: 'CARX006149', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 231, product_name: 'Stocks & Shares ISA', provider_name: undefined, plan_number: 'CARX006149', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Fidelity
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Fidelity - Stocks & Shares ISA - CARX006149
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 183, product_name: 'Personal Pension', provider_name: undefined, plan_number: '80972825', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 183, product_name: 'Personal Pension', provider_name: undefined, plan_number: '80972825', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Aegon
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Aegon - Personal Pension - 80972825
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 265, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC886641', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 265, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC886641', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - Stocks & Shares - SCC886641
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 254, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000049202', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 254, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000049202', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Fidelity
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Fidelity - Personal Pension - 2000049202
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 250, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC906722', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 250, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC906722', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - Stocks & Shares - SCC906722
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 199, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896240', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 199, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896240', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896240
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 196, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896993', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 196, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896993', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896993
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 198, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896239', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 198, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896239', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896239
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 197, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC915000', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 197, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC915000', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC915000
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 29, product_name: 'GIA', provider_name: undefined, plan_number: 'SCC955813', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 29, product_name: 'GIA', provider_name: undefined, plan_number: 'SCC955813', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - GIA - SCC955813
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 243, product_name: 'Onshore Bond', provider_name: undefined, plan_number: '1000997543', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 243, product_name: 'Onshore Bond', provider_name: undefined, plan_number: '1000997543', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Transact
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Transact - Onshore Bond - 1000997543
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 238, product_name: 'GIA', provider_name: undefined, plan_number: 'TURQ000688', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 238, product_name: 'GIA', provider_name: undefined, plan_number: 'TURQ000688', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Fidelity
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Fidelity - GIA - TURQ000688
- Found 13 portfolios using generation Medium Plus - November 2024
- Total portfolios using this template: 13
- Fetching funds for generation 48
- 🎯 Auto-selected generation: Medium Plus - November 2024
- calculateWeightedRisk called with: {template: {…}, weighted_risk: 4.35, typeof_weighted_risk: 'number'}
- Returning weighted risk: 4.35
- Product data for generateProductDisplayName: {id: 262, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000050301', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 262, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000050301', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: Fidelity
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: Fidelity - Personal Pension - 2000050301
- Product data for generateProductDisplayName: {id: 231, product_name: 'Stocks & Shares ISA', provider_name: undefined, plan_number: 'CARX006149', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 231, product_name: 'Stocks & Shares ISA', provider_name: undefined, plan_number: 'CARX006149', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: Fidelity
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: Fidelity - Stocks & Shares ISA - CARX006149
- Product data for generateProductDisplayName: {id: 183, product_name: 'Personal Pension', provider_name: undefined, plan_number: '80972825', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 183, product_name: 'Personal Pension', provider_name: undefined, plan_number: '80972825', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: Aegon
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: Aegon - Personal Pension - 80972825
- Product data for generateProductDisplayName: {id: 265, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC886641', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 265, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC886641', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: AJBell
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: AJBell - Stocks & Shares - SCC886641
- Product data for generateProductDisplayName: {id: 254, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000049202', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 254, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000049202', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: Fidelity
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: Fidelity - Personal Pension - 2000049202
- Product data for generateProductDisplayName: {id: 250, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC906722', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 250, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC906722', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: AJBell
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: AJBell - Stocks & Shares - SCC906722
- Product data for generateProductDisplayName: {id: 199, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896240', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 199, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896240', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: AJBell
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896240
- Product data for generateProductDisplayName: {id: 196, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896993', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 196, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896993', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: AJBell
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896993
- Product data for generateProductDisplayName: {id: 198, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896239', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 198, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896239', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: AJBell
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896239
- Product data for generateProductDisplayName: {id: 197, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC915000', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 197, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC915000', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: AJBell
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC915000
- Product data for generateProductDisplayName: {id: 29, product_name: 'GIA', provider_name: undefined, plan_number: 'SCC955813', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 29, product_name: 'GIA', provider_name: undefined, plan_number: 'SCC955813', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: AJBell
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: AJBell - GIA - SCC955813
- Product data for generateProductDisplayName: {id: 243, product_name: 'Onshore Bond', provider_name: undefined, plan_number: '1000997543', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 243, product_name: 'Onshore Bond', provider_name: undefined, plan_number: '1000997543', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
- 🔍 [DEBUG] Using provider name from available_providers: Transact
- 🔍 [DEBUG] No product_owners found
- 🔍 [DEBUG] Final product display name: Transact - Onshore Bond - 1000997543
- Product data for generateProductDisplayName: {id: 238, product_name: 'GIA', provider_name: undefined, plan_number: 'TURQ000688', product_owners: undefined}
- 🔍 [DEBUG] generateProductDisplayName called with product: {id: 238, product_name: 'GIA', provider_name: undefined, plan_number: 'TURQ000688', product_owners: undefined, …}
- 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Fidelity
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Fidelity - GIA - TURQ000688
-PortfolioTemplateDetails.tsx:494 calculateWeightedRisk called with: {template: {…}, weighted_risk: 4.35, typeof_weighted_risk: 'number'}
-PortfolioTemplateDetails.tsx:502 Returning weighted risk: 4.35
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 262, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000050301', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 262, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000050301', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Fidelity
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Fidelity - Personal Pension - 2000050301
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 231, product_name: 'Stocks & Shares ISA', provider_name: undefined, plan_number: 'CARX006149', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 231, product_name: 'Stocks & Shares ISA', provider_name: undefined, plan_number: 'CARX006149', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Fidelity
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Fidelity - Stocks & Shares ISA - CARX006149
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 183, product_name: 'Personal Pension', provider_name: undefined, plan_number: '80972825', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 183, product_name: 'Personal Pension', provider_name: undefined, plan_number: '80972825', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Aegon
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Aegon - Personal Pension - 80972825
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 265, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC886641', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 265, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC886641', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - Stocks & Shares - SCC886641
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 254, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000049202', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 254, product_name: 'Personal Pension', provider_name: undefined, plan_number: '2000049202', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Fidelity
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Fidelity - Personal Pension - 2000049202
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 250, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC906722', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 250, product_name: 'Stocks & Shares', provider_name: undefined, plan_number: 'SCC906722', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - Stocks & Shares - SCC906722
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 199, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896240', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 199, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896240', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896240
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 196, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896993', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 196, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896993', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896993
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 198, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896239', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 198, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC896239', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC896239
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 197, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC915000', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 197, product_name: 'JISA', provider_name: undefined, plan_number: 'SCC915000', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - JISA - SCC915000
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 29, product_name: 'GIA', provider_name: undefined, plan_number: 'SCC955813', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 29, product_name: 'GIA', provider_name: undefined, plan_number: 'SCC955813', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: AJBell
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: AJBell - GIA - SCC955813
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 243, product_name: 'Onshore Bond', provider_name: undefined, plan_number: '1000997543', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 243, product_name: 'Onshore Bond', provider_name: undefined, plan_number: '1000997543', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Transact
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Transact - Onshore Bond - 1000997543
-PortfolioTemplateDetails.tsx:1165 Product data for generateProductDisplayName: {id: 238, product_name: 'GIA', provider_name: undefined, plan_number: 'TURQ000688', product_owners: undefined}
-productTitleUtils.ts:208 🔍 [DEBUG] generateProductDisplayName called with product: {id: 238, product_name: 'GIA', provider_name: undefined, plan_number: 'TURQ000688', product_owners: undefined, …}
-productTitleUtils.ts:224 🔍 [DEBUG] No provider_name found, checking available_providers...
-productTitleUtils.ts:227 🔍 [DEBUG] Using provider name from available_providers: Fidelity
-productTitleUtils.ts:263 🔍 [DEBUG] No product_owners found
-productTitleUtils.ts:267 🔍 [DEBUG] Final product display name: Fidelity - GIA - TURQ000688
-PortfolioTemplateDetails.tsx:299 Response from fetchFundsForGeneration: {id: 32, created_at: '2025-07-15T13:33:29.798699Z', name: 'Medium Plus', generation_id: 48, generation_name: 'Medium Plus - November 2024', …}
-PortfolioTemplateDetails.tsx:300 Weighted risk in generation response: 4.35
-usePortfolioTemplates.ts:84 Fetching portfolio template details for ID: 32
-usePortfolioTemplates.ts:94 🔍 [DEBUG] Linked Products API Response: {portfolioId: '32', responseData: Array(13), sampleProduct: {…}}
-PortfolioTemplateDetails.tsx:305 Template updated with generation data
+PortfolioTemplateDetails.tsx:570 calculateWeightedRisk called with: {template: {…}, weighted_risk: null, typeof_weighted_risk: 'object'}
+PortfolioTemplateDetails.tsx:582 Weighted risk is null/undefined, returning null
+PortfolioTemplateDetails.tsx:570 calculateWeightedRisk called with: {template: {…}, weighted_risk: null, typeof_weighted_risk: 'object'}
+PortfolioTemplateDetails.tsx:582 Weighted risk is null/undefined, returning null
+PortfolioTemplateDetails.tsx:144 ✅ Portfolio template data refreshed successfully
+PortfolioTemplateDetails.tsx:367 🧹 Starting cascade deletion of template and all associated data...
+PortfolioTemplateDetails.tsx:370 🗑️ Step 1: Deleting all products using this template...
+PortfolioTemplateDetails.tsx:375 Found 0 products to delete
+PortfolioTemplateDetails.tsx:388 🗑️ Step 2: Deleting all portfolios using this template...
+PortfolioTemplateDetails.tsx:570 calculateWeightedRisk called with: {template: {…}, weighted_risk: null, typeof_weighted_risk: 'object'}
+PortfolioTemplateDetails.tsx:582 Weighted risk is null/undefined, returning null
+PortfolioTemplateDetails.tsx:570 calculateWeightedRisk called with: {template: {…}, weighted_risk: null, typeof_weighted_risk: 'object'}
+PortfolioTemplateDetails.tsx:582 Weighted risk is null/undefined, returning null
+PortfolioTemplateDetails.tsx:399 Found 1 portfolios for generation 5
+PortfolioTemplateDetails.tsx:404 🗑️ Deleting portfolio 250 from generation 5
+PortfolioTemplateDetails.tsx:405  DELETE http://localhost:3000/api/portfolios/250 500 (Internal Server Error)
+dispatchXhrRequest @ axios.js?v=cc98fab4:1637
+xhr @ axios.js?v=cc98fab4:1517
+dispatchRequest @ axios.js?v=cc98fab4:1992
+Promise.then
+_request @ axios.js?v=cc98fab4:2195
+request @ axios.js?v=cc98fab4:2104
+Axios.<computed> @ axios.js?v=cc98fab4:2232
+wrap @ axios.js?v=cc98fab4:8
+handleConfirmDelete @ PortfolioTemplateDetails.tsx:405
+await in handleConfirmDelete
+callCallback2 @ chunk-QYFCA5BS.js?v=cc98fab4:3680
+invokeGuardedCallbackDev @ chunk-QYFCA5BS.js?v=cc98fab4:3705
+invokeGuardedCallback @ chunk-QYFCA5BS.js?v=cc98fab4:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-QYFCA5BS.js?v=cc98fab4:3742
+executeDispatch @ chunk-QYFCA5BS.js?v=cc98fab4:7046
+processDispatchQueueItemsInOrder @ chunk-QYFCA5BS.js?v=cc98fab4:7066
+processDispatchQueue @ chunk-QYFCA5BS.js?v=cc98fab4:7075
+dispatchEventsForPlugins @ chunk-QYFCA5BS.js?v=cc98fab4:7083
+(anonymous) @ chunk-QYFCA5BS.js?v=cc98fab4:7206
+batchedUpdates$1 @ chunk-QYFCA5BS.js?v=cc98fab4:18966
+batchedUpdates @ chunk-QYFCA5BS.js?v=cc98fab4:3585
+dispatchEventForPluginEventSystem @ chunk-QYFCA5BS.js?v=cc98fab4:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-QYFCA5BS.js?v=cc98fab4:5484
+dispatchEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5478
+dispatchDiscreteEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5455
+auth.ts:227 API Error: Request failed with status code 500
+(anonymous) @ auth.ts:227
+Promise.then
+_request @ axios.js?v=cc98fab4:2195
+request @ axios.js?v=cc98fab4:2104
+Axios.<computed> @ axios.js?v=cc98fab4:2232
+wrap @ axios.js?v=cc98fab4:8
+handleConfirmDelete @ PortfolioTemplateDetails.tsx:405
+await in handleConfirmDelete
+callCallback2 @ chunk-QYFCA5BS.js?v=cc98fab4:3680
+invokeGuardedCallbackDev @ chunk-QYFCA5BS.js?v=cc98fab4:3705
+invokeGuardedCallback @ chunk-QYFCA5BS.js?v=cc98fab4:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-QYFCA5BS.js?v=cc98fab4:3742
+executeDispatch @ chunk-QYFCA5BS.js?v=cc98fab4:7046
+processDispatchQueueItemsInOrder @ chunk-QYFCA5BS.js?v=cc98fab4:7066
+processDispatchQueue @ chunk-QYFCA5BS.js?v=cc98fab4:7075
+dispatchEventsForPlugins @ chunk-QYFCA5BS.js?v=cc98fab4:7083
+(anonymous) @ chunk-QYFCA5BS.js?v=cc98fab4:7206
+batchedUpdates$1 @ chunk-QYFCA5BS.js?v=cc98fab4:18966
+batchedUpdates @ chunk-QYFCA5BS.js?v=cc98fab4:3585
+dispatchEventForPluginEventSystem @ chunk-QYFCA5BS.js?v=cc98fab4:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-QYFCA5BS.js?v=cc98fab4:5484
+dispatchEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5478
+dispatchDiscreteEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5455
+auth.ts:228 Request URL: /api/portfolios/250
+(anonymous) @ auth.ts:228
+Promise.then
+_request @ axios.js?v=cc98fab4:2195
+request @ axios.js?v=cc98fab4:2104
+Axios.<computed> @ axios.js?v=cc98fab4:2232
+wrap @ axios.js?v=cc98fab4:8
+handleConfirmDelete @ PortfolioTemplateDetails.tsx:405
+await in handleConfirmDelete
+callCallback2 @ chunk-QYFCA5BS.js?v=cc98fab4:3680
+invokeGuardedCallbackDev @ chunk-QYFCA5BS.js?v=cc98fab4:3705
+invokeGuardedCallback @ chunk-QYFCA5BS.js?v=cc98fab4:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-QYFCA5BS.js?v=cc98fab4:3742
+executeDispatch @ chunk-QYFCA5BS.js?v=cc98fab4:7046
+processDispatchQueueItemsInOrder @ chunk-QYFCA5BS.js?v=cc98fab4:7066
+processDispatchQueue @ chunk-QYFCA5BS.js?v=cc98fab4:7075
+dispatchEventsForPlugins @ chunk-QYFCA5BS.js?v=cc98fab4:7083
+(anonymous) @ chunk-QYFCA5BS.js?v=cc98fab4:7206
+batchedUpdates$1 @ chunk-QYFCA5BS.js?v=cc98fab4:18966
+batchedUpdates @ chunk-QYFCA5BS.js?v=cc98fab4:3585
+dispatchEventForPluginEventSystem @ chunk-QYFCA5BS.js?v=cc98fab4:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-QYFCA5BS.js?v=cc98fab4:5484
+dispatchEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5478
+dispatchDiscreteEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5455
+auth.ts:229 Request Method: delete
+(anonymous) @ auth.ts:229
+Promise.then
+_request @ axios.js?v=cc98fab4:2195
+request @ axios.js?v=cc98fab4:2104
+Axios.<computed> @ axios.js?v=cc98fab4:2232
+wrap @ axios.js?v=cc98fab4:8
+handleConfirmDelete @ PortfolioTemplateDetails.tsx:405
+await in handleConfirmDelete
+callCallback2 @ chunk-QYFCA5BS.js?v=cc98fab4:3680
+invokeGuardedCallbackDev @ chunk-QYFCA5BS.js?v=cc98fab4:3705
+invokeGuardedCallback @ chunk-QYFCA5BS.js?v=cc98fab4:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-QYFCA5BS.js?v=cc98fab4:3742
+executeDispatch @ chunk-QYFCA5BS.js?v=cc98fab4:7046
+processDispatchQueueItemsInOrder @ chunk-QYFCA5BS.js?v=cc98fab4:7066
+processDispatchQueue @ chunk-QYFCA5BS.js?v=cc98fab4:7075
+dispatchEventsForPlugins @ chunk-QYFCA5BS.js?v=cc98fab4:7083
+(anonymous) @ chunk-QYFCA5BS.js?v=cc98fab4:7206
+batchedUpdates$1 @ chunk-QYFCA5BS.js?v=cc98fab4:18966
+batchedUpdates @ chunk-QYFCA5BS.js?v=cc98fab4:3585
+dispatchEventForPluginEventSystem @ chunk-QYFCA5BS.js?v=cc98fab4:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-QYFCA5BS.js?v=cc98fab4:5484
+dispatchEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5478
+dispatchDiscreteEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5455
+auth.ts:230 Response Status: 500
+(anonymous) @ auth.ts:230
+Promise.then
+_request @ axios.js?v=cc98fab4:2195
+request @ axios.js?v=cc98fab4:2104
+Axios.<computed> @ axios.js?v=cc98fab4:2232
+wrap @ axios.js?v=cc98fab4:8
+handleConfirmDelete @ PortfolioTemplateDetails.tsx:405
+await in handleConfirmDelete
+callCallback2 @ chunk-QYFCA5BS.js?v=cc98fab4:3680
+invokeGuardedCallbackDev @ chunk-QYFCA5BS.js?v=cc98fab4:3705
+invokeGuardedCallback @ chunk-QYFCA5BS.js?v=cc98fab4:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-QYFCA5BS.js?v=cc98fab4:3742
+executeDispatch @ chunk-QYFCA5BS.js?v=cc98fab4:7046
+processDispatchQueueItemsInOrder @ chunk-QYFCA5BS.js?v=cc98fab4:7066
+processDispatchQueue @ chunk-QYFCA5BS.js?v=cc98fab4:7075
+dispatchEventsForPlugins @ chunk-QYFCA5BS.js?v=cc98fab4:7083
+(anonymous) @ chunk-QYFCA5BS.js?v=cc98fab4:7206
+batchedUpdates$1 @ chunk-QYFCA5BS.js?v=cc98fab4:18966
+batchedUpdates @ chunk-QYFCA5BS.js?v=cc98fab4:3585
+dispatchEventForPluginEventSystem @ chunk-QYFCA5BS.js?v=cc98fab4:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-QYFCA5BS.js?v=cc98fab4:5484
+dispatchEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5478
+dispatchDiscreteEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5455
+auth.ts:231 Response Data: {detail: 'Database error: update or delete on table "portfol…is still referenced from table "client_products".'}
+(anonymous) @ auth.ts:231
+Promise.then
+_request @ axios.js?v=cc98fab4:2195
+request @ axios.js?v=cc98fab4:2104
+Axios.<computed> @ axios.js?v=cc98fab4:2232
+wrap @ axios.js?v=cc98fab4:8
+handleConfirmDelete @ PortfolioTemplateDetails.tsx:405
+await in handleConfirmDelete
+callCallback2 @ chunk-QYFCA5BS.js?v=cc98fab4:3680
+invokeGuardedCallbackDev @ chunk-QYFCA5BS.js?v=cc98fab4:3705
+invokeGuardedCallback @ chunk-QYFCA5BS.js?v=cc98fab4:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-QYFCA5BS.js?v=cc98fab4:3742
+executeDispatch @ chunk-QYFCA5BS.js?v=cc98fab4:7046
+processDispatchQueueItemsInOrder @ chunk-QYFCA5BS.js?v=cc98fab4:7066
+processDispatchQueue @ chunk-QYFCA5BS.js?v=cc98fab4:7075
+dispatchEventsForPlugins @ chunk-QYFCA5BS.js?v=cc98fab4:7083
+(anonymous) @ chunk-QYFCA5BS.js?v=cc98fab4:7206
+batchedUpdates$1 @ chunk-QYFCA5BS.js?v=cc98fab4:18966
+batchedUpdates @ chunk-QYFCA5BS.js?v=cc98fab4:3585
+dispatchEventForPluginEventSystem @ chunk-QYFCA5BS.js?v=cc98fab4:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-QYFCA5BS.js?v=cc98fab4:5484
+dispatchEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5478
+dispatchDiscreteEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5455
+auth.ts:248 Server error - this is likely a backend issue, not authentication
+(anonymous) @ auth.ts:248
+Promise.then
+_request @ axios.js?v=cc98fab4:2195
+request @ axios.js?v=cc98fab4:2104
+Axios.<computed> @ axios.js?v=cc98fab4:2232
+wrap @ axios.js?v=cc98fab4:8
+handleConfirmDelete @ PortfolioTemplateDetails.tsx:405
+await in handleConfirmDelete
+callCallback2 @ chunk-QYFCA5BS.js?v=cc98fab4:3680
+invokeGuardedCallbackDev @ chunk-QYFCA5BS.js?v=cc98fab4:3705
+invokeGuardedCallback @ chunk-QYFCA5BS.js?v=cc98fab4:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-QYFCA5BS.js?v=cc98fab4:3742
+executeDispatch @ chunk-QYFCA5BS.js?v=cc98fab4:7046
+processDispatchQueueItemsInOrder @ chunk-QYFCA5BS.js?v=cc98fab4:7066
+processDispatchQueue @ chunk-QYFCA5BS.js?v=cc98fab4:7075
+dispatchEventsForPlugins @ chunk-QYFCA5BS.js?v=cc98fab4:7083
+(anonymous) @ chunk-QYFCA5BS.js?v=cc98fab4:7206
+batchedUpdates$1 @ chunk-QYFCA5BS.js?v=cc98fab4:18966
+batchedUpdates @ chunk-QYFCA5BS.js?v=cc98fab4:3585
+dispatchEventForPluginEventSystem @ chunk-QYFCA5BS.js?v=cc98fab4:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-QYFCA5BS.js?v=cc98fab4:5484
+dispatchEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5478
+dispatchDiscreteEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5455
+PortfolioTemplateDetails.tsx:408 ⚠️ Failed to delete portfolio 250: AxiosError {message: 'Request failed with status code 500', name: 'AxiosError', code: 'ERR_BAD_RESPONSE', config: {…}, request: XMLHttpRequest, …}
+handleConfirmDelete @ PortfolioTemplateDetails.tsx:408
+await in handleConfirmDelete
+callCallback2 @ chunk-QYFCA5BS.js?v=cc98fab4:3680
+invokeGuardedCallbackDev @ chunk-QYFCA5BS.js?v=cc98fab4:3705
+invokeGuardedCallback @ chunk-QYFCA5BS.js?v=cc98fab4:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-QYFCA5BS.js?v=cc98fab4:3742
+executeDispatch @ chunk-QYFCA5BS.js?v=cc98fab4:7046
+processDispatchQueueItemsInOrder @ chunk-QYFCA5BS.js?v=cc98fab4:7066
+processDispatchQueue @ chunk-QYFCA5BS.js?v=cc98fab4:7075
+dispatchEventsForPlugins @ chunk-QYFCA5BS.js?v=cc98fab4:7083
+(anonymous) @ chunk-QYFCA5BS.js?v=cc98fab4:7206
+batchedUpdates$1 @ chunk-QYFCA5BS.js?v=cc98fab4:18966
+batchedUpdates @ chunk-QYFCA5BS.js?v=cc98fab4:3585
+dispatchEventForPluginEventSystem @ chunk-QYFCA5BS.js?v=cc98fab4:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-QYFCA5BS.js?v=cc98fab4:5484
+dispatchEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5478
+dispatchDiscreteEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5455
+PortfolioTemplateDetails.tsx:418 🗑️ Step 3: Deleting all template generations...
+PortfolioTemplateDetails.tsx:421 🗑️ Deleting generation 5 (Initial version of Flintstone)
+PortfolioTemplateDetails.tsx:422  DELETE http://localhost:3000/api/available_portfolios/16/generations/5 400 (Bad Request)
+dispatchXhrRequest @ axios.js?v=cc98fab4:1637
+xhr @ axios.js?v=cc98fab4:1517
+dispatchRequest @ axios.js?v=cc98fab4:1992
+Promise.then
+_request @ axios.js?v=cc98fab4:2195
+request @ axios.js?v=cc98fab4:2104
+Axios.<computed> @ axios.js?v=cc98fab4:2232
+wrap @ axios.js?v=cc98fab4:8
+handleConfirmDelete @ PortfolioTemplateDetails.tsx:422
+await in handleConfirmDelete
+callCallback2 @ chunk-QYFCA5BS.js?v=cc98fab4:3680
+invokeGuardedCallbackDev @ chunk-QYFCA5BS.js?v=cc98fab4:3705
+invokeGuardedCallback @ chunk-QYFCA5BS.js?v=cc98fab4:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-QYFCA5BS.js?v=cc98fab4:3742
+executeDispatch @ chunk-QYFCA5BS.js?v=cc98fab4:7046
+processDispatchQueueItemsInOrder @ chunk-QYFCA5BS.js?v=cc98fab4:7066
+processDispatchQueue @ chunk-QYFCA5BS.js?v=cc98fab4:7075
+dispatchEventsForPlugins @ chunk-QYFCA5BS.js?v=cc98fab4:7083
+(anonymous) @ chunk-QYFCA5BS.js?v=cc98fab4:7206
+batchedUpdates$1 @ chunk-QYFCA5BS.js?v=cc98fab4:18966
+batchedUpdates @ chunk-QYFCA5BS.js?v=cc98fab4:3585
+dispatchEventForPluginEventSystem @ chunk-QYFCA5BS.js?v=cc98fab4:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-QYFCA5BS.js?v=cc98fab4:5484
+dispatchEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5478
+dispatchDiscreteEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5455
+auth.ts:227 API Error: Request failed with status code 400
+(anonymous) @ auth.ts:227
+Promise.then
+_request @ axios.js?v=cc98fab4:2195
+request @ axios.js?v=cc98fab4:2104
+Axios.<computed> @ axios.js?v=cc98fab4:2232
+wrap @ axios.js?v=cc98fab4:8
+handleConfirmDelete @ PortfolioTemplateDetails.tsx:422
+await in handleConfirmDelete
+callCallback2 @ chunk-QYFCA5BS.js?v=cc98fab4:3680
+invokeGuardedCallbackDev @ chunk-QYFCA5BS.js?v=cc98fab4:3705
+invokeGuardedCallback @ chunk-QYFCA5BS.js?v=cc98fab4:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-QYFCA5BS.js?v=cc98fab4:3742
+executeDispatch @ chunk-QYFCA5BS.js?v=cc98fab4:7046
+processDispatchQueueItemsInOrder @ chunk-QYFCA5BS.js?v=cc98fab4:7066
+processDispatchQueue @ chunk-QYFCA5BS.js?v=cc98fab4:7075
+dispatchEventsForPlugins @ chunk-QYFCA5BS.js?v=cc98fab4:7083
+(anonymous) @ chunk-QYFCA5BS.js?v=cc98fab4:7206
+batchedUpdates$1 @ chunk-QYFCA5BS.js?v=cc98fab4:18966
+batchedUpdates @ chunk-QYFCA5BS.js?v=cc98fab4:3585
+dispatchEventForPluginEventSystem @ chunk-QYFCA5BS.js?v=cc98fab4:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-QYFCA5BS.js?v=cc98fab4:5484
+dispatchEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5478
+dispatchDiscreteEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5455
+auth.ts:228 Request URL: /api/available_portfolios/16/generations/5
+(anonymous) @ auth.ts:228
+Promise.then
+_request @ axios.js?v=cc98fab4:2195
+request @ axios.js?v=cc98fab4:2104
+Axios.<computed> @ axios.js?v=cc98fab4:2232
+wrap @ axios.js?v=cc98fab4:8
+handleConfirmDelete @ PortfolioTemplateDetails.tsx:422
+await in handleConfirmDelete
+callCallback2 @ chunk-QYFCA5BS.js?v=cc98fab4:3680
+invokeGuardedCallbackDev @ chunk-QYFCA5BS.js?v=cc98fab4:3705
+invokeGuardedCallback @ chunk-QYFCA5BS.js?v=cc98fab4:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-QYFCA5BS.js?v=cc98fab4:3742
+executeDispatch @ chunk-QYFCA5BS.js?v=cc98fab4:7046
+processDispatchQueueItemsInOrder @ chunk-QYFCA5BS.js?v=cc98fab4:7066
+processDispatchQueue @ chunk-QYFCA5BS.js?v=cc98fab4:7075
+dispatchEventsForPlugins @ chunk-QYFCA5BS.js?v=cc98fab4:7083
+(anonymous) @ chunk-QYFCA5BS.js?v=cc98fab4:7206
+batchedUpdates$1 @ chunk-QYFCA5BS.js?v=cc98fab4:18966
+batchedUpdates @ chunk-QYFCA5BS.js?v=cc98fab4:3585
+dispatchEventForPluginEventSystem @ chunk-QYFCA5BS.js?v=cc98fab4:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-QYFCA5BS.js?v=cc98fab4:5484
+dispatchEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5478
+dispatchDiscreteEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5455
+auth.ts:229 Request Method: delete
+(anonymous) @ auth.ts:229
+Promise.then
+_request @ axios.js?v=cc98fab4:2195
+request @ axios.js?v=cc98fab4:2104
+Axios.<computed> @ axios.js?v=cc98fab4:2232
+wrap @ axios.js?v=cc98fab4:8
+handleConfirmDelete @ PortfolioTemplateDetails.tsx:422
+await in handleConfirmDelete
+callCallback2 @ chunk-QYFCA5BS.js?v=cc98fab4:3680
+invokeGuardedCallbackDev @ chunk-QYFCA5BS.js?v=cc98fab4:3705
+invokeGuardedCallback @ chunk-QYFCA5BS.js?v=cc98fab4:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-QYFCA5BS.js?v=cc98fab4:3742
+executeDispatch @ chunk-QYFCA5BS.js?v=cc98fab4:7046
+processDispatchQueueItemsInOrder @ chunk-QYFCA5BS.js?v=cc98fab4:7066
+processDispatchQueue @ chunk-QYFCA5BS.js?v=cc98fab4:7075
+dispatchEventsForPlugins @ chunk-QYFCA5BS.js?v=cc98fab4:7083
+(anonymous) @ chunk-QYFCA5BS.js?v=cc98fab4:7206
+batchedUpdates$1 @ chunk-QYFCA5BS.js?v=cc98fab4:18966
+batchedUpdates @ chunk-QYFCA5BS.js?v=cc98fab4:3585
+dispatchEventForPluginEventSystem @ chunk-QYFCA5BS.js?v=cc98fab4:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-QYFCA5BS.js?v=cc98fab4:5484
+dispatchEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5478
+dispatchDiscreteEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5455
+auth.ts:230 Response Status: 400
+(anonymous) @ auth.ts:230
+Promise.then
+_request @ axios.js?v=cc98fab4:2195
+request @ axios.js?v=cc98fab4:2104
+Axios.<computed> @ axios.js?v=cc98fab4:2232
+wrap @ axios.js?v=cc98fab4:8
+handleConfirmDelete @ PortfolioTemplateDetails.tsx:422
+await in handleConfirmDelete
+callCallback2 @ chunk-QYFCA5BS.js?v=cc98fab4:3680
+invokeGuardedCallbackDev @ chunk-QYFCA5BS.js?v=cc98fab4:3705
+invokeGuardedCallback @ chunk-QYFCA5BS.js?v=cc98fab4:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-QYFCA5BS.js?v=cc98fab4:3742
+executeDispatch @ chunk-QYFCA5BS.js?v=cc98fab4:7046
+processDispatchQueueItemsInOrder @ chunk-QYFCA5BS.js?v=cc98fab4:7066
+processDispatchQueue @ chunk-QYFCA5BS.js?v=cc98fab4:7075
+dispatchEventsForPlugins @ chunk-QYFCA5BS.js?v=cc98fab4:7083
+(anonymous) @ chunk-QYFCA5BS.js?v=cc98fab4:7206
+batchedUpdates$1 @ chunk-QYFCA5BS.js?v=cc98fab4:18966
+batchedUpdates @ chunk-QYFCA5BS.js?v=cc98fab4:3585
+dispatchEventForPluginEventSystem @ chunk-QYFCA5BS.js?v=cc98fab4:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-QYFCA5BS.js?v=cc98fab4:5484
+dispatchEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5478
+dispatchDiscreteEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5455
+auth.ts:231 Response Data: {detail: "Cannot delete generation 'Initial version of Flintstone' - 1 portfolio(s) are using this generation"}
+(anonymous) @ auth.ts:231
+Promise.then
+_request @ axios.js?v=cc98fab4:2195
+request @ axios.js?v=cc98fab4:2104
+Axios.<computed> @ axios.js?v=cc98fab4:2232
+wrap @ axios.js?v=cc98fab4:8
+handleConfirmDelete @ PortfolioTemplateDetails.tsx:422
+await in handleConfirmDelete
+callCallback2 @ chunk-QYFCA5BS.js?v=cc98fab4:3680
+invokeGuardedCallbackDev @ chunk-QYFCA5BS.js?v=cc98fab4:3705
+invokeGuardedCallback @ chunk-QYFCA5BS.js?v=cc98fab4:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-QYFCA5BS.js?v=cc98fab4:3742
+executeDispatch @ chunk-QYFCA5BS.js?v=cc98fab4:7046
+processDispatchQueueItemsInOrder @ chunk-QYFCA5BS.js?v=cc98fab4:7066
+processDispatchQueue @ chunk-QYFCA5BS.js?v=cc98fab4:7075
+dispatchEventsForPlugins @ chunk-QYFCA5BS.js?v=cc98fab4:7083
+(anonymous) @ chunk-QYFCA5BS.js?v=cc98fab4:7206
+batchedUpdates$1 @ chunk-QYFCA5BS.js?v=cc98fab4:18966
+batchedUpdates @ chunk-QYFCA5BS.js?v=cc98fab4:3585
+dispatchEventForPluginEventSystem @ chunk-QYFCA5BS.js?v=cc98fab4:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-QYFCA5BS.js?v=cc98fab4:5484
+dispatchEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5478
+dispatchDiscreteEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5455
+PortfolioTemplateDetails.tsx:425 ⚠️ Failed to delete generation 5: AxiosError {message: 'Request failed with status code 400', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+handleConfirmDelete @ PortfolioTemplateDetails.tsx:425
+await in handleConfirmDelete
+callCallback2 @ chunk-QYFCA5BS.js?v=cc98fab4:3680
+invokeGuardedCallbackDev @ chunk-QYFCA5BS.js?v=cc98fab4:3705
+invokeGuardedCallback @ chunk-QYFCA5BS.js?v=cc98fab4:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-QYFCA5BS.js?v=cc98fab4:3742
+executeDispatch @ chunk-QYFCA5BS.js?v=cc98fab4:7046
+processDispatchQueueItemsInOrder @ chunk-QYFCA5BS.js?v=cc98fab4:7066
+processDispatchQueue @ chunk-QYFCA5BS.js?v=cc98fab4:7075
+dispatchEventsForPlugins @ chunk-QYFCA5BS.js?v=cc98fab4:7083
+(anonymous) @ chunk-QYFCA5BS.js?v=cc98fab4:7206
+batchedUpdates$1 @ chunk-QYFCA5BS.js?v=cc98fab4:18966
+batchedUpdates @ chunk-QYFCA5BS.js?v=cc98fab4:3585
+dispatchEventForPluginEventSystem @ chunk-QYFCA5BS.js?v=cc98fab4:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-QYFCA5BS.js?v=cc98fab4:5484
+dispatchEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5478
+dispatchDiscreteEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5455
+PortfolioTemplateDetails.tsx:431 🗑️ Step 4: Deleting the template...
+PortfolioTemplateDetails.tsx:432  DELETE http://localhost:3000/api/available_portfolios/16 500 (Internal Server Error)
+dispatchXhrRequest @ axios.js?v=cc98fab4:1637
+xhr @ axios.js?v=cc98fab4:1517
+dispatchRequest @ axios.js?v=cc98fab4:1992
+Promise.then
+_request @ axios.js?v=cc98fab4:2195
+request @ axios.js?v=cc98fab4:2104
+Axios.<computed> @ axios.js?v=cc98fab4:2232
+wrap @ axios.js?v=cc98fab4:8
+handleConfirmDelete @ PortfolioTemplateDetails.tsx:432
+await in handleConfirmDelete
+callCallback2 @ chunk-QYFCA5BS.js?v=cc98fab4:3680
+invokeGuardedCallbackDev @ chunk-QYFCA5BS.js?v=cc98fab4:3705
+invokeGuardedCallback @ chunk-QYFCA5BS.js?v=cc98fab4:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-QYFCA5BS.js?v=cc98fab4:3742
+executeDispatch @ chunk-QYFCA5BS.js?v=cc98fab4:7046
+processDispatchQueueItemsInOrder @ chunk-QYFCA5BS.js?v=cc98fab4:7066
+processDispatchQueue @ chunk-QYFCA5BS.js?v=cc98fab4:7075
+dispatchEventsForPlugins @ chunk-QYFCA5BS.js?v=cc98fab4:7083
+(anonymous) @ chunk-QYFCA5BS.js?v=cc98fab4:7206
+batchedUpdates$1 @ chunk-QYFCA5BS.js?v=cc98fab4:18966
+batchedUpdates @ chunk-QYFCA5BS.js?v=cc98fab4:3585
+dispatchEventForPluginEventSystem @ chunk-QYFCA5BS.js?v=cc98fab4:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-QYFCA5BS.js?v=cc98fab4:5484
+dispatchEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5478
+dispatchDiscreteEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5455
+auth.ts:227 API Error: Request failed with status code 500
+(anonymous) @ auth.ts:227
+Promise.then
+_request @ axios.js?v=cc98fab4:2195
+request @ axios.js?v=cc98fab4:2104
+Axios.<computed> @ axios.js?v=cc98fab4:2232
+wrap @ axios.js?v=cc98fab4:8
+handleConfirmDelete @ PortfolioTemplateDetails.tsx:432
+await in handleConfirmDelete
+callCallback2 @ chunk-QYFCA5BS.js?v=cc98fab4:3680
+invokeGuardedCallbackDev @ chunk-QYFCA5BS.js?v=cc98fab4:3705
+invokeGuardedCallback @ chunk-QYFCA5BS.js?v=cc98fab4:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-QYFCA5BS.js?v=cc98fab4:3742
+executeDispatch @ chunk-QYFCA5BS.js?v=cc98fab4:7046
+processDispatchQueueItemsInOrder @ chunk-QYFCA5BS.js?v=cc98fab4:7066
+processDispatchQueue @ chunk-QYFCA5BS.js?v=cc98fab4:7075
+dispatchEventsForPlugins @ chunk-QYFCA5BS.js?v=cc98fab4:7083
+(anonymous) @ chunk-QYFCA5BS.js?v=cc98fab4:7206
+batchedUpdates$1 @ chunk-QYFCA5BS.js?v=cc98fab4:18966
+batchedUpdates @ chunk-QYFCA5BS.js?v=cc98fab4:3585
+dispatchEventForPluginEventSystem @ chunk-QYFCA5BS.js?v=cc98fab4:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-QYFCA5BS.js?v=cc98fab4:5484
+dispatchEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5478
+dispatchDiscreteEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5455
+auth.ts:228 Request URL: /api/available_portfolios/16
+(anonymous) @ auth.ts:228
+Promise.then
+_request @ axios.js?v=cc98fab4:2195
+request @ axios.js?v=cc98fab4:2104
+Axios.<computed> @ axios.js?v=cc98fab4:2232
+wrap @ axios.js?v=cc98fab4:8
+handleConfirmDelete @ PortfolioTemplateDetails.tsx:432
+await in handleConfirmDelete
+callCallback2 @ chunk-QYFCA5BS.js?v=cc98fab4:3680
+invokeGuardedCallbackDev @ chunk-QYFCA5BS.js?v=cc98fab4:3705
+invokeGuardedCallback @ chunk-QYFCA5BS.js?v=cc98fab4:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-QYFCA5BS.js?v=cc98fab4:3742
+executeDispatch @ chunk-QYFCA5BS.js?v=cc98fab4:7046
+processDispatchQueueItemsInOrder @ chunk-QYFCA5BS.js?v=cc98fab4:7066
+processDispatchQueue @ chunk-QYFCA5BS.js?v=cc98fab4:7075
+dispatchEventsForPlugins @ chunk-QYFCA5BS.js?v=cc98fab4:7083
+(anonymous) @ chunk-QYFCA5BS.js?v=cc98fab4:7206
+batchedUpdates$1 @ chunk-QYFCA5BS.js?v=cc98fab4:18966
+batchedUpdates @ chunk-QYFCA5BS.js?v=cc98fab4:3585
+dispatchEventForPluginEventSystem @ chunk-QYFCA5BS.js?v=cc98fab4:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-QYFCA5BS.js?v=cc98fab4:5484
+dispatchEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5478
+dispatchDiscreteEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5455
+auth.ts:229 Request Method: delete
+(anonymous) @ auth.ts:229
+Promise.then
+_request @ axios.js?v=cc98fab4:2195
+request @ axios.js?v=cc98fab4:2104
+Axios.<computed> @ axios.js?v=cc98fab4:2232
+wrap @ axios.js?v=cc98fab4:8
+handleConfirmDelete @ PortfolioTemplateDetails.tsx:432
+await in handleConfirmDelete
+callCallback2 @ chunk-QYFCA5BS.js?v=cc98fab4:3680
+invokeGuardedCallbackDev @ chunk-QYFCA5BS.js?v=cc98fab4:3705
+invokeGuardedCallback @ chunk-QYFCA5BS.js?v=cc98fab4:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-QYFCA5BS.js?v=cc98fab4:3742
+executeDispatch @ chunk-QYFCA5BS.js?v=cc98fab4:7046
+processDispatchQueueItemsInOrder @ chunk-QYFCA5BS.js?v=cc98fab4:7066
+processDispatchQueue @ chunk-QYFCA5BS.js?v=cc98fab4:7075
+dispatchEventsForPlugins @ chunk-QYFCA5BS.js?v=cc98fab4:7083
+(anonymous) @ chunk-QYFCA5BS.js?v=cc98fab4:7206
+batchedUpdates$1 @ chunk-QYFCA5BS.js?v=cc98fab4:18966
+batchedUpdates @ chunk-QYFCA5BS.js?v=cc98fab4:3585
+dispatchEventForPluginEventSystem @ chunk-QYFCA5BS.js?v=cc98fab4:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-QYFCA5BS.js?v=cc98fab4:5484
+dispatchEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5478
+dispatchDiscreteEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5455
+auth.ts:230 Response Status: 500
+(anonymous) @ auth.ts:230
+Promise.then
+_request @ axios.js?v=cc98fab4:2195
+request @ axios.js?v=cc98fab4:2104
+Axios.<computed> @ axios.js?v=cc98fab4:2232
+wrap @ axios.js?v=cc98fab4:8
+handleConfirmDelete @ PortfolioTemplateDetails.tsx:432
+await in handleConfirmDelete
+callCallback2 @ chunk-QYFCA5BS.js?v=cc98fab4:3680
+invokeGuardedCallbackDev @ chunk-QYFCA5BS.js?v=cc98fab4:3705
+invokeGuardedCallback @ chunk-QYFCA5BS.js?v=cc98fab4:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-QYFCA5BS.js?v=cc98fab4:3742
+executeDispatch @ chunk-QYFCA5BS.js?v=cc98fab4:7046
+processDispatchQueueItemsInOrder @ chunk-QYFCA5BS.js?v=cc98fab4:7066
+processDispatchQueue @ chunk-QYFCA5BS.js?v=cc98fab4:7075
+dispatchEventsForPlugins @ chunk-QYFCA5BS.js?v=cc98fab4:7083
+(anonymous) @ chunk-QYFCA5BS.js?v=cc98fab4:7206
+batchedUpdates$1 @ chunk-QYFCA5BS.js?v=cc98fab4:18966
+batchedUpdates @ chunk-QYFCA5BS.js?v=cc98fab4:3585
+dispatchEventForPluginEventSystem @ chunk-QYFCA5BS.js?v=cc98fab4:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-QYFCA5BS.js?v=cc98fab4:5484
+dispatchEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5478
+dispatchDiscreteEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5455
+auth.ts:231 Response Data: {detail: 'Database error: update or delete on table "templat…=(5) is still referenced from table "portfolios".'}
+(anonymous) @ auth.ts:231
+Promise.then
+_request @ axios.js?v=cc98fab4:2195
+request @ axios.js?v=cc98fab4:2104
+Axios.<computed> @ axios.js?v=cc98fab4:2232
+wrap @ axios.js?v=cc98fab4:8
+handleConfirmDelete @ PortfolioTemplateDetails.tsx:432
+await in handleConfirmDelete
+callCallback2 @ chunk-QYFCA5BS.js?v=cc98fab4:3680
+invokeGuardedCallbackDev @ chunk-QYFCA5BS.js?v=cc98fab4:3705
+invokeGuardedCallback @ chunk-QYFCA5BS.js?v=cc98fab4:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-QYFCA5BS.js?v=cc98fab4:3742
+executeDispatch @ chunk-QYFCA5BS.js?v=cc98fab4:7046
+processDispatchQueueItemsInOrder @ chunk-QYFCA5BS.js?v=cc98fab4:7066
+processDispatchQueue @ chunk-QYFCA5BS.js?v=cc98fab4:7075
+dispatchEventsForPlugins @ chunk-QYFCA5BS.js?v=cc98fab4:7083
+(anonymous) @ chunk-QYFCA5BS.js?v=cc98fab4:7206
+batchedUpdates$1 @ chunk-QYFCA5BS.js?v=cc98fab4:18966
+batchedUpdates @ chunk-QYFCA5BS.js?v=cc98fab4:3585
+dispatchEventForPluginEventSystem @ chunk-QYFCA5BS.js?v=cc98fab4:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-QYFCA5BS.js?v=cc98fab4:5484
+dispatchEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5478
+dispatchDiscreteEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5455
+auth.ts:248 Server error - this is likely a backend issue, not authentication
+(anonymous) @ auth.ts:248
+Promise.then
+_request @ axios.js?v=cc98fab4:2195
+request @ axios.js?v=cc98fab4:2104
+Axios.<computed> @ axios.js?v=cc98fab4:2232
+wrap @ axios.js?v=cc98fab4:8
+handleConfirmDelete @ PortfolioTemplateDetails.tsx:432
+await in handleConfirmDelete
+callCallback2 @ chunk-QYFCA5BS.js?v=cc98fab4:3680
+invokeGuardedCallbackDev @ chunk-QYFCA5BS.js?v=cc98fab4:3705
+invokeGuardedCallback @ chunk-QYFCA5BS.js?v=cc98fab4:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-QYFCA5BS.js?v=cc98fab4:3742
+executeDispatch @ chunk-QYFCA5BS.js?v=cc98fab4:7046
+processDispatchQueueItemsInOrder @ chunk-QYFCA5BS.js?v=cc98fab4:7066
+processDispatchQueue @ chunk-QYFCA5BS.js?v=cc98fab4:7075
+dispatchEventsForPlugins @ chunk-QYFCA5BS.js?v=cc98fab4:7083
+(anonymous) @ chunk-QYFCA5BS.js?v=cc98fab4:7206
+batchedUpdates$1 @ chunk-QYFCA5BS.js?v=cc98fab4:18966
+batchedUpdates @ chunk-QYFCA5BS.js?v=cc98fab4:3585
+dispatchEventForPluginEventSystem @ chunk-QYFCA5BS.js?v=cc98fab4:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-QYFCA5BS.js?v=cc98fab4:5484
+dispatchEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5478
+dispatchDiscreteEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5455
+PortfolioTemplateDetails.tsx:438 ❌ Error during cascade deletion: AxiosError {message: 'Request failed with status code 500', name: 'AxiosError', code: 'ERR_BAD_RESPONSE', config: {…}, request: XMLHttpRequest, …}
+handleConfirmDelete @ PortfolioTemplateDetails.tsx:438
+await in handleConfirmDelete
+callCallback2 @ chunk-QYFCA5BS.js?v=cc98fab4:3680
+invokeGuardedCallbackDev @ chunk-QYFCA5BS.js?v=cc98fab4:3705
+invokeGuardedCallback @ chunk-QYFCA5BS.js?v=cc98fab4:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-QYFCA5BS.js?v=cc98fab4:3742
+executeDispatch @ chunk-QYFCA5BS.js?v=cc98fab4:7046
+processDispatchQueueItemsInOrder @ chunk-QYFCA5BS.js?v=cc98fab4:7066
+processDispatchQueue @ chunk-QYFCA5BS.js?v=cc98fab4:7075
+dispatchEventsForPlugins @ chunk-QYFCA5BS.js?v=cc98fab4:7083
+(anonymous) @ chunk-QYFCA5BS.js?v=cc98fab4:7206
+batchedUpdates$1 @ chunk-QYFCA5BS.js?v=cc98fab4:18966
+batchedUpdates @ chunk-QYFCA5BS.js?v=cc98fab4:3585
+dispatchEventForPluginEventSystem @ chunk-QYFCA5BS.js?v=cc98fab4:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-QYFCA5BS.js?v=cc98fab4:5484
+dispatchEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5478
+dispatchDiscreteEvent @ chunk-QYFCA5BS.js?v=cc98fab4:5455

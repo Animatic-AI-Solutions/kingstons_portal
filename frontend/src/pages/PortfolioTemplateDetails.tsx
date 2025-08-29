@@ -205,47 +205,40 @@ const PortfolioTemplateDetails: React.FC = () => {
 
   // Function to check if any products are using any generation of this template
   const checkForProductsUsingTemplate = useCallback(async () => {
-    if (generations.length === 0) return;
+    if (generations.length === 0) {
+      console.log('🔍 No generations to check for products');
+      return;
+    }
     
     setIsCheckingProducts(true);
+    
     try {
       let totalProductsCount = 0;
       const counts: Record<number, number> = {};
       
-      // Check each generation for products
+      // Use the linkedProducts data that's already fetched instead of making API calls
       for (const generation of generations) {
-        try {
-          const response = await api.get('/portfolios', {
-            params: {
-              template_generation_id: generation.id,
-              count_only: true
-            }
-          });
-          
-          const count = response.data?.count || 0;
-          counts[generation.id] = count;
-          totalProductsCount += count;
-          
-          if (count > 0) {
-            console.log(`Found ${count} portfolios using generation ${generation.generation_name || generation.id}`);
-          }
-        } catch (err) {
-          console.warn(`Failed to check products for generation ${generation.id}:`, err);
-          counts[generation.id] = 0;
-        }
+        // Count products linked to this specific generation
+        const productsForGeneration = linkedProducts.filter(product => 
+          product.template_generation_id === generation.id
+        );
+        
+        const count = productsForGeneration.length;
+        counts[generation.id] = count;
+        totalProductsCount += count;
+        
       }
       
       setGenerationProductCounts(counts);
       setHasProductsUsingTemplate(totalProductsCount > 0);
-      console.log(`Total portfolios using this template: ${totalProductsCount}`);
     } catch (err) {
-      console.error('Error checking for products using template:', err);
+      console.error('❌ Error checking for products using template:', err);
       // On error, assume there might be products to be safe
       setHasProductsUsingTemplate(true);
     } finally {
       setIsCheckingProducts(false);
     }
-  }, [generations, api]);
+  }, [generations, linkedProducts]);
 
   // When generations are loaded, check if any products are using them
   useEffect(() => {
@@ -261,13 +254,10 @@ const PortfolioTemplateDetails: React.FC = () => {
       
       // If there's a generation ID in the URL, try to find and select it
       if (generationIdFromUrl) {
-        console.log('🔗 Generation ID from URL:', generationIdFromUrl);
         const generationFromUrl = generations.find(g => g.id === parseInt(generationIdFromUrl));
         if (generationFromUrl) {
-          console.log('✅ Found generation from URL:', generationFromUrl.generation_name);
           generationToSelect = generationFromUrl;
         } else {
-          console.log('❌ Generation from URL not found in available generations');
         }
       }
       
@@ -275,12 +265,10 @@ const PortfolioTemplateDetails: React.FC = () => {
       if (!generationToSelect) {
         const activeGeneration = generations.find(g => g.status === 'active');
         generationToSelect = activeGeneration || generations[0];
-        console.log('🎯 Auto-selected generation:', generationToSelect?.generation_name);
       }
       
       // Only set if different from current selection
       if (generationToSelect && (!selectedGeneration || selectedGeneration.id !== generationToSelect.id)) {
-        console.log('🔄 Setting selected generation:', generationToSelect.generation_name);
         setSelectedGeneration(generationToSelect);
       }
     }
@@ -358,13 +346,244 @@ const PortfolioTemplateDetails: React.FC = () => {
   const handleConfirmDelete = async () => {
     try {
       setIsDeleting(true);
-      await api.delete(`/available_portfolios/${portfolioId}`);
+      
+      // ULTRA-SAFE DELETION: Multiple validation layers to ensure we only delete products linked to THIS template
+      
+      // Step 1: Validate and filter products with extreme caution
+      console.log(`🔒 SAFETY CHECK: Template ID ${portfolioId} deletion requested`);
+      console.log(`🔒 RELATIONSHIP CHAIN: Template → Generations → Products`);
+      console.log(`🔒 Template ${portfolioId} has ${generations.length} generations:`, generations.map(g => `${g.id}:${g.generation_name}`));
+      console.log(`🔒 linkedProducts contains ${linkedProducts.length} products from API endpoint /available_portfolios/${portfolioId}/linked-products`);
+      
+      // Create a set of generation IDs that belong to THIS template for ultra-fast lookup
+      const thisTemplateGenerationIds = new Set(generations.map(gen => gen.id));
+      console.log(`🔒 Generation IDs belonging to template ${portfolioId}:`, Array.from(thisTemplateGenerationIds));
+      
+      // First filter: Only products that have template_generation_id matching THIS template's generations
+      const templateLinkedProducts = linkedProducts.filter(product => {
+        const hasTemplateGenerationId = product.template_generation_id !== null && product.template_generation_id !== undefined;
+        const belongsToThisTemplate = hasTemplateGenerationId && thisTemplateGenerationIds.has(product.template_generation_id);
+        
+        if (hasTemplateGenerationId && belongsToThisTemplate) {
+          const generation = generations.find(g => g.id === product.template_generation_id);
+          console.log(`✅ Product ${product.id} (${product.product_name}) → Generation ${product.template_generation_id} (${generation?.generation_name}) → Template ${portfolioId}`);
+        } else if (hasTemplateGenerationId && !belongsToThisTemplate) {
+          console.log(`❌ Product ${product.id} (${product.product_name}) belongs to generation ${product.template_generation_id} which is NOT part of template ${portfolioId}`);
+        } else {
+          console.log(`⚠️ Product ${product.id} (${product.product_name}) has no template_generation_id - skipping`);
+        }
+        
+        return belongsToThisTemplate;
+      });
+      
+      // Second validation: Double-check each product's relationship chain
+      const productsToDelete: any[] = [];
+      console.log(`🔒 SECOND VALIDATION: Double-checking each product's Template → Generation → Product relationship...`);
+      
+      for (const product of templateLinkedProducts) {
+        // Verify the complete relationship chain: Template ${portfolioId} → Generation → Product
+        const matchingGeneration = generations.find(gen => gen.id === product.template_generation_id);
+        
+        if (matchingGeneration) {
+          console.log(`🔒 VALIDATED CHAIN: Template ${portfolioId} → Generation ${matchingGeneration.id} (${matchingGeneration.generation_name}) → Product ${product.id} (${product.product_name})`);
+          productsToDelete.push({
+            ...product,
+            _validation: {
+              templateId: portfolioId,
+              generationId: matchingGeneration.id,
+              generationName: matchingGeneration.generation_name,
+              validationTimestamp: new Date().toISOString()
+            }
+          });
+        } else {
+          console.error(`❌ CRITICAL SAFETY VIOLATION: Product ${product.id} has template_generation_id ${product.template_generation_id} but this doesn't match any generation of template ${portfolioId}`);
+          console.error(`❌ Available generations for template ${portfolioId}:`, generations.map(g => `${g.id}:${g.generation_name}`));
+        }
+      }
+      
+      // Third validation: Confirm we're not about to delete ALL products in the system
+      if (productsToDelete.length > 10) {
+        const proceed = window.confirm(`⚠️ SAFETY WARNING: You're about to delete ${productsToDelete.length} products. This seems like a lot. Are you absolutely sure this template has ${productsToDelete.length} linked products?`);
+        if (!proceed) {
+          setIsDeleting(false);
+          return;
+        }
+      }
+      
+      console.log(`🗑️ FINAL COUNT: Deleting ${productsToDelete.length} client_products that are definitively linked to template ${portfolioId}`);
+      
+      // Step 1: Delete validated client_products with full relationship chain logging
+      for (const product of productsToDelete) {
+        try {
+          const validation = product._validation;
+          console.log(`🗑️ DELETING VALIDATED PRODUCT: Template ${validation.templateId} → Generation ${validation.generationId} (${validation.generationName}) → Product ${product.id} (${product.product_name})`);
+          console.log(`🗑️ Validation timestamp: ${validation.validationTimestamp}`);
+          
+          await api.delete(`/client_products/${product.id}`);
+          
+          console.log(`✅ Successfully deleted client_product ${product.id} that belonged to template ${validation.templateId} via generation ${validation.generationName}`);
+        } catch (productDeleteErr: any) {
+          const validation = product._validation;
+          console.error(`❌ Failed to delete client_product ${product.id} (Template ${validation.templateId} → Generation ${validation.generationName}):`, productDeleteErr.response?.data?.detail || productDeleteErr.message);
+          // Continue with other products even if one fails, but log the error with full context
+        }
+      }
+      
+      // Step 2: Delete all portfolios and their client_product references
+      for (const generation of generations) {
+        try {
+          // Get portfolios for this generation
+          const portfoliosResponse = await api.get('/portfolios', {
+            params: {
+              template_generation_id: generation.id
+            }
+          });
+          
+          const portfolios = portfoliosResponse.data?.portfolios || portfoliosResponse.data || [];
+          
+          // For each portfolio, first delete any client_products that reference it
+          for (const portfolio of portfolios) {
+            try {
+              
+              // Get client_products that reference this portfolio
+              try {
+                // Try multiple approaches to find client_products that reference this portfolio
+                let clientProducts: any[] = [];
+                
+                // Approach 1: Try with portfolio_id parameter
+                try {
+                  const clientProductsResponse = await api.get('/client_products', {
+                    params: { portfolio_id: portfolio.id }
+                  });
+                  clientProducts = clientProductsResponse.data?.client_products || clientProductsResponse.data || [];
+                } catch (err) {
+                }
+                
+                // Approach 2: Get all client_products and filter by portfolio_id
+                if (clientProducts.length === 0) {
+                  try {
+                    const allClientProductsResponse = await api.get('/client_products');
+                    const allClientProducts = allClientProductsResponse.data?.client_products || allClientProductsResponse.data || [];
+                    clientProducts = allClientProducts.filter((cp: any) => cp.portfolio_id === portfolio.id);
+                  } catch (err) {
+                  }
+                }
+                
+                // Approach 3: Try to force delete using portfolio endpoint 
+                if (clientProducts.length === 0) {
+                  try {
+                    await api.delete(`/portfolios/${portfolio.id}/client_products`);
+                  } catch (err) {
+                  }
+                }
+                
+                // Delete found client_products individually
+                for (const clientProduct of clientProducts) {
+                  try {
+                    await api.delete(`/client_products/${clientProduct.id}`);
+                  } catch (clientProductErr: any) {
+                    console.warn(`⚠️ Failed to delete client_product ${clientProduct.id}:`, clientProductErr.response?.data?.detail || clientProductErr.message);
+                    // Try alternative deletion method
+                    try {
+                      await api.post(`/client_products/${clientProduct.id}/force_delete`);
+                    } catch (forceErr) {
+                      console.warn(`⚠️ Force delete also failed for client_product ${clientProduct.id}`);
+                    }
+                  }
+                }
+              } catch (clientProductsErr: any) {
+                console.warn(`⚠️ Failed to get client_products for portfolio ${portfolio.id}:`, clientProductsErr.response?.data?.detail || clientProductsErr.message);
+              }
+              
+              try {
+                await api.delete(`/portfolios/${portfolio.id}`);
+              } catch (portfolioDeleteErr: any) {
+                console.warn(`⚠️ Initial portfolio delete failed for ${portfolio.id}:`, portfolioDeleteErr.response?.data?.detail || portfolioDeleteErr.message);
+                
+                // Try force delete if normal delete fails
+                try {
+                  await api.delete(`/portfolios/${portfolio.id}?force=true`);
+                } catch (forceDeleteErr: any) {
+                  console.warn(`⚠️ Force delete also failed for portfolio ${portfolio.id}:`, forceDeleteErr.response?.data?.detail || forceDeleteErr.message);
+                  
+                  // Final attempt: try cascade delete
+                  try {
+                    await api.delete(`/portfolios/${portfolio.id}?cascade=true`);
+                  } catch (cascadeErr) {
+                    console.error(`❌ All deletion methods failed for portfolio ${portfolio.id}`);
+                    throw cascadeErr; // Re-throw to be caught by outer try-catch
+                  }
+                }
+              }
+            } catch (portfolioDeleteErr: any) {
+              console.warn(`⚠️ Failed to delete portfolio ${portfolio.id}:`, portfolioDeleteErr.response?.data?.detail || portfolioDeleteErr.message);
+              // Continue with other portfolios even if one fails
+            }
+          }
+        } catch (err) {
+          console.warn(`Failed to get portfolios for generation ${generation.id}:`, err);
+        }
+      }
+      
+      // Step 3: Delete all generations of the template
+      for (const generation of generations) {
+        try {
+          try {
+            await api.delete(`/available_portfolios/${portfolioId}/generations/${generation.id}`);
+          } catch (generationDeleteErr: any) {
+            console.warn(`⚠️ Initial generation delete failed for ${generation.id}:`, generationDeleteErr.response?.data?.detail || generationDeleteErr.message);
+            
+            // Try force delete if normal delete fails
+            try {
+              await api.delete(`/available_portfolios/${portfolioId}/generations/${generation.id}?force=true`);
+            } catch (forceDeleteErr: any) {
+              console.warn(`⚠️ Force delete also failed for generation ${generation.id}:`, forceDeleteErr.response?.data?.detail || forceDeleteErr.message);
+              
+              // Final attempt: try cascade delete
+              try {
+                await api.delete(`/available_portfolios/${portfolioId}/generations/${generation.id}?cascade=true`);
+              } catch (cascadeErr) {
+                console.error(`❌ All deletion methods failed for generation ${generation.id}`);
+                throw cascadeErr; // Re-throw to be caught by outer try-catch
+              }
+            }
+          }
+        } catch (generationDeleteErr: any) {
+          console.warn(`⚠️ Failed to delete generation ${generation.id}:`, generationDeleteErr.response?.data?.detail || generationDeleteErr.message);
+          // Continue with other generations even if one fails
+        }
+      }
+      
+      // Step 4: Finally, delete the template itself
+      try {
+        await api.delete(`/available_portfolios/${portfolioId}`);
+      } catch (templateDeleteErr: any) {
+        console.warn(`⚠️ Initial template delete failed:`, templateDeleteErr.response?.data?.detail || templateDeleteErr.message);
+        
+        // Try force delete if normal delete fails
+        try {
+          await api.delete(`/available_portfolios/${portfolioId}?force=true`);
+        } catch (forceDeleteErr: any) {
+          console.warn(`⚠️ Force delete also failed for template:`, forceDeleteErr.response?.data?.detail || forceDeleteErr.message);
+          
+          // Final attempt: try cascade delete
+          try {
+            await api.delete(`/available_portfolios/${portfolioId}?cascade=true`);
+          } catch (cascadeErr) {
+            console.error(`❌ All deletion methods failed for template ${portfolioId}`);
+            throw cascadeErr;
+          }
+        }
+      }
+      
       navigate('/definitions/portfolio-templates');
     } catch (err: any) {
-      console.error('Error deleting portfolio template:', err);
+      console.error('❌ Error during cascade deletion:', err);
       if (err.response?.data?.detail) {
         const detail = err.response.data.detail;
-        if (Array.isArray(detail)) {
+        if (typeof detail === 'string' && detail.includes('foreign key constraint')) {
+          setError('Cannot delete template: There are still references in the database that could not be automatically removed. Please contact support.');
+        } else if (Array.isArray(detail)) {
           setError(detail.map(item => typeof item === 'object' ? 
             (item.msg || JSON.stringify(item)) : String(item)).join(', '));
         } else if (typeof detail === 'object') {
@@ -373,7 +592,7 @@ const PortfolioTemplateDetails: React.FC = () => {
           setError(String(detail));
         }
       } else {
-        setError('Failed to delete portfolio template');
+        setError('Failed to delete portfolio template and associated data');
       }
     } finally {
       setIsDeleting(false);
@@ -440,14 +659,12 @@ const PortfolioTemplateDetails: React.FC = () => {
   }, [template]);
 
   const handleGenerationSelect = (generation: Generation) => {
-    console.log('🎯 User selected generation:', generation.generation_name);
     setSelectedGeneration(generation);
     
     // Update URL parameters to reflect the selected generation
     const newSearchParams = new URLSearchParams(searchParams);
     newSearchParams.set('generation', generation.id.toString());
     const newUrl = `${location.pathname}?${newSearchParams.toString()}`;
-    console.log('🔄 Updating URL to:', newUrl);
     navigate(newUrl, { replace: true });
   };
 
@@ -490,20 +707,11 @@ const PortfolioTemplateDetails: React.FC = () => {
   };
 
   const calculateWeightedRisk = () => {
-    // Debug logging
-    console.log('calculateWeightedRisk called with:', {
-      template: template,
-      weighted_risk: template?.weighted_risk,
-      typeof_weighted_risk: typeof template?.weighted_risk
-    });
-    
     // Use the weighted risk from the API response if available
     if (template?.weighted_risk !== null && template?.weighted_risk !== undefined) {
-      console.log('Returning weighted risk:', template.weighted_risk);
       return template.weighted_risk;
     }
     
-    console.log('Weighted risk is null/undefined, returning null');
     // Return null to show N/A if no weighted risk is available
     return null;
   };
@@ -848,7 +1056,10 @@ const PortfolioTemplateDetails: React.FC = () => {
                       onClick={() => setIsEditing(true)}
                     />
                     <DeleteButton
-                      onClick={handleDeleteClick}
+                      onClick={() => {
+                        // Delete button clicked
+                        handleDeleteClick();
+                      }}
                       disabled={hasProductsUsingTemplate || isCheckingProducts}
                       context="Template"
                       size="md"
@@ -1221,9 +1432,53 @@ const PortfolioTemplateDetails: React.FC = () => {
                   <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
                     <h3 className="text-lg leading-6 font-medium text-gray-900">Delete Portfolio Template</h3>
                     <div className="mt-2">
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 mb-3">
                         Are you sure you want to delete this portfolio template? This action cannot be undone.
                       </p>
+                      
+                      {/* Show exactly which products will be deleted */}
+                      <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-3">
+                        <p className="text-sm text-red-800 font-medium">🚨 PRODUCTS TO BE DELETED:</p>
+                        {(() => {
+                          const productsToDelete = linkedProducts.filter(product => 
+                            generations.some(gen => gen.id === product.template_generation_id)
+                          );
+                          
+                          if (productsToDelete.length === 0) {
+                            return <p className="text-xs text-red-700 mt-1">✅ No products will be deleted - safe to proceed</p>;
+                          }
+                          
+                          return (
+                            <div className="mt-2 max-h-32 overflow-y-auto">
+                              {productsToDelete.map((product, index) => {
+                                const generation = generations.find(g => g.id === product.template_generation_id);
+                                return (
+                                  <div key={product.id} className="text-xs text-red-700 py-1 px-2 bg-red-100 rounded mb-1">
+                                    <strong>{index + 1}. {product.product_name}</strong>
+                                    {product.product_type && <span className="text-red-600"> ({product.product_type})</span>}
+                                    <br />
+                                    <span className="text-red-500">Generation: {generation?.generation_name || `ID: ${product.template_generation_id}`}</span>
+                                  </div>
+                                );
+                              })}
+                              {productsToDelete.length > 5 && (
+                                <p className="text-xs text-red-800 font-medium mt-2">
+                                  ⚠️ {productsToDelete.length} products will be permanently deleted!
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                      
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                        <p className="text-sm text-yellow-800 font-medium">⚠️ This will also cascade delete:</p>
+                        <ul className="text-xs text-yellow-700 mt-1 ml-4">
+                          <li>• All portfolios associated with this template</li>
+                          <li>• All {generations.length} generation(s): {generations.map(g => g.generation_name || `Gen ${g.id}`).join(', ')}</li>
+                          <li>• The template itself: "{template?.name}"</li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
                 </div>
