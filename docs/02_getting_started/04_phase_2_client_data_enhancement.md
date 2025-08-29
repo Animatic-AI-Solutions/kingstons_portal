@@ -6,12 +6,12 @@ Phase 2 enhances Kingston's Portal with comprehensive client data management cap
 
 ## Implementation Goals
 
-1. **Enhanced Client Details Page**: 6-tab navigation with comprehensive client data views
-2. **Information Items Management**: Flexible JSON-based data collection for 5 key categories
-3. **Objectives & Actions Tracking**: Goal-setting and task management for client relationships
-4. **Networth Statement Generation**: Comprehensive asset/liability tracking with historical snapshots and complete data preservation
-5. **KYC Report System**: Automated compliance report generation with data completeness tracking
-6. **Managed Products Integration**: Dedicated tab for comprehensive product management with full functionality preservation
+1. **Enhanced Client Details Page**: 6-tab navigation system with comprehensive client data views and enhanced product owner cards
+2. **Information Items Management**: Flexible JSON-based data collection for 5 key categories with advanced search and filtering
+3. **Objectives & Actions Tracking**: Hierarchical goal-setting with objective-action linking and collapsible display segments
+4. **Networth Statement Generation**: Professional-grade asset/liability tracking with period-over-period analysis and enhanced summary cards
+5. **KYC Report System**: Automated compliance report generation with data completeness tracking and customizable sections
+6. **Managed Products Integration**: Dedicated tab for comprehensive product management moved from main client page
 
 ## 6-Tab Navigation Structure
 
@@ -21,13 +21,22 @@ Phase 2 enhances Kingston's Portal with comprehensive client data management cap
 - Visual indicators for total FUM, IRR, and revenue
 
 #### Product Owner Card Data Fields
-Each product owner card displays the following detailed information:
-- **Contact Information**: Email address and phone number
-- **Personal Details**: Date of birth, known as (preferred name), title, NI number
-- **Security Information**: Three security words for client verification
-- **Notes**: Free-form notes about client preferences and details
-- **Meeting Information**: Next scheduled meeting date and time
-- **Compliance Tracking**: Last signed terms of business and fee agreement dates
+Each product owner card displays comprehensive client information in a structured, easily accessible format:
+
+**Core Information**:
+- **Contact Details**: Email address and phone number for direct communication
+- **Personal Information**: Date of birth, preferred name ("known as"), title, and NI number
+- **Security Verification**: Three security words for client authentication
+
+**Professional Management**:
+- **Client Notes**: Free-form notes about client preferences, requirements, and important details
+- **Meeting Schedule**: Next scheduled meeting date and time for appointment management
+- **Compliance Documentation**: Last signed terms & conditions and fee agreement dates for regulatory tracking
+
+**Display Features**:
+- **Two-Column Layout**: Compact information display with clear visual organization
+- **Color-Coded Cards**: Gradient styling with avatar initials for quick client identification
+- **Security Handling**: Three words displayed as comma-separated values for verification purposes
 
 ### Tab 2: Main List (Information Items)
 - 5 information item categories with flexible JSON storage
@@ -35,17 +44,21 @@ Each product owner card displays the following detailed information:
 - Modal-based creation and editing workflows
 
 ### Tab 3: Aims, Objectives & Actions
-- Comprehensive objective tracking with detailed descriptions
-- Action item management with assignment and due date tracking
-- Priority and status management for planning workflows
-- Two-status action system (todo/completed)
+- Comprehensive objective tracking with start date, target date, and last discussed fields
+- **Objective-Action Linking**: Actions can be linked to specific objectives or remain unlinked (standalone)
+- **Collapsible Action Segments**: Linked actions appear as expandable sections within objective cards
+- Enhanced action management with date_created, target_date, and drop_dead_date fields
+- Assignment types: advisor, client, or other (third-party)
+- Two-status action system (todo/completed) with visual status indicators
 
 ### Tab 4: Networth Statement
-- Asset and liability breakdown with individual ownership tracking
-- Item-level managed/unmanaged status indicators
+- Asset and liability breakdown with individual ownership tracking by item type
+- **Column Headers**: Use "known as" names from product owner cards (e.g., "John", "Mary")
+- Item-level managed/unmanaged status indicators with color-coded badges
 - Historical snapshot functionality with complete table data preservation
-- Professional styling suitable for financial document printing
-- Summary cards with visual indicators in order: Net Worth, Total Assets, Total Liabilities, Change Since Last Snapshot
+- Professional monochromatic styling suitable for financial document printing
+- **Enhanced Summary Cards** in order: Net Worth → Assets → Liabilities → Change
+- **Change Metric Enhancement**: Displays value, percentage, and period (e.g., "Apr 24 to Aug 25")
 
 ### Tab 5: Know Your Customer (KYC)
 - Data completeness tracking with visual progress indicators
@@ -121,11 +134,12 @@ Each product owner card displays the following detailed information:
   "description": "Detailed description explaining the objective, target amounts, strategy, and approach",
   "priority": "high|medium|low",
   "start_date": "YYYY-MM-DD",
-  "target_date": "YYYY-MM-DD",
+  "target_date": "YYYY-MM-DD", 
   "last_discussed": "YYYY-MM-DD",
   "status": "on-target|needs revision",
   "created_at": "timestamp",
-  "updated_at": "timestamp"
+  "updated_at": "timestamp",
+  "linked_actions_count": "integer"
 }
 ```
 
@@ -191,14 +205,17 @@ Objectives can have multiple actions linked to them through the `objective_id` f
   "assignment_type": "advisor|client|other",
   "status": "todo|completed",
   "created_at": "timestamp",
-  "updated_at": "timestamp"
+  "updated_at": "timestamp",
+  "parent_objective_title": "string_when_linked"
 }
 ```
 
 #### Action Item Date Field Definitions
-- **Date Created**: When the action item was initially created
-- **Target Date**: The official deadline for completion
-- **Drop Dead Date**: The absolute final deadline after which the action becomes critical or invalid
+- **Date Created**: When the action item was initially created in the system
+- **Target Date**: The primary deadline for completion (replaces the previous due_date field)
+- **Drop Dead Date**: The absolute final deadline after which the action becomes critical, invalid, or may impact other processes
+
+**Note**: The due_date field has been removed in favor of the more descriptive target_date field to better align with business requirements and reduce confusion between multiple date fields.
 
 #### Example Action Items
 
@@ -313,13 +330,17 @@ The networth statement organizes data hierarchically by item types, with individ
 3. **Total Liabilities**: Sum of all liability values, highlighted in red
 4. **Change Since Last Snapshot**: Comparison with previous snapshot, highlighted in purple
 
-**Change Calculation Display:**
-- **Value Change**: Absolute monetary difference from last snapshot (e.g., "+£12,500")
-- **Percentage Change**: Relative percentage change from last snapshot (e.g., "+2.8%")
-- **Period Display**: Time period showing "MMM YY to MMM YY" format from last snapshot to current date (e.g., "Apr 24 to Aug 25")
-- **Color Coding**: Green for positive changes, red for negative changes
-- **Historical Reference**: Change calculated against the most recent saved snapshot
-- **Three-Line Format**: Value change, percentage change, and period display for complete context
+**Enhanced Change Calculation Display:**
+- **Value Change**: Absolute monetary difference from last snapshot with appropriate sign (+£12,500 or -£3,200)
+- **Percentage Change**: Relative percentage change with one decimal place precision (+2.8% or -1.2%)
+- **Period Display**: Formatted time period in "MMM YY to MMM YY" format:
+  - Calculated from last snapshot date to current calculation date
+  - Examples: "Apr 24 to Aug 25", "Dec 23 to Mar 24", "Jan 25 to Jan 25" (same month)
+- **Visual Design**:
+  - **Color Coding**: Green for positive changes, red for negative changes, neutral gray for zero change
+  - **Three-Line Card Format**: Value change (line 1), percentage change (line 2), period display (line 3)
+  - **Consistent Formatting**: Maintains professional appearance suitable for client presentations
+- **Data Sources**: Change calculated against the most recent saved snapshot, with graceful handling when no previous snapshots exist
 
 #### Table Display Requirements
 
@@ -333,16 +354,21 @@ The networth statement organizes data hierarchically by item types, with individ
 - **Typography**: Consistent font weights and right-aligned monetary values
 
 **Column Header Requirements:**
-- **Product Owner Names**: Column headers use "known as" names from product owner cards (e.g., "John", "Mary") rather than full legal names
-- **Joint Holdings**: "Joint" column for jointly owned assets
-- **Total Column**: Aggregated total values across all ownership types
-- **Consistent Naming**: Column headers must match the known-as field from the client's product owner information
+- **Dynamic Owner Names**: Column headers automatically populate with "known as" names from product owner cards
+  - Example: If product owner card shows "known as: John", column header displays "John" not "John Smith"
+  - Ensures consistency between client identification and financial data display
+- **Joint Holdings**: "Joint" column for jointly owned assets and accounts
+- **Total Column**: "Total" column showing aggregated values across all ownership types
+- **Real-time Synchronization**: Headers update automatically when product owner "known as" names are modified
 
-**Hierarchical Structure:**
-1. Item type header (e.g., "GIAS", "BANK ACCOUNTS")
-2. Individual items with specific names, managed/unmanaged status badges, and ownership breakdown
-3. Section subtotal with calculated totals per item type
-4. Grand total across all asset types with ownership distribution
+**Hierarchical Data Organization by Item Types:**
+1. **Item Type Headers**: Bold uppercase section headers (e.g., "GIAS", "BANK ACCOUNTS", "PENSIONS")
+2. **Individual Items**: Specific product/account names with:
+   - **Managed/Unmanaged Badges**: Color-coded status indicators (green for managed, gray for unmanaged)
+   - **Ownership Breakdown**: Values distributed by owner using "known as" names
+   - **Individual Item Totals**: Calculated totals per item across all owners
+3. **Section Subtotals**: Aggregated totals per item type with light gray backgrounds and semibold styling
+4. **Grand Totals**: Final aggregated values across all asset types with prominent borders and bold formatting
 
 **Complete Data Preservation:**
 - **Historical Snapshots**: Full table structure and data preserved for retrospective viewing
@@ -413,9 +439,9 @@ The Managed Products tab provides dedicated access to all client product managem
 - `title` (VARCHAR)
 - `description` (TEXT)
 - `priority` (Enum: high, medium, low)
-- `start_date` (DATE)
-- `target_date` (DATE)
-- `last_discussed` (DATE)
+- `start_date` (DATE) - When work on the objective began
+- `target_date` (DATE) - When the objective should be completed
+- `last_discussed` (DATE) - Most recent discussion/review date
 - `status` (Enum: on-target, needs revision)
 - `created_at` (TIMESTAMP)
 - `updated_at` (TIMESTAMP)
@@ -423,12 +449,12 @@ The Managed Products tab provides dedicated access to all client product managem
 #### `action_items`
 - `id` (Primary Key) 
 - `client_id` (Foreign Key to client_groups)
-- `objective_id` (Foreign Key to client_objectives, nullable)
+- `objective_id` (Foreign Key to client_objectives, nullable) - Links action to objective or NULL for standalone actions
 - `title` (VARCHAR)
 - `description` (TEXT)
-- `date_created` (DATE)
-- `target_date` (DATE)
-- `drop_dead_date` (DATE)
+- `date_created` (DATE) - When the action item was initially created
+- `target_date` (DATE) - Primary deadline for completion (replaces due_date)
+- `drop_dead_date` (DATE) - Absolute final deadline
 - `assigned_to` (VARCHAR or Foreign Key to users)
 - `assignment_type` (Enum: advisor, client, other)
 - `status` (Enum: todo, completed)
@@ -487,29 +513,61 @@ The Managed Products tab provides dedicated access to all client product managem
 
 ## Frontend Implementation
 
-### Component Structure
-- `Phase2TabNavigation` - Main 6-tab navigation container
-- `ClientOverviewTab` - Enhanced financial summary and metrics display
-- `MainListTab` - Information items management across 5 categories
-- `ObjectivesTab` - Objectives and actions tracking with assignment types, objective-action linking, and collapsible action segments
-- `NetworthTab` - Networth display, snapshot management, and print functionality
-- `KYCTab` - KYC data completeness tracking and report generation
-- `ManagedProductsTab` - Comprehensive product management with full functionality preservation
+### Enhanced Component Structure
+- `Phase2TabNavigation` - Main 6-tab navigation container with enhanced accessibility and user presence indicators
+- `ClientOverviewTab` - Enhanced financial summary with detailed product owner cards displaying comprehensive client information
+- `MainListTab` - Information items management across 5 categories with advanced search, filtering, and bulk operations
+- `ObjectivesActionsTab` - Comprehensive objectives and actions tracking featuring:
+  - **Objective-action linking** with collapsible action segments
+  - **Enhanced date management** (start_date, target_date, drop_dead_date, last_discussed)
+  - **Visual hierarchy** showing linked vs. unlinked actions
+  - **Assignment type indicators** for advisor, client, and third-party actions
+- `NetworthTab` - Professional networth statements with:
+  - **Dynamic column headers** using "known as" names from product owner cards
+  - **Enhanced summary cards** with period-over-period change analysis
+  - **Item-type hierarchical organization** with managed/unmanaged status indicators
+- `KYCTab` - KYC data completeness tracking and automated report generation with template customization
+- `ManagedProductsTab` - Comprehensive product management relocated from main client page for better organization
 
-### UI Requirements
-- Responsive design for all screen sizes
-- Loading states for all async operations
-- Error handling and user feedback
-- Accessibility compliance (WCAG 2.1 AA)
-- Consistent styling with existing Kingston's Portal design system
+### Enhanced UI Requirements
+
+**Core Design Standards:**
+- **Responsive Design**: Full compatibility across desktop, tablet, and mobile devices
+- **Loading States**: Skeleton components and progress indicators for all async operations
+- **Error Handling**: Comprehensive error boundaries with user-friendly error messages and recovery options
+- **Accessibility Compliance**: Full WCAG 2.1 AA compliance with screen reader optimization and keyboard navigation
+- **Design System Integration**: Seamless integration with existing Kingston's Portal design language and component library
+
+**Phase 2 Specific Enhancements:**
+- **Real-time Updates**: Live synchronization of data changes across concurrent user sessions
+- **Visual Status Indicators**: Clear status representation for objectives (on-target/needs revision) and actions (todo/completed)
+- **Professional Styling**: Networth statement formatting suitable for client presentations and printing
+- **Interactive Elements**: Collapsible sections, expandable cards, and smooth transitions
+- **Data Completeness Visualization**: Progress meters and completion indicators for KYC and information gathering
+- **Touch Optimization**: Mobile-friendly interaction patterns with appropriate touch targets
 
 #### Objective-Action Linking UI Features
-- **Collapsible Action Segments**: Expandable/collapsible sections within objective cards showing linked actions
-- **Action Count Indicators**: Clear display of linked action counts with visual expand/collapse controls
-- **Hierarchical Display**: Visual hierarchy showing objective-action relationships with indentation and borders
-- **Status Integration**: Completed action indicators within linked action segments
-- **Separate Unlinked Actions**: Clear separation of standalone actions in dedicated sections
-- **Interactive Controls**: Click-to-expand functionality with smooth transitions and visual feedback
+
+**Visual Hierarchy and Organization:**
+- **Collapsible Action Segments**: Each objective card contains expandable sections showing linked actions
+- **Action Count Badges**: Visual indicators showing number of linked actions (e.g., "3 Actions", "No Actions")
+- **Expand/Collapse Controls**: Smooth animation controls with clear visual feedback
+- **Hierarchical Indentation**: Linked actions visually nested within parent objectives with consistent indentation
+
+**Status and Progress Tracking:**
+- **Action Status Integration**: Completed/todo status clearly visible within linked action segments
+- **Progress Indicators**: Visual representation of completion progress for objectives with multiple actions
+- **Status Color Coding**: Consistent color scheme for todo (blue), completed (green), overdue (red) actions
+
+**Separate Unlinked Actions Management:**
+- **Standalone Actions Section**: Dedicated area for actions not linked to any objective
+- **"No Objective" Grouping**: Clear visual separation with appropriate labeling
+- **Conversion Capabilities**: Easy linking of standalone actions to existing objectives
+
+**Interactive Features:**
+- **One-Click Expansion**: Click anywhere on objective header to expand/collapse
+- **Keyboard Navigation**: Full keyboard accessibility with tab navigation and enter/space activation
+- **Touch Optimization**: Mobile-friendly touch targets with appropriate sizing
 
 ## Security Considerations
 
@@ -544,12 +602,49 @@ The Managed Products tab provides dedicated access to all client product managem
 4. **Monitoring**: Implement comprehensive logging and error tracking
 5. **Training**: User training materials for new functionality
 
-## Success Metrics
+## Success Metrics and Performance Indicators
 
-1. **User Adoption**: Percentage of advisors using Phase 2 features
-2. **Data Quality**: Completeness of client information items
-3. **Efficiency**: Time savings in client data management
-4. **Compliance**: KYC report generation accuracy and completeness
-5. **Client Satisfaction**: Feedback on enhanced client service capabilities
+### User Adoption Metrics
+1. **Feature Utilization**: Percentage of advisors actively using Phase 2 features within 30 days of release
+2. **Tab Usage Distribution**: Analytics on which tabs are most frequently accessed and time spent per tab
+3. **Objective-Action Linking Adoption**: Percentage of actions linked to objectives vs. standalone actions
 
-This Phase 2 implementation provides a comprehensive foundation for enhanced client data management while maintaining the flexibility to adapt to evolving business requirements.
+### Data Quality Improvements
+1. **Information Item Completeness**: Average number of information items per client and completion rates across 5 categories
+2. **KYC Data Completeness**: Improvement in KYC completion scores and reduction in missing data alerts
+3. **Networth Statement Usage**: Frequency of snapshot creation and historical data utilization
+
+### Operational Efficiency
+1. **Time Savings**: Measurable reduction in time required for client data entry and management tasks
+2. **Error Reduction**: Decrease in data entry errors through improved validation and user interface design
+3. **Meeting Preparation**: Time reduction in preparing for client meetings using comprehensive data views
+
+### Compliance and Quality Assurance
+1. **KYC Report Generation**: Accuracy, completeness, and time-to-generate compliance reports
+2. **Audit Trail Completeness**: Full tracking of data changes and user actions for regulatory compliance
+3. **Data Consistency**: Alignment between different data views and elimination of discrepancies
+
+### Client Service Enhancement
+1. **Client Satisfaction Scores**: Feedback on improved service delivery and information accuracy
+2. **Meeting Quality**: Enhanced client meetings through better preparation and data accessibility
+3. **Response Time**: Faster response to client inquiries through improved data organization
+
+## Implementation Readiness and Next Steps
+
+### Development Readiness Checklist
+- [ ] Database schema updates with new tables and fields
+- [ ] API endpoint implementation with enhanced error handling and correlation IDs
+- [ ] Frontend component development with objective-action linking functionality
+- [ ] Product owner card enhancement with all specified data fields
+- [ ] Networth statement redesign with improved summary cards and column headers
+- [ ] KYC report system integration and template customization
+- [ ] Testing suite completion including unit, integration, and accessibility tests
+- [ ] Documentation updates and user training material preparation
+
+### Post-Implementation Monitoring
+- **Performance Monitoring**: Track response times, user adoption rates, and system performance
+- **User Feedback Collection**: Gather advisor feedback on new functionality and areas for improvement
+- **Data Quality Assessment**: Monitor improvement in data completeness and accuracy
+- **Compliance Verification**: Ensure all regulatory requirements are met through enhanced KYC processes
+
+This comprehensive Phase 2 implementation provides a robust foundation for enhanced client data management while maintaining full backward compatibility and the flexibility to adapt to evolving business requirements. The enhanced documentation ensures clear understanding of all new features, data structures, and implementation requirements for successful development and deployment.

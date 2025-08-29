@@ -387,35 +387,48 @@ Same as POST response with updated timestamps.
 
 ### GET /api/client_groups/{client_group_id}/networth/current
 
-**Purpose**: Generate real-time networth statement data organized by item types with individual items and subtotals
+**Purpose**: Generate real-time networth statement data organized by item types with enhanced summary cards and dynamic column headers
 **Authentication**: Required
 **Method**: GET
 
-#### Response Format - Hierarchical Structure
+#### Enhanced Response Format with Dynamic Headers
 ```json
 {
   "networth_data": {
+    "client_info": {
+      "client_group_id": 123,
+      "product_owners": [
+        {"id": 456, "known_as": "John", "full_name": "John Smith"},
+        {"id": 789, "known_as": "Mary", "full_name": "Mary Smith"}
+      ]
+    },
     "item_types": [
       {
         "type": "GIAs",
-        "is_managed": true,
         "items": [
           {
             "name": "Zurich Vista GIA",
+            "is_managed": true,
             "john": 125000,
             "mary": 95000,
             "joint": 0,
             "total": 220000,
             "valuation_date": "2024-08-26"
           }
-        ]
+        ],
+        "subtotal": {
+          "john": 125000,
+          "mary": 95000,
+          "joint": 0,
+          "total": 220000
+        }
       },
       {
         "type": "Bank Accounts",
-        "is_managed": false, 
         "items": [
           {
             "name": "Halifax Current Account",
+            "is_managed": true,
             "john": 2250,
             "mary": 1750,
             "joint": 0,
@@ -424,28 +437,47 @@ Same as POST response with updated timestamps.
           },
           {
             "name": "Barclays Joint Savings", 
+            "is_managed": false,
             "john": 0,
             "mary": 0,
             "joint": 4500,
             "total": 4500,
             "valuation_date": "2024-08-26"
           }
-        ]
+        ],
+        "subtotal": {
+          "john": 2250,
+          "mary": 1750,
+          "joint": 4500,
+          "total": 8500
+        }
       }
     ],
     "summary": {
-      "managed_total": 425000,
-      "unmanaged_total": 48000, 
-      "total_assets": 473000,
+      "managed_total": 224000,
+      "unmanaged_total": 4500, 
+      "total_assets": 228500,
       "total_liabilities": 25000,
-      "net_worth": 448000
+      "net_worth": 203500,
+      "change_since_last": {
+        "value": 12500,
+        "percentage": 6.5,
+        "period_display": "Apr 24 to Aug 25",
+        "last_snapshot_date": "2024-04-15",
+        "last_snapshot_net_worth": 191000,
+        "current_date": "2024-08-29"
+      }
     }
   },
   "display_requirements": {
     "table_structure": "hierarchical_by_item_type",
     "styling": "professional_monochromatic",
-    "subtotals_required": true,
-    "ownership_breakdown": ["john", "mary", "joint"],
+    "column_headers": {
+      "owner_columns": ["John", "Mary", "Joint"],
+      "header_source": "known_as_from_product_owners"
+    },
+    "summary_card_order": ["Net Worth", "Assets", "Liabilities", "Change"],
+    "managed_status_indicators": true,
     "zero_value_display": "em_dash"
   }
 }
@@ -459,7 +491,9 @@ Same as POST response with updated timestamps.
 | include_items | boolean | No | Include information items (default: true) |
 | group_by | string | No | Grouping method (product_type, owner, category) |
 
-#### Response Format
+#### Legacy Response Format (Deprecated)
+
+**Note**: This response format is maintained for backward compatibility but will be deprecated in favor of the enhanced hierarchical structure above.
 
 ```json
 {
@@ -467,8 +501,8 @@ Same as POST response with updated timestamps.
     "id": 123,
     "name": "Smith Family Trust",
     "product_owners": [
-      {"id": 123, "name": "John Smith", "inception_date": "2020-01-15"},
-      {"id": 456, "name": "Jane Smith", "inception_date": "2020-01-15"}
+      {"id": 123, "name": "John Smith", "known_as": "John", "inception_date": "2020-01-15"},
+      {"id": 456, "name": "Jane Smith", "known_as": "Mary", "inception_date": "2020-01-15"}
     ]
   },
   "statement_data": {
@@ -482,30 +516,32 @@ Same as POST response with updated timestamps.
             "id": 101,
             "name": "Zurich GIA (Managed)",
             "type": "managed_product",
+            "is_managed": true,
             "current_valuation": 25000.00,
             "valuation_date": "2024-08-26",
             "ownership": {
-              "123": 25000.00,
-              "456": 0.00,
+              "john": 25000.00,
+              "mary": 0.00,
               "joint": 0.00
             }
           },
           {
             "id": 202,
             "name": "Halifax GIA (Unmanaged)",
-            "type": "unmanaged_product", 
+            "type": "unmanaged_product",
+            "is_managed": false,
             "current_valuation": 15000.00,
             "valuation_date": "2024-08-26",
             "ownership": {
-              "123": 7500.00,
-              "456": 7500.00,
+              "john": 7500.00,
+              "mary": 7500.00,
               "joint": 0.00
             }
           }
         ],
         "section_totals": {
-          "123": 32500.00,
-          "456": 7500.00,
+          "john": 32500.00,
+          "mary": 7500.00,
           "joint": 0.00,
           "total": 40000.00
         }
@@ -515,9 +551,14 @@ Same as POST response with updated timestamps.
       "total_assets": 340000.00,
       "total_liabilities": 45000.00,
       "net_worth": 295000.00,
+      "change_since_last": {
+        "value": 12500,
+        "percentage": 3.8,
+        "period_display": "Apr 24 to Aug 25"
+      },
       "by_owner": {
-        "123": {"assets": 170000.00, "liabilities": 22500.00, "net": 147500.00},
-        "456": {"assets": 170000.00, "liabilities": 22500.00, "net": 147500.00}
+        "john": {"assets": 170000.00, "liabilities": 22500.00, "net": 147500.00},
+        "mary": {"assets": 170000.00, "liabilities": 22500.00, "net": 147500.00}
       }
     }
   }
@@ -1959,13 +2000,40 @@ ALERT_THRESHOLDS = {
 
 ### PUT /api/client_groups/{client_group_id}/objectives/{objective_id}
 
-**Purpose**: Update existing objective with enhanced description and priority tracking
+**Purpose**: Update existing objective with enhanced description, priority tracking, and date field management
+
+#### Request Format
+```json
+{
+  "title": "Updated Retirement Planning",
+  "description": "Enhanced retirement portfolio strategy targeting £800,000 by age 65, with increased focus on ESG investments and tax-efficient pension contributions.",
+  "priority": "high",
+  "start_date": "2024-01-15",
+  "target_date": "2030-12-31",
+  "last_discussed": "2024-08-29",
+  "status": "on-target"
+}
+```
+
+#### Enhanced Features
+- **Date Field Validation**: Ensures logical date relationships (start_date ≤ target_date)
+- **Last Discussed Tracking**: Automatic updates when objective is modified during client meetings
+- **Status Change Logging**: Audit trail for status changes with timestamps and user attribution
 
 ### GET /api/client_groups/{client_group_id}/actions
 
-**Purpose**: Retrieve all action items for a specific client group
+**Purpose**: Retrieve all action items for a specific client group with objective linking information
 
-#### Response Format
+#### Query Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| objective_id | integer | No | Filter actions by specific objective (or null for unlinked actions) |
+| status | string | No | Filter by action status (todo, completed) |
+| assignment_type | string | No | Filter by assignment type (advisor, client, other) |
+| include_objective_info | boolean | No | Include parent objective information (default: true) |
+
+#### Enhanced Response Format
 ```json
 {
   "actions": [
@@ -1975,24 +2043,60 @@ ALERT_THRESHOLDS = {
       "objective_id": 1,
       "title": "Review pension contributions",
       "description": "Analyze current pension contributions across all schemes including workplace pension and SIPP. Consider increasing contributions to maximize annual allowance and tax efficiency. Review provider performance and fees.",
-      "due_date": "2024-09-15",
+      "date_created": "2024-08-15",
+      "target_date": "2024-09-15",
+      "drop_dead_date": "2024-09-20",
       "assigned_to": "John Advisor",
       "assignment_type": "advisor",
       "status": "todo",
       "created_at": "2024-08-26T10:00:00Z",
-      "updated_at": "2024-08-26T10:00:00Z"
+      "updated_at": "2024-08-26T10:00:00Z",
+      "parent_objective": {
+        "id": 1,
+        "title": "Retirement Planning",
+        "status": "on-target"
+      }
+    },
+    {
+      "id": 2,
+      "client_group_id": 123,
+      "objective_id": null,
+      "title": "Update client contact details",
+      "description": "Verify and update client email and phone information following recent move.",
+      "date_created": "2024-08-20",
+      "target_date": "2024-09-10",
+      "drop_dead_date": "2024-09-15",
+      "assigned_to": "Jane Advisor",
+      "assignment_type": "advisor", 
+      "status": "todo",
+      "created_at": "2024-08-26T11:00:00Z",
+      "updated_at": "2024-08-26T11:00:00Z",
+      "parent_objective": null
     }
   ],
-  "total_count": 4,
+  "summary": {
+    "total_count": 8,
+    "linked_actions": 6,
+    "unlinked_actions": 2,
+    "by_status": {
+      "todo": 5,
+      "completed": 3
+    },
+    "by_assignment_type": {
+      "advisor": 4,
+      "client": 3,
+      "other": 1
+    }
+  },
   "performance": {
-    "query_time_ms": 38
+    "query_time_ms": 42
   }
 }
 ```
 
 ### POST /api/client_groups/{client_group_id}/actions
 
-**Purpose**: Create a new action item with detailed description
+**Purpose**: Create a new action item with enhanced date management and objective linking
 
 #### Request Format
 ```json
@@ -2000,16 +2104,60 @@ ALERT_THRESHOLDS = {
   "objective_id": 2,
   "title": "Provide salary documentation",
   "description": "Gather and provide recent P60s, last 3 months payslips, and employment contract. Client to collect these documents from HR department and scan for secure upload.",
-  "due_date": "2024-09-20",
+  "date_created": "2024-08-20",
+  "target_date": "2024-09-20",
+  "drop_dead_date": "2024-09-25", 
   "assigned_to": "John Smith (Client)",
   "assignment_type": "client",
   "status": "todo"
 }
 ```
 
+#### Enhanced Validation Rules
+- **Objective Linking**: If objective_id is provided, must reference valid existing objective for the client group
+- **Date Logic Validation**: date_created ≤ target_date ≤ drop_dead_date
+- **Assignment Validation**: assigned_to must be valid user or client name depending on assignment_type
+- **Null Objective Support**: objective_id can be null for standalone actions not linked to any objective
+
 ### PUT /api/client_groups/{client_group_id}/actions/{action_id}
 
-**Purpose**: Update existing action item including status changes and description updates
+**Purpose**: Update existing action item with objective linking, date management, and status tracking
+
+#### Request Format
+```json
+{
+  "objective_id": 1,
+  "title": "Updated: Complete risk assessment questionnaire",
+  "description": "Fill out comprehensive attitude to risk questionnaire online, including capacity for loss assessment and investment experience details. Updated with new regulatory requirements.",
+  "target_date": "2024-09-25",
+  "drop_dead_date": "2024-09-30",
+  "status": "completed"
+}
+```
+
+#### Objective Linking Features
+- **Link to Objective**: Set objective_id to link standalone action to an existing objective
+- **Unlink from Objective**: Set objective_id to null to convert linked action to standalone
+- **Change Objective**: Update objective_id to move action between objectives
+- **Validation**: Ensures objective exists and belongs to the same client group
+
+#### Response Includes Updated Relationships
+```json
+{
+  "action": {
+    "id": 15,
+    "objective_id": 1,
+    "title": "Updated: Complete risk assessment questionnaire",
+    "status": "completed",
+    "updated_at": "2024-08-29T10:15:00Z",
+    "parent_objective": {
+      "id": 1,
+      "title": "Investment Strategy Review",
+      "linked_actions_count": 4
+    }
+  }
+}
+```
 
 ---
 
