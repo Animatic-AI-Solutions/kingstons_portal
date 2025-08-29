@@ -103,6 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkAuth();
   }, []);
 
+
   // Redirect to preferred landing page when authenticated
   useEffect(() => {
     // Only redirect if:

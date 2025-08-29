@@ -26,7 +26,6 @@ const ProtectedRoute: React.FC = () => {
     // Save the current location for redirecting after login
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
-
   // Render the child routes
   return <Outlet />;
 };

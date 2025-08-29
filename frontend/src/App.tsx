@@ -88,7 +88,7 @@ const AppContent: React.FC = () => {
         {/* Protected Routes - Require authentication to access */}
         <Route element={<ProtectedRoute />}>
           {/* Home */}
-          <Route path="/" element={<AppLayout><Home /></AppLayout>} />
+          <Route index element={<AppLayout><Home /></AppLayout>} />
           
           {/* Profile Page */}
           <Route path="/profile" element={<AppLayout><Profile /></AppLayout>} />
