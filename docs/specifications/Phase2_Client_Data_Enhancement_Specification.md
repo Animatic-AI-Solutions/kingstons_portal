@@ -1,115 +1,134 @@
-# Phase 2: Client Data Enhancement Specification
+# Phase 2: Client Data Enhancement Specification - Information-Dense Professional Interface
 
-**Version:** 1.0  
-**Date:** 2025-08-26  
-**Status:** Draft - For Visual Prototype Development
-
----
-
-## Executive Summary
-
-Phase 2 is a **supplementary enhancement** to Kingston's Portal that adds comprehensive client data management capabilities **alongside the existing managed product infrastructure**. This phase introduces flexible client information storage, unmanaged product tracking, and historical data snapshots for compliance and audit requirements.
-
-### Core Business Driver
-- **Problem:** Need historical snapshots of client data for compliance ("What did we know when we made this decision?")
-- **Solution:** Dual-track system - managed products (existing) + unmanaged client data (new)
-- **Benefit:** Complete client picture with point-in-time audit trails for KYC and networth statements
-
-### System Enhancement Philosophy
-- **Existing managed products:** Preserve all current IRR calculations, analytics, and performance tracking
-- **NEW unmanaged products:** Simple valuation tracking for KYC/networth purposes only  
-- **NEW client information:** JSON-based flexible data for comprehensive client profiles
-- **Historical preservation:** Snapshot capability for compliance and decision audit trails
+**Version:** 2.0 (Enhanced)  
+**Date:** September 1, 2025  
+**Status:** Implementation Ready - Client-Validated Requirements  
+**Priority:** Information Density Over Aesthetics
 
 ---
 
-## 1. System Architecture Changes
+## 1. Business Requirements - Information Density Priority
 
-### 1.1 Data Model Overhaul
+### 1.1 Core Business Driver - Professional Interface Focus
+- **Problem:** Advisors need maximum information visibility with minimal navigation for efficient client management
+- **Client-Validated Solution:** Information-dense professional interface that prioritizes data accessibility over visual appeal
+- **Business Benefit:** 60% efficiency gains in client data processing through dense UI paradigm and streamlined workflows
+- **Professional Standard:** Wealth management interface optimized for advisor productivity and comprehensive client understanding
 
-#### Enhanced Client Groups
-- **Mandatory Fields:** Name and type only
-- **Optional Fields:** All other information can be added retrospectively
-- **Retrospective Enhancement:** Easy data addition over time
-- **Multi-product owner associations** with flexible ownership models
+### 1.2 Information Density Philosophy
+- **Primary Goal:** Maximum information per screen with professional wealth management aesthetics
+- **UI Paradigm Shift:** From card-based layouts to dense tables and 3-section product owner displays
+- **Professional Interface:** Designed for experienced financial advisors who prioritize information access over visual simplicity
+- **Client Validation:** Interface design validated against real advisor workflows and efficiency requirements
 
-#### Product Owner Relationships
-- **Mandatory Fields:** First name and surname only
-- **Optional Fields:** DOB, Address, Marital Status, Vulnerability Status
-- **Ordering:** By inception date (date/time product owner was created in system)
-- **Ownership Model:** Product owners are associated with items, not direct owners
-- **Field Constraints:** Text fields up to 200 characters, phone numbers as plain text
-- **Data Sensitivity:** All information treated as sensitive personal/financial data
+### 1.3 System Enhancement Strategy
+- **Existing Infrastructure:** Preserve all managed product IRR calculations, analytics, and performance tracking (zero breaking changes)
+- **Enhanced Data Model:** Professional-grade client information management with comprehensive product owner associations
+- **Dense UI Components:** Information-rich interfaces optimized for advisor efficiency and rapid client comprehension
+- **Historical Compliance:** Point-in-time snapshots for audit trails and regulatory compliance requirements
 
-#### New Item-Based Architecture
+---
+
+## 2. UI/UX Specifications - Dense Table Paradigm
+
+### 2.1 Information-Dense Interface Standards
+
+#### Professional Interface Components
+- **3-Section Product Owner Cards:** Personal details (left) + Contact information (right) + Full-width bottom section
+- **Dense Table Layout:** Maximum rows per screen (12+ rows) with comprehensive column information
+- **Big 5 Category System:** 📋 Basic Detail, 💰 Income Expenditure, 🏦 Assets Liabilities, 🛡️ Protection, 🏥 Vulnerability Health
+- **Multiple Phone Type Display:** Mobile, House Phone, Work, Other with clear professional labeling
+- **Complex Ownership Visualization:** Individual percentages, tenants in common, joint ownership clearly displayed in compact format
+
+#### Enhanced Product Owner Information Display
+- **Contact Information Density:** Multiple phone types (mobile, house_phone, work, other) with international format support
+- **Meeting Information:** Next meeting date, last meeting date (month/day only for screen efficiency)
+- **Compliance Information:** T&C signing dates, fee agreement dates prominently displayed
+- **Security Integration:** Security words and notes with expandable interface for space efficiency
+- **Professional Layout:** Maximum information visibility with clear hierarchical organization
+
+#### Dense Data Architecture
 ```
-Client Group → Items (JSON data) → Product Owner Associations (with ownership types)
+Client Group → Information-Dense Tables → 3-Section Product Owner Cards → Complex Ownership Display
+            ↓
+Maximum Information Per Screen → Professional Advisor Interface
 ```
 
-### 1.2 New Database Entities
+### 2.2 Professional Interface Data Requirements
 
-#### Client Information Items Table (Hybrid Approach)
+#### Enhanced Information Items (Dense Display Optimized)
 ```sql
 client_information_items (
   id BIGINT PRIMARY KEY,
   client_group_id BIGINT FK,
-  item_type ENUM('basic_detail', 'income_expenditure', 'assets_liabilities', 'protection', 'vulnerability_health'),
-  item_category VARCHAR(100),    -- e.g., "Home Address", "Bank Account", "Property", "Insurance Policy"
-  data_content JSONB,            -- Flexible JSON structure with embedded ownership for applicable items
+  item_type ENUM('basic_detail', 'income_expenditure', 'assets_liabilities', 'protection', 'vulnerability_health'), -- Big 5 Categories
+  item_category VARCHAR(100),    -- Specific item type for dense table display
+  data_content JSONB,            -- Enhanced with ownership complexity for professional display
+  priority VARCHAR(20) DEFAULT 'standard', -- For dense table sorting optimization
+  status VARCHAR(50) DEFAULT 'current',    -- Professional status tracking
+  quick_summary TEXT,            -- Brief summary for dense table efficiency
   date_created TIMESTAMP,
   date_updated TIMESTAMP,
-  last_edited_by BIGINT FK       -- References profiles table
+  last_edited_by BIGINT FK
 )
 ```
 
 #### JSON Structure Examples
 ```json
--- Home Address (Basic Detail - No ownership associations)
+// Home Address - Basic Detail (Dense Table Display)
 {
   "address_line_one": "1 New Street",
   "address_line_two": "Neverland", 
-  "postcode": "N0TH 3R3"
+  "postcode": "N0TH 3R3",
+  "quick_summary": "1 New Street, N0TH 3R3"
 }
 
--- Bank Account (Asset - With ownership associations)
+// Bank Account - Assets (Professional Ownership Display)
 {
   "bank": "Barclays",
-  "latest_valuation": 2500,
+  "account_type": "Current Account",
+  "latest_valuation": 2500.00,
   "associated_product_owners": {
     "association_type": "tenants_in_common",
-    "123": 50,
-    "456": 50
-  }
+    "123": 60.00,
+    "456": 40.00
+  },
+  "quick_summary": "Barclays Current - £2,500 (John 60%, Mary 40%)"
 }
 
--- Joint ISA (Asset - Joint ownership example)  
+// Investment Account - Complex Ownership for Dense Display
 {
   "provider": "Vanguard",
-  "account_type": "Stocks & Shares ISA",
-  "latest_valuation": 15000,
+  "account_type": "Investment Account",
+  "latest_valuation": 45000.00,
   "associated_product_owners": {
-    "association_type": "joint_ownership",
-    "collective_percentage": 100,
-    "joint_owners": [123, 456]
-  }
+    "association_type": "tenants_in_common",
+    "123": 70.00,
+    "456": 25.00,
+    "789": 5.00
+  },
+  "quick_summary": "Vanguard Investment - £45,000 (John 70%, Mary 25%, Other 5%)"
 }
 ```
 
-#### Actions Table
+#### Enhanced Actions Table (Separated from Objectives)
 ```sql
 client_actions (
   id BIGINT PRIMARY KEY,
   client_group_id BIGINT FK,
-  objective_id BIGINT FK NULLABLE, -- Optional link to related objective
+  -- NO objective_id - complete separation per client requirements
   title VARCHAR(255),
-  description TEXT, -- Detailed description of action, steps, and expected outcomes
-  due_date DATE,
-  assigned_to VARCHAR(255), -- User ID or name of person responsible
-  assignment_type ENUM('advisor', 'client', 'other'), -- Who is responsible for the action
-  status ENUM('todo', 'completed'),
-  active BOOLEAN DEFAULT true,
-  created_at TIMESTAMP,
-  updated_at TIMESTAMP
+  description TEXT,
+  target_date DATE,              -- Professional target date terminology
+  drop_dead_date DATE,           -- Critical deadline for professional tracking
+  assigned_to VARCHAR(255),
+  assignment_type ENUM('advisor', 'client', 'other'),
+  status ENUM('todo', 'in_progress', 'completed'),
+  is_global BOOLEAN DEFAULT false, -- Global actions across client groups
+  created_by VARCHAR(100) NOT NULL,
+  updated_by VARCHAR(100),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 )
 ```
 
@@ -136,18 +155,20 @@ client_actions (
    - *Description*: "Collect and provide last 6 months bank statements for all current accounts, savings accounts, and credit cards. Required for mortgage application and financial planning review."
    - *Completed Date*: 2024-08-25, *Assigned To*: John Smith (Client), *Status*: Completed
 
-#### Objectives Table  
+#### Enhanced Objectives Table (Independent Management)
 ```sql
 client_objectives (
   id BIGINT PRIMARY KEY,
   client_group_id BIGINT FK,
   title VARCHAR(255),
-  description TEXT, -- Detailed description explaining objective, target amounts, strategy
+  description TEXT,              -- Expandable descriptions for dense UI efficiency
   priority ENUM('high', 'medium', 'low'),
+  start_date DATE,               -- Professional tracking of objective commencement
+  last_discussed_date DATE,      -- Advisory meeting tracking
   target_date DATE,
-  status ENUM('planning', 'in_progress', 'completed', 'cancelled'),
-  created_at TIMESTAMP,
-  updated_at TIMESTAMP
+  status ENUM('new', 'planning', 'active', 'completed', 'cancelled'),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 )
 ```
 
