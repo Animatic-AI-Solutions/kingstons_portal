@@ -304,17 +304,127 @@ describe('Post-Migration Validation', () => {
 
 ---
 
-## 4. API Testing for New Endpoints
+## 4. API Testing for Phase 2 Enhanced Endpoints
 
-### Ownership API Testing
+### Global Actions API Testing
 
-#### Endpoint Validation Framework
+#### Cross-Client Action Management Testing
 ```typescript
-// src/tests/api/ownership.test.ts
+// src/tests/api/global-actions.test.ts
 import { APITestClient } from '@/tests/utils/api-client';
 import { TestDataFactory } from '@/tests/factories/data-factory';
+import { MockConcurrentUsers } from '@/tests/mocks/concurrent-users';
 
-describe('Ownership API Endpoints', () => {
+describe('Global Actions API Endpoints', () => {
+  let apiClient: APITestClient;
+  let dataFactory: TestDataFactory;
+  let concurrentUserMock: MockConcurrentUsers;
+
+  beforeEach(async () => {
+    apiClient = new APITestClient();
+    dataFactory = new TestDataFactory();
+    concurrentUserMock = new MockConcurrentUsers();
+    await apiClient.authenticate({ role: 'senior_advisor' });
+  });
+
+  describe('GET /api/actions/global/cross_client', () => {
+    it('should return actions from multiple client groups with workflow insights', async () => {
+      const clientGroups = await dataFactory.createMultipleClientGroups(3);
+      const actions = await dataFactory.createCrossClientActions(clientGroups);
+
+      const response = await apiClient.get('/api/actions/global/cross_client', {
+        params: {
+          client_group_ids: clientGroups.map(c => c.id),
+          include_workflow_insights: true
+        }
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.data.global_actions.summary.total_actions).toBeGreaterThan(0);
+      expect(response.data.workflow_insights).toHaveProperty('bottlenecks');
+      expect(response.data.workflow_insights.bottlenecks).toBeInstanceOf(Array);
+    });
+
+    it('should enforce rate limiting for bulk operations', async () => {
+      // Simulate multiple rapid requests
+      const promises = Array.from({ length: 5 }, () => 
+        apiClient.get('/api/actions/global/cross_client')
+      );
+
+      const responses = await Promise.allSettled(promises);
+      const rateLimitedResponse = responses.find(r => 
+        r.status === 'fulfilled' && r.value.status === 429
+      );
+
+      expect(rateLimitedResponse).toBeDefined();
+    });
+  });
+
+  describe('POST /api/actions/global/bulk_create', () => {
+    it('should create actions across multiple client groups atomically', async () => {
+      const clientGroups = await dataFactory.createMultipleClientGroups(2);
+      const bulkActionData = {
+        bulk_actions: clientGroups.map(cg => ({
+          client_group_id: cg.id,
+          title: 'Quarterly Review',
+          description: 'Q4 portfolio review',
+          target_date: '2024-12-31',
+          assigned_to: 'John Advisor',
+          assignment_type: 'advisor'
+        })),
+        bulk_options: {
+          transaction_mode: 'atomic',
+          send_notifications: true
+        }
+      };
+
+      const response = await apiClient.post('/api/actions/global/bulk_create', bulkActionData);
+
+      expect(response.status).toBe(201);
+      expect(response.data.bulk_operation_result.successful_operations).toBe(2);
+      expect(response.data.bulk_operation_result.failed_operations).toBe(0);
+    });
+
+    it('should handle partial failures with proper rollback', async () => {
+      const validClient = await dataFactory.createClientGroup();
+      const bulkActionData = {
+        bulk_actions: [
+          {
+            client_group_id: validClient.id,
+            title: 'Valid Action',
+            target_date: '2024-12-31',
+            assigned_to: 'John Advisor',
+            assignment_type: 'advisor'
+          },
+          {
+            client_group_id: 'non-existent-id',
+            title: 'Invalid Action',
+            target_date: '2024-12-31',
+            assigned_to: 'John Advisor',
+            assignment_type: 'advisor'
+          }
+        ],
+        bulk_options: {
+          transaction_mode: 'atomic',
+          rollback_on_failure: true
+        }
+      };
+
+      const response = await apiClient.post('/api/actions/global/bulk_create', bulkActionData);
+
+      expect(response.status).toBe(400);
+      expect(response.data.bulk_operation_result.successful_operations).toBe(0);
+    });
+  });
+});
+```
+
+### Phone Management API Testing
+
+#### Flexible Multi-Type Phone System Testing
+```typescript
+// src/tests/api/phone-management.test.ts
+describe('Phone Management API Endpoints', () => {
   let apiClient: APITestClient;
   let dataFactory: TestDataFactory;
 
@@ -324,37 +434,382 @@ describe('Ownership API Endpoints', () => {
     await apiClient.authenticate();
   });
 
-  describe('GET /api/ownership/{client_id}', () => {
-    it('should return ownership distribution for valid client', async () => {
-      const testClient = await dataFactory.createClient();
-      const testOwnership = await dataFactory.createOwnership(testClient.id);
+  describe('POST /api/product_owners/{id}/phone_numbers', () => {
+    it('should support all phone types (mobile, house_phone, work, other)', async () => {
+      const productOwner = await dataFactory.createProductOwner();
+      const phoneTypes = ['mobile', 'house_phone', 'work', 'other'];
 
-      const response = await apiClient.get(`/api/ownership/${testClient.id}`);
+      for (const phoneType of phoneTypes) {
+        const phoneData = {
+          phone_type: phoneType,
+          phone_number: `0${Math.random().toString().slice(2, 13)}`,
+          is_primary: false,
+          notes: `Test ${phoneType} phone`
+        };
 
-      expect(response.status).toBe(200);
-      expect(response.data).toHaveProperty('ownership_percentage');
-      expect(response.data.ownership_percentage).toBe(testOwnership.percentage);
+        const response = await apiClient.post(
+          `/api/product_owners/${productOwner.id}/phone_numbers`,
+          phoneData
+        );
+
+        expect(response.status).toBe(201);
+        expect(response.data.contact.phone_type).toBe(phoneType);
+      }
     });
 
-    it('should return 404 for non-existent client', async () => {
-      const response = await apiClient.get('/api/ownership/non-existent-id');
+    it('should enforce primary phone business logic', async () => {
+      const productOwner = await dataFactory.createProductOwner();
       
-      expect(response.status).toBe(404);
-      expect(response.data.error).toBe('Client not found');
+      // Create first primary phone
+      const firstPhone = {
+        phone_type: 'mobile',
+        phone_number: '07700900123',
+        is_primary: true
+      };
+      await apiClient.post(`/api/product_owners/${productOwner.id}/phone_numbers`, firstPhone);
+
+      // Attempt to create second primary phone
+      const secondPhone = {
+        phone_type: 'work',
+        phone_number: '01234567890',
+        is_primary: true
+      };
+      const response = await apiClient.post(
+        `/api/product_owners/${productOwner.id}/phone_numbers`,
+        secondPhone
+      );
+
+      expect(response.status).toBe(201);
+      
+      // Verify first phone is no longer primary
+      const phonesResponse = await apiClient.get(`/api/product_owners/${productOwner.id}/phone_numbers`);
+      const primaryPhones = phonesResponse.data.phone_numbers.filter(p => p.is_primary);
+      expect(primaryPhones).toHaveLength(1);
+      expect(primaryPhones[0].phone_type).toBe('work');
+    });
+
+    it('should validate phone number formats', async () => {
+      const productOwner = await dataFactory.createProductOwner();
+      const invalidPhones = [
+        '123',  // Too short
+        '01234567890123',  // Too long
+        'not-a-phone',  // Invalid characters
+        '+1 555 123 4567'  // Non-UK format
+      ];
+
+      for (const invalidPhone of invalidPhones) {
+        const phoneData = {
+          phone_type: 'mobile',
+          phone_number: invalidPhone,
+          is_primary: false
+        };
+
+        const response = await apiClient.post(
+          `/api/product_owners/${productOwner.id}/phone_numbers`,
+          phoneData
+        );
+
+        expect(response.status).toBe(422);
+        expect(response.data.error.details).toContainEqual(
+          expect.objectContaining({ field: 'phone_number' })
+        );
+      }
     });
   });
 
-  describe('POST /api/ownership', () => {
-    it('should create new ownership record with validation', async () => {
-      const testClient = await dataFactory.createClient();
-      const ownershipData = {
-        client_id: testClient.id,
-        ownership_percentage: 75.5,
-        effective_date: '2024-01-01',
-        ownership_type: 'individual'
+  describe('POST /api/product_owners/{id}/phone_numbers/{phone_id}/verify', () => {
+    it('should initiate phone verification process', async () => {
+      const productOwner = await dataFactory.createProductOwner();
+      const phone = await dataFactory.createPhone(productOwner.id);
+
+      const verificationData = {
+        verification_method: 'sms',
+        send_verification_code: true
       };
 
-      const response = await apiClient.post('/api/ownership', ownershipData);
+      const response = await apiClient.post(
+        `/api/product_owners/${productOwner.id}/phone_numbers/${phone.id}/verify`,
+        verificationData
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.data.verification).toHaveProperty('verification_id');
+      expect(response.data.verification.code_sent).toBe(true);
+      expect(response.data.verification.attempts_remaining).toBe(3);
+    });
+  });
+});
+```
+
+### Security Fields API Testing
+
+#### Enhanced Security and Audit Testing
+```typescript
+// src/tests/api/security-fields.test.ts
+describe('Security Fields API Endpoints', () => {
+  let apiClient: APITestClient;
+  let dataFactory: TestDataFactory;
+
+  beforeEach(async () => {
+    apiClient = new APITestClient();
+    dataFactory = new TestDataFactory();
+    await apiClient.authenticate({ 
+      role: 'senior_advisor',
+      mfa_enabled: true 
+    });
+  });
+
+  describe('POST /api/product_owners/{id}/security_fields/decrypt', () => {
+    it('should require MFA for sensitive data access', async () => {
+      const productOwner = await dataFactory.createProductOwner();
+      const decryptRequest = {
+        decrypt_request: {
+          fields_to_decrypt: ['three_words', 'security_notes'],
+          access_justification: 'Client meeting preparation'
+        }
+      };
+
+      // Attempt without MFA token
+      const responseWithoutMFA = await apiClient.post(
+        `/api/product_owners/${productOwner.id}/security_fields/decrypt`,
+        decryptRequest
+      );
+
+      expect(responseWithoutMFA.status).toBe(403);
+      expect(responseWithoutMFA.data.error.message).toContain('Multi-factor authentication required');
+
+      // Attempt with valid MFA token
+      apiClient.setMFAToken('123456');
+      const responseWithMFA = await apiClient.post(
+        `/api/product_owners/${productOwner.id}/security_fields/decrypt`,
+        decryptRequest
+      );
+
+      expect(responseWithMFA.status).toBe(200);
+      expect(responseWithMFA.data.decrypted_fields).toHaveProperty('three_words');
+      expect(responseWithMFA.data.access_tracking).toHaveProperty('access_id');
+    });
+
+    it('should log all sensitive data access for audit', async () => {
+      const productOwner = await dataFactory.createProductOwner();
+      const auditLogSpy = jest.spyOn(apiClient, 'trackAuditLog');
+
+      apiClient.setMFAToken('123456');
+      await apiClient.post(
+        `/api/product_owners/${productOwner.id}/security_fields/decrypt`,
+        {
+          decrypt_request: {
+            fields_to_decrypt: ['three_words'],
+            access_justification: 'Annual review meeting'
+          }
+        }
+      );
+
+      expect(auditLogSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event_type: 'sensitive_data_access',
+          severity: 'high'
+        })
+      );
+    });
+
+    it('should enforce session timeout for sensitive operations', async () => {
+      const productOwner = await dataFactory.createProductOwner();
+      
+      // Simulate expired session
+      apiClient.setSessionAge(3700); // 1 hour + 1 second
+      apiClient.setMFAToken('123456');
+
+      const response = await apiClient.post(
+        `/api/product_owners/${productOwner.id}/security_fields/decrypt`,
+        {
+          decrypt_request: {
+            fields_to_decrypt: ['security_notes'],
+            access_justification: 'Client query'
+          }
+        }
+      );
+
+      expect(response.status).toBe(401);
+      expect(response.data.error.message).toContain('session expired');
+    });
+  });
+});
+```
+
+### Liquidity Preferences API Testing
+
+#### User Customization Testing
+```typescript
+// src/tests/api/liquidity-preferences.test.ts
+describe('Liquidity Preferences API', () => {
+  let apiClient: APITestClient;
+  let dataFactory: TestDataFactory;
+
+  describe('PUT /api/users/{user_id}/liquidity_preferences', () => {
+    it('should validate liquidity ordering constraints', async () => {
+      const user = await dataFactory.createUser();
+      const invalidPreferences = {
+        custom_ordering: {
+          cash_equivalents: { display_order: 1 },
+          accessible_investments: { display_order: 1 } // Duplicate order
+        }
+      };
+
+      const response = await apiClient.put(
+        `/api/users/${user.id}/liquidity_preferences`,
+        invalidPreferences
+      );
+
+      expect(response.status).toBe(422);
+      expect(response.data.error.details).toContainEqual(
+        expect.objectContaining({
+          field: 'custom_ordering',
+          error: expect.stringContaining('unique display_order')
+        })
+      );
+    });
+
+    it('should apply preferences immediately to net worth displays', async () => {
+      const user = await dataFactory.createUser();
+      const clientGroup = await dataFactory.createClientGroup();
+      
+      const preferences = {
+        custom_ordering: {
+          cash_equivalents: {
+            display_order: 2,
+            subcategory_order: ['cash_isas', 'bank_accounts']
+          },
+          accessible_investments: {
+            display_order: 1,
+            subcategory_order: ['gias', 'stocks_shares_isas']
+          }
+        }
+      };
+
+      await apiClient.put(`/api/users/${user.id}/liquidity_preferences`, preferences);
+
+      // Verify preferences applied to net worth endpoint
+      const networthResponse = await apiClient.get(
+        `/api/client_groups/${clientGroup.id}/networth/liquidity_ordered`,
+        { params: { apply_user_preferences: true } }
+      );
+
+      const categories = networthResponse.data.networth_data.asset_categories;
+      expect(categories[0].category_id).toBe('accessible_investments');
+      expect(categories[1].category_id).toBe('cash_equivalents');
+    });
+  });
+});
+```
+
+### Bulk Operations API Testing
+
+#### Large-Scale Data Management Testing
+```typescript
+// src/tests/api/bulk-operations.test.ts
+describe('Bulk Operations API', () => {
+  let apiClient: APITestClient;
+  let dataFactory: TestDataFactory;
+
+  beforeEach(async () => {
+    apiClient = new APITestClient();
+    dataFactory = new TestDataFactory();
+    await apiClient.authenticate({ role: 'senior_advisor' });
+  });
+
+  describe('POST /api/bulk_operations/efficient_data_management', () => {
+    it('should handle large dataset processing with memory optimization', async () => {
+      const clientGroups = await dataFactory.createMultipleClientGroups(8);
+      const bulkOperation = {
+        data_operation: {
+          operation_type: 'portfolio_revaluation_update',
+          scope: {
+            client_group_ids: clientGroups.map(cg => cg.id),
+            asset_categories: ['GIAs', 'ISAs', 'Bank_Accounts']
+          },
+          processing_options: {
+            batch_size: 100,
+            memory_optimization: true,
+            create_backup_snapshot: true
+          }
+        }
+      };
+
+      const response = await apiClient.post('/api/bulk_operations/efficient_data_management', bulkOperation);
+
+      expect(response.status).toBe(202); // Accepted for async processing
+      expect(response.data.bulk_operation_result.operation_id).toBeDefined();
+    });
+
+    it('should enforce supervisor approval for large operations', async () => {
+      const largeOperation = {
+        data_operation: {
+          scope: {
+            client_group_ids: Array.from({ length: 15 }, (_, i) => i + 1) // 15 client groups
+          },
+          quality_assurance: {
+            require_supervisor_approval: true,
+            supervisor_user_id: null // No supervisor assigned
+          }
+        }
+      };
+
+      const response = await apiClient.post('/api/bulk_operations/efficient_data_management', largeOperation);
+
+      expect(response.status).toBe(422);
+      expect(response.data.error.message).toContain('supervisor approval required');
+    });
+  });
+});
+```
+
+### API Response Time and Performance Testing
+
+#### Performance Baseline Validation
+```typescript
+// src/tests/api/performance.test.ts
+describe('API Performance Testing', () => {
+  let apiClient: APITestClient;
+  let performanceMonitor: PerformanceMonitor;
+
+  beforeEach(() => {
+    apiClient = new APITestClient();
+    performanceMonitor = new PerformanceMonitor();
+  });
+
+  describe('Response Time Requirements', () => {
+    it('should meet performance targets for list operations (<500ms)', async () => {
+      const clientGroup = await dataFactory.createClientGroup();
+      
+      const startTime = performance.now();
+      const response = await apiClient.get(`/api/client_groups/${clientGroup.id}/information_items`);
+      const endTime = performance.now();
+
+      expect(response.status).toBe(200);
+      expect(endTime - startTime).toBeLessThan(500);
+    });
+
+    it('should meet targets for net worth generation (<2s)', async () => {
+      const clientGroup = await dataFactory.createLargeClientGroup(); // With many assets
+      
+      const startTime = performance.now();
+      const response = await apiClient.get(`/api/client_groups/${clientGroup.id}/networth/current`);
+      const endTime = performance.now();
+
+      expect(response.status).toBe(200);
+      expect(endTime - startTime).toBeLessThan(2000);
+    });
+
+    it('should include performance metrics in response headers', async () => {
+      const response = await apiClient.get('/api/client_groups/123/information_items');
+
+      expect(response.headers).toHaveProperty('x-response-time');
+      expect(response.headers).toHaveProperty('x-database-time');
+      expect(response.headers).toHaveProperty('x-correlation-id');
+    });
+  });
+});
 
       expect(response.status).toBe(201);
       expect(response.data.id).toBeDefined();
@@ -3485,7 +3940,938 @@ describe('Stakeholder Acceptance Tests', () => {
 
 ---
 
-## 15. Automated Testing Pipeline Integration
+## 15. Dense Table Performance Testing
+
+### Virtualization and Rendering Performance
+
+#### Large Dataset Rendering Tests
+```typescript
+// src/tests/performance/dense-table-rendering.test.tsx
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { DenseDataTable } from '@/components/ui/tables/DenseDataTable';
+import { createLargeDataset } from '@/tests/utils/data-generators';
+
+describe('Dense Table Performance Testing', () => {
+  let performanceObserver: PerformanceObserver;
+  let renderMetrics: PerformanceEntry[];
+
+  beforeEach(() => {
+    renderMetrics = [];
+    performanceObserver = new PerformanceObserver((list) => {
+      renderMetrics.push(...list.getEntries());
+    });
+    performanceObserver.observe({ entryTypes: ['measure'] });
+  });
+
+  afterEach(() => {
+    performanceObserver.disconnect();
+  });
+
+  describe('Large Dataset Rendering (<500ms target)', () => {
+    it('should render 1000+ information items within performance target', async () => {
+      const largeDataset = createLargeDataset(1200, 'information_items');
+      
+      performance.mark('table-render-start');
+      
+      render(
+        <DenseDataTable
+          data={largeDataset}
+          virtualizationEnabled={true}
+          itemHeight={40}
+          bufferSize={10}
+        />
+      );
+      
+      await waitFor(() => {
+        expect(screen.getByRole('table')).toBeInTheDocument();
+      });
+
+      performance.mark('table-render-end');
+      performance.measure('table-render-duration', 'table-render-start', 'table-render-end');
+
+      const renderMeasure = renderMetrics.find(m => m.name === 'table-render-duration');
+      expect(renderMeasure?.duration).toBeLessThan(500);
+    });
+
+    it('should maintain performance during scroll operations', async () => {
+      const largeDataset = createLargeDataset(2000, 'information_items');
+      
+      const { container } = render(
+        <DenseDataTable
+          data={largeDataset}
+          virtualizationEnabled={true}
+          itemHeight={40}
+        />
+      );
+
+      const tableContainer = container.querySelector('[data-testid="table-viewport"]');
+      
+      // Simulate rapid scrolling
+      for (let i = 0; i < 10; i++) {
+        performance.mark(`scroll-${i}-start`);
+        
+        fireEvent.scroll(tableContainer!, { target: { scrollTop: i * 500 } });
+        
+        await waitFor(() => {
+          expect(tableContainer?.scrollTop).toBe(i * 500);
+        });
+        
+        performance.mark(`scroll-${i}-end`);
+        performance.measure(`scroll-${i}-duration`, `scroll-${i}-start`, `scroll-${i}-end`);
+      }
+
+      const scrollMeasures = renderMetrics.filter(m => m.name.includes('scroll-'));
+      const averageScrollTime = scrollMeasures.reduce((sum, m) => sum + m.duration, 0) / scrollMeasures.length;
+      
+      expect(averageScrollTime).toBeLessThan(16); // 60 FPS = 16.67ms per frame
+    });
+
+    it('should efficiently handle column sorting on large datasets', async () => {
+      const largeDataset = createLargeDataset(1500, 'information_items');
+      
+      render(
+        <DenseDataTable
+          data={largeDataset}
+          sortable={true}
+          virtualizationEnabled={true}
+        />
+      );
+
+      const sortButton = screen.getByRole('button', { name: /sort by valuation/i });
+      
+      performance.mark('sort-start');
+      fireEvent.click(sortButton);
+      performance.mark('sort-end');
+      performance.measure('sort-duration', 'sort-start', 'sort-end');
+
+      await waitFor(() => {
+        const firstRow = screen.getAllByRole('row')[1];
+        expect(firstRow).toBeInTheDocument();
+      });
+
+      const sortMeasure = renderMetrics.find(m => m.name === 'sort-duration');
+      expect(sortMeasure?.duration).toBeLessThan(200);
+    });
+  });
+
+  describe('Memory Management Testing', () => {
+    it('should not cause memory leaks with frequent data updates', async () => {
+      const initialDataset = createLargeDataset(800, 'information_items');
+      
+      const { rerender } = render(
+        <DenseDataTable data={initialDataset} virtualizationEnabled={true} />
+      );
+
+      const initialMemory = (performance as any).memory?.usedJSHeapSize || 0;
+
+      // Simulate 20 data updates
+      for (let i = 0; i < 20; i++) {
+        const updatedDataset = createLargeDataset(800, 'information_items');
+        rerender(
+          <DenseDataTable data={updatedDataset} virtualizationEnabled={true} />
+        );
+        
+        await waitFor(() => {
+          expect(screen.getByRole('table')).toBeInTheDocument();
+        });
+      }
+
+      // Force garbage collection (if available in test environment)
+      if ((window as any).gc) {
+        (window as any).gc();
+      }
+
+      const finalMemory = (performance as any).memory?.usedJSHeapSize || 0;
+      const memoryIncrease = finalMemory - initialMemory;
+      
+      // Memory increase should be minimal (< 10MB)
+      expect(memoryIncrease).toBeLessThan(10 * 1024 * 1024);
+    });
+
+    it('should properly cleanup virtual scroll event listeners', () => {
+      const { unmount } = render(
+        <DenseDataTable 
+          data={createLargeDataset(1000, 'information_items')}
+          virtualizationEnabled={true}
+        />
+      );
+
+      const initialListenerCount = Object.keys((window as any).eventListeners || {}).length;
+      
+      unmount();
+      
+      const finalListenerCount = Object.keys((window as any).eventListeners || {}).length;
+      expect(finalListenerCount).toBeLessThanOrEqual(initialListenerCount);
+    });
+  });
+
+  describe('Accessibility Performance', () => {
+    it('should maintain ARIA updates within performance budget', async () => {
+      const largeDataset = createLargeDataset(1000, 'information_items');
+      
+      render(
+        <DenseDataTable
+          data={largeDataset}
+          virtualizationEnabled={true}
+          accessibilityMode="enhanced"
+        />
+      );
+
+      const table = screen.getByRole('table');
+      
+      performance.mark('aria-update-start');
+      
+      // Trigger ARIA live region update
+      fireEvent.keyDown(table, { key: 'ArrowDown' });
+      
+      await waitFor(() => {
+        expect(screen.getByRole('status')).toHaveTextContent(/row.*of.*selected/i);
+      });
+      
+      performance.mark('aria-update-end');
+      performance.measure('aria-update-duration', 'aria-update-start', 'aria-update-end');
+
+      const ariaMeasure = renderMetrics.find(m => m.name === 'aria-update-duration');
+      expect(ariaMeasure?.duration).toBeLessThan(50);
+    });
+  });
+});
+```
+
+### Information Density Optimization Testing
+
+#### Professional Interface Standards Testing
+```typescript
+// src/tests/performance/information-density.test.tsx
+describe('Information Density Performance', () => {
+  describe('3-Section Product Owner Cards', () => {
+    it('should render 50+ cards within performance target', async () => {
+      const productOwners = createLargeDataset(60, 'product_owners');
+      
+      performance.mark('cards-render-start');
+      
+      render(
+        <ProductOwnerGrid
+          productOwners={productOwners}
+          layout="three-section"
+          densityMode="professional"
+        />
+      );
+      
+      await waitFor(() => {
+        expect(screen.getAllByTestId('product-owner-card')).toHaveLength(60);
+      });
+      
+      performance.mark('cards-render-end');
+      performance.measure('cards-render-duration', 'cards-render-start', 'cards-render-end');
+
+      const renderMeasure = renderMetrics.find(m => m.name === 'cards-render-duration');
+      expect(renderMeasure?.duration).toBeLessThan(400);
+    });
+
+    it('should handle hover interactions without performance degradation', async () => {
+      const productOwners = createLargeDataset(40, 'product_owners');
+      
+      render(
+        <ProductOwnerGrid productOwners={productOwners} layout="three-section" />
+      );
+
+      const cards = screen.getAllByTestId('product-owner-card');
+      
+      // Test hover performance on multiple cards
+      for (let i = 0; i < 10; i++) {
+        performance.mark(`hover-${i}-start`);
+        
+        fireEvent.mouseEnter(cards[i]);
+        
+        await waitFor(() => {
+          expect(cards[i]).toHaveClass('hover:elevated');
+        });
+        
+        performance.mark(`hover-${i}-end`);
+        performance.measure(`hover-${i}-duration`, `hover-${i}-start`, `hover-${i}-end`);
+      }
+
+      const hoverMeasures = renderMetrics.filter(m => m.name.includes('hover-'));
+      const averageHoverTime = hoverMeasures.reduce((sum, m) => sum + m.duration, 0) / hoverMeasures.length;
+      
+      expect(averageHoverTime).toBeLessThan(10);
+    });
+  });
+
+  describe('Dense Net Worth Displays', () => {
+    it('should render complex net worth with liquidity ordering quickly', async () => {
+      const complexNetWorth = createComplexNetWorthData(150); // 150 line items
+      
+      performance.mark('networth-render-start');
+      
+      render(
+        <NetWorthDisplay
+          data={complexNetWorth}
+          liquidityOrdering="user_preferences"
+          informationDensity="professional"
+        />
+      );
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('net-worth-summary')).toBeInTheDocument();
+      });
+      
+      performance.mark('networth-render-end');
+      performance.measure('networth-render-duration', 'networth-render-start', 'networth-render-end');
+
+      const renderMeasure = renderMetrics.find(m => m.name === 'networth-render-duration');
+      expect(renderMeasure?.duration).toBeLessThan(600);
+    });
+  });
+});
+```
+
+---
+
+## 16. Migration Testing Strategy
+
+### Database Migration Validation
+
+#### Phase 2 Schema Migration Testing
+```typescript
+// src/tests/migration/database-migration.test.ts
+import { DatabaseMigrator } from '@/services/migration/DatabaseMigrator';
+import { TestDatabaseProvider } from '@/tests/utils/test-database';
+
+describe('Phase 2 Database Migration Testing', () => {
+  let migrator: DatabaseMigrator;
+  let testDb: TestDatabaseProvider;
+
+  beforeEach(async () => {
+    testDb = new TestDatabaseProvider();
+    migrator = new DatabaseMigrator(testDb);
+    await testDb.seedWithLegacyData();
+  });
+
+  afterEach(async () => {
+    await testDb.cleanup();
+  });
+
+  describe('Product Owner Data Migration', () => {
+    it('should migrate name structure from single field to multiple fields', async () => {
+      const legacyData = await testDb.query('SELECT * FROM product_owners WHERE name IS NOT NULL');
+      expect(legacyData.rows.length).toBeGreaterThan(0);
+
+      const migrationResult = await migrator.migrateProductOwnerNames();
+
+      expect(migrationResult.success).toBe(true);
+      expect(migrationResult.migratedRecords).toBe(legacyData.rows.length);
+
+      const migratedData = await testDb.query(`
+        SELECT first_name, surname, known_as 
+        FROM product_owners 
+        WHERE first_name IS NOT NULL
+      `);
+
+      expect(migratedData.rows.length).toBe(legacyData.rows.length);
+      
+      // Verify name parsing accuracy
+      migratedData.rows.forEach(row => {
+        expect(row.first_name).toBeTruthy();
+        expect(row.surname).toBeTruthy();
+        expect(row.known_as).toBeTruthy();
+      });
+    });
+
+    it('should preserve data integrity during phone number migration', async () => {
+      const preMigrationPhones = await testDb.query('SELECT COUNT(*) as count FROM contacts');
+      
+      const migrationResult = await migrator.migratePhoneNumbers();
+
+      expect(migrationResult.success).toBe(true);
+
+      const postMigrationPhones = await testDb.query(`
+        SELECT COUNT(*) as count FROM product_owner_phones
+      `);
+
+      expect(postMigrationPhones.rows[0].count).toBe(preMigrationPhones.rows[0].count);
+    });
+  });
+
+  describe('Information Items Migration', () => {
+    it('should add priority and status fields to existing items', async () => {
+      const preMigrationItems = await testDb.query('SELECT COUNT(*) as count FROM client_information_items');
+      
+      const migrationResult = await migrator.addInformationItemsMetadata();
+
+      expect(migrationResult.success).toBe(true);
+
+      const postMigrationItems = await testDb.query(`
+        SELECT priority, status FROM client_information_items 
+        WHERE priority IS NOT NULL AND status IS NOT NULL
+      `);
+
+      expect(postMigrationItems.rows.length).toBe(preMigrationItems.rows[0].count);
+    });
+  });
+
+  describe('Rollback Safety Testing', () => {
+    it('should safely rollback incomplete migrations', async () => {
+      // Simulate migration failure halfway through
+      const rollbackMigrator = new DatabaseMigrator(testDb, { 
+        simulateFailureAt: 'step_3' 
+      });
+
+      const migrationResult = await rollbackMigrator.migrateProductOwnerNames();
+
+      expect(migrationResult.success).toBe(false);
+      expect(migrationResult.rollbackApplied).toBe(true);
+
+      // Verify original data is intact
+      const originalData = await testDb.query('SELECT * FROM product_owners WHERE name IS NOT NULL');
+      expect(originalData.rows.length).toBeGreaterThan(0);
+
+      // Verify no partial migration data exists
+      const partialData = await testDb.query('SELECT * FROM product_owners WHERE first_name IS NOT NULL');
+      expect(partialData.rows.length).toBe(0);
+    });
+
+    it('should create backup snapshots before major migrations', async () => {
+      const backupResult = await migrator.createPreMigrationBackup();
+      expect(backupResult.success).toBe(true);
+
+      const migrationResult = await migrator.migrateProductOwnerNames();
+      expect(migrationResult.success).toBe(true);
+
+      // Verify backup exists and is complete
+      const backupData = await testDb.getBackupData(backupResult.backupId);
+      expect(backupData.tableCount).toBeGreaterThan(0);
+      expect(backupData.recordCount).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Business Rule Validation', () => {
+    it('should enforce ownership percentage constraints after migration', async () => {
+      await migrator.migrateOwnershipModel();
+
+      // Try to create invalid ownership data
+      const invalidOwnership = testDb.query(`
+        INSERT INTO asset_ownership (asset_id, owner_1_pct, owner_2_pct)
+        VALUES (1, 60.0, 50.0)
+      `);
+
+      await expect(invalidOwnership).rejects.toThrow(/ownership.*exceed.*100/i);
+    });
+
+    it('should maintain referential integrity during complex migrations', async () => {
+      const preConstraints = await testDb.query(`
+        SELECT COUNT(*) as count FROM information_schema.table_constraints 
+        WHERE constraint_type = 'FOREIGN KEY'
+      `);
+
+      await migrator.migrateInformationItemsStructure();
+
+      const postConstraints = await testDb.query(`
+        SELECT COUNT(*) as count FROM information_schema.table_constraints 
+        WHERE constraint_type = 'FOREIGN KEY'
+      `);
+
+      expect(postConstraints.rows[0].count).toBeGreaterThanOrEqual(preConstraints.rows[0].count);
+    });
+  });
+});
+```
+
+### Safe Deployment Validation
+
+#### Production Migration Testing
+```typescript
+// src/tests/migration/deployment-validation.test.ts
+describe('Safe Deployment Validation', () => {
+  let deploymentValidator: DeploymentValidator;
+
+  beforeEach(() => {
+    deploymentValidator = new DeploymentValidator();
+  });
+
+  describe('Pre-Deployment Checks', () => {
+    it('should validate database connectivity and permissions', async () => {
+      const connectivityCheck = await deploymentValidator.checkDatabaseConnectivity();
+      
+      expect(connectivityCheck.canConnect).toBe(true);
+      expect(connectivityCheck.canRead).toBe(true);
+      expect(connectivityCheck.canWrite).toBe(true);
+      expect(connectivityCheck.canCreateTables).toBe(true);
+    });
+
+    it('should verify required environment variables', async () => {
+      const envCheck = await deploymentValidator.checkEnvironmentVariables();
+      
+      expect(envCheck.requiredVarsPresent).toBe(true);
+      expect(envCheck.databaseUrlValid).toBe(true);
+      expect(envCheck.jwtSecretConfigured).toBe(true);
+    });
+
+    it('should validate API endpoint availability', async () => {
+      const apiCheck = await deploymentValidator.checkAPIEndpoints();
+      
+      expect(apiCheck.healthEndpointResponding).toBe(true);
+      expect(apiCheck.authEndpointResponding).toBe(true);
+      expect(apiCheck.averageResponseTime).toBeLessThan(500);
+    });
+  });
+
+  describe('Post-Deployment Verification', () => {
+    it('should verify all new Phase 2 endpoints are accessible', async () => {
+      const phase2Endpoints = [
+        '/api/actions/global/cross_client',
+        '/api/product_owners/1/phone_numbers',
+        '/api/users/1/liquidity_preferences',
+        '/api/client_groups/1/pdf_exports/client_summary',
+        '/api/product_owners/1/security_fields',
+        '/api/audit_logs/comprehensive',
+        '/api/bulk_operations/cross_client_actions'
+      ];
+
+      const endpointResults = await Promise.all(
+        phase2Endpoints.map(endpoint => 
+          deploymentValidator.checkEndpointAccessibility(endpoint)
+        )
+      );
+
+      endpointResults.forEach((result, index) => {
+        expect(result.accessible).toBe(true);
+        expect(result.responseTime).toBeLessThan(1000);
+      });
+    });
+
+    it('should validate data migration completeness', async () => {
+      const migrationStatus = await deploymentValidator.checkMigrationCompleteness();
+      
+      expect(migrationStatus.allMigrationsApplied).toBe(true);
+      expect(migrationStatus.dataIntegrityValid).toBe(true);
+      expect(migrationStatus.backupAvailable).toBe(true);
+    });
+
+    it('should perform end-to-end workflow validation', async () => {
+      const workflowTests = [
+        'create_information_item',
+        'update_product_owner_details',
+        'generate_net_worth_report',
+        'create_global_action',
+        'export_client_summary'
+      ];
+
+      const workflowResults = await Promise.all(
+        workflowTests.map(workflow => 
+          deploymentValidator.runWorkflowTest(workflow)
+        )
+      );
+
+      workflowResults.forEach(result => {
+        expect(result.success).toBe(true);
+        expect(result.executionTime).toBeLessThan(5000);
+      });
+    });
+  });
+});
+```
+
+---
+
+## 17. User Experience Testing
+
+### Professional Interface Validation
+
+#### Wealth Management Standards Testing
+```typescript
+// src/tests/ux/professional-interface.test.tsx
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { ClientDashboard } from '@/pages/ClientDashboard';
+import { NetWorthPage } from '@/pages/NetWorthPage';
+
+describe('Professional Interface UX Testing', () => {
+  describe('Information Density Standards', () => {
+    it('should display optimal information density without cognitive overload', async () => {
+      const clientData = createDenseClientData();
+      
+      render(<ClientDashboard clientData={clientData} />);
+
+      // Verify key information is visible without scrolling
+      expect(screen.getByText(clientData.name)).toBeInTheDocument();
+      expect(screen.getByText(/net worth/i)).toBeInTheDocument();
+      expect(screen.getByText(/last meeting/i)).toBeInTheDocument();
+      expect(screen.getByText(/next action/i)).toBeInTheDocument();
+
+      // Verify information hierarchy is clear
+      const primaryInfo = screen.getAllByTestId('primary-info');
+      const secondaryInfo = screen.getAllByTestId('secondary-info');
+      
+      expect(primaryInfo.length).toBeGreaterThan(0);
+      expect(secondaryInfo.length).toBeGreaterThan(primaryInfo.length);
+    });
+
+    it('should support efficient scanning patterns for wealth advisors', async () => {
+      render(<NetWorthPage clientId="123" />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('table')).toBeInTheDocument();
+      });
+
+      // Verify visual hierarchy supports F-pattern reading
+      const leftColumn = screen.getByTestId('asset-names-column');
+      const rightColumn = screen.getByTestId('values-column');
+      
+      expect(leftColumn).toBeVisible();
+      expect(rightColumn).toBeVisible();
+
+      // Verify important values are prominently displayed
+      const totalNetWorth = screen.getByTestId('total-net-worth');
+      expect(totalNetWorth).toHaveClass(/text-.*-lg|text-.*-xl/);
+    });
+
+    it('should minimize clicks required for common workflows', async () => {
+      const clientData = createDenseClientData();
+      let clickCount = 0;
+      
+      const trackClicks = () => clickCount++;
+      
+      render(
+        <div onClick={trackClicks}>
+          <ClientDashboard clientData={clientData} />
+        </div>
+      );
+
+      // Complete common workflow: View client -> Check net worth -> Add action
+      fireEvent.click(screen.getByText(/view details/i));
+      fireEvent.click(screen.getByText(/net worth/i));
+      fireEvent.click(screen.getByText(/add action/i));
+
+      expect(clickCount).toBeLessThanOrEqual(3); // Maximum 3 clicks for common workflow
+    });
+  });
+
+  describe('Professional Presentation Standards', () => {
+    it('should maintain consistent professional styling', async () => {
+      render(<ClientDashboard clientData={createDenseClientData()} />);
+
+      // Verify color scheme consistency
+      const primaryElements = screen.getAllByTestId(/primary-/);
+      primaryElements.forEach(element => {
+        expect(element).toHaveClass(/text-slate-|text-gray-|text-blue-/);
+      });
+
+      // Verify typography hierarchy
+      const headings = screen.getAllByRole('heading');
+      headings.forEach(heading => {
+        expect(heading).toHaveClass(/font-semibold|font-medium/);
+      });
+    });
+
+    it('should support client-facing presentation mode', async () => {
+      render(
+        <ClientDashboard 
+          clientData={createDenseClientData()} 
+          presentationMode="client_facing"
+        />
+      );
+
+      // Verify sensitive information is hidden
+      expect(screen.queryByTestId('advisor-notes')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('internal-tags')).not.toBeInTheDocument();
+
+      // Verify professional language is used
+      const displayText = screen.getByTestId('main-content').textContent;
+      expect(displayText).not.toMatch(/todo|fixme|hack/i);
+    });
+  });
+
+  describe('Workflow Efficiency Testing', () => {
+    it('should support keyboard navigation for power users', async () => {
+      render(<ClientDashboard clientData={createDenseClientData()} />);
+
+      const firstInteractive = screen.getAllByRole('button')[0];
+      firstInteractive.focus();
+
+      // Test tab navigation
+      fireEvent.keyDown(firstInteractive, { key: 'Tab' });
+      expect(document.activeElement).not.toBe(firstInteractive);
+
+      // Test arrow key navigation in tables
+      const table = screen.getByRole('table');
+      fireEvent.keyDown(table, { key: 'ArrowDown' });
+      
+      await waitFor(() => {
+        expect(screen.getByRole('row', { selected: true })).toBeInTheDocument();
+      });
+    });
+
+    it('should provide contextual shortcuts and quick actions', async () => {
+      render(<ClientDashboard clientData={createDenseClientData()} />);
+
+      // Test right-click context menu
+      const clientCard = screen.getByTestId('client-summary-card');
+      fireEvent.contextMenu(clientCard);
+
+      await waitFor(() => {
+        expect(screen.getByRole('menu')).toBeInTheDocument();
+      });
+
+      const quickActions = screen.getAllByRole('menuitem');
+      expect(quickActions.length).toBeGreaterThan(3);
+      expect(quickActions.some(action => action.textContent?.includes('Add Action'))).toBe(true);
+    });
+  });
+});
+```
+
+---
+
+## 18. Accessibility Testing
+
+### WCAG 2.1 AA Compliance for Dense UI
+
+#### Screen Reader Compatibility Testing
+```typescript
+// src/tests/accessibility/screen-reader.test.tsx
+import { render } from '@testing-library/react';
+import { axe, toHaveNoViolations } from 'jest-axe';
+import { DenseDataTable } from '@/components/ui/tables/DenseDataTable';
+import { ProductOwnerCard } from '@/components/ProductOwnerCard';
+
+expect.extend(toHaveNoViolations);
+
+describe('Accessibility Testing - Screen Readers', () => {
+  describe('Dense Data Tables', () => {
+    it('should have proper ARIA labels for screen readers', async () => {
+      const tableData = createLargeDataset(100, 'information_items');
+      
+      const { container } = render(
+        <DenseDataTable
+          data={tableData}
+          accessibilityMode="enhanced"
+          ariaLabel="Client information items"
+        />
+      );
+
+      const results = await axe(container);
+      expect(results).toHaveNoViolations();
+
+      // Verify specific ARIA attributes
+      const table = container.querySelector('table');
+      expect(table).toHaveAttribute('aria-label', 'Client information items');
+      expect(table).toHaveAttribute('aria-rowcount', tableData.length.toString());
+    });
+
+    it('should provide meaningful descriptions for complex data', async () => {
+      const complexData = createComplexNetWorthData(50);
+      
+      render(
+        <NetWorthDisplay
+          data={complexData}
+          accessibilityMode="enhanced"
+        />
+      );
+
+      const summaryCards = screen.getAllByRole('region');
+      summaryCards.forEach(card => {
+        expect(card).toHaveAttribute('aria-labelledby');
+        expect(card).toHaveAttribute('aria-describedby');
+      });
+    });
+
+    it('should handle virtual scrolling with screen reader announcements', async () => {
+      const largeDataset = createLargeDataset(1000, 'information_items');
+      
+      render(
+        <DenseDataTable
+          data={largeDataset}
+          virtualizationEnabled={true}
+          accessibilityMode="enhanced"
+        />
+      );
+
+      const liveRegion = screen.getByRole('status');
+      expect(liveRegion).toBeInTheDocument();
+      expect(liveRegion).toHaveAttribute('aria-live', 'polite');
+    });
+  });
+
+  describe('Product Owner Cards (3-Section Layout)', () => {
+    it('should provide comprehensive information via screen readers', async () => {
+      const productOwnerData = createProductOwnerData();
+      
+      const { container } = render(
+        <ProductOwnerCard
+          productOwner={productOwnerData}
+          layout="three-section"
+          accessibilityEnhanced={true}
+        />
+      );
+
+      const results = await axe(container);
+      expect(results).toHaveNoViolations();
+
+      // Verify each section has proper labeling
+      const sections = container.querySelectorAll('[data-section]');
+      expect(sections).toHaveLength(3);
+      
+      sections.forEach(section => {
+        expect(section).toHaveAttribute('aria-labelledby');
+        expect(section).toHaveAttribute('role', 'region');
+      });
+    });
+  });
+
+  describe('Keyboard Navigation', () => {
+    it('should support full keyboard navigation in dense interfaces', async () => {
+      render(
+        <ClientDashboard 
+          clientData={createDenseClientData()}
+          keyboardNavigationMode="enhanced"
+        />
+      );
+
+      const interactiveElements = screen.getAllByRole('button')
+        .concat(screen.getAllByRole('link'))
+        .concat(screen.getAllByRole('textbox'));
+
+      // Verify all interactive elements are focusable
+      interactiveElements.forEach(element => {
+        expect(element).not.toHaveAttribute('tabindex', '-1');
+      });
+
+      // Verify logical tab order
+      const tabOrder = interactiveElements.map(el => el.tabIndex);
+      expect(tabOrder.every(index => index >= 0)).toBe(true);
+    });
+
+    it('should provide skip links for dense content areas', async () => {
+      render(<ClientDashboard clientData={createDenseClientData()} />);
+
+      const skipLink = screen.getByRole('link', { name: /skip to main content/i });
+      expect(skipLink).toBeInTheDocument();
+      expect(skipLink).toHaveAttribute('href', '#main-content');
+    });
+  });
+
+  describe('Color and Contrast Compliance', () => {
+    it('should meet WCAG AA contrast requirements for all text', async () => {
+      const { container } = render(
+        <DenseDataTable
+          data={createLargeDataset(50, 'information_items')}
+          theme="professional"
+        />
+      );
+
+      const results = await axe(container, {
+        rules: {
+          'color-contrast': { enabled: true }
+        }
+      });
+
+      expect(results).toHaveNoViolations();
+    });
+
+    it('should not rely solely on color for information', async () => {
+      render(
+        <NetWorthDisplay
+          data={createComplexNetWorthData(30)}
+          colorBlindnessMode="protanopia"
+        />
+      );
+
+      // Verify status indicators use more than just color
+      const statusIndicators = screen.getAllByTestId('status-indicator');
+      statusIndicators.forEach(indicator => {
+        // Should have text, icon, or pattern in addition to color
+        expect(
+          indicator.querySelector('svg') || 
+          indicator.textContent?.trim() ||
+          indicator.classList.toString().includes('pattern-')
+        ).toBeTruthy();
+      });
+    });
+  });
+});
+```
+
+### Focus Management in Complex UIs
+
+#### Focus Trap and Management Testing
+```typescript
+// src/tests/accessibility/focus-management.test.tsx
+describe('Focus Management Testing', () => {
+  describe('Modal and Dialog Focus Management', () => {
+    it('should trap focus within modals containing dense data', async () => {
+      render(
+        <EditInformationItemModal
+          item={createInformationItem()}
+          isOpen={true}
+          onClose={jest.fn()}
+        />
+      );
+
+      const modal = screen.getByRole('dialog');
+      const firstFocusable = within(modal).getAllByRole('textbox')[0];
+      const lastFocusable = within(modal).getByRole('button', { name: /save/i });
+
+      firstFocusable.focus();
+      expect(document.activeElement).toBe(firstFocusable);
+
+      // Tab forward to last element
+      fireEvent.keyDown(lastFocusable, { key: 'Tab' });
+      expect(document.activeElement).toBe(firstFocusable);
+
+      // Shift-tab backward from first element
+      fireEvent.keyDown(firstFocusable, { key: 'Tab', shiftKey: true });
+      expect(document.activeElement).toBe(lastFocusable);
+    });
+
+    it('should restore focus after modal closure', async () => {
+      const originalButton = screen.getByRole('button', { name: /edit item/i });
+      
+      fireEvent.click(originalButton);
+      
+      const modal = screen.getByRole('dialog');
+      const closeButton = within(modal).getByRole('button', { name: /close/i });
+      
+      fireEvent.click(closeButton);
+      
+      await waitFor(() => {
+        expect(document.activeElement).toBe(originalButton);
+      });
+    });
+  });
+
+  describe('Dense Table Focus Management', () => {
+    it('should maintain focus position during virtual scrolling', async () => {
+      const largeDataset = createLargeDataset(1000, 'information_items');
+      
+      render(
+        <DenseDataTable
+          data={largeDataset}
+          virtualizationEnabled={true}
+          keyboardNavigationEnabled={true}
+        />
+      );
+
+      const table = screen.getByRole('table');
+      const firstRow = screen.getAllByRole('row')[1]; // Skip header
+      
+      firstRow.focus();
+      expect(document.activeElement).toBe(firstRow);
+
+      // Scroll down significantly
+      fireEvent.scroll(table, { target: { scrollTop: 5000 } });
+
+      await waitFor(() => {
+        expect(document.activeElement).toBe(firstRow);
+      });
+    });
+  });
+});
+```
+
+---
+
+## 19. Automated Testing Pipeline Integration
 
 ### CI/CD Pipeline Configuration
 
@@ -4341,6 +5727,1846 @@ export class TestEnvironmentManager {
     // Implementation to find available port
     return 8000 + Math.floor(Math.random() * 1000);
   }
+}
+```
+
+---
+
+## 20. Critical Testing Coverage Enhancements
+
+### PDF Export API Testing
+
+#### Comprehensive PDF Generation Testing
+The PDF export functionality requires extensive testing to ensure reliable document generation for professional financial reporting.
+
+```typescript
+// src/tests/api/pdf-export.test.ts
+describe('PDF Export API Testing', () => {
+  describe('Async Job Processing Tests', () => {
+    it('should create PDF export job and track progress', async () => {
+      const clientGroup = await dataFactory.createClientGroup();
+      const user = await dataFactory.createUser();
+      
+      // Initiate PDF export
+      const exportResponse = await apiClient.post(
+        `/api/client_groups/${clientGroup.id}/pdf_exports/client_summary`,
+        {
+          export_type: 'comprehensive_summary',
+          include_net_worth: true,
+          include_ownership_breakdown: true,
+          user_id: user.id
+        }
+      );
+      
+      expect(exportResponse.status).toBe(202); // Accepted for async processing
+      expect(exportResponse.data.job_id).toBeDefined();
+      expect(exportResponse.data.status).toBe('queued');
+      expect(exportResponse.data.estimated_completion).toBeDefined();
+    });
+
+    it('should handle queue management for concurrent exports', async () => {
+      const clientGroups = await dataFactory.createMultipleClientGroups(5);
+      const user = await dataFactory.createUser();
+      
+      // Submit multiple PDF export jobs simultaneously
+      const exportPromises = clientGroups.map(group =>
+        apiClient.post(`/api/client_groups/${group.id}/pdf_exports/client_summary`, {
+          export_type: 'comprehensive_summary',
+          user_id: user.id
+        })
+      );
+      
+      const responses = await Promise.all(exportPromises);
+      
+      // Verify queue management
+      responses.forEach((response, index) => {
+        expect(response.status).toBe(202);
+        expect(response.data.queue_position).toBeDefined();
+        expect(response.data.queue_position).toBeGreaterThanOrEqual(index);
+      });
+    });
+
+    it('should provide real-time job progress updates', async () => {
+      const clientGroup = await dataFactory.createLargeClientGroup(); // Complex data
+      const user = await dataFactory.createUser();
+      
+      const exportResponse = await apiClient.post(
+        `/api/client_groups/${clientGroup.id}/pdf_exports/client_summary`,
+        { export_type: 'comprehensive_summary', user_id: user.id }
+      );
+      
+      const jobId = exportResponse.data.job_id;
+      
+      // Poll for progress updates
+      let status = 'queued';
+      const maxPolls = 20;
+      let polls = 0;
+      
+      while (status !== 'completed' && polls < maxPolls) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const statusResponse = await apiClient.get(`/api/pdf_exports/status/${jobId}`);
+        status = statusResponse.data.status;
+        
+        expect(['queued', 'processing', 'completed', 'failed']).toContain(status);
+        
+        if (status === 'processing') {
+          expect(statusResponse.data.progress_percentage).toBeGreaterThan(0);
+          expect(statusResponse.data.progress_percentage).toBeLessThanOrEqual(100);
+          expect(statusResponse.data.current_stage).toBeDefined();
+        }
+        
+        polls++;
+      }
+      
+      expect(status).toBe('completed');
+    });
+  });
+
+  describe('File Generation Validation', () => {
+    it('should generate valid PDF with correct content structure', async () => {
+      const clientGroup = await dataFactory.createClientGroupWithComplexData();
+      const user = await dataFactory.createUser();
+      
+      const exportResponse = await apiClient.post(
+        `/api/client_groups/${clientGroup.id}/pdf_exports/client_summary`,
+        {
+          export_type: 'comprehensive_summary',
+          include_net_worth: true,
+          include_ownership_breakdown: true,
+          user_id: user.id
+        }
+      );
+      
+      const jobId = exportResponse.data.job_id;
+      
+      // Wait for completion
+      await waitForJobCompletion(jobId);
+      
+      // Download and validate PDF
+      const downloadResponse = await apiClient.get(
+        `/api/pdf_exports/download/${jobId}`,
+        { responseType: 'arraybuffer' }
+      );
+      
+      expect(downloadResponse.headers['content-type']).toBe('application/pdf');
+      expect(downloadResponse.data.byteLength).toBeGreaterThan(10000); // Minimum viable PDF size
+      
+      // Validate PDF structure using PDF parser
+      const pdfBuffer = Buffer.from(downloadResponse.data);
+      const pdfData = await parsePdf(pdfBuffer);
+      
+      // Verify essential content sections
+      expect(pdfData.text).toContain(clientGroup.name);
+      expect(pdfData.text).toContain('Net Worth Summary');
+      expect(pdfData.text).toContain('Ownership Breakdown');
+      expect(pdfData.text).toContain('Generated on');
+      
+      // Verify professional formatting
+      expect(pdfData.pages.length).toBeGreaterThan(0);
+      expect(pdfData.metadata.Title).toBe(`${clientGroup.name} - Financial Summary`);
+      expect(pdfData.metadata.Subject).toContain('Financial Report');
+    });
+
+    it('should validate content accuracy against source data', async () => {
+      const clientGroup = await dataFactory.createClientGroupWithKnownValues();
+      const user = await dataFactory.createUser();
+      
+      // Get source data for comparison
+      const sourceData = await apiClient.get(`/api/client_groups/${clientGroup.id}/complete_summary`);
+      
+      const exportResponse = await apiClient.post(
+        `/api/client_groups/${clientGroup.id}/pdf_exports/client_summary`,
+        { export_type: 'comprehensive_summary', user_id: user.id }
+      );
+      
+      const jobId = exportResponse.data.job_id;
+      await waitForJobCompletion(jobId);
+      
+      const downloadResponse = await apiClient.get(
+        `/api/pdf_exports/download/${jobId}`,
+        { responseType: 'arraybuffer' }
+      );
+      
+      const pdfData = await parsePdf(Buffer.from(downloadResponse.data));
+      
+      // Validate financial data accuracy
+      expect(pdfData.text).toContain(formatMoney(sourceData.data.total_net_worth));
+      expect(pdfData.text).toContain(`${sourceData.data.total_ownership_percentage}%`);
+      
+      // Validate all product owners are included
+      sourceData.data.product_owners.forEach(owner => {
+        expect(pdfData.text).toContain(owner.name);
+        expect(pdfData.text).toContain(formatMoney(owner.net_worth));
+      });
+    });
+  });
+
+  describe('Error Handling and Timeout Scenarios', () => {
+    it('should handle large export timeouts gracefully', async () => {
+      const clientGroup = await dataFactory.createExtraLargeClientGroup(); // >1000 assets
+      const user = await dataFactory.createUser();
+      
+      const exportResponse = await apiClient.post(
+        `/api/client_groups/${clientGroup.id}/pdf_exports/client_summary`,
+        {
+          export_type: 'comprehensive_summary',
+          timeout_seconds: 30 // Short timeout for testing
+        }
+      );
+      
+      const jobId = exportResponse.data.job_id;
+      
+      // Wait for timeout scenario
+      await new Promise(resolve => setTimeout(resolve, 35000));
+      
+      const statusResponse = await apiClient.get(`/api/pdf_exports/status/${jobId}`);
+      
+      expect(statusResponse.data.status).toBe('failed');
+      expect(statusResponse.data.error_message).toContain('timeout');
+      expect(statusResponse.data.retry_available).toBe(true);
+      expect(statusResponse.data.suggested_timeout).toBeGreaterThan(30);
+    });
+
+    it('should provide meaningful error messages for data issues', async () => {
+      const clientGroup = await dataFactory.createClientGroupWithCorruptData();
+      const user = await dataFactory.createUser();
+      
+      const exportResponse = await apiClient.post(
+        `/api/client_groups/${clientGroup.id}/pdf_exports/client_summary`,
+        { export_type: 'comprehensive_summary', user_id: user.id }
+      );
+      
+      const jobId = exportResponse.data.job_id;
+      await waitForJobCompletion(jobId);
+      
+      const statusResponse = await apiClient.get(`/api/pdf_exports/status/${jobId}`);
+      
+      expect(statusResponse.data.status).toBe('failed');
+      expect(statusResponse.data.error_message).toBeDefined();
+      expect(statusResponse.data.error_code).toBeDefined();
+      expect(statusResponse.data.data_issues).toBeDefined();
+      expect(statusResponse.data.suggested_resolution).toBeDefined();
+    });
+  });
+
+  describe('Rate Limiting and Resource Management', () => {
+    it('should enforce rate limits for resource-intensive operations', async () => {
+      const user = await dataFactory.createUser();
+      const clientGroups = await dataFactory.createMultipleClientGroups(10);
+      
+      // Attempt to submit more exports than allowed per user
+      const exportPromises = clientGroups.map(group =>
+        apiClient.post(`/api/client_groups/${group.id}/pdf_exports/client_summary`, {
+          export_type: 'comprehensive_summary',
+          user_id: user.id
+        })
+      );
+      
+      const responses = await Promise.allSettled(exportPromises);
+      
+      // Verify rate limiting kicks in
+      const successfulRequests = responses.filter(r => r.status === 'fulfilled').length;
+      const rateLimitedRequests = responses.filter(r => 
+        r.status === 'rejected' || 
+        (r.status === 'fulfilled' && r.value.status === 429)
+      ).length;
+      
+      expect(successfulRequests).toBeLessThanOrEqual(5); // Max 5 concurrent per user
+      expect(rateLimitedRequests).toBeGreaterThan(0);
+    });
+
+    it('should manage system resources during peak load', async () => {
+      const users = await dataFactory.createMultipleUsers(5);
+      const exportRequests = [];
+      
+      // Create export requests from multiple users
+      for (const user of users) {
+        const clientGroup = await dataFactory.createLargeClientGroup();
+        exportRequests.push(
+          apiClient.post(`/api/client_groups/${clientGroup.id}/pdf_exports/client_summary`, {
+            export_type: 'comprehensive_summary',
+            user_id: user.id
+          })
+        );
+      }
+      
+      const responses = await Promise.all(exportRequests);
+      
+      // Verify system handles load appropriately
+      responses.forEach((response, index) => {
+        expect(response.status).toBe(202);
+        expect(response.data.estimated_completion).toBeDefined();
+        
+        // Later requests should have longer estimated times
+        if (index > 0) {
+          const previousEstimate = responses[index - 1].data.estimated_completion;
+          expect(response.data.estimated_completion).toBeGreaterThanOrEqual(previousEstimate);
+        }
+      });
+    });
+  });
+
+  describe('Professional Branding and Format Validation', () => {
+    it('should apply consistent professional branding', async () => {
+      const clientGroup = await dataFactory.createClientGroup();
+      const user = await dataFactory.createUser();
+      
+      const exportResponse = await apiClient.post(
+        `/api/client_groups/${clientGroup.id}/pdf_exports/client_summary`,
+        { export_type: 'comprehensive_summary', user_id: user.id }
+      );
+      
+      const jobId = exportResponse.data.job_id;
+      await waitForJobCompletion(jobId);
+      
+      const downloadResponse = await apiClient.get(
+        `/api/pdf_exports/download/${jobId}`,
+        { responseType: 'arraybuffer' }
+      );
+      
+      const pdfData = await parsePdf(Buffer.from(downloadResponse.data));
+      
+      // Verify professional branding elements
+      expect(pdfData.text).toContain('Kingston\'s Portal');
+      expect(pdfData.metadata.Creator).toBe('Kingston\'s Portal Financial System');
+      
+      // Verify consistent formatting
+      expect(pdfData.pages.length).toBeGreaterThan(0);
+      pdfData.pages.forEach(page => {
+        expect(page.width).toBe(612); // Letter size width
+        expect(page.height).toBe(792); // Letter size height
+      });
+      
+      // Verify footer and header consistency
+      expect(pdfData.text).toMatch(/Page \d+ of \d+/);
+      expect(pdfData.text).toContain('Generated on');
+      expect(pdfData.text).toContain('Confidential Financial Information');
+    });
+
+    it('should maintain format consistency across different export types', async () => {
+      const clientGroup = await dataFactory.createClientGroup();
+      const user = await dataFactory.createUser();
+      
+      const exportTypes = ['comprehensive_summary', 'net_worth_only', 'ownership_only'];
+      const pdfResults = [];
+      
+      for (const exportType of exportTypes) {
+        const exportResponse = await apiClient.post(
+          `/api/client_groups/${clientGroup.id}/pdf_exports/client_summary`,
+          { export_type: exportType, user_id: user.id }
+        );
+        
+        const jobId = exportResponse.data.job_id;
+        await waitForJobCompletion(jobId);
+        
+        const downloadResponse = await apiClient.get(
+          `/api/pdf_exports/download/${jobId}`,
+          { responseType: 'arraybuffer' }
+        );
+        
+        const pdfData = await parsePdf(Buffer.from(downloadResponse.data));
+        pdfResults.push({ type: exportType, data: pdfData });
+      }
+      
+      // Verify consistent branding across all types
+      pdfResults.forEach(result => {
+        expect(result.data.metadata.Creator).toBe('Kingston\'s Portal Financial System');
+        expect(result.data.text).toContain('Kingston\'s Portal');
+        expect(result.data.text).toContain('Confidential Financial Information');
+        
+        // Verify consistent page formatting
+        result.data.pages.forEach(page => {
+          expect(page.width).toBe(612);
+          expect(page.height).toBe(792);
+        });
+      });
+    });
+  });
+});
+
+// Helper functions for PDF testing
+async function waitForJobCompletion(jobId: string, maxWaitTime: number = 60000): Promise<void> {
+  const startTime = Date.now();
+  
+  while (Date.now() - startTime < maxWaitTime) {
+    const statusResponse = await apiClient.get(`/api/pdf_exports/status/${jobId}`);
+    const status = statusResponse.data.status;
+    
+    if (status === 'completed') return;
+    if (status === 'failed') throw new Error(`PDF export failed: ${statusResponse.data.error_message}`);
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+  
+  throw new Error(`PDF export timeout after ${maxWaitTime}ms`);
+}
+
+async function parsePdf(buffer: Buffer): Promise<any> {
+  // Implementation using pdf-parse or similar library
+  // Returns structured PDF data for validation
+}
+```
+
+### Enhanced Net Worth API Testing
+
+#### Comprehensive Net Worth Display Testing
+The Net Worth API requires extensive testing to ensure accurate liquidity ordering, user preference handling, and performance with large asset portfolios.
+
+```typescript
+// src/tests/api/enhanced-networth.test.ts
+describe('Enhanced Net Worth API Testing', () => {
+  describe('Liquidity Ordering Validation', () => {
+    it('should correctly order assets by liquidity across different asset types', async () => {
+      const clientGroup = await dataFactory.createClientGroupWithDiverseAssets();
+      
+      // Create assets with known liquidity rankings
+      const assets = [
+        { type: 'cash', name: 'Checking Account', amount: 50000, liquidity_rank: 1 },
+        { type: 'public_equity', name: 'Apple Stock', amount: 100000, liquidity_rank: 2 },
+        { type: 'mutual_fund', name: 'Vanguard 500', amount: 200000, liquidity_rank: 3 },
+        { type: 'bond', name: 'Treasury Bond', amount: 150000, liquidity_rank: 4 },
+        { type: 'real_estate', name: 'Primary Residence', amount: 500000, liquidity_rank: 5 },
+        { type: 'private_equity', name: 'PE Investment', amount: 300000, liquidity_rank: 6 }
+      ];
+      
+      await dataFactory.createAssetsForClientGroup(clientGroup.id, assets);
+      
+      const response = await apiClient.get(
+        `/api/client_groups/${clientGroup.id}/networth/liquidity_ordered`
+      );
+      
+      expect(response.status).toBe(200);
+      expect(response.data.assets).toHaveLength(6);
+      
+      // Verify liquidity ordering
+      for (let i = 0; i < response.data.assets.length - 1; i++) {
+        const currentAsset = response.data.assets[i];
+        const nextAsset = response.data.assets[i + 1];
+        
+        expect(currentAsset.liquidity_rank).toBeLessThanOrEqual(nextAsset.liquidity_rank);
+      }
+      
+      // Verify specific ordering
+      expect(response.data.assets[0].type).toBe('cash');
+      expect(response.data.assets[1].type).toBe('public_equity');
+      expect(response.data.assets[response.data.assets.length - 1].type).toBe('private_equity');
+    });
+
+    it('should handle complex liquidity scenarios with sub-asset types', async () => {
+      const clientGroup = await dataFactory.createClientGroup();
+      
+      // Create complex asset structure
+      const complexAssets = [
+        { type: 'public_equity', subtype: 'blue_chip', liquidity_rank: 2 },
+        { type: 'public_equity', subtype: 'small_cap', liquidity_rank: 3 },
+        { type: 'real_estate', subtype: 'commercial', liquidity_rank: 8 },
+        { type: 'real_estate', subtype: 'residential', liquidity_rank: 6 },
+        { type: 'alternative', subtype: 'hedge_fund', liquidity_rank: 7 },
+        { type: 'alternative', subtype: 'commodity', liquidity_rank: 4 }
+      ];
+      
+      await dataFactory.createComplexAssetsForClientGroup(clientGroup.id, complexAssets);
+      
+      const response = await apiClient.get(
+        `/api/client_groups/${clientGroup.id}/networth/liquidity_ordered`,
+        { params: { include_subtypes: true } }
+      );
+      
+      expect(response.status).toBe(200);
+      
+      // Verify sub-type liquidity ordering
+      const publicEquityAssets = response.data.assets.filter(a => a.type === 'public_equity');
+      expect(publicEquityAssets[0].subtype).toBe('blue_chip');
+      expect(publicEquityAssets[1].subtype).toBe('small_cap');
+      
+      const realEstateAssets = response.data.assets.filter(a => a.type === 'real_estate');
+      expect(realEstateAssets[0].subtype).toBe('residential');
+      expect(realEstateAssets[1].subtype).toBe('commercial');
+    });
+  });
+
+  describe('User Preference Customization Testing', () => {
+    it('should apply user-specific liquidity preferences with ranking overrides', async () => {
+      const user = await dataFactory.createUser();
+      const clientGroup = await dataFactory.createClientGroupWithDiverseAssets();
+      
+      // Set custom user preferences
+      const customPreferences = {
+        real_estate_liquidity_rank: 2, // Higher than default
+        private_equity_liquidity_rank: 3, // Higher than default
+        cash_liquidity_rank: 1, // Keep default
+        public_equity_liquidity_rank: 4, // Lower than default
+        custom_rankings: {
+          'Treasury Bond': 5,
+          'Municipal Bond': 6
+        }
+      };
+      
+      await apiClient.put(`/api/users/${user.id}/liquidity_preferences`, customPreferences);
+      
+      const response = await apiClient.get(
+        `/api/client_groups/${clientGroup.id}/networth/liquidity_ordered`,
+        { params: { user_id: user.id, apply_user_preferences: true } }
+      );
+      
+      expect(response.status).toBe(200);
+      
+      // Verify custom ranking applied
+      const assetsByType = response.data.assets.reduce((acc, asset) => {
+        if (!acc[asset.type]) acc[asset.type] = [];
+        acc[asset.type].push(asset);
+        return acc;
+      }, {});
+      
+      // Real estate should appear earlier than default
+      const realEstateIndex = response.data.assets.findIndex(a => a.type === 'real_estate');
+      const publicEquityIndex = response.data.assets.findIndex(a => a.type === 'public_equity');
+      
+      expect(realEstateIndex).toBeLessThan(publicEquityIndex);
+    });
+
+    it('should handle preference conflicts and provide resolution logic', async () => {
+      const user = await dataFactory.createUser();
+      const clientGroup = await dataFactory.createClientGroup();
+      
+      // Create conflicting preferences
+      const conflictingPreferences = {
+        real_estate_liquidity_rank: 1, // Same as cash
+        cash_liquidity_rank: 1, // Same as real estate
+        public_equity_liquidity_rank: 2,
+        resolution_strategy: 'alphabetical_tiebreaker'
+      };
+      
+      await apiClient.put(`/api/users/${user.id}/liquidity_preferences`, conflictingPreferences);
+      
+      const response = await apiClient.get(
+        `/api/client_groups/${clientGroup.id}/networth/liquidity_ordered`,
+        { params: { user_id: user.id, apply_user_preferences: true } }
+      );
+      
+      expect(response.status).toBe(200);
+      expect(response.data.preference_conflicts).toBeDefined();
+      expect(response.data.resolution_applied).toBe('alphabetical_tiebreaker');
+      
+      // Verify conflict resolution applied
+      const rank1Assets = response.data.assets.filter(a => a.applied_liquidity_rank === 1);
+      if (rank1Assets.length > 1) {
+        for (let i = 0; i < rank1Assets.length - 1; i++) {
+          expect(rank1Assets[i].type.localeCompare(rank1Assets[i + 1].type)).toBeLessThan(0);
+        }
+      }
+    });
+
+    it('should save and recall user preferences across sessions', async () => {
+      const user = await dataFactory.createUser();
+      const clientGroup = await dataFactory.createClientGroup();
+      
+      // Set preferences in first session
+      const preferences = {
+        real_estate_liquidity_rank: 3,
+        preferred_view_mode: 'grouped_by_liquidity',
+        show_percentages: true,
+        currency_format: 'compact'
+      };
+      
+      await apiClient.put(`/api/users/${user.id}/liquidity_preferences`, preferences);
+      
+      // Simulate new session - get preferences
+      const preferencesResponse = await apiClient.get(`/api/users/${user.id}/liquidity_preferences`);
+      
+      expect(preferencesResponse.status).toBe(200);
+      expect(preferencesResponse.data).toMatchObject(preferences);
+      
+      // Apply preferences in net worth call
+      const netWorthResponse = await apiClient.get(
+        `/api/client_groups/${clientGroup.id}/networth/liquidity_ordered`,
+        { params: { user_id: user.id, apply_user_preferences: true } }
+      );
+      
+      expect(netWorthResponse.data.applied_preferences).toMatchObject(preferences);
+    });
+  });
+
+  describe('Asset Type vs Liquidity View Toggle Testing', () => {
+    it('should switch between asset type and liquidity ordering views', async () => {
+      const clientGroup = await dataFactory.createClientGroupWithDiverseAssets();
+      
+      // Get asset type view
+      const assetTypeResponse = await apiClient.get(
+        `/api/client_groups/${clientGroup.id}/networth/by_asset_type`
+      );
+      
+      // Get liquidity ordered view
+      const liquidityResponse = await apiClient.get(
+        `/api/client_groups/${clientGroup.id}/networth/liquidity_ordered`
+      );
+      
+      expect(assetTypeResponse.status).toBe(200);
+      expect(liquidityResponse.status).toBe(200);
+      
+      // Same assets, different ordering
+      expect(assetTypeResponse.data.assets.length).toBe(liquidityResponse.data.assets.length);
+      
+      // Verify asset type grouping
+      const assetTypeGroups = assetTypeResponse.data.grouped_by_type;
+      expect(assetTypeGroups.cash).toBeDefined();
+      expect(assetTypeGroups.public_equity).toBeDefined();
+      expect(assetTypeGroups.real_estate).toBeDefined();
+      
+      // Verify liquidity ordering (different from asset type order)
+      const assetTypeOrder = assetTypeResponse.data.assets.map(a => a.id);
+      const liquidityOrder = liquidityResponse.data.assets.map(a => a.id);
+      expect(assetTypeOrder).not.toEqual(liquidityOrder);
+    });
+
+    it('should maintain consistent totals across different view modes', async () => {
+      const clientGroup = await dataFactory.createClientGroupWithKnownTotals();
+      
+      const views = [
+        'by_asset_type',
+        'liquidity_ordered',
+        'by_value_descending',
+        'by_ownership_percentage'
+      ];
+      
+      const responses = await Promise.all(
+        views.map(view => 
+          apiClient.get(`/api/client_groups/${clientGroup.id}/networth/${view}`)
+        )
+      );
+      
+      // All views should report same totals
+      const totalNetWorths = responses.map(r => r.data.total_net_worth);
+      const totalAssetCounts = responses.map(r => r.data.assets.length);
+      
+      // Verify consistency
+      expect(new Set(totalNetWorths).size).toBe(1); // All totals should be identical
+      expect(new Set(totalAssetCounts).size).toBe(1); // All asset counts should be identical
+      
+      // Verify specific calculations
+      const expectedTotal = responses[0].data.total_net_worth;
+      expect(expectedTotal).toBeGreaterThan(0);
+      
+      responses.forEach(response => {
+        const calculatedTotal = response.data.assets.reduce((sum, asset) => sum + asset.value, 0);
+        expect(calculatedTotal).toBe(expectedTotal);
+      });
+    });
+  });
+
+  describe('Performance Testing for Large Asset Portfolios', () => {
+    it('should handle 1000+ asset portfolios within performance targets', async () => {
+      const clientGroup = await dataFactory.createClientGroupWithLargePortfolio(1000);
+      
+      const startTime = performance.now();
+      
+      const response = await apiClient.get(
+        `/api/client_groups/${clientGroup.id}/networth/liquidity_ordered`,
+        { params: { include_detailed_breakdown: true } }
+      );
+      
+      const endTime = performance.now();
+      const responseTime = endTime - startTime;
+      
+      expect(response.status).toBe(200);
+      expect(response.data.assets.length).toBe(1000);
+      expect(responseTime).toBeLessThan(2000); // <2s for 1000 assets
+      
+      // Verify pagination support for large datasets
+      expect(response.data.pagination).toBeDefined();
+      expect(response.data.pagination.total_pages).toBeGreaterThan(1);
+      expect(response.data.pagination.current_page).toBe(1);
+      expect(response.data.pagination.per_page).toBeLessThanOrEqual(100);
+    });
+
+    it('should efficiently handle complex asset hierarchies', async () => {
+      const clientGroup = await dataFactory.createClientGroupWithComplexHierarchy();
+      
+      const startTime = performance.now();
+      
+      const response = await apiClient.get(
+        `/api/client_groups/${clientGroup.id}/networth/hierarchical_view`,
+        { 
+          params: { 
+            include_sub_assets: true,
+            max_depth: 5,
+            include_performance_metrics: true
+          }
+        }
+      );
+      
+      const endTime = performance.now();
+      const responseTime = endTime - startTime;
+      
+      expect(response.status).toBe(200);
+      expect(responseTime).toBeLessThan(3000); // <3s for complex hierarchies
+      
+      // Verify hierarchical structure maintained
+      expect(response.data.hierarchy_levels).toBeGreaterThan(0);
+      expect(response.data.assets.some(a => a.sub_assets && a.sub_assets.length > 0)).toBe(true);
+    });
+
+    it('should implement efficient caching for repeated requests', async () => {
+      const clientGroup = await dataFactory.createClientGroupWithLargePortfolio(500);
+      
+      // First request (cache miss)
+      const startTime1 = performance.now();
+      const response1 = await apiClient.get(
+        `/api/client_groups/${clientGroup.id}/networth/liquidity_ordered`
+      );
+      const endTime1 = performance.now();
+      const firstRequestTime = endTime1 - startTime1;
+      
+      // Second request (cache hit)
+      const startTime2 = performance.now();
+      const response2 = await apiClient.get(
+        `/api/client_groups/${clientGroup.id}/networth/liquidity_ordered`
+      );
+      const endTime2 = performance.now();
+      const secondRequestTime = endTime2 - startTime2;
+      
+      expect(response1.status).toBe(200);
+      expect(response2.status).toBe(200);
+      
+      // Second request should be significantly faster
+      expect(secondRequestTime).toBeLessThan(firstRequestTime * 0.3); // >70% improvement
+      expect(secondRequestTime).toBeLessThan(200); // <200ms for cached response
+      
+      // Verify cache headers
+      expect(response2.headers['x-cache-status']).toBe('hit');
+      expect(response2.headers['x-cache-key']).toBeDefined();
+    });
+  });
+
+  describe('Cross-Client Net Worth Comparison Validation', () => {
+    it('should compare net worth across multiple client groups', async () => {
+      const clientGroups = await dataFactory.createMultipleClientGroupsWithKnownValues(3);
+      const user = await dataFactory.createUser();
+      
+      const comparisonResponse = await apiClient.post('/api/networth/cross_client_comparison', {
+        client_group_ids: clientGroups.map(cg => cg.id),
+        user_id: user.id,
+        comparison_type: 'side_by_side',
+        normalize_by: 'total_value'
+      });
+      
+      expect(comparisonResponse.status).toBe(200);
+      expect(comparisonResponse.data.client_groups).toHaveLength(3);
+      
+      // Verify comparison data structure
+      comparisonResponse.data.client_groups.forEach(clientData => {
+        expect(clientData.client_group_id).toBeDefined();
+        expect(clientData.total_net_worth).toBeDefined();
+        expect(clientData.asset_breakdown).toBeDefined();
+        expect(clientData.liquidity_score).toBeDefined();
+      });
+      
+      // Verify comparative metrics
+      expect(comparisonResponse.data.comparison_metrics).toBeDefined();
+      expect(comparisonResponse.data.comparison_metrics.highest_net_worth).toBeDefined();
+      expect(comparisonResponse.data.comparison_metrics.most_liquid_portfolio).toBeDefined();
+      expect(comparisonResponse.data.comparison_metrics.asset_type_distribution).toBeDefined();
+    });
+
+    it('should handle cross-client performance benchmarking', async () => {
+      const clientGroups = await dataFactory.createClientGroupsWithPerformanceHistory(5);
+      
+      const benchmarkResponse = await apiClient.post('/api/networth/performance_benchmark', {
+        client_group_ids: clientGroups.map(cg => cg.id),
+        time_period: '12_months',
+        benchmark_type: 'peer_comparison'
+      });
+      
+      expect(benchmarkResponse.status).toBe(200);
+      
+      // Verify performance benchmarking
+      expect(benchmarkResponse.data.performance_metrics).toBeDefined();
+      expect(benchmarkResponse.data.peer_percentiles).toBeDefined();
+      expect(benchmarkResponse.data.top_performers).toBeDefined();
+      expect(benchmarkResponse.data.underperformers).toBeDefined();
+      
+      // Verify statistical significance
+      benchmarkResponse.data.client_groups.forEach(clientData => {
+        expect(clientData.performance_percentile).toBeGreaterThanOrEqual(0);
+        expect(clientData.performance_percentile).toBeLessThanOrEqual(100);
+        expect(clientData.statistical_significance).toBeDefined();
+      });
+    });
+  });
+});
+```
+
+### API Response Time Validation Testing
+
+#### Performance Regression Testing Framework
+Comprehensive performance monitoring to ensure all new endpoints meet response time requirements and detect performance degradation.
+
+```typescript
+// src/tests/performance/api-response-time.test.ts
+describe('API Response Time Validation Testing', () => {
+  describe('Response Time Validation for New Endpoints', () => {
+    it('should validate <500ms response time for all Phase 2 endpoints', async () => {
+      const testEndpoints = [
+        { path: '/api/global_actions/cross_client', method: 'GET' },
+        { path: '/api/global_actions', method: 'POST' },
+        { path: '/api/client_groups/1/networth/liquidity_ordered', method: 'GET' },
+        { path: '/api/users/1/liquidity_preferences', method: 'GET' },
+        { path: '/api/product_owners/1/phone_numbers', method: 'GET' },
+        { path: '/api/audit_logs/comprehensive', method: 'GET' },
+        { path: '/api/bulk_operations/cross_client_actions', method: 'POST' }
+      ];
+      
+      const performanceResults = [];
+      
+      for (const endpoint of testEndpoints) {
+        const startTime = performance.now();
+        
+        let response;
+        if (endpoint.method === 'GET') {
+          response = await apiClient.get(endpoint.path);
+        } else {
+          response = await apiClient.post(endpoint.path, getTestDataForEndpoint(endpoint.path));
+        }
+        
+        const endTime = performance.now();
+        const responseTime = endTime - startTime;
+        
+        performanceResults.push({
+          endpoint: endpoint.path,
+          method: endpoint.method,
+          responseTime,
+          status: response.status
+        });
+        
+        expect(response.status).toBeLessThan(400); // Successful response
+        expect(responseTime).toBeLessThan(500); // <500ms requirement
+      }
+      
+      // Log performance results for monitoring
+      console.log('API Response Time Results:', performanceResults);
+      
+      // Calculate average response time
+      const averageResponseTime = performanceResults.reduce(
+        (sum, result) => sum + result.responseTime, 0
+      ) / performanceResults.length;
+      
+      expect(averageResponseTime).toBeLessThan(300); // Average should be well under limit
+    });
+
+    it('should maintain response times under load conditions', async () => {
+      const concurrentUsers = 10;
+      const requestsPerUser = 5;
+      
+      const performancePromises = [];
+      
+      for (let user = 0; user < concurrentUsers; user++) {
+        for (let request = 0; request < requestsPerUser; request++) {
+          performancePromises.push(
+            measureEndpointPerformance('/api/client_groups/1/networth/liquidity_ordered')
+          );
+        }
+      }
+      
+      const results = await Promise.all(performancePromises);
+      
+      // Verify all requests meet performance targets under load
+      results.forEach(result => {
+        expect(result.responseTime).toBeLessThan(1000); // Allow higher threshold under load
+        expect(result.status).toBeLessThan(400);
+      });
+      
+      // Verify no significant degradation
+      const p95ResponseTime = calculatePercentile(results.map(r => r.responseTime), 95);
+      expect(p95ResponseTime).toBeLessThan(800); // 95th percentile under 800ms
+    });
+  });
+
+  describe('Load Testing for Dense Data Operations', () => {
+    it('should handle dense client group data within performance limits', async () => {
+      const largeClientGroup = await dataFactory.createClientGroupWithDenseData(1000);
+      
+      const denseDataEndpoints = [
+        `/api/client_groups/${largeClientGroup.id}/complete_summary`,
+        `/api/client_groups/${largeClientGroup.id}/networth/liquidity_ordered`,
+        `/api/client_groups/${largeClientGroup.id}/ownership_breakdown`,
+        `/api/client_groups/${largeClientGroup.id}/performance_analytics`
+      ];
+      
+      const performanceResults = [];
+      
+      for (const endpoint of denseDataEndpoints) {
+        const iterations = 5;
+        const iterationResults = [];
+        
+        for (let i = 0; i < iterations; i++) {
+          const startTime = performance.now();
+          const response = await apiClient.get(endpoint);
+          const endTime = performance.now();
+          
+          iterationResults.push({
+            responseTime: endTime - startTime,
+            status: response.status,
+            dataSize: JSON.stringify(response.data).length
+          });
+        }
+        
+        const avgResponseTime = iterationResults.reduce(
+          (sum, result) => sum + result.responseTime, 0
+        ) / iterations;
+        
+        performanceResults.push({
+          endpoint,
+          averageResponseTime: avgResponseTime,
+          maxResponseTime: Math.max(...iterationResults.map(r => r.responseTime)),
+          averageDataSize: iterationResults.reduce((sum, r) => sum + r.dataSize, 0) / iterations
+        });
+        
+        // Dense data endpoints should still meet reasonable performance targets
+        expect(avgResponseTime).toBeLessThan(2000); // <2s for dense data
+      }
+      
+      // Verify consistent performance across similar endpoints
+      const responseTimeVariance = calculateVariance(
+        performanceResults.map(r => r.averageResponseTime)
+      );
+      expect(responseTimeVariance).toBeLessThan(500000); // Reasonable variance threshold
+    });
+
+    it('should efficiently handle bulk operations', async () => {
+      const clientGroups = await dataFactory.createMultipleClientGroups(20);
+      
+      const bulkOperations = [
+        {
+          endpoint: '/api/bulk_operations/cross_client_actions',
+          data: {
+            action_type: 'update_contact_info',
+            client_group_ids: clientGroups.map(cg => cg.id).slice(0, 10),
+            updates: { phone_type: 'mobile' }
+          }
+        },
+        {
+          endpoint: '/api/bulk_operations/generate_reports',
+          data: {
+            report_type: 'net_worth_summary',
+            client_group_ids: clientGroups.map(cg => cg.id).slice(0, 15)
+          }
+        },
+        {
+          endpoint: '/api/bulk_operations/update_preferences',
+          data: {
+            user_id: 1,
+            client_group_ids: clientGroups.map(cg => cg.id),
+            preference_updates: { liquidity_view_default: 'ordered' }
+          }
+        }
+      ];
+      
+      for (const operation of bulkOperations) {
+        const startTime = performance.now();
+        const response = await apiClient.post(operation.endpoint, operation.data);
+        const endTime = performance.now();
+        
+        const responseTime = endTime - startTime;
+        const itemCount = operation.data.client_group_ids.length;
+        const timePerItem = responseTime / itemCount;
+        
+        expect(response.status).toBe(202); // Async operation accepted
+        expect(timePerItem).toBeLessThan(100); // <100ms per item for bulk operations
+        
+        // Verify bulk operation provides progress tracking
+        expect(response.data.job_id).toBeDefined();
+        expect(response.data.estimated_completion_time).toBeDefined();
+      }
+    });
+  });
+
+  describe('Performance Benchmark Establishment', () => {
+    it('should establish baseline performance benchmarks', async () => {
+      const benchmarkEndpoints = [
+        '/api/client_groups/1/networth/liquidity_ordered',
+        '/api/global_actions/cross_client',
+        '/api/users/1/liquidity_preferences',
+        '/api/audit_logs/comprehensive',
+        '/api/product_owners/1/phone_numbers'
+      ];
+      
+      const benchmarks = {};
+      
+      for (const endpoint of benchmarkEndpoints) {
+        const measurements = [];
+        
+        // Take multiple measurements for statistical significance
+        for (let i = 0; i < 20; i++) {
+          const startTime = performance.now();
+          await apiClient.get(endpoint);
+          const endTime = performance.now();
+          
+          measurements.push(endTime - startTime);
+          
+          // Small delay between measurements
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        benchmarks[endpoint] = {
+          mean: calculateMean(measurements),
+          median: calculateMedian(measurements),
+          p95: calculatePercentile(measurements, 95),
+          p99: calculatePercentile(measurements, 99),
+          standardDeviation: calculateStandardDeviation(measurements),
+          sampleSize: measurements.length
+        };
+      }
+      
+      // Store benchmarks for regression testing
+      await storeBenchmarks(benchmarks);
+      
+      // Verify benchmark quality
+      Object.values(benchmarks).forEach((benchmark: any) => {
+        expect(benchmark.mean).toBeLessThan(500); // Mean under 500ms
+        expect(benchmark.p95).toBeLessThan(1000); // 95th percentile under 1s
+        expect(benchmark.standardDeviation).toBeLessThan(200); // Reasonable consistency
+      });
+    });
+
+    it('should detect performance regression against benchmarks', async () => {
+      const storedBenchmarks = await loadBenchmarks();
+      const regressionThreshold = 0.3; // 30% degradation threshold
+      
+      const currentMeasurements = {};
+      
+      for (const endpoint of Object.keys(storedBenchmarks)) {
+        const measurements = [];
+        
+        for (let i = 0; i < 10; i++) {
+          const startTime = performance.now();
+          await apiClient.get(endpoint);
+          const endTime = performance.now();
+          
+          measurements.push(endTime - startTime);
+        }
+        
+        currentMeasurements[endpoint] = {
+          mean: calculateMean(measurements),
+          p95: calculatePercentile(measurements, 95)
+        };
+      }
+      
+      // Check for regressions
+      const regressions = [];
+      
+      Object.keys(storedBenchmarks).forEach(endpoint => {
+        const baseline = storedBenchmarks[endpoint];
+        const current = currentMeasurements[endpoint];
+        
+        const meanRegression = (current.mean - baseline.mean) / baseline.mean;
+        const p95Regression = (current.p95 - baseline.p95) / baseline.p95;
+        
+        if (meanRegression > regressionThreshold) {
+          regressions.push({
+            endpoint,
+            type: 'mean',
+            regression: meanRegression,
+            baseline: baseline.mean,
+            current: current.mean
+          });
+        }
+        
+        if (p95Regression > regressionThreshold) {
+          regressions.push({
+            endpoint,
+            type: 'p95',
+            regression: p95Regression,
+            baseline: baseline.p95,
+            current: current.p95
+          });
+        }
+      });
+      
+      // Report any regressions found
+      if (regressions.length > 0) {
+        console.warn('Performance regressions detected:', regressions);
+      }
+      
+      // Fail test if critical regressions found
+      const criticalRegressions = regressions.filter(r => r.regression > 0.5); // >50% degradation
+      expect(criticalRegressions).toHaveLength(0);
+    });
+  });
+
+  describe('Regression Detection and Monitoring', () => {
+    it('should continuously monitor API performance trends', async () => {
+      const monitoringEndpoints = [
+        '/api/client_groups/1/networth/liquidity_ordered',
+        '/api/global_actions/cross_client',
+        '/api/bulk_operations/cross_client_actions'
+      ];
+      
+      const trendData = [];
+      
+      // Simulate performance monitoring over time
+      for (let timeSlot = 0; timeSlot < 10; timeSlot++) {
+        const slotMeasurements = {};
+        
+        for (const endpoint of monitoringEndpoints) {
+          const startTime = performance.now();
+          await apiClient.get(endpoint);
+          const endTime = performance.now();
+          
+          slotMeasurements[endpoint] = endTime - startTime;
+        }
+        
+        trendData.push({
+          timestamp: Date.now() + (timeSlot * 60000), // 1-minute intervals
+          measurements: slotMeasurements
+        });
+        
+        // Small delay between time slots
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      // Analyze trends for each endpoint
+      monitoringEndpoints.forEach(endpoint => {
+        const responseTimes = trendData.map(data => data.measurements[endpoint]);
+        
+        // Check for upward trend (performance degradation)
+        const trendSlope = calculateTrendSlope(responseTimes);
+        expect(trendSlope).toBeLessThan(10); // <10ms degradation per measurement
+        
+        // Check for excessive variability
+        const coefficientOfVariation = calculateCoefficientOfVariation(responseTimes);
+        expect(coefficientOfVariation).toBeLessThan(0.5); // Reasonable consistency
+      });
+      
+      // Store trend data for historical analysis
+      await storeTrendData(trendData);
+    });
+  });
+});
+
+// Helper functions for performance testing
+async function measureEndpointPerformance(endpoint: string): Promise<{ responseTime: number; status: number }> {
+  const startTime = performance.now();
+  const response = await apiClient.get(endpoint);
+  const endTime = performance.now();
+  
+  return {
+    responseTime: endTime - startTime,
+    status: response.status
+  };
+}
+
+function calculatePercentile(values: number[], percentile: number): number {
+  const sorted = values.slice().sort((a, b) => a - b);
+  const index = Math.ceil(sorted.length * (percentile / 100)) - 1;
+  return sorted[index];
+}
+
+function calculateMean(values: number[]): number {
+  return values.reduce((sum, val) => sum + val, 0) / values.length;
+}
+
+function calculateMedian(values: number[]): number {
+  const sorted = values.slice().sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+}
+
+function calculateStandardDeviation(values: number[]): number {
+  const mean = calculateMean(values);
+  const squaredDifferences = values.map(val => Math.pow(val - mean, 2));
+  const variance = calculateMean(squaredDifferences);
+  return Math.sqrt(variance);
+}
+
+function calculateVariance(values: number[]): number {
+  const mean = calculateMean(values);
+  const squaredDifferences = values.map(val => Math.pow(val - mean, 2));
+  return calculateMean(squaredDifferences);
+}
+
+function calculateTrendSlope(values: number[]): number {
+  const n = values.length;
+  const xMean = (n - 1) / 2;
+  const yMean = calculateMean(values);
+  
+  let numerator = 0;
+  let denominator = 0;
+  
+  for (let i = 0; i < n; i++) {
+    numerator += (i - xMean) * (values[i] - yMean);
+    denominator += Math.pow(i - xMean, 2);
+  }
+  
+  return denominator === 0 ? 0 : numerator / denominator;
+}
+
+function calculateCoefficientOfVariation(values: number[]): number {
+  const mean = calculateMean(values);
+  const standardDeviation = calculateStandardDeviation(values);
+  return standardDeviation / mean;
+}
+
+async function storeBenchmarks(benchmarks: any): Promise<void> {
+  // Implementation to store benchmarks for regression testing
+}
+
+async function loadBenchmarks(): Promise<any> {
+  // Implementation to load stored benchmarks
+  return {};
+}
+
+async function storeTrendData(trendData: any[]): Promise<void> {
+  // Implementation to store trend data for historical analysis
+}
+
+function getTestDataForEndpoint(endpoint: string): any {
+  // Return appropriate test data based on endpoint
+  const testDataMap = {
+    '/api/global_actions': {
+      action_type: 'update_contact_preferences',
+      client_group_ids: [1, 2, 3],
+      action_data: { preference: 'email' }
+    },
+    '/api/bulk_operations/cross_client_actions': {
+      action_type: 'update_liquidity_preferences',
+      client_group_ids: [1, 2],
+      bulk_data: { liquidity_rank_adjustments: {} }
+    }
+  };
+  
+  return testDataMap[endpoint] || {};
+}
+```
+
+### Cross-Client Workflow Integration Testing
+
+#### End-to-End Cross-Client Workflow Validation
+Comprehensive testing of complete workflows spanning multiple client groups with validation of state transitions and data consistency.
+
+```typescript
+// src/tests/integration/cross-client-workflow.test.ts
+describe('Cross-Client Workflow Integration Testing', () => {
+  describe('Complete Workflow Testing', () => {
+    it('should execute complete cross-client workflow from action creation to PDF export', async () => {
+      // Setup: Create multiple client groups and user
+      const clientGroups = await dataFactory.createMultipleClientGroups(3);
+      const user = await dataFactory.createUser();
+      
+      // Step 1: Create global cross-client action
+      const globalActionResponse = await apiClient.post('/api/global_actions', {
+        action_type: 'update_liquidity_preferences',
+        client_group_ids: clientGroups.map(cg => cg.id),
+        action_data: {
+          real_estate_liquidity_rank: 2,
+          cash_liquidity_rank: 1,
+          public_equity_liquidity_rank: 3
+        },
+        user_id: user.id,
+        scheduled_execution: null // Immediate execution
+      });
+      
+      expect(globalActionResponse.status).toBe(201);
+      const globalActionId = globalActionResponse.data.id;
+      
+      // Step 2: Monitor action execution across all client groups
+      let executionComplete = false;
+      let attempts = 0;
+      const maxAttempts = 30;
+      
+      while (!executionComplete && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const statusResponse = await apiClient.get(`/api/global_actions/${globalActionId}/status`);
+        
+        expect(statusResponse.status).toBe(200);
+        expect(['pending', 'executing', 'completed', 'failed']).toContain(statusResponse.data.status);
+        
+        if (statusResponse.data.status === 'completed') {
+          executionComplete = true;
+          
+          // Verify execution results for each client group
+          expect(statusResponse.data.client_group_results).toHaveLength(3);
+          statusResponse.data.client_group_results.forEach(result => {
+            expect(result.status).toBe('success');
+            expect(result.changes_applied).toBeDefined();
+            expect(result.timestamp).toBeDefined();
+          });
+        }
+        
+        attempts++;
+      }
+      
+      expect(executionComplete).toBe(true);
+      
+      // Step 3: Verify liquidity preference changes applied
+      for (const clientGroup of clientGroups) {
+        const netWorthResponse = await apiClient.get(
+          `/api/client_groups/${clientGroup.id}/networth/liquidity_ordered`,
+          { params: { user_id: user.id, apply_user_preferences: true } }
+        );
+        
+        expect(netWorthResponse.status).toBe(200);
+        expect(netWorthResponse.data.applied_preferences).toMatchObject({
+          real_estate_liquidity_rank: 2,
+          cash_liquidity_rank: 1,
+          public_equity_liquidity_rank: 3
+        });
+        
+        // Verify actual ordering reflects preferences
+        const realEstateAssets = netWorthResponse.data.assets.filter(a => a.type === 'real_estate');
+        const cashAssets = netWorthResponse.data.assets.filter(a => a.type === 'cash');
+        
+        if (realEstateAssets.length > 0 && cashAssets.length > 0) {
+          const realEstateIndex = netWorthResponse.data.assets.findIndex(a => a.type === 'real_estate');
+          const cashIndex = netWorthResponse.data.assets.findIndex(a => a.type === 'cash');
+          
+          expect(cashIndex).toBeLessThan(realEstateIndex); // Cash should come before real estate
+        }
+      }
+      
+      // Step 4: Generate comprehensive PDF reports for all affected client groups
+      const pdfExportPromises = clientGroups.map(clientGroup =>
+        apiClient.post(`/api/client_groups/${clientGroup.id}/pdf_exports/client_summary`, {
+          export_type: 'comprehensive_summary',
+          include_global_action_history: true,
+          user_id: user.id
+        })
+      );
+      
+      const pdfResponses = await Promise.all(pdfExportPromises);
+      
+      pdfResponses.forEach(response => {
+        expect(response.status).toBe(202);
+        expect(response.data.job_id).toBeDefined();
+      });
+      
+      // Step 5: Wait for PDF generation completion and validate content
+      const pdfJobIds = pdfResponses.map(response => response.data.job_id);
+      
+      for (const jobId of pdfJobIds) {
+        await waitForPdfCompletion(jobId);
+        
+        // Download and validate PDF contains global action information
+        const downloadResponse = await apiClient.get(
+          `/api/pdf_exports/download/${jobId}`,
+          { responseType: 'arraybuffer' }
+        );
+        
+        expect(downloadResponse.status).toBe(200);
+        
+        const pdfData = await parsePdf(Buffer.from(downloadResponse.data));
+        expect(pdfData.text).toContain('Global Action Applied');
+        expect(pdfData.text).toContain('Liquidity Preferences Updated');
+        expect(pdfData.text).toContain(globalActionId);
+      }
+      
+      // Step 6: Verify audit trail captures complete workflow
+      const auditResponse = await apiClient.get('/api/audit_logs/comprehensive', {
+        params: {
+          entity_type: 'global_action',
+          entity_id: globalActionId,
+          include_related_changes: true
+        }
+      });
+      
+      expect(auditResponse.status).toBe(200);
+      expect(auditResponse.data.logs.length).toBeGreaterThan(0);
+      
+      // Verify audit trail completeness
+      const auditLogs = auditResponse.data.logs;
+      const actionCreationLog = auditLogs.find(log => log.action === 'global_action_created');
+      const executionLogs = auditLogs.filter(log => log.action === 'client_group_updated');
+      const completionLog = auditLogs.find(log => log.action === 'global_action_completed');
+      
+      expect(actionCreationLog).toBeDefined();
+      expect(executionLogs).toHaveLength(3); // One for each client group
+      expect(completionLog).toBeDefined();
+    });
+
+    it('should handle workflow failures and provide rollback capabilities', async () => {
+      const clientGroups = await dataFactory.createMultipleClientGroups(3);
+      const user = await dataFactory.createUser();
+      
+      // Create client group with data that will cause failure
+      await dataFactory.introduceDataCorruption(clientGroups[1].id);
+      
+      const globalActionResponse = await apiClient.post('/api/global_actions', {
+        action_type: 'update_complex_calculations',
+        client_group_ids: clientGroups.map(cg => cg.id),
+        action_data: { recalculate_net_worth: true },
+        user_id: user.id,
+        rollback_on_partial_failure: true
+      });
+      
+      expect(globalActionResponse.status).toBe(201);
+      const globalActionId = globalActionResponse.data.id;
+      
+      // Monitor execution - should fail on corrupted client group
+      let finalStatus = null;
+      let attempts = 0;
+      
+      while (finalStatus === null && attempts < 30) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const statusResponse = await apiClient.get(`/api/global_actions/${globalActionId}/status`);
+        
+        if (['completed', 'failed', 'rolled_back'].includes(statusResponse.data.status)) {
+          finalStatus = statusResponse.data.status;
+          
+          // Should be rolled back due to partial failure
+          expect(finalStatus).toBe('rolled_back');
+          
+          // Verify rollback details
+          expect(statusResponse.data.rollback_details).toBeDefined();
+          expect(statusResponse.data.failed_client_groups).toHaveLength(1);
+          expect(statusResponse.data.rolled_back_client_groups).toHaveLength(2); // Other 2 rolled back
+        }
+        
+        attempts++;
+      }
+      
+      expect(finalStatus).toBe('rolled_back');
+      
+      // Verify no changes were persisted due to rollback
+      for (const clientGroup of clientGroups) {
+        if (clientGroup.id !== clientGroups[1].id) { // Skip corrupted one
+          const netWorthResponse = await apiClient.get(
+            `/api/client_groups/${clientGroup.id}/networth/liquidity_ordered`
+          );
+          
+          // Should not have the changes from the failed global action
+          expect(netWorthResponse.data.last_global_action_id).not.toBe(globalActionId);
+        }
+      }
+    });
+  });
+
+  describe('Multi-Client Assignment Validation', () => {
+    it('should validate proper assignment logic across multiple client groups', async () => {
+      const clientGroups = await dataFactory.createClientGroupsWithVariedComplexity(5);
+      const users = await dataFactory.createMultipleUsers(3);
+      
+      // Create global action with assignment rules
+      const globalActionResponse = await apiClient.post('/api/global_actions', {
+        action_type: 'comprehensive_portfolio_review',
+        client_group_ids: clientGroups.map(cg => cg.id),
+        assignment_rules: {
+          assign_by: 'complexity_and_workload',
+          max_assignments_per_user: 2,
+          user_ids: users.map(u => u.id)
+        },
+        action_data: {
+          review_type: 'quarterly',
+          include_risk_assessment: true
+        }
+      });
+      
+      expect(globalActionResponse.status).toBe(201);
+      const globalActionId = globalActionResponse.data.id;
+      
+      // Wait for assignment completion
+      await waitForGlobalActionCompletion(globalActionId);
+      
+      // Verify assignment results
+      const assignmentResponse = await apiClient.get(`/api/global_actions/${globalActionId}/assignments`);
+      
+      expect(assignmentResponse.status).toBe(200);
+      expect(assignmentResponse.data.assignments).toHaveLength(5); // All client groups assigned
+      
+      // Verify assignment rules were followed
+      const assignmentsByUser = assignmentResponse.data.assignments.reduce((acc, assignment) => {
+        if (!acc[assignment.assigned_user_id]) acc[assignment.assigned_user_id] = 0;
+        acc[assignment.assigned_user_id]++;
+        return acc;
+      }, {});
+      
+      // No user should have more than 2 assignments
+      Object.values(assignmentsByUser).forEach(count => {
+        expect(count).toBeLessThanOrEqual(2);
+      });
+      
+      // All users should have at least 1 assignment (with 5 client groups and 3 users)
+      expect(Object.keys(assignmentsByUser).length).toBe(3);
+      
+      // Verify complexity-based assignment
+      const complexClientGroups = clientGroups
+        .filter(cg => cg.complexity_score > 7)
+        .map(cg => cg.id);
+      
+      const complexAssignments = assignmentResponse.data.assignments
+        .filter(a => complexClientGroups.includes(a.client_group_id));
+      
+      // Complex client groups should be assigned to users with appropriate experience
+      complexAssignments.forEach(assignment => {
+        const assignedUser = users.find(u => u.id === assignment.assigned_user_id);
+        expect(assignedUser.experience_level).toBeGreaterThanOrEqual(7);
+      });
+    });
+
+    it('should handle assignment conflicts and provide resolution strategies', async () => {
+      const clientGroups = await dataFactory.createMultipleClientGroups(4);
+      const users = await dataFactory.createUsersWithConflictingAvailability(2);
+      
+      // Create overlapping global actions
+      const globalAction1Response = await apiClient.post('/api/global_actions', {
+        action_type: 'quarterly_review',
+        client_group_ids: clientGroups.slice(0, 3).map(cg => cg.id),
+        assignment_rules: {
+          assign_by: 'round_robin',
+          user_ids: users.map(u => u.id),
+          due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 1 week
+        }
+      });
+      
+      const globalAction2Response = await apiClient.post('/api/global_actions', {
+        action_type: 'risk_assessment',
+        client_group_ids: clientGroups.slice(2, 4).map(cg => cg.id), // Overlap with action1
+        assignment_rules: {
+          assign_by: 'workload_balanced',
+          user_ids: users.map(u => u.id),
+          due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Same week
+        }
+      });
+      
+      expect(globalAction1Response.status).toBe(201);
+      expect(globalAction2Response.status).toBe(201);
+      
+      // Wait for both actions to process assignments
+      await Promise.all([
+        waitForGlobalActionCompletion(globalAction1Response.data.id),
+        waitForGlobalActionCompletion(globalAction2Response.data.id)
+      ]);
+      
+      // Check for assignment conflicts
+      const conflictsResponse = await apiClient.get('/api/global_actions/assignment_conflicts', {
+        params: {
+          time_range: '1_week',
+          user_ids: users.map(u => u.id).join(',')
+        }
+      });
+      
+      expect(conflictsResponse.status).toBe(200);
+      
+      if (conflictsResponse.data.conflicts.length > 0) {
+        // Verify conflict resolution was applied
+        conflictsResponse.data.conflicts.forEach(conflict => {
+          expect(conflict.resolution_strategy).toBeDefined();
+          expect(conflict.resolved).toBe(true);
+          expect(['reassignment', 'due_date_adjustment', 'workload_distribution']).toContain(
+            conflict.resolution_strategy
+          );
+        });
+      }
+      
+      // Verify final assignments don't exceed user capacity
+      const finalAssignmentsResponse = await apiClient.get('/api/users/assignments/current', {
+        params: { user_ids: users.map(u => u.id).join(',') }
+      });
+      
+      finalAssignmentsResponse.data.user_assignments.forEach(userAssignments => {
+        const weeklyWorkload = calculateWeeklyWorkload(userAssignments.assignments);
+        expect(weeklyWorkload).toBeLessThanOrEqual(userAssignments.user.max_weekly_capacity);
+      });
+    });
+  });
+
+  describe('Cross-Client Bulk Operations Testing', () => {
+    it('should handle bulk operations across multiple client groups efficiently', async () => {
+      const clientGroups = await dataFactory.createMultipleClientGroups(20);
+      const user = await dataFactory.createUser();
+      
+      // Test various bulk operations
+      const bulkOperations = [
+        {
+          type: 'update_contact_preferences',
+          data: {
+            client_group_ids: clientGroups.slice(0, 10).map(cg => cg.id),
+            updates: {
+              preferred_contact_method: 'email',
+              contact_frequency: 'quarterly'
+            }
+          }
+        },
+        {
+          type: 'regenerate_net_worth_calculations',
+          data: {
+            client_group_ids: clientGroups.slice(5, 15).map(cg => cg.id),
+            calculation_parameters: {
+              include_pending_transactions: true,
+              use_market_close_prices: true
+            }
+          }
+        },
+        {
+          type: 'update_liquidity_rankings',
+          data: {
+            client_group_ids: clientGroups.slice(10, 20).map(cg => cg.id),
+            user_id: user.id,
+            ranking_updates: {
+              real_estate_liquidity_rank: 3,
+              alternative_investments_rank: 5
+            }
+          }
+        }
+      ];
+      
+      const operationResults = [];
+      
+      for (const operation of bulkOperations) {
+        const startTime = performance.now();
+        
+        const response = await apiClient.post('/api/bulk_operations/cross_client_actions', {
+          operation_type: operation.type,
+          ...operation.data
+        });
+        
+        const endTime = performance.now();
+        
+        expect(response.status).toBe(202); // Async operation
+        expect(response.data.job_id).toBeDefined();
+        
+        operationResults.push({
+          type: operation.type,
+          jobId: response.data.job_id,
+          clientCount: operation.data.client_group_ids.length,
+          submissionTime: endTime - startTime,
+          estimatedCompletion: response.data.estimated_completion_time
+        });
+      }
+      
+      // Monitor bulk operation completion
+      for (const operation of operationResults) {
+        let completed = false;
+        let attempts = 0;
+        
+        while (!completed && attempts < 60) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          const statusResponse = await apiClient.get(`/api/bulk_operations/status/${operation.jobId}`);
+          
+          if (statusResponse.data.status === 'completed') {
+            completed = true;
+            
+            // Verify operation results
+            expect(statusResponse.data.results.successful_updates).toBe(operation.clientCount);
+            expect(statusResponse.data.results.failed_updates).toBe(0);
+            expect(statusResponse.data.execution_time).toBeLessThan(30000); // <30s for bulk ops
+            
+          } else if (statusResponse.data.status === 'failed') {
+            throw new Error(`Bulk operation failed: ${statusResponse.data.error_message}`);
+          }
+          
+          attempts++;
+        }
+        
+        expect(completed).toBe(true);
+      }
+      
+      // Verify bulk operations were applied correctly
+      const verificationPromises = clientGroups.map(async (clientGroup, index) => {
+        const detailsResponse = await apiClient.get(`/api/client_groups/${clientGroup.id}/complete_summary`);
+        
+        // Check which operations should have affected this client group
+        if (index < 10) {
+          // Should have contact preference updates
+          expect(detailsResponse.data.contact_preferences.preferred_method).toBe('email');
+          expect(detailsResponse.data.contact_preferences.frequency).toBe('quarterly');
+        }
+        
+        if (index >= 5 && index < 15) {
+          // Should have regenerated net worth
+          expect(detailsResponse.data.net_worth.last_calculation_method).toContain('market_close_prices');
+        }
+        
+        if (index >= 10) {
+          // Should have liquidity ranking updates
+          const netWorthResponse = await apiClient.get(
+            `/api/client_groups/${clientGroup.id}/networth/liquidity_ordered`,
+            { params: { user_id: user.id, apply_user_preferences: true } }
+          );
+          
+          expect(netWorthResponse.data.applied_preferences.real_estate_liquidity_rank).toBe(3);
+          expect(netWorthResponse.data.applied_preferences.alternative_investments_rank).toBe(5);
+        }
+      });
+      
+      await Promise.all(verificationPromises);
+    });
+  });
+
+  describe('Workflow State Transition Validation', () => {
+    it('should validate proper state transitions across client boundaries', async () => {
+      const clientGroups = await dataFactory.createMultipleClientGroups(3);
+      const user = await dataFactory.createUser();
+      
+      // Create complex workflow with multiple state transitions
+      const workflowResponse = await apiClient.post('/api/workflows/cross_client', {
+        workflow_type: 'comprehensive_review_and_update',
+        client_group_ids: clientGroups.map(cg => cg.id),
+        user_id: user.id,
+        steps: [
+          {
+            step_type: 'data_validation',
+            parallel_execution: true,
+            timeout_minutes: 5
+          },
+          {
+            step_type: 'calculate_net_worth',
+            parallel_execution: true,
+            dependencies: ['data_validation'],
+            timeout_minutes: 10
+          },
+          {
+            step_type: 'update_liquidity_preferences',
+            parallel_execution: false,
+            dependencies: ['calculate_net_worth'],
+            timeout_minutes: 15
+          },
+          {
+            step_type: 'generate_reports',
+            parallel_execution: true,
+            dependencies: ['update_liquidity_preferences'],
+            timeout_minutes: 20
+          },
+          {
+            step_type: 'audit_trail_creation',
+            parallel_execution: false,
+            dependencies: ['generate_reports'],
+            timeout_minutes: 5
+          }
+        ]
+      });
+      
+      expect(workflowResponse.status).toBe(201);
+      const workflowId = workflowResponse.data.workflow_id;
+      
+      // Monitor workflow state transitions
+      const stateTransitions = [];
+      let currentState = 'pending';
+      let attempts = 0;
+      
+      while (currentState !== 'completed' && currentState !== 'failed' && attempts < 120) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const statusResponse = await apiClient.get(`/api/workflows/${workflowId}/status`);
+        
+        if (statusResponse.data.current_state !== currentState) {
+          stateTransitions.push({
+            from: currentState,
+            to: statusResponse.data.current_state,
+            timestamp: Date.now(),
+            step_details: statusResponse.data.current_step,
+            client_group_states: statusResponse.data.client_group_states
+          });
+          
+          currentState = statusResponse.data.current_state;
+        }
+        
+        // Verify state consistency across client groups
+        if (statusResponse.data.client_group_states) {
+          statusResponse.data.client_group_states.forEach(cgState => {
+            expect(['pending', 'executing', 'completed', 'failed', 'skipped']).toContain(cgState.state);
+            expect(cgState.client_group_id).toBeDefined();
+            expect(cgState.current_step).toBeDefined();
+          });
+          
+          // For parallel steps, verify all client groups are in sync
+          const parallelStep = statusResponse.data.current_step;
+          if (parallelStep && parallelStep.parallel_execution) {
+            const clientStates = statusResponse.data.client_group_states.map(cgs => cgs.state);
+            const uniqueStates = [...new Set(clientStates)];
+            
+            // All client groups should be in similar states during parallel execution
+            expect(uniqueStates.length).toBeLessThanOrEqual(2); // At most 2 different states
+          }
+        }
+        
+        attempts++;
+      }
+      
+      expect(currentState).toBe('completed');
+      
+      // Verify complete state transition sequence
+      expect(stateTransitions.length).toBeGreaterThan(0);
+      
+      // Verify expected state progression
+      const stateProgression = stateTransitions.map(t => t.to);
+      expect(stateProgression).toContain('executing');
+      expect(stateProgression).toContain('completed');
+      
+      // Verify final workflow results
+      const finalStatusResponse = await apiClient.get(`/api/workflows/${workflowId}/results`);
+      
+      expect(finalStatusResponse.status).toBe(200);
+      expect(finalStatusResponse.data.overall_status).toBe('completed');
+      expect(finalStatusResponse.data.client_group_results).toHaveLength(3);
+      
+      finalStatusResponse.data.client_group_results.forEach(result => {
+        expect(result.status).toBe('completed');
+        expect(result.steps_completed).toBe(5);
+        expect(result.execution_time).toBeLessThan(60000); // <60s per client group
+      });
+      
+      // Verify audit trail captured all state transitions
+      const auditResponse = await apiClient.get('/api/audit_logs/comprehensive', {
+        params: {
+          entity_type: 'workflow',
+          entity_id: workflowId,
+          include_state_transitions: true
+        }
+      });
+      
+      expect(auditResponse.status).toBe(200);
+      expect(auditResponse.data.logs.length).toBeGreaterThanOrEqual(stateTransitions.length);
+    });
+  });
+});
+
+// Helper functions for cross-client workflow testing
+async function waitForGlobalActionCompletion(globalActionId: string): Promise<void> {
+  let attempts = 0;
+  while (attempts < 60) {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const statusResponse = await apiClient.get(`/api/global_actions/${globalActionId}/status`);
+    
+    if (['completed', 'failed', 'rolled_back'].includes(statusResponse.data.status)) {
+      return;
+    }
+    
+    attempts++;
+  }
+  
+  throw new Error(`Global action ${globalActionId} did not complete within timeout`);
+}
+
+async function waitForPdfCompletion(jobId: string): Promise<void> {
+  let attempts = 0;
+  while (attempts < 60) {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const statusResponse = await apiClient.get(`/api/pdf_exports/status/${jobId}`);
+    
+    if (statusResponse.data.status === 'completed') {
+      return;
+    }
+    
+    if (statusResponse.data.status === 'failed') {
+      throw new Error(`PDF export ${jobId} failed: ${statusResponse.data.error_message}`);
+    }
+    
+    attempts++;
+  }
+  
+  throw new Error(`PDF export ${jobId} did not complete within timeout`);
+}
+
+function calculateWeeklyWorkload(assignments: any[]): number {
+  return assignments.reduce((total, assignment) => {
+    const estimatedHours = assignment.estimated_hours || 2; // Default 2 hours per assignment
+    return total + estimatedHours;
+  }, 0);
 }
 ```
 

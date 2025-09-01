@@ -14,167 +14,290 @@ related_docs:
 
 Phase 2 frontend architecture extends Kingston's Portal's proven React/TypeScript foundation with **enhanced client data management**, **real-time collaborative features**, and **comprehensive accessibility support**. The architecture leverages existing shared modules and component library patterns while introducing sophisticated new capabilities for concurrent user management, universal search, and complex data visualization.
 
-### Design Principles
+### UI Philosophy - Information Density Over Aesthetics
 
-**Backward Compatibility First**:
-- All existing functionality preserved and enhanced
-- Seamless integration with current 38+ pages and 69+ components
-- Progressive enhancement approach for new features
-- Zero breaking changes to existing user workflows
+**Professional Interface Paradigm**:
+Kingston's Portal Phase 2 represents a fundamental paradigm shift from aesthetic-focused design to **information-dense professional interfaces** that prioritize data visibility and advisor efficiency. This approach aligns with wealth management industry standards where information accessibility directly impacts client service quality and advisor productivity.
+
+**Information Density First Principles**:
+- **Maximum data visibility**: Dense tables with 12+ rows per view, eliminating card-based layouts where tabular data is more efficient
+- **Professional standards alignment**: Interface design follows wealth management industry conventions for financial planning software
+- **Cognitive load optimization**: Information grouping and visual hierarchy designed to reduce mental processing time for financial advisors
+- **Efficiency over aesthetics**: Every pixel serves a functional purpose - decorative elements removed in favor of data display space
+
+**Dense Data Display Standards**:
+- **Table-first approach**: Replace card layouts with dense tables for information items, actions, and financial data
+- **Compact row height**: 32-40px row heights to maximize information density while maintaining readability
+- **Smart truncation**: Expandable text with [+ Expand] controls for detailed descriptions without sacrificing overview efficiency
+- **Multi-column layouts**: Utilize full screen width with 3-section layouts (personal details + contact info + full-width compliance)
+- **Status indicators**: Visual priority/status markers using color coding and icons for quick scanning
 
 **Performance-Oriented Architecture**:
-- **Sub-500ms** page load times for enhanced client details
-- **Auto-save every 30 seconds** with optimistic updates
-- **Virtual scrolling** for datasets with 200+ items
-- **Lazy loading** for tab content and complex components
+- **Sub-500ms** rendering for dense tables with 100+ rows
+- **Virtual scrolling** mandatory for datasets with 200+ items
+- **Optimistic updates** with automatic conflict resolution
+- **Memory management** for large dataset handling without performance degradation
 
-**Accessibility and Inclusive Design**:
-- **WCAG 2.1 AA compliance** across all new components
-- **Keyboard navigation** support for all interactive elements
-- **Screen reader optimization** with proper ARIA attributes
-- **High contrast** and zoom support up to 200%
+**Professional Accessibility Standards**:
+- **WCAG 2.1 AA compliance** with enhanced focus management for dense interfaces
+- **Keyboard navigation** optimized for rapid data entry and editing workflows
+- **Screen reader support** with proper table semantics and contextual information
+- **High contrast mode** maintaining information density while improving visibility
 
 **Real-time Collaborative Features**:
-- **4 concurrent user support** with conflict resolution
-- **Real-time presence indicators** showing active users
-- **Optimistic locking** with merge conflict UI
-- **Auto-sync** updates every 5 seconds
+- **Multi-user editing** with conflict resolution for sensitive financial data
+- **Presence indicators** showing which advisor is editing which client data
+- **Auto-save functionality** with rollback capabilities for data integrity
+- **Change tracking** with full audit trails for compliance requirements
 
 ---
 
-## Component Architecture and Hierarchy
+## Component Architecture - Dense Table Components
 
-### Enhanced Component Library Structure
+### Information-Dense Component Library Structure
+
+The Phase 2 frontend architecture prioritizes **dense table components** over card-based layouts, focusing on maximum information visibility and professional interface standards for wealth management workflows.
 
 ```
 frontend/src/components/
-├── ui/                                 # Extended base components (85+ total)
-│   ├── buttons/                       # Enhanced button variants
-│   │   ├── ActionButton.tsx           # Existing + loading states
-│   │   ├── EditButton.tsx             # Existing + inline edit mode
-│   │   ├── SaveButton.tsx             # NEW: Auto-save indicator
-│   │   └── ConflictResolveButton.tsx  # NEW: Merge conflict resolution
-│   ├── card/                          # Enhanced card components
-│   │   ├── StatBox.tsx                # Existing + real-time updates
-│   │   ├── InformationItemCard.tsx    # NEW: Information item display
-│   │   └── OwnershipCard.tsx          # NEW: Ownership visualization
-│   ├── data-displays/                 # Advanced data visualization
-│   │   ├── DataTable.tsx              # Enhanced + inline editing
-│   │   ├── EditableTable.tsx          # NEW: Full editing capabilities
-│   │   ├── NetworthTable.tsx          # NEW: Networth statement table
-│   │   └── CompletionMeter.tsx        # NEW: Data completeness indicator
-│   ├── dropdowns/                     # Enhanced dropdown components
-│   │   ├── SearchableDropdown.tsx     # Existing + performance improvements
-│   │   ├── CategoryDropdown.tsx       # NEW: Information item categories
-│   │   └── OwnershipDropdown.tsx      # NEW: Ownership type selection
-│   ├── feedback/                      # Enhanced user feedback
-│   │   ├── EmptyState.tsx            # Existing + contextual actions
-│   │   ├── PresenceIndicator.tsx     # NEW: Concurrent user awareness
-│   │   ├── ConflictNotification.tsx  # NEW: Edit conflict alerts
-│   │   └── AutoSaveIndicator.tsx     # NEW: Auto-save status
-│   ├── inputs/                        # Enhanced input components
-│   │   ├── BaseInput.tsx             # Enhanced + validation
-│   │   ├── JsonEditor.tsx            # NEW: Structured data editing
-│   │   ├── OwnershipInput.tsx        # NEW: Complex ownership configuration
-│   │   └── UniversalSearchInput.tsx  # NEW: Cross-data search
-│   ├── layout/                       # Enhanced layout components
-│   │   ├── TabContainer.tsx          # NEW: 5-tab navigation system
-│   │   ├── TabPanel.tsx              # NEW: Accessible tab content
-│   │   └── SplitView.tsx             # NEW: Side-by-side editing
-│   ├── modals/                       # Enhanced modal components
-│   │   ├── ItemCreationModal.tsx     # NEW: Multi-step creation
-│   │   ├── ConflictResolutionModal.tsx # NEW: Merge conflict UI
-│   │   └── BulkImportModal.tsx       # NEW: CSV/Excel import
-│   └── tables/                       # Advanced table components
-│       ├── EditableCell.tsx          # NEW: Inline editing
-│       ├── SortableHeader.tsx        # Enhanced sorting
-│       └── FilterableColumn.tsx      # Enhanced filtering
-└── phase2/                           # Phase 2 specific components
-    ├── client-details/               # Enhanced client details pages
-    │   ├── ClientDetailsLayout.tsx   # NEW: 5-tab container
-    │   ├── MainListTab.tsx           # NEW: Information items management
-    │   ├── UnmanagedProductsTab.tsx  # NEW: Unmanaged products
-    │   ├── NetworthTab.tsx           # NEW: Networth statements
-    │   ├── KYCTab.tsx                # NEW: KYC report generation
-    │   └── ActionsObjectivesTab.tsx  # NEW: Actions and objectives
-    ├── ownership/                    # Ownership management components
-    │   ├── OwnershipConfiguration.tsx # NEW: Complex ownership UI
-    │   ├── OwnershipValidation.tsx    # NEW: Percentage validation
-    │   └── OwnershipHistory.tsx       # NEW: Ownership change tracking
-    ├── search/                       # Universal search components
-    │   ├── UniversalSearch.tsx        # NEW: Cross-data search
-    │   ├── SearchFilters.tsx          # NEW: Advanced filtering
-    │   └── SearchResults.tsx          # NEW: Unified result display
-    └── reports/                      # Enhanced report components
-        ├── NetworthGenerator.tsx     # NEW: Interactive networth reports
-        ├── KYCReportBuilder.tsx      # NEW: KYC report customization
-        └── SnapshotViewer.tsx        # NEW: Historical data viewer
+├── ui/                                 # Information-dense base components (95+ total)
+│   ├── tables/                        # Core dense table components (PRIMARY)
+│   │   ├── DenseDataTable.tsx         # Main information display table (12+ rows)
+│   │   ├── VirtualizedTable.tsx       # High-performance large dataset table
+│   │   ├── EditableTableRow.tsx       # Inline editing with validation
+│   │   ├── ExpandableTableRow.tsx     # [+ Expand] functionality for descriptions
+│   │   ├── SortableTableHeader.tsx    # Multi-column sorting with visual indicators
+│   │   ├── FilterableTableColumn.tsx  # Column-specific filtering controls
+│   │   └── TablePaginationDense.tsx   # Compact pagination for dense layouts
+│   ├── cards/                         # 3-Section layout components (SECONDARY)
+│   │   ├── ProductOwnerCard3Section.tsx # Personal + Contact + Full-width layout
+│   │   ├── StatBox.tsx                # Preserved from existing + enhanced
+│   │   └── CompactInfoCard.tsx        # Minimal card for non-tabular data
+│   ├── inputs/                        # Professional data entry components
+│   │   ├── DenseFormInput.tsx         # Compact form inputs for tight layouts
+│   │   ├── PhoneNumberInput.tsx       # Multi-type phone management (mobile/house/work)
+│   │   ├── OwnershipPercentageInput.tsx # Complex ownership entry with validation
+│   │   ├── ExpandableTextArea.tsx     # [+ Expand] text input for detailed descriptions
+│   │   └── CategoryDropdownWithEmoji.tsx # Big 5 categories with emoji + text
+│   ├── buttons/                       # Compact action buttons for dense interfaces
+│   │   ├── ActionButton.tsx           # Existing enhanced with loading states
+│   │   ├── DenseEditButton.tsx        # Compact edit button for table rows
+│   │   ├── ExpandCollapseButton.tsx   # [+ Expand]/[- Collapse] toggle
+│   │   ├── InlineActionButton.tsx     # Minimal buttons for dense row actions
+│   │   └── ExportButton.tsx           # PDF/CSV export with progress indication
+│   ├── navigation/                    # Professional interface navigation
+│   │   ├── TabNavigation.tsx          # Separated objectives/actions tab system
+│   │   ├── GlobalActionsSidebar.tsx   # Cross-client actions navigation
+│   │   └── BreadcrumbDense.tsx        # Compact breadcrumb navigation
+│   ├── feedback/                      # Status and progress indicators
+│   │   ├── StatusIndicator.tsx        # Priority/status visual markers
+│   │   ├── ProgressMeter.tsx          # Data completion and processing progress
+│   │   ├── PresenceIndicator.tsx      # Multi-user editing awareness
+│   │   └── AutoSaveIndicator.tsx      # Real-time save status
+│   └── modals/                        # Professional workflow modals
+│       ├── ConfirmationModal.tsx      # Standard confirmation dialogs
+│       ├── PDFExportModal.tsx         # Export progress and options
+│       └── GlobalActionModal.tsx      # Cross-client action assignment
+└── phase2/                           # Phase 2 dense interface components
+    ├── client-details/               # Information-dense client management
+    │   ├── ClientDetailsLayout.tsx   # 5-tab container with separated actions
+    │   ├── InformationItemsTable.tsx # Dense table for main list (PRIMARY)
+    │   ├── ProductOwnerCard3Section.tsx # 3-section layout implementation
+    │   ├── NetWorthTable.tsx         # Liquidity-ordered financial display
+    │   └── ObjectivesActionsLayout.tsx # Separated dual-column layout
+    ├── global-actions/               # Cross-client workflow management
+    │   ├── GlobalActionsTable.tsx    # All-client actions by urgency
+    │   ├── ActionAssignmentTable.tsx # Multi-client action assignment
+    │   └── PDFExportWorkflow.tsx     # Global actions export workflow
+    ├── networth/                     # Professional financial displays
+    │   ├── LiquidityOrderedTable.tsx # Asset ordering by liquidity preference
+    │   ├── AssetCategoryTable.tsx    # Traditional asset type grouping
+    │   ├── ViewToggleControl.tsx     # Asset Type vs Liquidity view toggle
+    │   └── OwnershipColumnDisplay.tsx # Multi-owner financial data display
+    └── phone-management/             # Enhanced contact information
+        ├── PhoneNumberTable.tsx      # Multiple phone types management
+        ├── PhoneTypeSelector.tsx     # Mobile/House/Work/Other selection
+        └── PrimaryPhoneIndicator.tsx # Primary phone visual identification
 ```
 
-### Component Design Patterns
+### Dense Table Component Patterns
 
-**Consistent Component Interface Pattern**:
+**Information Density Design Principles**:
 ```typescript
-// Standard Phase 2 component props interface
-interface Phase2ComponentProps {
-  // Base props (inherited from existing pattern)
-  className?: string;
-  children?: React.ReactNode;
+// Core dense table component interface
+interface DenseTableProps<T> {
+  // Data handling
+  data: T[];
+  loading?: boolean;
+  error?: Error | null;
+  totalCount?: number; // For virtual scrolling
   
-  // Phase 2 specific props
-  clientGroupId: number;
-  onDataChange?: (data: any) => void;
-  isEditing?: boolean;
-  showPresence?: boolean;
+  // Information density settings
+  rowHeight: 32 | 36 | 40; // Compact professional heights
+  minVisibleRows: 12; // Minimum rows per view for information density
+  enableVirtualScrolling?: boolean; // Required for 200+ rows
   
-  // Accessibility props
-  ariaLabel?: string;
-  ariaDescribedBy?: string;
+  // Professional interface features
+  columns: DenseTableColumn<T>[];
+  sortable?: boolean;
+  filterable?: boolean;
+  inlineEditable?: boolean;
+  expandableRows?: boolean; // For [+ Expand] functionality
   
-  // Performance props
-  virtualizeThreshold?: number;
-  lazyLoad?: boolean;
+  // Multi-user features
+  showPresenceIndicators?: boolean;
+  enableRealTimeUpdates?: boolean;
+  conflictResolution?: 'optimistic' | 'manual';
+  
+  // Professional workflow features
+  bulkActions?: BulkAction[];
+  exportOptions?: ExportConfig;
+  selectionEnabled?: boolean;
+  
+  // Accessibility and compliance
+  ariaLabel: string;
+  screenReaderOptimized?: boolean;
+  keyboardNavigationEnabled?: boolean;
 }
 
-// Example implementation
-const InformationItemCard: React.FC<InformationItemCardProps> = ({
-  item,
-  clientGroupId,
-  onDataChange,
-  isEditing = false,
-  showPresence = true,
-  ariaLabel,
-  className = '',
-  ...rest
-}) => {
-  // Consistent error boundary wrapper
-  return (
-    <ErrorBoundary fallback={<ItemCardError />}>
-      <div 
-        className={`information-item-card ${className}`}
-        role="article"
-        aria-label={ariaLabel || `${item.category} information item`}
-        {...rest}
-      >
-        {showPresence && <PresenceIndicator itemId={item.id} />}
-        <ItemContent 
-          item={item}
-          isEditing={isEditing}
-          onChange={onDataChange}
-        />
-      </div>
-    </ErrorBoundary>
-  );
-};
+// Dense table column configuration
+interface DenseTableColumn<T> {
+  key: keyof T | string;
+  header: string;
+  width?: number | string;
+  minWidth?: number;
+  
+  // Information density features
+  sortable?: boolean;
+  filterable?: boolean;
+  searchable?: boolean;
+  
+  // Display optimization
+  truncate?: boolean;
+  expandable?: boolean; // [+ Expand] functionality
+  renderCell?: (value: any, row: T) => React.ReactNode;
+  
+  // Professional features
+  sticky?: boolean; // For wide tables
+  priority?: 'high' | 'medium' | 'low'; // Column importance for responsive
+  dataType?: 'text' | 'number' | 'date' | 'currency' | 'percentage';
+}
+```
+
+**3-Section Product Owner Card Pattern**:
+```typescript
+// Professional 3-section layout implementation
+interface ProductOwnerCard3SectionProps {
+  productOwner: ProductOwner;
+  phones: PhoneNumber[];
+  
+  // Layout configuration
+  layout: {
+    leftSection: 'personal-details'; // Name, title, DOB, NI
+    rightSection: 'contact-info';    // Mobile, house, work, email
+    bottomSection: 'full-width';     // Meetings, compliance, security, notes
+  };
+  
+  // Professional features
+  editMode?: boolean;
+  showSecurityWords?: boolean; // Role-based visibility
+  auditLogging?: boolean;
+  
+  // Information density settings
+  compact?: boolean;
+  showLabels?: boolean;
+  
+  // Multi-user features
+  showEditingIndicator?: boolean;
+  conflictResolution?: ConflictResolution;
+}
+
+// Phone management for professional contact handling
+interface PhoneManagementProps {
+  phones: PhoneNumber[];
+  onPhoneUpdate: (phone: PhoneNumber) => Promise<void>;
+  onPhoneAdd: (phone: Omit<PhoneNumber, 'id'>) => Promise<void>;
+  onPhoneDelete: (phoneId: number) => Promise<void>;
+  
+  // Professional features
+  types: ['mobile', 'house_phone', 'work', 'other'];
+  maxPhones: 10;
+  primaryPhoneRequired: true;
+  
+  // Validation
+  internationalFormat: boolean;
+  realTimeValidation: boolean;
+}
+```
+
+### Component Performance Architecture
+
+**Virtual Scrolling Implementation**:
+```typescript
+// High-performance virtual scrolling for dense tables
+interface VirtualScrollConfig {
+  // Performance targets
+  targetFPS: 60;
+  maxMemoryUsage: '100MB'; // For 1000+ row datasets
+  renderingBudget: '16ms'; // Per frame rendering budget
+  
+  // Virtualization settings
+  rowHeight: 36; // Fixed height for calculation efficiency
+  bufferSize: 10; // Rows to render outside viewport
+  overscan: 5; // Additional buffer for smooth scrolling
+  
+  // Memory management
+  maxCachedRows: 500;
+  cleanupThreshold: 1000; // Trigger garbage collection
+  backgroundLoading: boolean;
+}
+
+// Component memoization strategy for dense displays
+interface MemoizationStrategy {
+  // Row-level memoization
+  memoizeRows: true; // React.memo for individual rows
+  memoizeColumns: true; // Memo expensive column calculations
+  
+  // Data comparison strategies
+  shallowCompare: boolean; // For simple data structures
+  deepCompare: boolean; // For complex ownership data
+  customComparator?: (prev: any, next: any) => boolean;
+  
+  // Update optimization
+  batchUpdates: true; // Batch state updates for smooth UI
+  debouncedSearch: 300; // ms debounce for search inputs
+  throttledScroll: 16; // ms throttle for scroll events
+}
+```
+
+**Error Boundary Strategy for Dense Components**:
+```typescript
+// Cascading error recovery for information-dense interfaces
+interface DenseComponentErrorBoundary {
+  // Error recovery levels
+  rowLevel: 'isolate-failed-row'; // Single row failure isolation
+  columnLevel: 'fallback-to-text'; // Complex column fallback
+  tableLevel: 'simplified-table'; // Full table fallback
+  
+  // Professional error handling
+  userFriendlyMessages: true;
+  retryMechanisms: true;
+  offlineSupport: boolean;
+  
+  // Data integrity protection
+  autoSave: boolean; // Preserve user input during errors
+  conflictDetection: boolean; // Multi-user error prevention
+  rollbackCapability: boolean; // Undo failed operations
+}
 ```
 
 ---
 
-## Enhanced Client Details Page Structure
+## Information-Dense Client Details Page Structure
 
-### 5-Tab Navigation System
+### Separated Objectives/Actions Navigation System
 
-The enhanced client details page implements a sophisticated tab system supporting concurrent user access, real-time updates, and comprehensive data management.
+The information-dense client details page implements a **5-tab navigation system** with complete **objectives/actions separation**, prioritizing professional workflow efficiency over aesthetic design.
 
 ```typescript
 // ClientDetailsLayout.tsx - Main tab container
@@ -309,15 +432,53 @@ const MainListTab: React.FC<MainListTabProps> = ({
         queryClient.invalidateQueries(['information-items', clientGroupId]);
         showSuccessMessage('Item saved successfully');
       },
-      onError: (error: ApiError) => {
-        if (error.code === 'CONFLICT') {
-          handleConflictResolution(error.data);
-        } else {
-          showErrorMessage('Failed to save item');
-        }
-      }
+  // Helper functions for information density
+  const getCategoryEmoji = (category: string): string => {
+    const emojiMap = {
+      'Basic Detail': '📋',
+      'Income Expenditure': '💰', 
+      'Assets Liabilities': '🏦',
+      'Protection': '🛡️',
+      'Vulnerability Health': '🏥'
+    };
+    return emojiMap[category] || '📋';
+  };
+  
+  const formatOwnershipForDenseDisplay = (ownership: any): string => {
+    if (!ownership) return 'N/A';
+    
+    // Complex ownership display logic
+    if (ownership.type === 'individual') {
+      return `${ownership.ownerName} (100%)`;
+    } else if (ownership.type === 'joint') {
+      return `Joint (${ownership.owners.join(', ')})`;
+    } else if (ownership.type === 'tenants_in_common') {
+      return ownership.owners.map(o => `${o.name} (${o.percentage}%)`).join(', ');
     }
+    
+    return ownership.display || 'Complex';
+  };
+  
+  const toggleExpandDescription = (itemId: number) => {
+    setExpandedDescriptions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  };
+  
+  return (
+    <ErrorBoundary 
+      fallback={<InformationTableError onRetry={() => window.location.reload()} />}
+    >
+      {tableContent}
+    </ErrorBoundary>
   );
+};
 
   // Auto-save implementation
   const debouncedSave = useMemo(
@@ -846,47 +1007,210 @@ const useAutoSave = <T>(
     }
   }, [data, debouncedSave, compareFunction, enabled]);
 
-  const forceSave = useCallback(async () => {
-    debouncedSave.cancel();
-    await debouncedSave(data);
-  }, [debouncedSave, data]);
-
   return {
-    lastSaved,
     saveStatus,
-    error,
-    forceSave
+    conflictItems,
+    forceSaveAll,
+    resolveConflict,
+    queueSize: saveQueue.size,
+    hasUnsavedChanges: saveQueue.size > 0
   };
 };
 
-// Usage in components
-const InformationItemEditor: React.FC<EditorProps> = ({ item, onChange }) => {
-  const [formData, setFormData] = useState(item);
+// Virtual scrolling state management for dense tables
+const useVirtualScrollState = <T>({
+  data,
+  rowHeight,
+  containerHeight,
+  bufferSize = 10
+}: VirtualScrollConfig<T>) => {
+  const [scrollTop, setScrollTop] = useState(0);
+  const [isScrolling, setIsScrolling] = useState(false);
   
-  const { lastSaved, saveStatus, error, forceSave } = useAutoSave(
-    formData,
-    async (data) => {
-      await apiService.updateInformationItem(item.client_group_id, data);
-    },
+  // Calculate visible range for performance
+  const visibleRange = useMemo(() => {
+    const startIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - bufferSize);
+    const endIndex = Math.min(
+      data.length - 1,
+      Math.ceil((scrollTop + containerHeight) / rowHeight) + bufferSize
+    );
+    
+    return { startIndex, endIndex };
+  }, [scrollTop, rowHeight, containerHeight, bufferSize, data.length]);
+  
+  // Scrolling performance optimization
+  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
+  const handleScroll = useCallback((scrollTop: number) => {
+    setScrollTop(scrollTop);
+    setIsScrolling(true);
+    
+    clearTimeout(scrollTimeoutRef.current);
+    scrollTimeoutRef.current = setTimeout(() => {
+      setIsScrolling(false);
+    }, 150);
+  }, []);
+  
+  return {
+    visibleRange,
+    isScrolling,
+    handleScroll,
+    totalHeight: data.length * rowHeight
+  };
+};
+
+// Separated objectives/actions state (no cross-linking)
+const useSeparatedObjectivesActions = (clientGroupId: number) => {
+  // Completely separate state management - NO linking between objectives and actions
+  const objectives = useQuery(
+    ['client-objectives', clientGroupId],
+    () => apiService.getClientObjectives(clientGroupId),
     {
-      delay: 30000,
-      enabled: !deepEqual(formData, item)
+      staleTime: 60 * 1000, // 1 minute
+      refetchInterval: false // Manual refresh only
     }
   );
+  
+  // Actions managed separately - no objective linking
+  const clientActions = useQuery(
+    ['client-specific-actions', clientGroupId],
+    () => apiService.getClientSpecificActions(clientGroupId),
+    {
+      staleTime: 30 * 1000,
+      enabled: false // Load only when tab is active
+    }
+  );
+  
+  return {
+    objectives,
+    clientActions,
+    // Separate management functions - NO linking capability
+    addObjective: (objective: CreateObjectiveRequest) => 
+      apiService.createObjective(clientGroupId, objective),
+    addClientAction: (action: CreateActionRequest) => 
+      apiService.createClientAction(clientGroupId, action),
+    // Note: No linkAction function - architecture prevents objective-action linking
+  };
+};
 
+// Global actions state (cross-client workflow)
+const useGlobalActionsState = () => {
+  const [filters, setFilters] = useState<GlobalActionFilters>({
+    sortBy: 'due_date',
+    sortOrder: 'asc',
+    showOverdue: true
+  });
+  
+  const globalActions = useQuery(
+    ['global-actions', filters],
+    () => apiService.getGlobalActionsByUrgency(filters),
+    {
+      staleTime: 15 * 1000, // 15 seconds - high priority workflow data
+      refetchInterval: 30 * 1000, // Auto-refresh for urgency tracking
+      select: (data) => {
+        // Pre-calculate display properties for dense table
+        return data.map(action => ({
+          ...action,
+          urgency_color: calculateUrgencyColor(action.due_date, action.priority),
+          days_until_due: calculateDaysUntilDue(action.due_date),
+          status_display: formatStatusForDenseDisplay(action.status)
+        }));
+      }
+    }
+  );
+  
+  return {
+    globalActions,
+    filters,
+    setFilters,
+    // Cross-client action management
+    assignToClients: (actionId: number, clientGroupIds: number[]) => 
+      apiService.assignGlobalAction(actionId, clientGroupIds),
+    updateActionStatus: (actionId: number, status: ActionStatus, notes?: string) => 
+      apiService.updateGlobalActionStatus(actionId, status, notes)
+  };
+};
+
+// Memory management for large datasets in dense interfaces
+const useDenseDataMemoryManagement = () => {
+  const queryClient = useQueryClient();
+  
+  useEffect(() => {
+    const memoryCheckInterval = setInterval(() => {
+      // Monitor memory usage for dense table performance
+      if (performance.memory?.usedJSHeapSize > 150 * 1024 * 1024) { // 150MB threshold
+        // Clear old query cache to free memory
+        queryClient.removeQueries({
+          predicate: (query) => {
+            const age = Date.now() - query.state.dataUpdatedAt;
+            return age > 10 * 60 * 1000; // Remove queries older than 10 minutes
+          }
+        });
+        
+        // Force garbage collection if available
+        if (window.gc) {
+          window.gc();
+        }
+      }
+    }, 30000); // Check every 30 seconds
+    
+    return () => clearInterval(memoryCheckInterval);
+  }, [queryClient]);
+};
+
+// Usage in dense table components
+const DenseInformationTable: React.FC<DenseTableProps> = ({ 
+  clientGroupId, 
+  data, 
+  onRowUpdate 
+}) => {
+  // Enhanced auto-save for dense table editing
+  const { saveStatus, conflictItems, hasUnsavedChanges } = useDenseTableAutoSave(
+    data,
+    async (item) => {
+      await apiService.updateInformationItemDense(clientGroupId, item);
+      onRowUpdate?.(item);
+    },
+    {
+      delay: 15000, // Faster save for professional workflow
+      batchSize: 10, // Batch multiple edits
+      conflictResolution: 'optimistic'
+    }
+  );
+  
+  // Virtual scrolling for large datasets
+  const { visibleRange, handleScroll, totalHeight } = useVirtualScrollState({
+    data,
+    rowHeight: 36, // Information-dense row height
+    containerHeight: 600, // Table container height
+    bufferSize: 5 // Rows to render outside viewport
+  });
+  
+  // Memory management
+  useDenseDataMemoryManagement();
+  
   return (
-    <div className="item-editor">
-      <JsonEditor
-        data={formData.data_content}
-        onChange={(data) => setFormData(prev => ({ ...prev, data_content: data }))}
+    <div className="dense-information-table">
+      <TableHeader
+        unsavedChanges={hasUnsavedChanges}
+        conflictCount={conflictItems.size}
+        totalItems={data.length}
       />
       
-      <AutoSaveIndicator
-        status={saveStatus}
-        lastSaved={lastSaved}
-        error={error}
-        onForceSave={forceSave}
-      />
+      <VirtualScrollContainer
+        height={totalHeight}
+        onScroll={handleScroll}
+        className="information-dense"
+      >
+        {data.slice(visibleRange.startIndex, visibleRange.endIndex + 1).map(item => (
+          <DenseTableRow
+            key={item.id}
+            item={item}
+            saveStatus={saveStatus[item.id]}
+            hasConflict={conflictItems.has(item.id)}
+            height={36}
+          />
+        ))}
+      </VirtualScrollContainer>
     </div>
   );
 };
@@ -1712,78 +2036,426 @@ const AccessibleTable: React.FC<AccessibleTableProps> = ({
 
 ---
 
-## Performance Optimization
+## Performance Strategy - Virtual Scrolling & Dense Data Optimization
 
-### Virtual Scrolling and Large Dataset Management
+### Information-Dense Virtual Scrolling Architecture
+
+**Performance Requirements for Dense Interfaces**:
+- **Sub-500ms rendering** for dense tables with 100+ rows
+- **12+ rows visible** simultaneously for information density
+- **Virtual scrolling mandatory** for datasets > 200 items
+- **Memory management** for 1000+ row datasets without degradation
+- **Smooth scrolling** at 60fps with complex row content
 
 ```typescript
-// VirtualizedList component for handling large datasets
-const VirtualizedList: React.FC<VirtualizedListProps> = ({
+// High-performance dense table virtual scrolling
+const DenseTableVirtualized: React.FC<DenseVirtualTableProps> = ({
   items,
-  itemHeight = 60,
-  containerHeight = 400,
-  renderItem,
-  overscan = 5,
+  columns,
+  rowHeight = 36, // Information-dense compact height
+  containerHeight = 600, // Minimum height for 12+ rows visibility
+  minVisibleRows = 12, // Information density requirement
+  bufferSize = 10, // Rows to render outside viewport
+  enableStickyHeader = true,
+  onRowEdit,
   className = ''
 }) => {
   const [scrollTop, setScrollTop] = useState(0);
+  const [isScrolling, setIsScrolling] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  const visibleStart = Math.floor(scrollTop / itemHeight);
-  const visibleEnd = Math.min(
-    visibleStart + Math.ceil(containerHeight / itemHeight) + overscan,
-    items.length
-  );
-
-  const visibleItems = items.slice(visibleStart, visibleEnd);
-
+  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
+  
+  // Calculate visible range with buffer for smooth scrolling
+  const visibleRange = useMemo(() => {
+    const startIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - bufferSize);
+    const endIndex = Math.min(
+      items.length - 1,
+      Math.ceil((scrollTop + containerHeight) / rowHeight) + bufferSize
+    );
+    
+    return { startIndex, endIndex };
+  }, [scrollTop, rowHeight, containerHeight, bufferSize, items.length]);
+  
+  // Performance-optimized scroll handler
   const handleScroll = useCallback(
-    throttle((e: React.UIEvent<HTMLDivElement>) => {
-      setScrollTop(e.currentTarget.scrollTop);
-    }, 16), // ~60fps
+    (e: React.UIEvent<HTMLDivElement>) => {
+      const newScrollTop = e.currentTarget.scrollTop;
+      setScrollTop(newScrollTop);
+      setIsScrolling(true);
+      
+      // Debounce scrolling state for performance
+      clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = setTimeout(() => {
+        setIsScrolling(false);
+      }, 150);
+    },
     []
   );
-
-  const scrollToItem = useCallback((index: number) => {
-    if (containerRef.current) {
-      const scrollTo = index * itemHeight;
-      containerRef.current.scrollTo({ top: scrollTo, behavior: 'smooth' });
+  
+  // Memory-efficient visible items calculation
+  const visibleItems = useMemo(() => {
+    return items.slice(visibleRange.startIndex, visibleRange.endIndex + 1);
+  }, [items, visibleRange.startIndex, visibleRange.endIndex]);
+  
+  // Scroll to specific row (for search/navigation)
+  const scrollToRow = useCallback((rowIndex: number) => {
+    if (containerRef.current && rowIndex >= 0 && rowIndex < items.length) {
+      const scrollTo = rowIndex * rowHeight;
+      containerRef.current.scrollTo({ 
+        top: scrollTo, 
+        behavior: 'smooth' 
+      });
     }
-  }, [itemHeight]);
-
+  }, [rowHeight, items.length]);
+  
+  // Performance monitoring
+  useEffect(() => {
+    const measurePerformance = () => {
+      const renderStart = performance.now();
+      requestAnimationFrame(() => {
+        const renderTime = performance.now() - renderStart;
+        if (renderTime > 16) { // > 60fps threshold
+          console.warn(`Dense table render time: ${renderTime.toFixed(2)}ms (target: <16ms)`);
+        }
+      });
+    };
+    
+    if (visibleItems.length > 0) {
+      measurePerformance();
+    }
+  }, [visibleItems]);
+  
   return (
-    <div
-      ref={containerRef}
-      className={`virtualized-list ${className}`}
-      style={{ height: containerHeight, overflow: 'auto' }}
-      onScroll={handleScroll}
-      role="list"
-      aria-label={`List of ${items.length} items`}
-    >
+    <div className={`dense-table-virtualized ${className}`}>
+      {/* Sticky header for dense tables */}
+      {enableStickyHeader && (
+        <div className="dense-table-header sticky">
+          <DenseTableHeaderRow 
+            columns={columns}
+            sortable={true}
+            className="information-dense"
+          />
+        </div>
+      )}
+      
+      {/* Virtual scroll container */}
       <div
-        style={{
-          height: items.length * itemHeight,
-          position: 'relative'
+        ref={containerRef}
+        className="dense-table-scroll-container"
+        style={{ 
+          height: containerHeight, 
+          overflow: 'auto',
+          // Ensure minimum rows are visible
+          minHeight: Math.max(containerHeight, minVisibleRows * rowHeight + 40)
         }}
+        onScroll={handleScroll}
+        role="table"
+        aria-label={`Dense table with ${items.length} rows, showing ${visibleItems.length} visible`}
+        aria-rowcount={items.length}
       >
-        {visibleItems.map((item, index) => {
-          const actualIndex = visibleStart + index;
-          return (
-            <div
-              key={item.id || actualIndex}
-              style={{
-                position: 'absolute',
-                top: actualIndex * itemHeight,
-                height: itemHeight,
-                width: '100%'
-              }}
-              role="listitem"
-            >
-              {renderItem(item, actualIndex)}
-            </div>
-          );
-        })}
+        {/* Total height container for scroll bar calculation */}
+        <div
+          className="dense-table-total-height"
+          style={{
+            height: items.length * rowHeight,
+            position: 'relative'
+          }}
+        >
+          {/* Only render visible rows for performance */}
+          {visibleItems.map((item, index) => {
+            const actualIndex = visibleRange.startIndex + index;
+            return (
+              <DenseTableRow
+                key={item.id || actualIndex}
+                item={item}
+                columns={columns}
+                rowIndex={actualIndex}
+                style={{
+                  position: 'absolute',
+                  top: actualIndex * rowHeight,
+                  height: rowHeight,
+                  width: '100%'
+                }}
+                className={`
+                  dense-row
+                  ${isScrolling ? 'scrolling' : ''}
+                  ${actualIndex % 2 === 0 ? 'even' : 'odd'}
+                `}
+                onEdit={() => onRowEdit?.(item)}
+                aria-rowindex={actualIndex + 1}
+                informationDense={true}
+              />
+            );
+          })}
+        </div>
       </div>
+      
+      {/* Performance indicators for development */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="performance-debug">
+          <small>
+            Visible: {visibleRange.endIndex - visibleRange.startIndex + 1}/{items.length} | 
+            Scroll: {Math.round(scrollTop)}px | 
+            {isScrolling ? 'Scrolling' : 'Idle'}
+          </small>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Memory management for large datasets
+const useDenseTableMemoryOptimization = <T>(
+  items: T[],
+  options: MemoryOptimizationOptions = {}
+) => {
+  const {
+    maxItemsInMemory = 1000,
+    cleanupThreshold = 5000,
+    enableGarbageCollection = true
+  } = options;
+  
+  const [optimizedItems, setOptimizedItems] = useState(items);
+  
+  useEffect(() => {
+    // If dataset is large, implement chunked loading
+    if (items.length > maxItemsInMemory) {
+      // Keep only essential data in memory, lazy load details
+      const optimized = items.map(item => ({
+        ...item,
+        _detailed: false, // Flag for lazy loading detailed data
+        _memoryOptimized: true
+      }));
+      
+      setOptimizedItems(optimized as T[]);
+    } else {
+      setOptimizedItems(items);
+    }
+    
+    // Trigger garbage collection if dataset is very large
+    if (enableGarbageCollection && items.length > cleanupThreshold) {
+      if (window.gc) {
+        window.gc();
+      }
+    }
+  }, [items, maxItemsInMemory, cleanupThreshold, enableGarbageCollection]);
+  
+  return optimizedItems;
+};
+```
+
+### Dense Table Performance Patterns
+
+**Row-Level Memoization Strategy**:
+```typescript
+// High-performance row component with memoization
+const DenseTableRow = React.memo<DenseTableRowProps>(({ 
+  item, 
+  columns, 
+  rowIndex, 
+  onEdit,
+  informationDense = true,
+  ...props 
+}) => {
+  // Memoize expensive calculations
+  const calculatedFields = useMemo(() => ({
+    ownershipDisplay: formatOwnershipForDenseDisplay(item.ownership),
+    categoryEmoji: getCategoryEmoji(item.category),
+    urgencyColor: item.due_date ? calculateUrgencyColor(item.due_date) : null,
+    lastEditedRelative: formatRelativeDate(item.last_edited)
+  }), [item.ownership, item.category, item.due_date, item.last_edited]);
+  
+  // Memoize click handlers to prevent unnecessary re-renders
+  const handleEdit = useCallback(() => {
+    onEdit?.(item);
+  }, [onEdit, item]);
+  
+  const handleRowClick = useCallback((e: React.MouseEvent) => {
+    if (e.detail === 2) { // Double click for edit
+      handleEdit();
+    }
+  }, [handleEdit]);
+  
+  return (
+    <div 
+      className={`dense-table-row ${informationDense ? 'information-dense' : ''}`}
+      onClick={handleRowClick}
+      {...props}
+    >
+      {columns.map(column => (
+        <DenseTableCell
+          key={column.key}
+          column={column}
+          item={item}
+          calculatedFields={calculatedFields}
+          rowIndex={rowIndex}
+          className="dense-cell"
+        />
+      ))}
+    </div>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison for performance optimization
+  return (
+    prevProps.item.id === nextProps.item.id &&
+    prevProps.item.updated_at === nextProps.item.updated_at &&
+    prevProps.rowIndex === nextProps.rowIndex
+  );
+});
+```
+
+### Global Actions Performance Optimization
+
+**Cross-Client Data Caching Strategy**:
+```typescript
+// Optimized global actions data management
+const useGlobalActionsPerformance = () => {
+  const queryClient = useQueryClient();
+  
+  // Prefetch strategy for large action datasets
+  const prefetchNextPage = useCallback(async (currentPage: number) => {
+    await queryClient.prefetchQuery({
+      queryKey: ['global-actions', { page: currentPage + 1 }],
+      queryFn: () => apiService.getGlobalActions({ page: currentPage + 1 }),
+      staleTime: 60 * 1000 // 1 minute
+    });
+  }, [queryClient]);
+  
+  // Background sync for urgency updates
+  useEffect(() => {
+    const urgencyUpdateInterval = setInterval(() => {
+      // Update urgency colors based on current time
+      queryClient.setQueryData(
+        ['global-actions'],
+        (oldData: GlobalAction[] | undefined) => {
+          if (!oldData) return oldData;
+          
+          return oldData.map(action => ({
+            ...action,
+            urgency_color: calculateUrgencyColor(action.due_date, action.priority),
+            days_until_due: calculateDaysUntilDue(action.due_date)
+          }));
+        }
+      );
+    }, 60 * 1000); // Update every minute
+    
+    return () => clearInterval(urgencyUpdateInterval);
+  }, [queryClient]);
+  
+  return {
+    prefetchNextPage
+  };
+};
+```
+
+### Performance Monitoring & Metrics
+
+**Real-Time Performance Tracking**:
+```typescript
+// Performance monitoring for dense interfaces
+class DenseInterfacePerformanceMonitor {
+  private metrics: PerformanceMetric[] = [];
+  private renderTimeThreshold = 16; // 60fps target
+  private memoryThreshold = 150 * 1024 * 1024; // 150MB
+  
+  // Monitor dense table rendering performance
+  measureDenseTableRender<T>(
+    component: string,
+    rowCount: number,
+    renderFunction: () => T
+  ): T {
+    const startTime = performance.now();
+    const startMemory = (performance as any).memory?.usedJSHeapSize || 0;
+    
+    const result = renderFunction();
+    
+    requestAnimationFrame(() => {
+      const endTime = performance.now();
+      const endMemory = (performance as any).memory?.usedJSHeapSize || 0;
+      const renderTime = endTime - startTime;
+      const memoryUsed = endMemory - startMemory;
+      
+      this.metrics.push({
+        component,
+        renderTime,
+        memoryUsed,
+        rowCount,
+        timestamp: Date.now(),
+        exceededThreshold: renderTime > this.renderTimeThreshold
+      });
+      
+      // Log performance warnings
+      if (renderTime > this.renderTimeThreshold) {
+        console.warn(
+          `Dense table ${component} render time: ${renderTime.toFixed(2)}ms ` +
+          `(${rowCount} rows) - Target: <${this.renderTimeThreshold}ms`
+        );
+      }
+      
+      if (memoryUsed > this.memoryThreshold) {
+        console.warn(
+          `High memory usage: ${(memoryUsed / 1024 / 1024).toFixed(2)}MB ` +
+          `- Consider virtual scrolling optimization`
+        );
+      }
+    });
+    
+    return result;
+  }
+  
+  // Get performance summary for dense interfaces
+  getPerformanceSummary(): DenseInterfaceMetrics {
+    const recentMetrics = this.metrics.filter(
+      m => Date.now() - m.timestamp < 5 * 60 * 1000 // Last 5 minutes
+    );
+    
+    return {
+      averageRenderTime: recentMetrics.reduce((sum, m) => sum + m.renderTime, 0) / recentMetrics.length,
+      maxRenderTime: Math.max(...recentMetrics.map(m => m.renderTime)),
+      performanceIssues: recentMetrics.filter(m => m.exceededThreshold).length,
+      totalMeasurements: recentMetrics.length,
+      memoryEfficiency: recentMetrics.reduce((sum, m) => sum + m.memoryUsed, 0) / recentMetrics.length
+    };
+  }
+}
+
+// Usage in dense table components
+const performanceMonitor = new DenseInterfacePerformanceMonitor();
+
+const MonitoredDenseTable: React.FC<DenseTableProps> = ({ data, ...props }) => {
+  const [performanceMetrics, setPerformanceMetrics] = useState<DenseInterfaceMetrics | null>(null);
+  
+  useEffect(() => {
+    // Update performance metrics every 30 seconds
+    const metricsInterval = setInterval(() => {
+      setPerformanceMetrics(performanceMonitor.getPerformanceSummary());
+    }, 30000);
+    
+    return () => clearInterval(metricsInterval);
+  }, []);
+  
+  const renderTable = useCallback(() => {
+    return performanceMonitor.measureDenseTableRender(
+      'InformationItemsTable',
+      data.length,
+      () => <DenseTableVirtualized data={data} {...props} />
+    );
+  }, [data, props]);
+  
+  return (
+    <div className="monitored-dense-table">
+      {renderTable()}
+      
+      {/* Performance indicator for development */}
+      {process.env.NODE_ENV === 'development' && performanceMetrics && (
+        <div className="performance-metrics">
+          <small>
+            Avg Render: {performanceMetrics.averageRenderTime.toFixed(1)}ms | 
+            Issues: {performanceMetrics.performanceIssues} | 
+            Memory: {(performanceMetrics.memoryEfficiency / 1024 / 1024).toFixed(1)}MB
+          </small>
+        </div>
+      )}
     </div>
   );
 };
@@ -1793,7 +2465,7 @@ const VirtualizedList: React.FC<VirtualizedListProps> = ({
 
 ## Integration with Existing Frontend
 
-### Backward Compatibility Strategy
+### Information-Dense Interface Integration Strategy
 
 ```typescript
 // LegacyCompatibilityLayer for seamless integration
@@ -2159,124 +2831,685 @@ interface EditableTableColumn<T> {
 
 ---
 
-## UI/UX Design Patterns
+## Professional Wealth Management Styling Guidelines
 
-### Design System Integration
+### Information-Dense Design System
 
-**Color Palette Extensions**:
+**Professional Color Palette for Financial Interfaces**:
 ```scss
-// Phase 2 color additions
+// Professional wealth management color system
 :root {
-  // Presence indicators
-  --color-presence-active: #10b981;
-  --color-presence-idle: #f59e0b;
-  --color-presence-away: #6b7280;
+  // Information density colors - prioritizing readability over aesthetics
+  --color-professional-primary: #1f2937;    // Dark gray for primary text
+  --color-professional-secondary: #4b5563;  // Medium gray for secondary text
+  --color-professional-tertiary: #9ca3af;   // Light gray for supporting text
   
-  // Auto-save status
-  --color-saving: #3b82f6;
-  --color-saved: #10b981;
-  --color-save-error: #ef4444;
+  // Dense table colors for maximum information visibility
+  --color-table-header: #f9fafb;            // Subtle header background
+  --color-table-row-even: #ffffff;          // White for even rows
+  --color-table-row-odd: #f8fafc;          // Very light gray for odd rows
+  --color-table-border: #e5e7eb;           // Light border for structure
+  --color-table-hover: #f3f4f6;            // Subtle hover state
   
-  // Conflict resolution
-  --color-conflict-warning: #f59e0b;
-  --color-conflict-danger: #ef4444;
-  --color-conflict-resolution: #8b5cf6;
+  // Financial status colors - professional and accessible
+  --color-overdue: #dc2626;                 // Red for overdue items
+  --color-due-soon: #d97706;                // Orange for due soon
+  --color-on-track: #059669;                // Green for on-track items
+  --color-pending: #7c2d12;                 // Brown for pending items
+  
+  // 3-section card colors
+  --color-section-border: #d1d5db;          // Section divider
+  --color-section-header: #6b7280;          // Section header text
+  --color-field-label: #374151;             // Field labels
+  
+  // Big 5 category colors (subtle, professional)
+  --color-basic-detail: #8b5cf6;            // Purple for basic detail
+  --color-income-expenditure: #10b981;      // Green for income/expenditure
+  --color-assets-liabilities: #3b82f6;      // Blue for assets/liabilities
+  --color-protection: #f59e0b;              // Amber for protection
+  --color-vulnerability-health: #ef4444;    // Red for vulnerability/health
+  
+  // Status and workflow colors
+  --color-saving: #6366f1;                  // Indigo for saving state
+  --color-saved: #10b981;                   // Green for saved state
+  --color-conflict: #dc2626;                // Red for conflicts
+  --color-presence-active: #059669;         // Green for active users
 }
 ```
 
-**Spacing and Layout**:
+**Information Density Typography**:
 ```scss
-// Phase 2 spacing system
-.tab-container {
-  --tab-padding: 1rem 1.5rem;
-  --tab-gap: 0.5rem;
-  --tab-border-radius: 0.5rem 0.5rem 0 0;
-}
-
-.presence-indicator {
-  --presence-size: 2rem;
-  --presence-gap: 0.25rem;
-  --presence-offset: -0.125rem;
-}
-
-.auto-save-indicator {
-  --indicator-size: 0.75rem;
-  --indicator-spacing: 0.5rem;
+// Professional typography prioritizing readability and information density
+:root {
+  // Dense table typography
+  --font-size-table-header: 0.75rem;        // 12px - compact headers
+  --font-size-table-cell: 0.875rem;         // 14px - readable cell text
+  --font-size-table-detail: 0.75rem;        // 12px - supporting details
+  
+  // 3-section card typography
+  --font-size-section-header: 1rem;         // 16px - section headers
+  --font-size-field-label: 0.875rem;        // 14px - field labels
+  --font-size-field-value: 0.875rem;        // 14px - field values
+  
+  // Professional spacing for information density
+  --line-height-dense: 1.25;                // Compact line height
+  --line-height-comfortable: 1.5;           // Standard line height
+  
+  // Font weights for hierarchy
+  --font-weight-table-header: 600;          // Semibold for headers
+  --font-weight-field-label: 500;           // Medium for labels
+  --font-weight-emphasis: 600;               // Semibold for emphasis
 }
 ```
 
-**Animation and Transitions**:
+**Information-Dense Layout System**:
 ```scss
-// Phase 2 animation system
-@keyframes presence-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+// Professional spacing optimized for information density
+.dense-table {
+  --row-height: 36px;                       // Compact row height for 12+ rows visibility
+  --cell-padding: 8px 12px;                 // Minimal cell padding
+  --header-height: 40px;                    // Slightly larger header
+  --border-width: 1px;                      // Subtle borders
 }
 
-@keyframes save-success {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
+.product-owner-card-3section {
+  --section-gap: 16px;                      // Space between sections
+  --field-spacing: 8px;                     // Space between fields
+  --section-border: 1px solid var(--color-section-border);
+  --card-padding: 16px;                     // Professional card padding
 }
 
-.presence-indicator {
-  animation: presence-pulse 2s infinite;
+.global-actions-interface {
+  --action-row-height: 40px;                // Slightly larger for cross-client view
+  --urgency-indicator-size: 12px;           // Color indicators
+  --status-badge-padding: 4px 8px;          // Compact status badges
 }
 
-.auto-save-indicator.saving {
-  animation: rotate 1s linear infinite;
+.objectives-actions-separated {
+  --column-gap: 24px;                       // Clear separation between objectives and actions
+  --item-spacing: 12px;                     // Space between items
+  --expand-button-size: 20px;               // [+ Expand] button size
 }
 
-.auto-save-indicator.saved {
-  animation: save-success 0.3s ease-out;
+// Big 5 category layout
+.category-display {
+  --emoji-size: 16px;                       // Category emoji size
+  --emoji-text-gap: 8px;                    // Space between emoji and text
+  --category-padding: 4px 8px;              // Category badge padding
 }
 ```
 
-### Responsive Design Patterns
-
+**Dense Table Component Styles**:
 ```scss
-// Phase 2 responsive breakpoints
-.client-details-layout {
-  @media (max-width: 768px) {
-    .tab-container {
-      flex-direction: column;
+// Information-dense table styling
+.dense-data-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  font-size: var(--font-size-table-cell);
+  
+  .table-header {
+    background-color: var(--color-table-header);
+    font-size: var(--font-size-table-header);
+    font-weight: var(--font-weight-table-header);
+    height: var(--header-height);
+    border-bottom: 2px solid var(--color-table-border);
+    
+    .sortable-header {
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.15s ease;
       
-      .tab-nav {
-        overflow-x: auto;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
+      &:hover {
+        background-color: var(--color-table-hover);
+      }
+    }
+  }
+  
+  .table-row {
+    height: var(--row-height);
+    border-bottom: var(--border-width) solid var(--color-table-border);
+    transition: background-color 0.1s ease;
+    
+    &:nth-child(even) {
+      background-color: var(--color-table-row-even);
+    }
+    
+    &:nth-child(odd) {
+      background-color: var(--color-table-row-odd);
+    }
+    
+    &:hover {
+      background-color: var(--color-table-hover);
+    }
+    
+    &.editing {
+      background-color: #fef3c7; // Light yellow for editing state
+      outline: 2px solid var(--color-saving);
+    }
+  }
+  
+  .table-cell {
+    padding: var(--cell-padding);
+    border-right: var(--border-width) solid var(--color-table-border);
+    vertical-align: middle;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    
+    &:last-child {
+      border-right: none;
+    }
+    
+    .expandable-text {
+      cursor: pointer;
+      
+      .expand-button {
+        color: var(--color-professional-secondary);
+        font-size: 0.75rem;
+        margin-left: 4px;
         
-        &::-webkit-scrollbar {
-          display: none;
+        &:hover {
+          color: var(--color-professional-primary);
+        }
+      }
+    }
+  }
+}
+```
+
+**Professional Interface Animations**:
+```scss
+// Subtle animations for professional wealth management interfaces
+
+// Status indicator animations
+@keyframes urgency-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes save-progress {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes expand-content {
+  0% { 
+    max-height: 0; 
+    opacity: 0; 
+  }
+  100% { 
+    max-height: 200px; 
+    opacity: 1; 
+  }
+}
+
+// Urgency color coding animations
+.urgency-indicator {
+  &.overdue {
+    color: var(--color-overdue);
+    animation: urgency-pulse 1.5s infinite;
+  }
+  
+  &.due-soon {
+    color: var(--color-due-soon);
+    animation: urgency-pulse 2s infinite;
+  }
+}
+
+// Auto-save status animations
+.save-status {
+  &.saving {
+    animation: save-progress 1s linear infinite;
+  }
+  
+  &.saved {
+    color: var(--color-saved);
+    transition: color 0.3s ease;
+  }
+  
+  &.conflict {
+    color: var(--color-conflict);
+    animation: urgency-pulse 1s infinite;
+  }
+}
+
+// Expandable content animations
+.expandable-content {
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+  
+  &.expanded {
+    animation: expand-content 0.3s ease;
+  }
+}
+
+// Row interaction animations
+.table-row {
+  transition: background-color 0.1s ease, transform 0.1s ease;
+  
+  &.selected {
+    transform: translateX(2px);
+    background-color: #e0f2fe;
+    border-left: 3px solid var(--color-professional-primary);
+  }
+}
+```
+
+**3-Section Product Owner Card Styles**:
+```scss
+// Professional 3-section layout styling
+.product-owner-card-3section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: var(--section-gap);
+  padding: var(--card-padding);
+  border: 1px solid var(--color-section-border);
+  border-radius: 8px;
+  background: white;
+  
+  .personal-details-section {
+    grid-column: 1;
+    grid-row: 1;
+    
+    .section-header {
+      font-size: var(--font-size-section-header);
+      font-weight: var(--font-weight-emphasis);
+      color: var(--color-section-header);
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--color-section-border);
+      padding-bottom: 4px;
+    }
+    
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--field-spacing);
+      
+      .field-item {
+        display: flex;
+        justify-content: space-between;
+        
+        .field-label {
+          font-size: var(--font-size-field-label);
+          font-weight: var(--font-weight-field-label);
+          color: var(--color-field-label);
+        }
+        
+        .field-value {
+          font-size: var(--font-size-field-value);
+          color: var(--color-professional-primary);
+        }
+      }
+    }
+  }
+  
+  .contact-info-section {
+    grid-column: 2;
+    grid-row: 1;
+    border-left: var(--section-border);
+    padding-left: var(--section-gap);
+    
+    .phone-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      
+      .phone-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        
+        .phone-emoji {
+          font-size: 14px;
+        }
+        
+        .phone-type {
+          font-size: 0.75rem;
+          color: var(--color-professional-secondary);
+          min-width: 60px;
+        }
+        
+        .phone-number {
+          font-family: monospace;
+          font-size: var(--font-size-field-value);
+        }
+        
+        &.primary {
+          font-weight: var(--font-weight-emphasis);
+        }
+      }
+    }
+  }
+  
+  .full-width-section {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    border-top: var(--section-border);
+    padding-top: var(--section-gap);
+    
+    .compliance-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    
+    .security-notes {
+      margin-top: 12px;
+      padding: 12px;
+      background-color: #f9fafb;
+      border-radius: 4px;
+      font-size: var(--font-size-field-value);
+    }
+  }
+}
+```
+
+### Professional Interface Responsive Design
+
+```scss
+// Information-dense responsive patterns (desktop-first approach)
+.dense-interface {
+  // Large screens - optimal information density
+  @media (min-width: 1440px) {
+    .dense-data-table {
+      --row-height: 32px;                     // Even more compact for large screens
+      font-size: 0.8125rem;                   // Slightly smaller text
+    }
+    
+    .product-owner-card-3section {
+      grid-template-columns: 300px 300px;     // Fixed section widths
+      max-width: 800px;                       // Prevent over-stretching
+    }
+    
+    .global-actions-table {
+      .table-cell {
+        min-width: 150px;                     // Prevent column squeeze
+      }
+    }
+  }
+  
+  // Standard desktop - primary target
+  @media (min-width: 1024px) and (max-width: 1439px) {
+    .dense-data-table {
+      --row-height: 36px;                     // Standard dense height
+    }
+    
+    .information-items-container {
+      .table-container {
+        min-height: 450px;                    // Ensure 12+ rows visible
+      }
+    }
+  }
+  
+  // Tablet - degraded information density
+  @media (max-width: 1023px) {
+    .dense-data-table {
+      --row-height: 44px;                     // Larger touch targets
+      
+      .table-cell {
+        padding: 12px 8px;                    // More generous padding
+      }
+      
+      // Hide less critical columns on smaller screens
+      .column-priority-low {
+        display: none;
+      }
+    }
+    
+    .product-owner-card-3section {
+      grid-template-columns: 1fr;             // Stack sections vertically
+      grid-template-rows: auto auto auto;
+      
+      .contact-info-section {
+        border-left: none;
+        border-top: var(--section-border);
+        padding-left: 0;
+        padding-top: var(--section-gap);
+      }
+    }
+    
+    .objectives-actions-separated {
+      display: block;                          // Stack columns
+      
+      .objectives-column,
+      .actions-column {
+        width: 100%;
+        margin-bottom: 24px;
+      }
+    }
+  }
+  
+  // Mobile - minimal support (not primary target)
+  @media (max-width: 768px) {
+    .dense-data-table {
+      // Convert to card layout on very small screens
+      display: block;
+      
+      .table-row {
+        display: block;
+        border: 1px solid var(--color-table-border);
+        border-radius: 4px;
+        margin-bottom: 8px;
+        padding: 12px;
+        
+        .table-cell {
+          display: block;
+          border: none;
+          padding: 4px 0;
+          
+          &:before {
+            content: attr(data-label) ": ";
+            font-weight: var(--font-weight-emphasis);
+            display: inline-block;
+            min-width: 80px;
+          }
         }
       }
     }
     
-    .presence-indicator {
-      position: fixed;
-      bottom: 1rem;
-      right: 1rem;
-      z-index: 50;
+    .global-actions-interface {
+      .urgency-filters {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
     }
   }
 }
 
-.universal-search {
-  @media (max-width: 640px) {
-    .search-results {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      z-index: 50;
-      background: white;
-      padding: 1rem;
-      overflow-y: auto;
+// Print styles for professional reports
+@media print {
+  .dense-interface {
+    * {
+      color: black !important;
+      background: white !important;
+    }
+    
+    .dense-data-table {
+      border-collapse: collapse;
+      width: 100%;
+      
+      .table-row {
+        break-inside: avoid;
+      }
+    }
+    
+    .product-owner-card-3section {
+      break-inside: avoid;
+      border: 1px solid black;
+    }
+    
+    // Hide interactive elements
+    .edit-button,
+    .expand-button,
+    .presence-indicator,
+    .auto-save-indicator {
+      display: none;
     }
   }
 }
 ```
+
+**Accessibility Enhancements for Dense Interfaces**:
+```scss
+// WCAG 2.1 AA compliance for information-dense interfaces
+.dense-interface {
+  // High contrast mode support
+  @media (prefers-contrast: high) {
+    :root {
+      --color-professional-primary: #000000;
+      --color-professional-secondary: #333333;
+      --color-table-border: #666666;
+      --color-table-hover: #f0f0f0;
+    }
+  }
+  
+  // Reduced motion support
+  @media (prefers-reduced-motion: reduce) {
+    .urgency-indicator,
+    .save-status,
+    .expandable-content {
+      animation: none;
+    }
+    
+    .table-row {
+      transition: none;
+    }
+  }
+  
+  // Focus management for dense tables
+  .dense-data-table {
+    .table-row {
+      &:focus-within {
+        outline: 2px solid #005fcc;
+        outline-offset: -2px;
+        background-color: #e3f2fd;
+      }
+    }
+    
+    .table-cell {
+      &:focus {
+        outline: 2px solid #005fcc;
+        outline-offset: -2px;
+      }
+    }
+  }
+  
+  // Screen reader optimization
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+```
+
+---
+
+## Information Density Standards
+
+### Design Principles for Professional Wealth Management
+
+**Core Information Density Philosophy**:
+Kingston's Portal Phase 2 prioritizes **information accessibility over visual aesthetics**, following wealth management industry standards where data visibility directly impacts client service quality and business outcomes.
+
+**Quantitative Information Density Standards**:
+- **Minimum 12 rows visible** simultaneously in dense tables
+- **Maximum 40px row height** (36px optimal) for information density
+- **Sub-500ms rendering** target for dense displays with 100+ rows
+- **12+ columns** supported without horizontal scrolling degradation
+- **Big 5 categories** with emoji + text approach for older users
+
+---
+
+## 3-Section Product Owner Cards
+
+### Professional Contact Information Architecture
+
+The product owner cards implement a **professional 3-section layout** optimized for wealth management contact workflows:
+
+- **Left Section (Personal Details)**: Known as, title, DOB, NI number
+- **Right Section (Contact Info)**: Mobile 📱, House Phone 🏠, Work 💼, Email ✉️
+- **Bottom Section (Full-width)**: Meetings, compliance, security words, notes
+
+**Enhanced Phone Management**: Supports multiple phone types (mobile, house_phone, work, other) with international format validation and primary phone designation.
+
+---
+
+## Dense Table Components
+
+### High-Performance Information Display
+
+**Virtual Scrolling for Dense Tables**: Mandatory for datasets > 200 items with 36px row height, 60fps scrolling performance, and memory management for 1000+ rows.
+
+**Accessibility Features**: WCAG 2.1 AA compliance with keyboard navigation, screen reader optimization, and high contrast support.
+
+---
+
+## Global Actions UI
+
+### Cross-Client Workflow Interface
+
+**Complete Architectural Separation**: Global Actions interface accessed via dedicated site sidebar (NOT within client details tabs), enabling true cross-client workflow management with urgency-based ordering.
+
+**Professional Features**: PDF export, bulk action management, urgency color coding (🔴 Overdue, 🟡 Due Soon, 🟢 Future).
+
+---
+
+## Liquidity View Toggle
+
+### Asset Ordering Interface
+
+**Dual-View System**: 
+- **Asset Type View**: Traditional grouping (Bank Accounts, Pensions, Investments, Property)
+- **Liquidity View**: Ordered by liquidity ranking with user customization
+
+**User Preferences**: Customizable liquidity rankings with decimal precision for fine-grained ordering.
+
+---
+
+## PDF Export Interface
+
+### Professional Export Workflows
+
+**Real-Time Progress Tracking**: Background processing with progress indicators, estimated completion times, and download status management.
+
+**Export Queue Management**: Multiple simultaneous exports with retry capabilities and professional formatting options.
+
+---
+
+## Performance Optimization for Large Datasets
+
+### Memory Management Strategy
+
+**Dataset Chunking**: Load data in chunks of 100 items with background prefetching and memory usage monitoring (150MB threshold).
+
+**Virtual Scrolling Optimization**: Buffer management, smooth scrolling at 60fps, and automatic garbage collection for memory efficiency.
+
+---
+
+## Cross-Reference Alignment
+
+### Integration with Phase 1-3 Documentation
+
+**Complete Phase Alignment**:
+- **Phase 1 Foundation**: Information-dense professional interface requirements ✅
+- **Phase 2 Database**: Enhanced schema capabilities (phones, separated actions, liquidity) ✅
+- **Phase 3 API**: All new endpoints (global actions, PDF export, liquidity preferences) ✅
+- **Demo Feedback**: All client-validated UI/UX requirements implemented ✅
+
+**Architecture Validation**:
+- Information density prioritized over aesthetics ✅
+- Dense table components with virtualization ✅
+- Complete objectives/actions separation ✅
+- Professional wealth management standards ✅
+- WCAG 2.1 AA accessibility compliance ✅
 
 ---
 
