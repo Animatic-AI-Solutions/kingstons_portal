@@ -35,6 +35,218 @@ Phase 2 enhances Kingston's Portal with **supplementary API endpoints** that int
 
 ---
 
+## Enhanced Product Owner Cards API
+
+### GET /api/product_owners/{product_owner_id}/enhanced
+
+**Purpose**: Retrieve enhanced product owner data with new structured fields
+**Authentication**: Required
+**Method**: GET
+
+#### Enhanced Response Format
+
+```json
+{
+  "product_owner": {
+    "id": 123,
+    "personal_details": {
+      "title": "Mr",
+      "first_name": "John",
+      "middle_names": "Michael David",
+      "surname": "Smith",
+      "known_as": "John",
+      "date_of_birth": "1975-06-15",
+      "ni_number": "AB123456C"
+    },
+    "contact_details": {
+      "email_address": "john.smith@email.com",
+      "phone_numbers": [
+        {
+          "id": 1,
+          "type": "mobile",
+          "number": "07700 900123",
+          "is_primary": true
+        },
+        {
+          "id": 2,
+          "type": "home",
+          "number": "01234 567890",
+          "is_primary": false
+        }
+      ],
+      "home_address": {
+        "line_1": "123 Main Street",
+        "line_2": "Apartment 4B",
+        "city": "London",
+        "county": "Greater London",
+        "postal_code": "SW1A 1AA",
+        "country": "United Kingdom"
+      }
+    },
+    "security_and_management": {
+      "three_words": ["apple", "sunshine", "freedom"],
+      "notes": "Prefers morning meetings, conservative investment approach",
+      "next_meeting": {
+        "date": "2024-09-15",
+        "meeting_type": "annual_review",
+        "is_nearest": true
+      },
+      "compliance": {
+        "date_signed_tc": "2024-01-15",
+        "last_signed_fee_agreement": "2024-01-15"
+      }
+    },
+    "created_at": "2024-01-15T10:00:00Z",
+    "updated_at": "2024-08-29T14:30:00Z"
+  }
+}
+```
+
+### PUT /api/product_owners/{product_owner_id}/personal_details
+
+**Purpose**: Update personal details including name structure and address
+**Authentication**: Required
+**Method**: PUT
+
+#### Request Body Schema
+
+```json
+{
+  "title": "Mrs",
+  "first_name": "Jane",
+  "middle_names": "Elizabeth",
+  "surname": "Smith",
+  "known_as": "Jane",
+  "date_of_birth": "1978-03-22",
+  "ni_number": "CD987654E",
+  "home_address": {
+    "line_1": "456 Oak Avenue",
+    "line_2": null,
+    "city": "Manchester",
+    "county": "Greater Manchester",
+    "postal_code": "M1 1AA",
+    "country": "United Kingdom"
+  }
+}
+```
+
+#### Validation Rules
+
+**Name Structure Validation**:
+- `title`: Required, 1-10 characters
+- `first_name`: Required, 1-50 characters
+- `middle_names`: Optional, max 100 characters
+- `surname`: Required, 1-50 characters
+- `known_as`: Required for display purposes, 1-30 characters
+
+**Address Validation**:
+- `line_1`: Required, max 100 characters
+- `postal_code`: Required, UK postcode format validation
+- `city`: Required, max 50 characters
+
+### POST /api/product_owners/{product_owner_id}/contacts
+
+**Purpose**: Add new contact (phone number) with type designation
+**Authentication**: Required
+**Method**: POST
+
+#### Request Body Schema
+
+```json
+{
+  "contact_type": "work",
+  "contact_value": "0161 123 4567",
+  "is_primary": false
+}
+```
+
+#### Response Format
+
+```json
+{
+  "contact": {
+    "id": 3,
+    "product_owner_id": 123,
+    "contact_type": "work",
+    "contact_value": "0161 123 4567",
+    "is_primary": false,
+    "created_at": "2024-08-29T14:35:00Z"
+  }
+}
+```
+
+#### Business Rules
+
+- **Primary Contact Management**: Only one contact can be marked as primary
+- **Contact Type Validation**: Must be 'mobile', 'home', or 'work'
+- **Phone Number Validation**: UK phone number format validation
+- **Maximum Contacts**: Up to 5 phone numbers per product owner
+
+### PUT /api/product_owners/{product_owner_id}/contacts/{contact_id}
+
+**Purpose**: Update specific contact information
+**Authentication**: Required
+**Method**: PUT
+
+#### Business Rules
+
+- Cannot remove the last contact entry
+- When updating primary status, automatically removes primary flag from other contacts
+- Phone number format validation applied
+
+### DELETE /api/product_owners/{product_owner_id}/contacts/{contact_id}
+
+**Purpose**: Remove specific contact
+**Authentication**: Required
+**Method**: DELETE
+
+#### Validation Rules
+
+- Must maintain at least one contact per product owner
+- If deleting primary contact, automatically reassigns primary to another contact
+- Returns 409 Conflict if attempting to delete the only contact
+
+### PUT /api/product_owners/{product_owner_id}/meeting
+
+**Purpose**: Update meeting information with type and date (no time)
+**Authentication**: Required
+**Method**: PUT
+
+#### Request Body Schema
+
+```json
+{
+  "meeting_date": "2024-10-15",
+  "meeting_type": "planning_meeting",
+  "is_nearest": true
+}
+```
+
+#### Meeting Types Supported
+
+- `annual_review` - Annual client review meeting
+- `planning_meeting` - Financial planning discussion  
+- `update_meeting` - Portfolio update meeting
+- `onboarding_meeting` - New client onboarding
+- `compliance_meeting` - Regulatory compliance meeting
+- `ad_hoc_meeting` - Unscheduled meeting
+
+#### Response Format
+
+```json
+{
+  "meeting": {
+    "product_owner_id": 123,
+    "meeting_date": "2024-10-15",
+    "meeting_type": "planning_meeting", 
+    "is_nearest": true,
+    "updated_at": "2024-08-29T14:40:00Z"
+  }
+}
+```
+
+---
+
 ## Client Information Items API
 
 ### GET /api/client_groups/{client_group_id}/information_items
@@ -391,7 +603,7 @@ Same as POST response with updated timestamps.
 **Authentication**: Required
 **Method**: GET
 
-#### Enhanced Response Format with Dynamic Headers
+#### Enhanced Response Format with Liquidity-Based Ordering
 ```json
 {
   "networth_data": {
@@ -404,27 +616,9 @@ Same as POST response with updated timestamps.
     },
     "item_types": [
       {
-        "type": "GIAs",
-        "items": [
-          {
-            "name": "Zurich Vista GIA",
-            "is_managed": true,
-            "john": 125000,
-            "mary": 95000,
-            "joint": 0,
-            "total": 220000,
-            "valuation_date": "2024-08-26"
-          }
-        ],
-        "subtotal": {
-          "john": 125000,
-          "mary": 95000,
-          "joint": 0,
-          "total": 220000
-        }
-      },
-      {
         "type": "Bank Accounts",
+        "liquidity_category": "cash_equivalents",
+        "display_order": 1,
         "items": [
           {
             "name": "Halifax Current Account",
@@ -450,6 +644,72 @@ Same as POST response with updated timestamps.
           "mary": 1750,
           "joint": 4500,
           "total": 8500
+        }
+      },
+      {
+        "type": "Cash ISAs",
+        "liquidity_category": "cash_equivalents",
+        "display_order": 2,
+        "items": [
+          {
+            "name": "Halifax Cash ISA 2024",
+            "is_managed": false,
+            "john": 15000,
+            "mary": 20000,
+            "joint": 0,
+            "total": 35000,
+            "valuation_date": "2024-08-26"
+          }
+        ],
+        "subtotal": {
+          "john": 15000,
+          "mary": 20000,
+          "joint": 0,
+          "total": 35000
+        }
+      },
+      {
+        "type": "Stocks & Shares ISAs",
+        "liquidity_category": "accessible_investments",
+        "display_order": 3,
+        "items": [
+          {
+            "name": "Vanguard S&S ISA",
+            "is_managed": true,
+            "john": 45000,
+            "mary": 38000,
+            "joint": 0,
+            "total": 83000,
+            "valuation_date": "2024-08-26"
+          }
+        ],
+        "subtotal": {
+          "john": 45000,
+          "mary": 38000,
+          "joint": 0,
+          "total": 83000
+        }
+      },
+      {
+        "type": "GIAs",
+        "liquidity_category": "accessible_investments",
+        "display_order": 4,
+        "items": [
+          {
+            "name": "Zurich Vista GIA",
+            "is_managed": true,
+            "john": 125000,
+            "mary": 95000,
+            "joint": 0,
+            "total": 220000,
+            "valuation_date": "2024-08-26"
+          }
+        ],
+        "subtotal": {
+          "john": 125000,
+          "mary": 95000,
+          "joint": 0,
+          "total": 220000
         }
       }
     ],
@@ -479,6 +739,24 @@ Same as POST response with updated timestamps.
     "summary_card_order": ["Net Worth", "Assets", "Liabilities", "Change"],
     "managed_status_indicators": true,
     "zero_value_display": "em_dash"
+  },
+  "ordering_metadata": {
+    "applied_hierarchy": "liquidity_based",
+    "ordering_principle": "most_liquid_to_least_liquid",
+    "reports_page_consistency": true,
+    "liquidity_categories": [
+      "cash_equivalents",
+      "accessible_investments", 
+      "retirement_investments",
+      "illiquid_investments",
+      "personal_assets",
+      "liabilities"
+    ],
+    "special_rules": {
+      "cash_isas_before_stocks_shares": true,
+      "managed_before_unmanaged_within_type": true,
+      "liabilities_always_last": true
+    }
   }
 }
 
@@ -490,6 +768,8 @@ Same as POST response with updated timestamps.
 | include_unmanaged | boolean | No | Include unmanaged products (default: true) |
 | include_items | boolean | No | Include information items (default: true) |
 | group_by | string | No | Grouping method (product_type, owner, category) |
+| ordering | string | No | Asset ordering method (liquidity_based, alphabetical, reports_page) default: liquidity_based |
+| apply_reports_consistency | boolean | No | Apply reports page consistency where applicable (default: true) |
 
 #### Legacy Response Format (Deprecated)
 
@@ -1958,7 +2238,7 @@ ALERT_THRESHOLDS = {
 
 ### GET /api/client_groups/{client_group_id}/objectives
 
-**Purpose**: Retrieve all objectives for a specific client group
+**Purpose**: Retrieve all objectives for a specific client group (completely independent from actions)
 
 #### Response Format
 ```json
@@ -1970,8 +2250,10 @@ ALERT_THRESHOLDS = {
       "title": "Retirement Planning",
       "description": "Build a comprehensive retirement portfolio targeting £750,000 by age 65. Focus on maximizing pension contributions and ISA allowances while maintaining appropriate risk levels for long-term growth.",
       "priority": "high",
+      "start_date": "2024-01-15",
       "target_date": "2030-12-31",
-      "status": "in_progress",
+      "last_discussed": "2024-08-29",
+      "status": "on-target",
       "created_at": "2024-08-26T10:00:00Z",
       "updated_at": "2024-08-26T10:00:00Z"
     }
@@ -1985,7 +2267,7 @@ ALERT_THRESHOLDS = {
 
 ### POST /api/client_groups/{client_group_id}/objectives
 
-**Purpose**: Create a new client objective
+**Purpose**: Create a new client objective (independent entity)
 
 #### Request Format
 ```json
@@ -1993,7 +2275,9 @@ ALERT_THRESHOLDS = {
   "title": "House Purchase",
   "description": "Save for deposit on family home in Surrey area. Target property value £450,000 requiring £90,000 deposit plus stamp duty and legal costs. Maintain funds in accessible investments.",
   "priority": "medium",
+  "start_date": "2024-08-01",
   "target_date": "2026-06-30",
+  "last_discussed": "2024-08-29",
   "status": "planning"
 }
 ```
@@ -2019,19 +2303,19 @@ ALERT_THRESHOLDS = {
 - **Date Field Validation**: Ensures logical date relationships (start_date ≤ target_date)
 - **Last Discussed Tracking**: Automatic updates when objective is modified during client meetings
 - **Status Change Logging**: Audit trail for status changes with timestamps and user attribution
+- **Complete Independence**: No action-related functionality or references
 
 ### GET /api/client_groups/{client_group_id}/actions
 
-**Purpose**: Retrieve all action items for a specific client group with objective linking information
+**Purpose**: Retrieve all action items for a specific client group (completely independent from objectives)
 
 #### Query Parameters
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| objective_id | integer | No | Filter actions by specific objective (or null for unlinked actions) |
 | status | string | No | Filter by action status (todo, completed) |
 | assignment_type | string | No | Filter by assignment type (advisor, client, other) |
-| include_objective_info | boolean | No | Include parent objective information (default: true) |
+| date_range | string | No | Filter by date range (created, target, drop_dead) |
 
 #### Enhanced Response Format
 ```json
@@ -2040,44 +2324,38 @@ ALERT_THRESHOLDS = {
     {
       "id": 1,
       "client_group_id": 123,
-      "objective_id": 1,
       "title": "Review pension contributions",
       "description": "Analyze current pension contributions across all schemes including workplace pension and SIPP. Consider increasing contributions to maximize annual allowance and tax efficiency. Review provider performance and fees.",
       "date_created": "2024-08-15",
       "target_date": "2024-09-15",
       "drop_dead_date": "2024-09-20",
+      "date_completed": null,
       "assigned_to": "John Advisor",
       "assignment_type": "advisor",
       "status": "todo",
+      "client_group_name": "Smith Family Trust",
       "created_at": "2024-08-26T10:00:00Z",
-      "updated_at": "2024-08-26T10:00:00Z",
-      "parent_objective": {
-        "id": 1,
-        "title": "Retirement Planning",
-        "status": "on-target"
-      }
+      "updated_at": "2024-08-26T10:00:00Z"
     },
     {
       "id": 2,
       "client_group_id": 123,
-      "objective_id": null,
       "title": "Update client contact details",
       "description": "Verify and update client email and phone information following recent move.",
       "date_created": "2024-08-20",
       "target_date": "2024-09-10",
       "drop_dead_date": "2024-09-15",
+      "date_completed": "2024-08-25",
       "assigned_to": "Jane Advisor",
       "assignment_type": "advisor", 
-      "status": "todo",
+      "status": "completed",
+      "client_group_name": "Smith Family Trust",
       "created_at": "2024-08-26T11:00:00Z",
-      "updated_at": "2024-08-26T11:00:00Z",
-      "parent_objective": null
+      "updated_at": "2024-08-25T14:30:00Z"
     }
   ],
   "summary": {
     "total_count": 8,
-    "linked_actions": 6,
-    "unlinked_actions": 2,
     "by_status": {
       "todo": 5,
       "completed": 3
@@ -2094,14 +2372,27 @@ ALERT_THRESHOLDS = {
 }
 ```
 
+### GET /api/actions/global
+
+**Purpose**: Retrieve actions from ALL client groups for global cross-client management (no objective context)
+
+#### Query Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| client_group_ids | array | No | Filter by specific client groups |
+| status | string | No | Filter by action status (todo, completed) |
+| assignment_type | string | No | Filter by assignment type (advisor, client, other) |
+| due_date_range | string | No | Filter by target/drop dead date ranges |
+| overdue_only | boolean | No | Show only overdue actions |
+
 ### POST /api/client_groups/{client_group_id}/actions
 
-**Purpose**: Create a new action item with enhanced date management and objective linking
+**Purpose**: Create a new standalone action item (no objective linking)
 
 #### Request Format
 ```json
 {
-  "objective_id": 2,
   "title": "Provide salary documentation",
   "description": "Gather and provide recent P60s, last 3 months payslips, and employment contract. Client to collect these documents from HR department and scan for secure upload.",
   "date_created": "2024-08-20",
@@ -2114,46 +2405,46 @@ ALERT_THRESHOLDS = {
 ```
 
 #### Enhanced Validation Rules
-- **Objective Linking**: If objective_id is provided, must reference valid existing objective for the client group
 - **Date Logic Validation**: date_created ≤ target_date ≤ drop_dead_date
 - **Assignment Validation**: assigned_to must be valid user or client name depending on assignment_type
-- **Null Objective Support**: objective_id can be null for standalone actions not linked to any objective
+- **No Objective References**: All objective_id fields and validations completely removed
 
 ### PUT /api/client_groups/{client_group_id}/actions/{action_id}
 
-**Purpose**: Update existing action item with objective linking, date management, and status tracking
+**Purpose**: Update existing standalone action item (no objective linking)
 
 #### Request Format
 ```json
 {
-  "objective_id": 1,
   "title": "Updated: Complete risk assessment questionnaire",
   "description": "Fill out comprehensive attitude to risk questionnaire online, including capacity for loss assessment and investment experience details. Updated with new regulatory requirements.",
   "target_date": "2024-09-25",
   "drop_dead_date": "2024-09-30",
+  "date_completed": "2024-08-29",
   "status": "completed"
 }
 ```
 
-#### Objective Linking Features
-- **Link to Objective**: Set objective_id to link standalone action to an existing objective
-- **Unlink from Objective**: Set objective_id to null to convert linked action to standalone
-- **Change Objective**: Update objective_id to move action between objectives
-- **Validation**: Ensures objective exists and belongs to the same client group
+#### Enhanced Features
+- **Date Completed Tracking**: New field for tracking completion dates
+- **Status Management**: Two-status system (todo/completed) with completion date validation
+- **Complete Independence**: No objective-related functionality or references
 
-#### Response Includes Updated Relationships
+### POST /api/actions/export/pdf
+
+**Purpose**: Export selected actions to PDF format (no objective context)
+
+#### Request Format
 ```json
 {
-  "action": {
-    "id": 15,
-    "objective_id": 1,
-    "title": "Updated: Complete risk assessment questionnaire",
-    "status": "completed",
-    "updated_at": "2024-08-29T10:15:00Z",
-    "parent_objective": {
-      "id": 1,
-      "title": "Investment Strategy Review",
-      "linked_actions_count": 4
+  "action_ids": [1, 2, 5, 8],
+  "export_options": {
+    "include_completed": true,
+    "sort_by": "target_date",
+    "group_by_client": true,
+    "date_range": {
+      "start": "2024-08-01",
+      "end": "2024-12-31"
     }
   }
 }
