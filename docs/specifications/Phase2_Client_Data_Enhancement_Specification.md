@@ -172,6 +172,368 @@ client_objectives (
 )
 ```
 
+### 2.3 Enhanced Phone Management System
+```sql
+-- Professional phone number management for dense contact display
+product_owner_phones (
+    id SERIAL PRIMARY KEY,
+    product_owner_id BIGINT NOT NULL REFERENCES product_owners(id) ON DELETE CASCADE,
+    phone_type VARCHAR(20) NOT NULL, -- 'mobile', 'house_phone', 'work', 'other'
+    phone_number VARCHAR(25) NOT NULL, -- International format support
+    label VARCHAR(50),               -- Custom label for 'other' type
+    is_primary BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+---
+
+## 3. Data Model - Enhanced Product Owner Architecture
+
+### 3.1 Product Owner Enhancements for Professional Interface
+```sql
+-- Enhanced product_owners table for 3-section card display
+ALTER TABLE product_owners ADD COLUMN security_words TEXT;           -- Encrypted storage
+ALTER TABLE product_owners ADD COLUMN notes TEXT;                    -- Encrypted storage  
+ALTER TABLE product_owners ADD COLUMN next_meeting_date DATE;        -- Professional meeting tracking
+ALTER TABLE product_owners ADD COLUMN last_meeting_date DATE;        -- Meeting history
+ALTER TABLE product_owners ADD COLUMN date_signed_tc DATE;           -- Compliance tracking
+ALTER TABLE product_owners ADD COLUMN last_fee_agreement_date DATE;  -- Fee agreement tracking
+ALTER TABLE product_owners ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+ALTER TABLE product_owners ADD COLUMN updated_by VARCHAR(100);
+```
+
+### 3.2 Asset Liquidity Management (Professional Feature)
+```sql
+-- User-customizable asset liquidity rankings for professional networth display
+CREATE TABLE asset_liquidity_rankings (
+    id SERIAL PRIMARY KEY,
+    asset_type VARCHAR(100) UNIQUE,
+    liquidity_rank INTEGER,
+    description TEXT,
+    is_default BOOLEAN DEFAULT true,
+    created_by VARCHAR(100) DEFAULT 'system'
+);
+
+-- User-specific liquidity preferences for personalized professional display
+CREATE TABLE user_liquidity_preferences (
+    id SERIAL PRIMARY KEY,
+    user_id VARCHAR(100) NOT NULL,
+    asset_type VARCHAR(100) NOT NULL,
+    custom_rank INTEGER NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, asset_type)
+);
+```
+
+### 3.3 Global Actions Architecture
+```sql
+-- Junction table for global actions across multiple client groups
+CREATE TABLE client_action_groups (
+    id SERIAL PRIMARY KEY,
+    action_id BIGINT NOT NULL REFERENCES client_actions(id) ON DELETE CASCADE,
+    client_group_id BIGINT NOT NULL REFERENCES client_groups(id) ON DELETE CASCADE,
+    assigned_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    assigned_by VARCHAR(100) NOT NULL,
+    UNIQUE(action_id, client_group_id)
+);
+
+-- Professional view for global actions management
+CREATE VIEW global_actions_with_clients AS
+SELECT 
+    ca.id as action_id,
+    ca.title,
+    ca.description,
+    ca.status,
+    ca.target_date,
+    ca.drop_dead_date,
+    STRING_AGG(cg.name, ', ' ORDER BY cg.name) as assigned_client_groups,
+    COUNT(cag.client_group_id) as client_group_count
+FROM client_actions ca
+LEFT JOIN client_action_groups cag ON ca.id = cag.action_id
+LEFT JOIN client_groups cg ON cag.client_group_id = cg.id
+WHERE ca.is_global = true
+GROUP BY ca.id, ca.title, ca.description, ca.status, ca.target_date, ca.drop_dead_date;
+```
+
+---
+
+## 4. API Specifications - Professional Interface Endpoints
+
+### 4.1 Enhanced Client Information API
+```typescript
+// Dense table data retrieval for professional interface
+interface InformationItemListResponse {
+  items: {
+    id: number;
+    item_type: 'basic_detail' | 'income_expenditure' | 'assets_liabilities' | 'protection' | 'vulnerability_health';
+    item_category: string;
+    quick_summary: string;           // For dense table display
+    ownership_display: string;       // Pre-formatted ownership for UI efficiency
+    last_edited: string;
+    priority: 'high' | 'standard' | 'low';
+    status: string;
+  }[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;  // Support for 12+ rows per page
+  };
+}
+
+// Enhanced phone management for 3-section cards
+interface PhoneListResponse {
+  phones: {
+    id: number;
+    phone_type: 'mobile' | 'house_phone' | 'work' | 'other';
+    phone_number: string;
+    label?: string;                  // For 'other' type
+    is_primary: boolean;
+    updated_at: string;
+  }[];
+}
+```
+
+### 4.2 Global Actions API (Professional Workflow Management)
+```typescript
+interface GlobalActionsResponse {
+  actions: {
+    id: number;
+    title: string;
+    description: string;
+    target_date: string;
+    drop_dead_date?: string;
+    status: 'todo' | 'in_progress' | 'completed';
+    assigned_client_groups: string[];
+    urgency_level: 'overdue' | 'due_today' | 'due_soon' | 'normal';
+    days_until_due: number;
+  }[];
+  summary: {
+    overdue_count: number;
+    due_today_count: number;
+    total_active: number;
+  };
+}
+```
+
+### 4.3 Liquidity-Ordered Networth API
+```typescript
+interface LiquidityOrderedNetworthResponse {
+  networth_data: {
+    asset_categories: {
+      category: string;
+      liquidity_rank: number;        // User-customizable ranking
+      items: {
+        name: string;
+        valuation: number;
+        ownership_breakdown: {
+          [owner_name: string]: number;
+        };
+        liquidity_notes?: string;
+      }[];
+      category_total: number;
+    }[];
+    grand_total: number;
+    user_liquidity_preferences?: {
+      [asset_type: string]: number;  // Custom rankings
+    };
+  };
+}
+```
+
+---
+
+## 5. Security Requirements - Enhanced Security Model
+
+### 5.1 Field-Level Encryption Implementation
+- **Security Words**: AES-256 encryption at rest with key rotation
+- **Notes Fields**: Full encryption for sensitive advisor notes
+- **Phone Numbers**: Standard storage with access logging
+- **Audit Logging**: Comprehensive tracking of all sensitive field access
+
+### 5.2 Enhanced RBAC (Role-Based Access Control)
+```typescript
+// Professional interface permissions
+interface SecurityPermissions {
+  can_view_security_words: boolean;
+  can_edit_security_words: boolean;
+  can_view_sensitive_notes: boolean;
+  can_export_client_data: boolean;
+  can_manage_global_actions: boolean;
+  can_customize_liquidity_rankings: boolean;
+}
+```
+
+### 5.3 Audit Trail Architecture
+```sql
+-- Enhanced audit logging for professional compliance
+CREATE TABLE enhanced_audit_log (
+    id SERIAL PRIMARY KEY,
+    entity_type VARCHAR(50) NOT NULL,     -- 'product_owner', 'information_item', etc.
+    entity_id BIGINT NOT NULL,
+    action_type VARCHAR(50) NOT NULL,     -- 'view', 'edit', 'create', 'delete'
+    field_changed VARCHAR(50),            -- Specific field for granular tracking
+    old_value_hash TEXT,                  -- Hashed sensitive data
+    new_value_hash TEXT,
+    user_id VARCHAR(100) NOT NULL,
+    ip_address INET,
+    user_agent TEXT,
+    session_id VARCHAR(100),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+---
+
+## 6. Performance Requirements - Dense Data Display
+
+### 6.1 Professional Interface Performance Targets
+- **Dense Table Rendering**: <500ms for 12+ rows with complex ownership display
+- **3-Section Card Loading**: <200ms for complete product owner information
+- **Global Actions Page**: <1s for cross-client action aggregation
+- **Liquidity-Ordered Display**: <2s for networth calculation with custom rankings
+- **Search Performance**: <300ms for full-text search across all information items
+
+### 6.2 Virtual Scrolling Implementation
+```typescript
+// Professional dense table optimization
+interface VirtualScrollConfig {
+  rowHeight: 48;                    // Dense row height for maximum information
+  overscan: 5;                      // Buffer rows for smooth scrolling
+  maxVisibleRows: 15;               // Professional interface row limit
+  enableHorizontalVirtualization: true; // For wide ownership columns
+}
+```
+
+### 6.3 Memory Management for Dense Data
+- **Client-Side Caching**: 50MB limit for information items
+- **Pagination Strategy**: 50-200 items per page (user configurable)
+- **Image Optimization**: WebP format with lazy loading
+- **API Response Compression**: Gzip compression for JSON responses
+
+---
+
+## 7. User Experience - Professional Interface Workflows
+
+### 7.1 Information Density User Experience Goals
+- **Advisor Efficiency**: 60% reduction in screen navigation for client reviews
+- **Information Accessibility**: Maximum data visibility per screen interaction
+- **Professional Aesthetics**: Clean, business-focused interface design
+- **Workflow Optimization**: Streamlined paths for common advisor tasks
+
+### 7.2 Dense UI Component Specifications
+```typescript
+// Professional 3-section product owner card
+interface ProductOwnerCardProps {
+  productOwner: {
+    personal_details: {
+      known_as: string;
+      title: string;
+      date_of_birth: string;
+      ni_number: string;
+    };
+    contact_information: {
+      phones: PhoneInfo[];
+      email: string;
+    };
+    meeting_compliance: {
+      next_meeting: string;
+      last_meeting: string;
+      date_signed_tc: string;
+      fee_agreement: string;
+      security_words: string;
+      notes: string;
+    };
+  };
+  displayMode: 'dense' | 'expanded';
+  onEdit: () => void;
+}
+
+// Dense table for maximum information display
+interface DenseTableProps {
+  data: InformationItem[];
+  columns: {
+    key: string;
+    label: string;
+    width: string;
+    sortable: boolean;
+  }[];
+  rowsPerPage: number;              // 12-15 for professional density
+  virtualScrolling: boolean;
+  ownershipColumnWidth: '25%';      // Optimized for complex ownership display
+}
+```
+
+### 7.3 Global Actions Workflow
+```typescript
+// Professional cross-client action management
+interface GlobalActionsWorkflow {
+  actionStates: {
+    'todo': { color: 'blue', priority: 3 };
+    'in_progress': { color: 'yellow', priority: 2 };
+    'completed': { color: 'green', priority: 1 };
+  };
+  urgencyLevels: {
+    'overdue': { color: 'red', days: -1 };
+    'due_today': { color: 'orange', days: 0 };
+    'due_soon': { color: 'yellow', days: 1-3 };
+    'normal': { color: 'gray', days: 4+ };
+  };
+  bulkOperations: {
+    'mark_completed': boolean;
+    'extend_deadline': boolean;
+    'reassign_clients': boolean;
+    'export_pdf': boolean;
+  };
+}
+```
+
+---
+
+## 8. Implementation Strategy - Professional Interface Migration
+
+### 8.1 UI Paradigm Migration Approach
+1. **Phase 1**: Implement dense table components with virtual scrolling
+2. **Phase 2**: Deploy 3-section product owner cards with enhanced contact management
+3. **Phase 3**: Roll out global actions workflow with cross-client capabilities
+4. **Phase 4**: Launch liquidity-ordered networth with user customization
+5. **Phase 5**: Complete professional interface optimization
+
+### 8.2 Database Migration Complexity
+- **Schema Changes**: Enhanced product_owners, separated actions/objectives
+- **Data Migration**: Convert existing data to enhanced ownership model
+- **Index Optimization**: GIN indexes for JSON querying performance
+- **Audit System**: Comprehensive logging for professional compliance
+
+### 8.3 Change Management for Professional Interface
+- **Advisor Training**: 2-hour training sessions focused on efficiency gains
+- **Interface Customization**: User preference settings for information density
+- **Feedback Integration**: Regular advisor input for professional interface refinement
+- **Performance Monitoring**: Real-time metrics for interface efficiency measurement
+
+---
+
+## 9. Success Criteria - Professional Interface Excellence
+
+### 9.1 Client-Validated Success Metrics
+- **Information Access Efficiency**: >85% improvement in data visibility
+- **Advisor Productivity**: 60% reduction in client review time
+- **Interface Satisfaction**: >4.5/5 rating from professional advisors
+- **Workflow Optimization**: <3 clicks for common advisor tasks
+- **Performance Standards**: All dense UI components meet response time targets
+
+### 9.2 Professional Interface ROI
+- **Efficiency Gains**: 12-15 month payback through reduced advisory time
+- **Client Satisfaction**: Improved advisor responsiveness and information accuracy
+- **Compliance Enhancement**: 100% audit trail coverage with <5 min report generation
+- **System Performance**: Maintained within 25% of baseline with enhanced functionality
+
+---
+
+**This specification represents a complete professional interface transformation for Kingston's Portal Phase 2, prioritizing information density, advisor efficiency, and client-validated requirements over aesthetic considerations. The implementation delivers maximum information visibility through dense tables, 3-section product owner cards, and streamlined workflows optimized for experienced financial advisors.**
+```
+
 **Example Client Objectives:**
 1. **Retirement Planning** (*Priority: High*)
    - *Description*: "Build a comprehensive retirement portfolio targeting £750,000 by age 65. Focus on maximizing pension contributions and ISA allowances while maintaining appropriate risk levels for long-term growth."
