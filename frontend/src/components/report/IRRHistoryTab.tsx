@@ -1425,8 +1425,18 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                           );
                           // Get active funds from historical IRR data (matching current active funds)
                           const activeFunds = productHistory.funds_historical_irr.filter((histFund: any) => {
-                            const correspondingFund = currentProduct?.funds?.find((summaryFund: any) => 
-                              summaryFund.fund_name === histFund.fund_name && summaryFund.status !== 'inactive'
+                            // Show historical IRR data for all funds, regardless of current status
+                            // This allows historical IRRs to be displayed even after a product is lapsed
+                            
+                            // For lapsed products, currentProduct may not exist or have empty funds
+                            // In this case, show all historical funds to preserve historical IRR data
+                            if (!currentProduct || !currentProduct.funds || currentProduct.funds.length === 0) {
+                              return true; // Show all historical funds for lapsed products
+                            }
+                            
+                            // For active products, match with current funds as before
+                            const correspondingFund = currentProduct.funds.find((summaryFund: any) => 
+                              summaryFund.fund_name === histFund.fund_name
                             );
                             return !!correspondingFund;
                           });

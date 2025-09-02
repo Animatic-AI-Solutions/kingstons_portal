@@ -38,17 +38,19 @@ async def get_portfolio_historical_irr(
     try:
         logger.info(f"Fetching portfolio historical IRR for product {product_id} (limit: {limit})")
         
-        # Query the portfolio_historical_irr view - note: view uses portfolio_id, not product_id
-        # We need to join through client_products to filter by product_id
+        # NOTE: Using direct query instead of portfolio_historical_irr view to include lapsed products
+        # The view filters by product status, but we need historical data regardless of current status
         result = await db.fetch(
             """
-            SELECT phi.portfolio_id, phi.portfolio_name, phi.date as irr_date, 
-                   phi.irr_result, phi.product_name, phi.provider_name,
-                   phi.created_at, cp.id as product_id
-            FROM portfolio_historical_irr phi
-            JOIN client_products cp ON phi.portfolio_id = cp.portfolio_id
+            SELECT p.id as portfolio_id, p.portfolio_name, pir.date as irr_date, 
+                   pir.irr_result, cp.product_name, ap.name as provider_name,
+                   pir.created_at, cp.id as product_id
+            FROM portfolio_irr_values pir
+            JOIN portfolios p ON pir.portfolio_id = p.id
+            JOIN client_products cp ON p.id = cp.portfolio_id
+            LEFT JOIN available_providers ap ON cp.provider_id = ap.id
             WHERE cp.id = $1 
-            ORDER BY phi.date DESC 
+            ORDER BY pir.date DESC 
             LIMIT $2
             """,
             product_id, limit
@@ -147,17 +149,22 @@ async def get_funds_historical_irr(
     try:
         logger.info(f"Fetching funds historical IRR for product {product_id} (limit: {limit})")
         
-        # Query the fund_historical_irr view - need to join through client_products
+        # NOTE: Using direct query instead of fund_historical_irr view to include lapsed products
+        # The view filters by product status, but we need historical data regardless of current status
         result = await db.fetch(
             """
-            SELECT fhi.fund_id, fhi.portfolio_id, fhi.fund_name, fhi.isin_number, 
-                   fhi.risk_factor, fhi.date as irr_date, fhi.irr_result,
-                   fhi.portfolio_name, fhi.product_name, fhi.provider_name,
+            SELECT pf.id as fund_id, p.id as portfolio_id, af.fund_name, af.isin_number, 
+                   af.risk_factor, pfir.date as irr_date, pfir.irr_result,
+                   p.portfolio_name, cp.product_name, ap.name as provider_name,
                    cp.id as product_id
-            FROM fund_historical_irr fhi
-            JOIN client_products cp ON fhi.portfolio_id = cp.portfolio_id
+            FROM portfolio_fund_irr_values pfir
+            JOIN portfolio_funds pf ON pfir.fund_id = pf.id
+            JOIN portfolios p ON pf.portfolio_id = p.id
+            JOIN client_products cp ON p.id = cp.portfolio_id
+            JOIN available_funds af ON pf.available_funds_id = af.id
+            LEFT JOIN available_providers ap ON cp.provider_id = ap.id
             WHERE cp.id = $1 
-            ORDER BY fhi.fund_id, fhi.date DESC
+            ORDER BY pf.id, pfir.date DESC
             """,
             product_id
         )

@@ -1203,18 +1203,52 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
         logger.info(f"Found client group: {client_group['name']}")
         
         # Step 2: Get all products for this client group with template generation information
+        # NOTE: Using direct query instead of products_list_view to include lapsed client groups
+        # This ensures historical IRR data is still accessible for reporting purposes
         products_result = await db.fetch("""
             SELECT 
-                plv.*,
+                cp.id,
+                cp.client_id,
+                cp.product_name,
+                cp.product_type,
+                cp.status,
+                cp.start_date,
+                cp.end_date,
+                cp.provider_id,
+                cp.portfolio_id,
+                cp.plan_number,
+                cp.created_at,
+                cg.name AS client_name,
+                cg.advisor,
+                cg.type AS client_type,
+                ap.name AS provider_name,
+                ap.theme_color AS provider_color,
+                p.portfolio_name,
+                p.status AS portfolio_status,
+                lpv.valuation AS current_value,
+                lpv.valuation_date,
+                lpir.irr_result AS current_irr,
+                lpir.date AS irr_date,
+                count(DISTINCT pop.product_owner_id) AS owner_count,
+                string_agg(DISTINCT COALESCE(po.known_as, concat(po.firstname, ' ', po.surname)), ', '::text) AS owners,
+                cp.fixed_cost,
+                cp.percentage_fee,
                 tpg.id as template_generation_id,
                 tpg.generation_name as template_generation_name,
                 tpg.description as template_description,
-                ap.name as template_name
-            FROM products_list_view plv
-            LEFT JOIN client_products cp ON plv.id = cp.id
+                ap2.name as template_name
+            FROM client_products cp
+            JOIN client_groups cg ON cp.client_id = cg.id
+            LEFT JOIN available_providers ap ON cp.provider_id = ap.id
+            LEFT JOIN portfolios p ON cp.portfolio_id = p.id
+            LEFT JOIN latest_portfolio_valuations lpv ON p.id = lpv.portfolio_id
+            LEFT JOIN latest_portfolio_irr_values lpir ON p.id = lpir.portfolio_id
+            LEFT JOIN product_owner_products pop ON cp.id = pop.product_id
+            LEFT JOIN product_owners po ON pop.product_owner_id = po.id AND po.status = 'active'::text
             LEFT JOIN template_portfolio_generations tpg ON cp.template_generation_id = tpg.id
-            LEFT JOIN available_portfolios ap ON tpg.available_portfolio_id = ap.id
-            WHERE plv.client_id = $1
+            LEFT JOIN available_portfolios ap2 ON tpg.available_portfolio_id = ap2.id
+            WHERE cp.client_id = $1
+            GROUP BY cp.id, cp.client_id, cp.product_name, cp.product_type, cp.status, cp.start_date, cp.end_date, cp.provider_id, cp.portfolio_id, cp.plan_number, cp.created_at, cg.name, cg.advisor, cg.type, ap.name, ap.theme_color, p.portfolio_name, p.status, lpv.valuation, lpv.valuation_date, lpir.irr_result, lpir.date, cp.fixed_cost, cp.percentage_fee, tpg.id, tpg.generation_name, tpg.description, ap2.name
         """, client_group_id)
         
         if not products_result:

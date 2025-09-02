@@ -1,15 +1,39 @@
-The client details page will need to be overhuled as instead of simply showing all their products it needs to show all the client's product owners in cards where you can see their basic personal information (name as this is compulsary, DOB if has one, address if has one, maritial status if has one, is vulnerable true or false if has one). The product owners shoudl be in order of inception. On this page should be tabs that take you to various sections of the clients manaegmenet flow. There are these sections ('Client Overiew' which is the first tab, 'Main List', 'Aims, Objectives, and Actions', 'Networth Statement', 'Know Your Customer'). The main perpose of the client overview page is to get a snapshot summary of the product owners
-
-The main list page is a long list of all the 'items' created in the client group. This is any piece of information such as DOB or a product which is created for a client group. However client groups are not just one person it represents a collection of people therefore for each item there is a product owner associated. It is an important philosophy of this next stage that the client group owns the information and it is associated with a product owner rather than infomraqtion being owned by product owners directly. When an item is created you create it for the client and then associate it to a product owner (allow no product owner to be associated). An itme can be associated to more thsn one product owner but in this case a percentage split needs to be specified.  There are many categories of 'items' thereforw at the top fo the list there shoudl be item types which the user can select to show. They are all selected by default and the user can choose to deselect any of them to filter down the list. The user can also use the columns of the list (itme, product owner,  date updated) to filter down the list aswell. The types of items I am currently aware of are: Basic Detail (which is personal information), Income and Exenditure, Assets and Liabilities, Protection, Vulnerability and Health. These are how we will categorise information for a client. When the user clicks into an item they can then edit it. Theres hodul also be a button at the top to create an item.
-
-The Aims, Objectives, and Actions page is where the advisor can manage their to-dos for a client and revise what their needs are. This shoudl contain all outstanding actions (plain text name + owner which woudl be either us or the client + description field + active flag), all completed actions, and all objectives.
-
-The Networth Statement page where an advisor can see a breakdown of the clients assets and liabilities. It shoud be displayed in a table where the type of liability and expenditure are the rows and the columns are product owners with a total column on the right most side. There will be several versions of this page (client friednly, meeting checlist, comprehensive for compliance) howver these are not fleshed out yet.
-
-The Know Your Customer page, here the advisor will be able to create a report on all the information they know about a client, organised by sections. It will be generated using a template and the adisor will be abel to include or remove information as they liek. This could be a whole section or one nitem in the section. Again this is not quite fleshed out yet.
-
-We are still trying to figure out what we want so this is a guidline so that we can create a visual prototype to gather feedback.
-
-The compulsary information needed to setup a product owner shoudl be minimum so that they can instatiate an owner an dlater when they know more about them add in more data.  The same gows with client groups. Allow minimal setup for a clients and product owners, including and freedom to add data in retrospectively (data must be easy to amend and add in).
-
-
+that actually didnt fix it, is it becasue in the products list view it filters only active products//-- public.products_list_view source
+>>
+>> CREATE OR REPLACE VIEW public.products_list_view
+>> AS SELECT cp.id,
+>>     cp.client_id,
+>>     cp.product_name,
+>>     cp.product_type,
+>>     cp.status,
+>>     cp.start_date,
+>>     cp.end_date,
+>>     cp.provider_id,
+>>     cp.portfolio_id,
+>>     cp.plan_number,
+>>     cp.created_at,
+>>     cg.name AS client_name,
+>>     cg.advisor,
+>>     cg.type AS client_type,
+>>     ap.name AS provider_name,
+>>     ap.theme_color AS provider_color,
+>>     p.portfolio_name,
+>>     p.status AS portfolio_status,
+>>     lpv.valuation AS current_value,
+>>     lpv.valuation_date,
+>>     lpir.irr_result AS current_irr,
+>>     lpir.date AS irr_date,
+>>     count(DISTINCT pop.product_owner_id) AS owner_count,
+>>     string_agg(DISTINCT COALESCE(po.known_as, concat(po.firstname, ' ', po.surname)), ', '::text) AS owners,
+>>     cp.fixed_cost,
+>>     cp.percentage_fee
+>>    FROM client_products cp
+>>      JOIN client_groups cg ON cp.client_id = cg.id
+>>      LEFT JOIN available_providers ap ON cp.provider_id = ap.id
+>>      LEFT JOIN portfolios p ON cp.portfolio_id = p.id
+>>      LEFT JOIN latest_portfolio_valuations lpv ON p.id = lpv.portfolio_id
+>>      LEFT JOIN latest_portfolio_irr_values lpir ON p.id = lpir.portfolio_id
+>>      LEFT JOIN product_owner_products pop ON cp.id = pop.product_id
+>>      LEFT JOIN product_owners po ON pop.product_owner_id = po.id AND po.status = 'active'::text
+>>   WHERE cg.status = 'active'::text
+>>   GROUP BY cp.id, cp.client_id, cp.product_name, cp.product_type, cp.status, cp.start_date, cp.end_date, cp.provider_id, cp.portfolio_id, cp.plan_number, cp.created_at, cg.name, cg.advisor, cg.type, ap.name, ap.theme_color, p.portfolio_name, p.status, lpv.valuation, lpv.valuation_date, lpir.irr_result, lpir.date, cp.fixed_cost, cp.percentage_fee;
