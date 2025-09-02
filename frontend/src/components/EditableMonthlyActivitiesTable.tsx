@@ -4,6 +4,8 @@ import { formatCurrency } from '../utils/formatters';
 import api, { createFundValuation, calculatePortfolioIRR } from '../services/api';
 import BulkMonthActivitiesModal from './BulkMonthActivitiesModal';
 import { TransactionCoordinator } from '../services/transactionCoordinator';
+import EnhancedMonthHeader from './ui/EnhancedMonthHeader';
+import { useFeatureFlags, shouldShowMiniYearSelectors, logFeatureFlagUsage } from '../utils/featureFlags';
 
 /**
  * SIGN CONVENTION FOR TOTALS:
@@ -157,6 +159,10 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   
   // Add state to track initial load vs year changes
   const [isInitialLoad, setIsInitialLoad] = useState<boolean>(true);
+  
+  // Feature flags for mini year selectors
+  const featureFlags = useFeatureFlags();
+  const enableMiniYearSelectors = shouldShowMiniYearSelectors();
   
   // Persist selected year to localStorage
   useEffect(() => {
@@ -2320,6 +2326,24 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     }
   };
 
+  // Enhanced year change handler with source tracking
+  const handleYearChange = useCallback((newYear: number, source: 'main' | 'mini' = 'main') => {
+    // Log feature flag usage for debugging
+    logFeatureFlagUsage('MiniYearSelector', source === 'mini');
+    
+    // Update year state
+    setIsInitialLoad(false); // Mark as manual year change
+    setCurrentYear(newYear);
+    
+    // Auto-scroll to beginning to show January
+    setTimeout(scrollToBeginning, 100);
+    
+    // Optional: Track analytics for year changes
+    if (featureFlags.debugMiniYearSelectors) {
+      console.log(`[Year Change] ${source} selector: ${currentYear} → ${newYear}`);
+    }
+  }, [currentYear, featureFlags.debugMiniYearSelectors, scrollToBeginning]);
+
   // Year Pagination Component
   const YearPagination = ({ position = 'top' }: { position?: 'top' | 'bottom' }) => {
     if (availableYears.length <= 1) return null;
@@ -2336,9 +2360,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
             onClick={() => {
               const currentIndex = availableYears.indexOf(currentYear);
               if (currentIndex > 0) {
-                setIsInitialLoad(false); // Mark as manual year change
-                setCurrentYear(availableYears[currentIndex - 1]);
-                setTimeout(scrollToBeginning, 100);
+                handleYearChange(availableYears[currentIndex - 1], 'main');
               }
             }}
             disabled={availableYears.indexOf(currentYear) === 0}
@@ -2354,9 +2376,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
               <button
                 key={year}
                 onClick={() => {
-                  setIsInitialLoad(false); // Mark as manual year change
-                  setCurrentYear(year);
-                  setTimeout(scrollToBeginning, 100);
+                  handleYearChange(year, 'main');
                 }}
                 className={`px-4 py-2 text-sm font-medium border-t border-b ${
                   index === 0 ? '' : 'border-l-0'
@@ -2377,9 +2397,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
             onClick={() => {
               const currentIndex = availableYears.indexOf(currentYear);
               if (currentIndex < availableYears.length - 1) {
-                setIsInitialLoad(false); // Mark as manual year change
-                setCurrentYear(availableYears[currentIndex + 1]);
-                setTimeout(scrollToBeginning, 100);
+                handleYearChange(availableYears[currentIndex + 1], 'main');
               }
             }}
             disabled={availableYears.indexOf(currentYear) === availableYears.length - 1}
@@ -2539,6 +2557,26 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                     const providerSwitch = getProviderSwitchForMonth(month);
                     const columnIndex = index + 1; // +1 because first column is Activity
                     
+                    // Use EnhancedMonthHeader if feature flag is enabled
+                    if (enableMiniYearSelectors) {
+                      return (
+                        <EnhancedMonthHeader
+                          key={month}
+                          month={month}
+                          currentYear={currentYear}
+                          availableYears={availableYears}
+                          onYearChange={(newYear) => handleYearChange(newYear, 'mini')}
+                          onMonthHeaderClick={handleMonthHeaderClick}
+                          isInFixedMode={headerTop !== null}
+                          providerSwitch={providerSwitch}
+                          columnIndex={columnIndex}
+                          columnPositions={columnPositions}
+                          headerTop={headerTop}
+                        />
+                      );
+                    }
+                    
+                    // Fallback to original header implementation
                     return (
                       <th 
                         key={month} 

@@ -90,3 +90,7 @@ export { default as RiskDifferences } from './RiskDifferences';
 export { default as FilterDropdown } from './dropdowns/FilterDropdown';
 export { EmptyState } from './feedback/EmptyState';
 export { ErrorDisplay } from './feedback/ErrorDisplay';
+
+// Group 9: Year Navigation Components
+export { default as MiniYearSelector } from './MiniYearSelector';
+export { default as EnhancedMonthHeader } from './EnhancedMonthHeader';
