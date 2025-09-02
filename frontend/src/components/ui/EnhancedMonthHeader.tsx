@@ -73,19 +73,23 @@ const EnhancedMonthHeader: React.FC<EnhancedMonthHeaderProps> = ({
     >
       {/* Month Display - Clickable area for bulk edit */}
       <div 
-        className="flex flex-col items-center justify-center w-full h-full cursor-pointer hover:bg-blue-100/50 rounded-sm px-1 transition-colors duration-150"
+        className="flex flex-col items-center justify-center w-full h-full cursor-pointer hover:bg-blue-100/50 rounded-sm px-2 transition-colors duration-150 overflow-hidden"
         onClick={() => onMonthHeaderClick(month)}
         title="Click to bulk edit activities for this month"
-        style={{ minHeight: '24px' }}
+        style={{ minHeight: '24px', maxWidth: '100px' }} // Ensure containment within column
       >
         {/* Month name - adjust size based on whether mini selector is shown */}
-        <div className={`font-medium text-gray-800 leading-none ${showMiniYearSelector ? 'text-xs mb-0.5' : 'text-sm'}`}>
+        <div className={`font-medium text-gray-800 leading-none text-center ${showMiniYearSelector ? 'text-xs mb-1' : 'text-sm'}`}>
           {formatMonth(month)}
         </div>
         
-        {/* Mini Year Selector - Ultra compact for fixed mode */}
+        {/* Mini Year Selector - Ultra compact for fixed mode with strict containment */}
         {showMiniYearSelector && (
-          <div onClick={(e) => e.stopPropagation()}>
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: '58px' }} // Ensure it doesn't exceed available space
+            className="flex justify-center"
+          >
             <MiniYearSelector
               currentYear={currentYear}
               availableYears={availableYears}

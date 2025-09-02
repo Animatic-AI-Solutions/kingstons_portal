@@ -68,11 +68,16 @@ const MiniYearSelector: React.FC<MiniYearSelectorProps> = ({
 
   return (
     <div 
-      className={`flex items-center justify-center gap-0 bg-white/90 shadow-xs border border-gray-300 rounded-sm ${className}`}
+      className={`inline-flex items-center justify-center gap-0 bg-white/95 shadow-sm border border-gray-300 rounded-sm mx-auto ${className}`}
       role="group"
       aria-label="Year selector"
       onClick={(e) => e.stopPropagation()} // Prevent parent click events
-      style={{ height: '16px', fontSize: '10px' }} // Ultra-compact size
+      style={{ 
+        height: '14px', 
+        width: '58px', // Fixed width to fit in 100px column with padding
+        fontSize: '9px',
+        maxWidth: '58px' // Prevent overflow
+      }}
     >
       {/* Previous Year Button */}
       <button
@@ -80,22 +85,28 @@ const MiniYearSelector: React.FC<MiniYearSelectorProps> = ({
         onClick={handlePreviousYear}
         onKeyDown={(e) => handleKeyDown(e, 'previous')}
         disabled={!hasPrevious}
-        className="flex items-center justify-center w-4 h-4 text-xs font-bold text-gray-600 hover:text-blue-700 hover:bg-blue-100 transition-all duration-100 ease-in-out disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none active:bg-blue-200 border-r border-gray-200"
+        className="flex items-center justify-center w-3 h-3 text-xs font-bold text-gray-600 hover:text-blue-700 hover:bg-blue-100 transition-all duration-100 ease-in-out disabled:opacity-20 disabled:cursor-not-allowed focus:outline-none active:bg-blue-200 rounded-l-sm flex-shrink-0"
         aria-label="Previous year"
         title={hasPrevious ? `Go to ${availableYears[currentIndex - 1]}` : 'No previous year available'}
+        style={{ minWidth: '12px', maxWidth: '12px' }}
       >
         ‹
       </button>
 
       {/* Current Year Display */}
-      <span 
-        className="text-xs font-medium text-gray-800 min-w-[28px] text-center px-0.5 select-none leading-none"
-        style={{ fontSize: '9px', lineHeight: '16px' }}
+      <div 
+        className="text-center px-0.5 select-none leading-none bg-gray-50 border-x border-gray-200 flex-1 flex items-center justify-center"
+        style={{ 
+          fontSize: '8px', 
+          lineHeight: '14px',
+          minWidth: '32px',
+          maxWidth: '32px'
+        }}
         aria-label={`Current year: ${currentYear}`}
         title={`Current year: ${currentYear}`}
       >
-        {currentYear}
-      </span>
+        <span className="font-medium text-gray-800 truncate">{currentYear}</span>
+      </div>
 
       {/* Next Year Button */}
       <button
@@ -103,9 +114,10 @@ const MiniYearSelector: React.FC<MiniYearSelectorProps> = ({
         onClick={handleNextYear}
         onKeyDown={(e) => handleKeyDown(e, 'next')}
         disabled={!hasNext}
-        className="flex items-center justify-center w-4 h-4 text-xs font-bold text-gray-600 hover:text-blue-700 hover:bg-blue-100 transition-all duration-100 ease-in-out disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none active:bg-blue-200 border-l border-gray-200"
+        className="flex items-center justify-center w-3 h-3 text-xs font-bold text-gray-600 hover:text-blue-700 hover:bg-blue-100 transition-all duration-100 ease-in-out disabled:opacity-20 disabled:cursor-not-allowed focus:outline-none active:bg-blue-200 rounded-r-sm flex-shrink-0"
         aria-label="Next year"
         title={hasNext ? `Go to ${availableYears[currentIndex + 1]}` : 'No next year available'}
+        style={{ minWidth: '12px', maxWidth: '12px' }}
       >
         ›
       </button>
