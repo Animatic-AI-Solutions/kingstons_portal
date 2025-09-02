@@ -1203,8 +1203,6 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
         logger.info(f"Found client group: {client_group['name']}")
         
         # Step 2: Get all products for this client group with template generation information
-        # NOTE: Using direct query instead of products_list_view to include lapsed client groups
-        # This ensures historical IRR data is still accessible for reporting purposes
         products_result = await db.fetch("""
             SELECT 
                 cp.id,

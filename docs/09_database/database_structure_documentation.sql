@@ -553,7 +553,7 @@ CREATE OR REPLACE VIEW fund_historical_irr AS
      JOIN client_products cp ON ((p.id = cp.portfolio_id)))
      JOIN client_groups cg ON ((cp.client_id = cg.id)))
      JOIN available_providers ap ON ((cp.provider_id = ap.id)))
-  WHERE ((pf.status = 'active'::text) AND (af.status = 'active'::text) AND (p.status = 'active'::text) AND (cp.status = 'active'::text) AND (cg.status = 'active'::text))
+  WHERE ((pf.status = 'active'::text) AND (af.status = 'active'::text) AND (p.status = 'active'::text) AND (cg.status = 'active'::text))
   ORDER BY pfir.date DESC, pfir.fund_id;;
 
 -- View: latest_portfolio_fund_irr_values
@@ -613,7 +613,7 @@ CREATE OR REPLACE VIEW portfolio_historical_irr AS
      JOIN client_products cp ON ((p.id = cp.portfolio_id)))
      JOIN client_groups cg ON ((cp.client_id = cg.id)))
      JOIN available_providers ap ON ((cp.provider_id = ap.id)))
-  WHERE ((p.status = 'active'::text) AND (cp.status = 'active'::text) AND (cg.status = 'active'::text))
+  WHERE ((p.status = 'active'::text) AND (cg.status = 'active'::text))
   ORDER BY pir.date DESC, pir.portfolio_id;;
 
 -- View: portfolio_performance_history

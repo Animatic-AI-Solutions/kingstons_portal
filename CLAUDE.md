@@ -153,6 +153,7 @@ API_PORT=8001
 - **Smart Navigation**: useSmartNavigation for context-aware breadcrumbs
 - **Concurrent Users**: PresenceIndicator and useConcurrentUserDetection for real-time awareness
 - **Bulk Data**: OptimizedClientData patterns for performance with large datasets
+- **Database Views**: Historical IRR views include lapsed products for compliance - prefer fixing filtering at view level over API workarounds
 
 ## Development Principles
 
