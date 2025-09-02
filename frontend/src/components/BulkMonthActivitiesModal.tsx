@@ -818,6 +818,7 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
                                   <input
                                     type="text"
                                     id={`bulk-input-${index}-${getDisplayedActivities().indexOf(activityType)}`}
+                                    autoComplete="off"
                                     className={`bulk-activity-modal-input ${getInputWidthClass(getDisplayedActivities().length)} px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 text-center transition-colors duration-150 ${
                                       inputErrors[getInputKey(fund.id, activityType)]
                                         ? 'border-red-500 bg-red-50 focus:ring-red-500 focus:border-red-500' // Error state
