@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useReportStateManager } from '../../hooks/report/useReportStateManager';
 import { IRRHistorySummaryService, type IRRHistorySummaryRequest, type ProductIRRHistory, type PortfolioIRRHistory } from '../../services/irrHistorySummaryService';
 import { formatWeightedRisk } from '../../utils/reportFormatters';
@@ -9,7 +9,8 @@ import api from '../../services/api';
 
 interface IRRHistorySummaryTableProps {
   productIds: number[];
-  selectedDates: string[]; // YYYY-MM-DD format
+  selectedDates: string[]; // YYYY-MM-DD format - DEPRECATED: kept for backward compatibility
+  perProductDates?: Record<number, string[]>; // NEW: Per-product date selections
   clientGroupIds?: number[];
   className?: string;
   realTimeTotalIRR?: number | null; // Current total IRR calculated properly with all cash flows
@@ -25,6 +26,7 @@ interface SummaryTableData {
 const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
   productIds,
   selectedDates,
+  perProductDates,
   clientGroupIds,
   className = '',
   realTimeTotalIRR,
@@ -51,6 +53,16 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
     () => selectedDates,
     [selectedDates.length, selectedDates.join(',')]
   );
+
+  // NEW: Helper function to determine if a date should be shown for a specific product
+  const shouldShowDateForProduct = useCallback((productId: number, date: string): boolean => {
+    if (!perProductDates) {
+      // Fallback to old behavior if perProductDates not provided
+      return true;
+    }
+    const productDates = perProductDates[productId] || [];
+    return productDates.includes(date);
+  }, [perProductDates]);
 
   const memoizedClientGroupIds = useMemo(
     () => clientGroupIds,
@@ -608,7 +620,10 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
 
                       {/* IRR Value Cells */}
                       {tableData.dateHeaders.map((date, index) => {
-                        const irrValue = getIRRValueForProductAndDate(product.product_id, date);
+                        // NEW: Check if this date should be shown for this product
+                        const shouldShow = shouldShowDateForProduct(product.product_id, date);
+                        const irrValue = shouldShow ? getIRRValueForProductAndDate(product.product_id, date) : null;
+                        
                         // Check if this is the most recent (first) date since dates are sorted newest first
                         const isCurrentYear = index === 0;
                         // Use 'total' format type for active products (1 decimal place), 'inactive' for inactive products (smart decimal places)

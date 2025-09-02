@@ -2464,11 +2464,24 @@ Please select a different valuation date or ensure all active funds have valuati
             
             // Format the selected valuation date for the API call
             let formattedDate: string | undefined = undefined;
-        if (selectedValuationDate) {
-              // Convert YYYY-MM format to YYYY-MM-DD (last day of month)
-          const [year, month] = selectedValuationDate.split('-').map(part => parseInt(part));
-              const lastDayOfMonth = new Date(year, month, 0).getDate();
-              formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+            if (selectedValuationDate) {
+              // Check if already in YYYY-MM-DD format (from IRR date fallback)
+              if (selectedValuationDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                // Already in YYYY-MM-DD format, use as-is
+                formattedDate = selectedValuationDate;
+                console.log('🔍 [DATE FORMAT] Using selectedValuationDate as-is (YYYY-MM-DD):', formattedDate);
+              } else if (selectedValuationDate.match(/^\d{4}-\d{2}$/)) {
+                // Convert YYYY-MM format to YYYY-MM-DD (last day of month)
+                const [year, month] = selectedValuationDate.split('-').map(part => parseInt(part));
+                const lastDayOfMonth = new Date(year, month, 0).getDate();
+                formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+                console.log('🔍 [DATE FORMAT] Converted YYYY-MM to YYYY-MM-DD:', selectedValuationDate, '->', formattedDate);
+              } else {
+                console.warn('🔍 [DATE FORMAT] Unexpected selectedValuationDate format:', selectedValuationDate, 'using as-is');
+                formattedDate = selectedValuationDate;
+              }
+            } else {
+              console.warn('🔍 [DATE FORMAT] selectedValuationDate is null/undefined, formattedDate will be undefined');
             }
             
             console.log('Using optimized batch IRR service for total IRR:', {
@@ -2502,7 +2515,15 @@ Please select a different valuation date or ensure all active funds have valuati
               totalIRR: null,
               totalValuation: overallValuation,
               earliestTransactionDate: earliestDate,
-              selectedValuationDate: selectedValuationDate,
+              selectedValuationDate: (() => {
+                const finalValuationDate = effectiveValuationDate || selectedValuationDate;
+                console.log('🔍 [VALUATION DATE DEBUG] Setting selectedValuationDate in reportData (fallback path):', {
+                  effectiveValuationDate,
+                  originalSelectedValuationDate: selectedValuationDate,
+                  finalValuationDate
+                });
+                return finalValuationDate;
+              })(),
               productOwnerNames: (() => {
                 // Use the extractProductOwners function that properly handles known_as field
                 const includedProducts = relatedProducts.filter(product => !excludedProductIds.has(product.id));
@@ -2555,7 +2576,15 @@ Please select a different valuation date or ensure all active funds have valuati
         totalIRR: calculatedTotalIRR,
         totalValuation: overallValuation,
         earliestTransactionDate: earliestDate,
-        selectedValuationDate: selectedValuationDate,
+        selectedValuationDate: (() => {
+          const finalValuationDate = effectiveValuationDate || selectedValuationDate;
+          console.log('🔍 [VALUATION DATE DEBUG] Setting selectedValuationDate in reportData (success path):', {
+            effectiveValuationDate,
+            originalSelectedValuationDate: selectedValuationDate,
+            finalValuationDate
+          });
+          return finalValuationDate;
+        })(),
         productOwnerOrder: (() => {
           console.log('🔍 [PRODUCT OWNER ORDER DEBUG] Current productOwnerOrder state:', productOwnerOrder);
           console.log('🔍 [PRODUCT OWNER ORDER DEBUG] productOwnerOrder length:', productOwnerOrder.length);

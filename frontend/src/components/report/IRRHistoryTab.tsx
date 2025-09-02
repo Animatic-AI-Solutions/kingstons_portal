@@ -166,6 +166,54 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       JSON.stringify(reportData?.selectedHistoricalIRRDates)
     ]
   );
+
+  // NEW: Per-product date selections for proper column filtering
+  const memoizedPerProductDates = useMemo(
+    () => {
+      if (!reportData?.selectedHistoricalIRRDates) {
+        return {};
+      }
+      console.log('🎯 [IRR HISTORY] Using per-product date selections:', reportData.selectedHistoricalIRRDates);
+      return reportData.selectedHistoricalIRRDates;
+    },
+    [
+      reportData?.selectedHistoricalIRRDates,
+      JSON.stringify(reportData?.selectedHistoricalIRRDates)
+    ]
+  );
+
+  // Filter out current valuation date from historical columns
+  const memoizedHistoricalDatesOnly = useMemo(() => {
+    const currentValuationDate = reportData?.selectedValuationDate;
+    console.log('🔍 [VALUATION DATE FILTER] Processing historical dates filter:', {
+      currentValuationDate,
+      memoizedSelectedDates,
+      memoizedPerProductDates: memoizedPerProductDates
+    });
+    
+    if (!currentValuationDate) {
+      console.log('🔍 [VALUATION DATE FILTER] No current valuation date, using all selected dates');
+      return memoizedSelectedDates;
+    }
+    
+    // Remove the current valuation date from historical display
+    const historicalOnly = memoizedSelectedDates.filter(date => {
+      // Normalize both dates to YYYY-MM-DD format for comparison
+      const normalizedHistDate = date.includes('T') ? date.split('T')[0] : date.split(' ')[0];
+      const normalizedValuationDate = currentValuationDate.includes('T') ? currentValuationDate.split('T')[0] : currentValuationDate.split(' ')[0];
+      return normalizedHistDate !== normalizedValuationDate;
+    });
+    
+    console.log('🔍 [VALUATION DATE FILTER] Removed current valuation date from historical columns:', {
+      currentValuationDate,
+      originalDates: memoizedSelectedDates,
+      filteredHistoricalDates: historicalOnly,
+      removedCount: memoizedSelectedDates.length - historicalOnly.length
+    });
+    
+    return historicalOnly;
+  }, [memoizedSelectedDates, reportData?.selectedValuationDate, memoizedPerProductDates]);
+
   // Memoize reportData to prevent unnecessary prop changes
   const memoizedReportData = useMemo(
     () => reportData,
@@ -391,19 +439,9 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       .map(type => groupedProducts[type] || [])
       .flat()
       .filter(Boolean);
-    // Get all unique dates
-    const allDates = new Set<string>();
-    organizedProducts.forEach((product, index) => {
-      const originalIndex = reportData.productSummaries.findIndex(p => p.id === product.id);
-      const productHistory = irrHistoryData[originalIndex];
-      if (productHistory?.portfolio_historical_irr) {
-        productHistory.portfolio_historical_irr.forEach((record: any) => {
-          allDates.add(record.irr_date);
-        });
-      }
-    });
-    // Sort dates chronologically
-    const sortedDates = Array.from(allDates).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+    // Use only the historical dates (excluding current valuation date)
+    // This ensures chart only shows historical data, not current valuation data
+    const sortedDates = memoizedHistoricalDatesOnly.slice().sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
     // Create chart data points
     return sortedDates.map(date => {
       const dataPoint: any = {
@@ -568,18 +606,9 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       .map(type => groupedProducts[type] || [])
       .flat()
       .filter(Boolean);
-    // Get all unique dates
-    const allDates = new Set<string>();
-    organizedProducts.forEach((product, index) => {
-      const originalIndex = reportData.productSummaries.findIndex(p => p.id === product.id);
-      const productHistory = irrHistoryData[originalIndex];
-      if (productHistory?.portfolio_historical_irr) {
-        productHistory.portfolio_historical_irr.forEach((record: any) => {
-          allDates.add(record.irr_date);
-        });
-      }
-    });
-    const sortedDates = Array.from(allDates).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+    // Use only the historical dates (excluding current valuation date)
+    // This prevents showing current valuation date as a separate historical column
+    const sortedDates = memoizedHistoricalDatesOnly.slice().sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
     // Create CSV headers (inline title generation)
     const headers = ['Date', ...organizedProducts.map(product => {
       const customTitle = stableCustomTitles.get(product.id);
@@ -1288,40 +1317,29 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
         {(() => {
           // Use the memoized filtered products to avoid expensive recalculation
           const filteredProducts = memoizedTableData;
-          // ✅ GLOBAL DATE CALCULATION - Calculate dates across ALL products first
-          const globalAllDates = new Set<string>();
-          // Collect ALL dates from ALL products
-          irrHistoryData.forEach((productHistory) => {
-            // Add portfolio IRR dates
-            if (productHistory.portfolio_historical_irr) {
-              productHistory.portfolio_historical_irr.forEach((record: any) => {
-                globalAllDates.add(record.irr_date);
-              });
-            }
-            // Add fund IRR dates
-            if (productHistory.funds_historical_irr) {
-              productHistory.funds_historical_irr.forEach((fund: any) => {
-                if (fund.historical_irr) {
-                  fund.historical_irr.forEach((record: any) => {
-                    globalAllDates.add(record.irr_date);
-                  });
-                }
-              });
-            }
-          });
-          // Sort all global dates (most recent first for display)
-          const globalSortedDates = Array.from(globalAllDates).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-          // Get the global set of historical dates (excluding current which is first)
-          // Take at least 8 columns with most recent dates first
-          const globalHistoricalDates = globalSortedDates.slice(1, Math.max(9, globalSortedDates.length)); // Skip first (current) and take next dates
+          // ✅ USE ONLY HISTORICAL DATES - Exclude current valuation date from table columns
+          // Current valuation date should only be used for "Current Average Return" column
+          const globalHistoricalDates = memoizedHistoricalDatesOnly.slice().sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
           return filteredProducts.map((product: ProductPeriodSummary, index: number) => {
             // Find the corresponding IRR history data for this product
             const productHistory = irrHistoryData.find((ph: any) => ph.product_id === product.id);
             if (!productHistory) {
               return null;
             }
-            // ✅ USE GLOBAL DATES for all products (not per-product calculation)
-            const sortedDates = globalHistoricalDates;
+            // ✅ USE PER-PRODUCT HISTORICAL DATES - Each product should only show its own historical dates (excluding current valuation date)
+            const productSelectedDates = memoizedPerProductDates[product.id] || [];
+            const currentValuationDate = reportData?.selectedValuationDate;
+            
+            // Filter out current valuation date from individual product display
+            const productHistoricalDates = currentValuationDate 
+              ? productSelectedDates.filter(date => {
+                  const normalizedHistDate = date.includes('T') ? date.split('T')[0] : date.split(' ')[0];
+                  const normalizedValuationDate = currentValuationDate.includes('T') ? currentValuationDate.split('T')[0] : currentValuationDate.split(' ')[0];
+                  return normalizedHistDate !== normalizedValuationDate;
+                })
+              : productSelectedDates;
+              
+            const sortedDates = productHistoricalDates.slice().sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
             // Create lookup maps for quick access
             const portfolioIrrMap = new Map();
             if (productHistory.portfolio_historical_irr) {
@@ -1723,13 +1741,73 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                       }
                                       return <span className="text-gray-500">N/A</span>;
                                     }
-                                    // Find current IRR for this fund from the main reportData
+                                    // Find IRR for the latest SELECTED date for this product (not the absolute latest)
+                                    // Get all selected dates for this product and find the most recent one
+                                    const productSelectedDates = memoizedPerProductDates[productHistory.product_id] || [];
+                                    let foundHistoricalIRR = false;
+                                    
+                                    console.log(`🔍 [CURRENT AVERAGE RETURN] Product ${productHistory.product_id} (${fund.fund_name}) processing:`, {
+                                      productSelectedDates,
+                                      hasHistoricalIrr: !!fund.historical_irr,
+                                      historicalIrrLength: fund.historical_irr?.length || 0
+                                    });
+                                    
+                                    if (productSelectedDates.length > 0) {
+                                      // Sort selected dates to find the latest one
+                                      const latestSelectedDate = productSelectedDates
+                                        .slice()
+                                        .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
+                                        
+                                      console.log(`🔍 [CURRENT AVERAGE RETURN] Product ${productHistory.product_id} latest selected date:`, latestSelectedDate);
+                                      
+                                      // Look up IRR for this latest selected date from historical data
+                                      if (fund.historical_irr && latestSelectedDate) {
+                                        const historicalRecord = fund.historical_irr.find((record: any) => {
+                                          const normalizedRecordDate = record.irr_date.includes('T') ? record.irr_date.split('T')[0] : record.irr_date.split(' ')[0];
+                                          const normalizedSelectedDate = latestSelectedDate.includes('T') ? latestSelectedDate.split('T')[0] : latestSelectedDate.split(' ')[0];
+                                          return normalizedRecordDate === normalizedSelectedDate;
+                                        });
+                                        
+                                        console.log(`🔍 [CURRENT AVERAGE RETURN] Product ${productHistory.product_id} historical lookup result:`, {
+                                          latestSelectedDate,
+                                          historicalRecord,
+                                          availableHistoricalDates: fund.historical_irr.map((r: any) => r.irr_date)
+                                        });
+                                        
+                                        if (historicalRecord && historicalRecord.irr_result !== null && historicalRecord.irr_result !== undefined) {
+                                          const irrValue = parseFloat(historicalRecord.irr_result);
+                                          if (!isNaN(irrValue)) {
+                                            foundHistoricalIRR = true;
+                                            console.log(`🎯 [CURRENT AVERAGE RETURN] Product ${productHistory.product_id} using historical IRR:`, irrValue, 'for date:', latestSelectedDate);
+                                            return (
+                                              <span className={irrValue >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'} 
+                                                    title={`IRR for latest selected date: ${latestSelectedDate}`}>
+                                                {formatFundIrr(irrValue)}
+                                              </span>
+                                            );
+                                          }
+                                        } else {
+                                          console.log(`⚠️ [CURRENT AVERAGE RETURN] Product ${productHistory.product_id} no historical record found for:`, latestSelectedDate);
+                                        }
+                                      }
+                                    }
+                                    
+                                    // Check if this is an inactive product (current valuation = 0)
                                     const currentProduct = reportData.productSummaries.find(p => p.id === productHistory.product_id);
+                                    const isInactiveProduct = currentProduct && currentProduct.current_valuation === 0;
+                                    
+                                    // For inactive products, show "N/A" instead of trying to fetch missing IRR data
+                                    if (isInactiveProduct) {
+                                      return <span className="text-gray-400" title="Product is inactive (no current valuation)">N/A</span>;
+                                    }
+                                    
+                                    // Fallback to current reportData IRR if no historical data available and product is active
                                     if (currentProduct && currentProduct.funds) {
                                       const currentFund = currentProduct.funds.find((f: any) => f.fund_name === fund.fund_name);
                                       if (currentFund && currentFund.irr !== null && currentFund.irr !== undefined) {
                                         return (
-                                          <span className={currentFund.irr >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                                          <span className={currentFund.irr >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}
+                                                title="Using current IRR (no historical data available for selected dates)">
                                             {formatFundIrr(currentFund.irr)}
                                           </span>
                                         );
@@ -1758,10 +1836,39 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                           });
                           // Add product total row
                           const productForTotal = reportData.productSummaries.find(p => p.id === productHistory.product_id);
-                          // Use updated IRR from portfolioIrrValues if available, otherwise fall back to reportData
-                          let productIrr = portfolioIrrValues.has(productHistory.product_id) 
-                            ? portfolioIrrValues.get(productHistory.product_id) 
-                            : productForTotal?.irr;
+                          
+                          // Calculate product-level historical IRR based on latest selected dates (not current IRR)
+                          let productIrr = productForTotal?.irr; // Default fallback
+                          
+                          // Get latest selected date for this product and look up historical IRR
+                          const productSelectedDates = memoizedPerProductDates[productHistory.product_id] || [];
+                          if (productSelectedDates.length > 0 && productHistory?.portfolio_historical_irr) {
+                            const latestSelectedDate = productSelectedDates
+                              .slice()
+                              .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
+                              
+                            console.log(`🔍 [PRODUCT TOTAL IRR] Product ${productHistory.product_id} calculating IRR for latest selected date:`, latestSelectedDate);
+                            
+                            const historicalRecord = productHistory.portfolio_historical_irr.find((record: any) => {
+                              const normalizedRecordDate = record.irr_date.includes('T') ? record.irr_date.split('T')[0] : record.irr_date.split(' ')[0];
+                              const normalizedSelectedDate = latestSelectedDate.includes('T') ? latestSelectedDate.split('T')[0] : latestSelectedDate.split(' ')[0];
+                              return normalizedRecordDate === normalizedSelectedDate;
+                            });
+                            
+                            if (historicalRecord && historicalRecord.irr_result !== null && historicalRecord.irr_result !== undefined) {
+                              const historicalIrr = parseFloat(historicalRecord.irr_result);
+                              if (!isNaN(historicalIrr)) {
+                                productIrr = historicalIrr;
+                                console.log(`🎯 [PRODUCT TOTAL IRR] Product ${productHistory.product_id} using historical IRR:`, historicalIrr, 'for date:', latestSelectedDate, '(instead of current IRR from portfolioIrrValues)');
+                              }
+                            }
+                          }
+                          
+                          // Only fall back to portfolioIrrValues if no historical data is available
+                          if (!productIrr && portfolioIrrValues.has(productHistory.product_id)) {
+                            productIrr = portfolioIrrValues.get(productHistory.product_id);
+                            console.log(`🔄 [PRODUCT TOTAL IRR] Product ${productHistory.product_id} using fallback from portfolioIrrValues:`, productIrr);
+                          }
                           // Debug: Log current IRR value extraction
                                     // Calculate total weighted risk including Previous Funds
           let totalWeightedRisk: number | undefined = undefined;
@@ -1975,6 +2082,7 @@ Available database dates: ${productHistory.portfolio_historical_irr.map((r: any)
         <IRRHistorySummaryTable
           productIds={memoizedProductIds}
           selectedDates={memoizedSelectedDates}
+          perProductDates={memoizedPerProductDates}
           clientGroupIds={undefined}
           realTimeTotalIRR={memoizedTotalIRR}
           reportData={memoizedReportData}
