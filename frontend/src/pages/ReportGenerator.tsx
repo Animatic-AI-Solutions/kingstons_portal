@@ -1450,8 +1450,8 @@ const ReportGenerator: React.FC = () => {
       console.log("Historical IRR data fetched:", historicalIRRMap.size, "funds with historical data");
 
       // --- Step 2: Get Portfolio IDs for all selected products ---
-      // Use main products list for lookup
-      const comprehensiveProductList = products;
+      // Use relatedProducts which includes products from both main list + selected client groups
+      const comprehensiveProductList = relatedProducts;
 
       // Create array to store each product's summary data
       const productSummaryResults: ProductPeriodSummary[] = [];
@@ -1499,9 +1499,9 @@ const ReportGenerator: React.FC = () => {
           }
         });
         
-        // Skip product if it has no active funds AND is not an inactive product
-        if (activeFundIds.size === 0 && (productDetails.status !== 'inactive' && inactiveFundIds.size === 0)) {
-          console.log(`Skipping product ${productDetails.product_name} as it has no active funds and is not inactive`);
+        // Skip product only if it has no funds at all (neither active nor inactive)
+        if (activeFundIds.size === 0 && inactiveFundIds.size === 0) {
+          console.log(`Skipping product ${productDetails.product_name} as it has no portfolio funds`);
           continue;
         }
         
