@@ -182,7 +182,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
   return (
     <div className="print:block report-section" id="summary-tab-panel" role="tabpanel" aria-labelledby="summary-tab">
       {/* Portfolio Performance Cards */}
-      <div className="mb-1 print:mb-0 bg-white px-2 py-2 print:px-1 print:py-1 product-card print-clean investment-performance-container">
+      <div className="mb-0 print:mb-0 bg-white px-2 py-2 print:px-1 print:pt-1 print:pb-0 product-card print-clean investment-performance-container">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 print:gap-1 portfolio-performance-grid">
 
           {/* Total Portfolio Value */}
@@ -234,7 +234,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
       </div>
 
       {/* Investment Summary Table - Detailed overview */}
-      <div className="mb-4 print:mb-1 product-card print-clean">
+      <div className="mt-0 mb-2 product-card print-clean investment-summary-spacing">
         <div className="bg-white px-2 py-2">
           <h2 className="text-lg font-semibold text-gray-900 mb-2 print:mb-1">Investment Summary</h2>
           <div className="overflow-x-auto product-table">
@@ -549,8 +549,8 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                   borderBottom: product.provider_theme_color ? `1px solid ${product.provider_theme_color}` : undefined,
                 }}
               >
-                <div className="px-2 py-2">
-                  <div className="flex items-center gap-3 mb-2">
+                <div className="px-2 pt-1 pb-0">
+                  <div className="flex items-center gap-3 mb-0">
                     {product.provider_theme_color && (
                       <div
                         className="w-4 h-4 rounded-full"
@@ -573,7 +573,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                 </div>
 
                 {/* Fund Breakdown Table */}
-                <div className="px-2 py-2">
+                <div className="px-2 pt-0 pb-2">
                   <div className="overflow-x-auto product-table">
                   <table className="w-full table-fixed divide-y divide-gray-300 landscape-table product-fund-table">
                     <colgroup>

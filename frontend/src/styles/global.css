@@ -49,6 +49,7 @@
     color: #6b7280 !important;
     opacity: 0.9 !important;
   }
+  
 }
 
 /* Base font size and text color for better readability */
@@ -1233,4 +1234,62 @@
   padding-bottom: 0.25rem;
   font-size: 0.75rem;
   line-height: 1.2;
+}
+
+/* Remove spacing between performance cards and investment summary */
+.investment-performance-container {
+  margin-bottom: 0 !important;
+}
+
+.investment-summary-spacing {
+  margin-top: 0 !important;
+}
+
+/* Ensure product title font consistency between web and print */
+.product-card h3,
+.product-card h3.text-xl.font-semibold,
+h3.text-xl.font-semibold {
+  font-size: 1.25rem !important; /* text-xl equivalent: 20px */
+  font-weight: 600 !important; /* font-semibold equivalent */
+  line-height: 1.75rem !important; /* Tailwind text-xl line-height */
+}
+
+@media print {
+  /* Performance cards - remove bottom margin completely */
+  .investment-performance-container,
+  .mb-0.product-card.print-clean.investment-performance-container,
+  div.mb-0.product-card.print-clean.investment-performance-container {
+    margin-bottom: 0 !important;
+    padding-bottom: 0.25rem !important;
+  }
+  
+  /* Investment summary - remove top margin completely */
+  .investment-summary-spacing,
+  .mt-0.mb-2.product-card.print-clean.investment-summary-spacing,
+  div.mt-0.mb-2.product-card.print-clean.investment-summary-spacing,
+  html body .investment-summary-spacing {
+    margin-top: 0 !important;
+    margin-bottom: 0.25rem !important;
+    padding-top: 0.25rem !important;
+  }
+  
+  /* Nuclear option - target by position */
+  .print-section > div:nth-child(1) {
+    margin-bottom: 0 !important;
+  }
+  
+  .print-section > div:nth-child(2) {
+    margin-top: 0 !important;
+  }
+  
+  /* Ensure product title font consistency in print view */
+  .product-card h3,
+  .product-card h3.text-xl.font-semibold,
+  h3.text-xl.font-semibold,
+  html body .product-card h3,
+  html body h3.text-xl.font-semibold {
+    font-size: 1.25rem !important; /* text-xl equivalent: 20px */
+    font-weight: 600 !important; /* font-semibold equivalent */
+    line-height: 1.75rem !important; /* Tailwind text-xl line-height */
+  }
 }
