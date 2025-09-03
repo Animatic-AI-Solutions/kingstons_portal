@@ -13,6 +13,7 @@ import { formatDateFallback, formatCurrencyFallback, formatPercentageFallback } 
 import { formatWeightedRisk } from '../utils/reportFormatters';
 import historicalIRRService from '../services/historicalIRRService';
 import { getProductOwnerDisplayName, getProductOwnerFormalDisplayName, getProductOwnerKnownAsDisplayName } from '../utils/productOwnerUtils';
+import { generateEffectiveProductTitle } from '../utils/productTitleUtils';
 
 /* 
  * PERFORMANCE OPTIMIZATIONS - PHASE 1, 2 & 3 (Implemented ✅)
@@ -299,7 +300,9 @@ const IRRDateSelectionGrid: React.FC<IRRDateSelectionGridProps> = ({
                   />
                 )}
                 <h5 className="text-sm font-medium text-gray-800">
-                  {product.product_name}
+                  {generateEffectiveProductTitle(product, customTitles, { 
+                    omitOwner: productOwnerOrder && productOwnerOrder.length <= 1 
+                  })}
                 </h5>
               </div>
               <div className="text-xs text-gray-500">
@@ -379,7 +382,10 @@ const ReportGenerator: React.FC = () => {
   const navigate = useNavigate();
   
   // Get state manager actions to sync checkbox state
-  const { actions: stateManagerActions } = useReportStateManager();
+  const { 
+    state: { customTitles },
+    actions: stateManagerActions 
+  } = useReportStateManager();
   
   // Initialize optimized services
   const irrDataService = useMemo(() => createIRRDataService(api), [api]);
@@ -3171,7 +3177,9 @@ Please select a different valuation date or ensure all active funds have valuati
                   label=""
                   options={products.map(product => ({
                     value: product.id,
-                    label: product.product_name
+                    label: generateEffectiveProductTitle(product, customTitles, { 
+                      omitOwner: productOwnerOrder && productOwnerOrder.length <= 1 
+                    })
                   }))}
                   values={selectedProductIds}
                   onChange={setSelectedProductIds}
@@ -3324,7 +3332,9 @@ Please select a different valuation date or ensure all active funds have valuati
                                 setExcludedProductIds(newExcludedProducts);
                               }}
                             >
-                              {product.product_name}
+                              {generateEffectiveProductTitle(product, customTitles, { 
+                                omitOwner: productOwnerOrder && productOwnerOrder.length <= 1 
+                              })}
                               {product.status === 'inactive' && (
                                 <span className="ml-1 text-orange-600 font-bold" title="Inactive Product">⚠</span>
                               )}
@@ -3347,7 +3357,7 @@ Please select a different valuation date or ensure all active funds have valuati
                                   setExcludedProductIds(newExcludedProducts);
                                 }}
                                 className={`ml-1.5 ${isExcluded ? 'text-gray-400 hover:text-gray-600' : 'text-green-400 hover:text-green-600'} focus:outline-none cursor-pointer`}
-                                aria-label={isExcluded ? `Include ${product.product_name}` : `Exclude ${product.product_name}`}
+                                aria-label={isExcluded ? `Include ${generateEffectiveProductTitle(product, customTitles, { omitOwner: productOwnerOrder && productOwnerOrder.length <= 1 })}` : `Exclude ${generateEffectiveProductTitle(product, customTitles, { omitOwner: productOwnerOrder && productOwnerOrder.length <= 1 })}`}
                                 title={isExcluded ? "Include product" : "Exclude product"}
                               >
                                 {isExcluded ? (
@@ -3672,7 +3682,9 @@ Please select a different valuation date or ensure all active funds have valuati
                           className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                         />
                         <span className="ml-2 text-sm text-gray-600">
-                          {product.product_name}
+                          {generateEffectiveProductTitle(product, customTitles, { 
+                            omitOwner: productOwnerOrder && productOwnerOrder.length <= 1 
+                          })}
                           <span className="ml-1 text-xs text-red-600">(Inactive)</span>
                         </span>
                       </label>
@@ -3712,7 +3724,9 @@ Please select a different valuation date or ensure all active funds have valuati
                             className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                           />
                           <span className="ml-2 text-sm text-gray-600">
-                            {product.product_name} ({previousFund?.inactiveFunds?.length || 0} funds)
+                            {generateEffectiveProductTitle(product, customTitles, { 
+                              omitOwner: productOwnerOrder && productOwnerOrder.length <= 1 
+                            })} ({previousFund?.inactiveFunds?.length || 0} funds)
                           </span>
                         </label>
                       );
