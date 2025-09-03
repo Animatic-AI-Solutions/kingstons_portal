@@ -762,11 +762,11 @@ const ProductCard: React.FC<{
     
     // If percentage fee is involved (with or without fixed cost)
     if (percentage > 0) {
-      // If no valuation available, we need valuation
-      if (!value || value <= 0) {
+      // Check if valuation data is actually missing (null/undefined) vs genuinely zero
+      if (portfolioValue === null || portfolioValue === undefined) {
         return 'Latest valuation needed';
       }
-      // If valuation exists, calculate properly with explicit number conversion
+      // If valuation exists (including zero), calculate properly
       const percentageFeeAmount = Number((value * percentage) / 100);
       const totalRevenue = Number(fixed + percentageFeeAmount);
       return totalRevenue;
@@ -1840,7 +1840,7 @@ const RevenueAssignmentModal: React.FC<{
   const calculatePercentageRevenue = (percentageFee: string, totalValue: number): string | number => {
     const fee = parseFloat(percentageFee);
     if (!fee || fee <= 0) return 0;
-    if (!totalValue || totalValue <= 0) return 'Latest valuation needed';
+    if (totalValue === null || totalValue === undefined) return 'Latest valuation needed';
     return (totalValue * fee) / 100;
   };
 
@@ -1860,11 +1860,11 @@ const RevenueAssignmentModal: React.FC<{
     
     // If percentage fee is involved (with or without fixed cost)
     if (percentage > 0) {
-      // If no valuation available, we need valuation
-      if (!totalValue || totalValue <= 0) {
+      // Check if valuation data is actually missing (null/undefined) vs genuinely zero
+      if (totalValue === null || totalValue === undefined) {
         return 'Latest valuation needed';
       }
-      // If valuation exists, calculate properly
+      // If valuation exists (including zero), calculate properly
       return fixed + ((totalValue * percentage) / 100);
     }
     

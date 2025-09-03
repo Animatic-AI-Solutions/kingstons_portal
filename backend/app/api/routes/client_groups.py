@@ -1461,7 +1461,13 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                 "provider_name": product["provider_name"],
                 "provider_theme_color": product.get("provider_theme_color"),
                 "plan_number": product.get("plan_number"),
-                "total_value": sum(safe_float(fund.get("market_value"), default=0) for fund in portfolio_funds),
+                "total_value": sum(
+                    # Use market_value if available and > 0, otherwise fallback to amount_invested if IRR exists
+                    safe_float(fund.get("market_value"), default=0) if safe_float(fund.get("market_value"), default=0) > 0
+                    else safe_float(fund.get("amount_invested"), default=0) if fund.get("irr") is not None
+                    else 0
+                    for fund in portfolio_funds
+                ),
                 "irr": None,  # Will be calculated using standardized method below
                 "active_fund_count": product.get("active_fund_count", 0),
                 "inactive_fund_count": product.get("inactive_fund_count", 0),

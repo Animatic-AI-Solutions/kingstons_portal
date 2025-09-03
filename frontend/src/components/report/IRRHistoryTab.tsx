@@ -1847,8 +1847,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                               .slice()
                               .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
                               
-                            console.log(`🔍 [PRODUCT TOTAL IRR] Product ${productHistory.product_id} calculating IRR for latest selected date:`, latestSelectedDate);
-                            
+                                            
                             const historicalRecord = productHistory.portfolio_historical_irr.find((record: any) => {
                               const normalizedRecordDate = record.irr_date.includes('T') ? record.irr_date.split('T')[0] : record.irr_date.split(' ')[0];
                               const normalizedSelectedDate = latestSelectedDate.includes('T') ? latestSelectedDate.split('T')[0] : latestSelectedDate.split(' ')[0];
@@ -1859,7 +1858,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                               const historicalIrr = parseFloat(historicalRecord.irr_result);
                               if (!isNaN(historicalIrr)) {
                                 productIrr = historicalIrr;
-                                console.log(`🎯 [PRODUCT TOTAL IRR] Product ${productHistory.product_id} using historical IRR:`, historicalIrr, 'for date:', latestSelectedDate, '(instead of current IRR from portfolioIrrValues)');
                               }
                             }
                           }
@@ -1867,7 +1865,6 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                           // Only fall back to portfolioIrrValues if no historical data is available
                           if (!productIrr && portfolioIrrValues.has(productHistory.product_id)) {
                             productIrr = portfolioIrrValues.get(productHistory.product_id);
-                            console.log(`🔄 [PRODUCT TOTAL IRR] Product ${productHistory.product_id} using fallback from portfolioIrrValues:`, productIrr);
                           }
                           // Debug: Log current IRR value extraction
                                     // Calculate total weighted risk including Previous Funds
