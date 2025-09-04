@@ -429,6 +429,9 @@ const ReportGenerator: React.FC = () => {
 
   // New state for product owner ordering
   const [productOwnerOrder, setProductOwnerOrder] = useState<string[]>([]);
+  
+  // New state for tracking which product owners are selected for display in report title
+  const [selectedProductOwners, setSelectedProductOwners] = useState<Set<string>>(new Set());
 
   // Cache for historical IRR data to avoid duplicate API calls
   const [historicalIRRCache, setHistoricalIRRCache] = useState<Map<number, any>>(new Map());
@@ -509,8 +512,20 @@ const ReportGenerator: React.FC = () => {
       const newOwners = currentOwners.filter(owner => !new Set(productOwnerOrder).has(owner));
       
       setProductOwnerOrder([...newOrder, ...newOwners]);
+      
+      // Initialize selected product owners (all selected by default)
+      // Only add new owners to selection, preserve existing selection state
+      const newSelectedOwners = new Set(selectedProductOwners);
+      newOwners.forEach(owner => newSelectedOwners.add(owner));
+      // Remove owners that no longer exist
+      Array.from(selectedProductOwners).forEach(owner => {
+        if (!currentOwnerSet.has(owner)) {
+          newSelectedOwners.delete(owner);
+        }
+      });
+      setSelectedProductOwners(newSelectedOwners);
     }
-  }, [relatedProducts]);
+  }, [relatedProducts, productOwnerOrder, selectedProductOwners]);
 
   // Function to move product owner in the order
   const moveProductOwner = (fromIndex: number, toIndex: number) => {
@@ -2527,9 +2542,14 @@ Please select a different valuation date or ensure all active funds have valuati
                 const includedProducts = relatedProducts.filter(product => !excludedProductIds.has(product.id));
                 const ownerNames = extractProductOwners(includedProducts);
                 
-                console.log('🔍 [PRODUCT OWNER DEBUG] Using extractProductOwners with known_as support:', ownerNames);
+                // Filter owner names based on selected product owners
+                const filteredOwnerNames = ownerNames.filter(ownerName => selectedProductOwners.has(ownerName));
                 
-                return ownerNames;
+                console.log('🔍 [PRODUCT OWNER DEBUG] All extracted owner names:', ownerNames);
+                console.log('🔍 [PRODUCT OWNER DEBUG] Selected owners:', Array.from(selectedProductOwners));
+                console.log('🔍 [PRODUCT OWNER DEBUG] Filtered owner names for report title:', filteredOwnerNames);
+                
+                return filteredOwnerNames;
               })(),
               timePeriod: (() => {
                 // Get the latest date from IRR date selections
@@ -2585,9 +2605,14 @@ Please select a different valuation date or ensure all active funds have valuati
           const includedProducts = relatedProducts.filter(product => !excludedProductIds.has(product.id));
           const ownerNames = extractProductOwners(includedProducts);
           
-          console.log('🔍 [PRODUCT OWNER DEBUG - FINAL] Using extractProductOwners with known_as support:', ownerNames);
+          // Filter owner names based on selected product owners
+          const filteredOwnerNames = ownerNames.filter(ownerName => selectedProductOwners.has(ownerName));
           
-          return ownerNames;
+          console.log('🔍 [PRODUCT OWNER DEBUG - FINAL] All extracted owner names:', ownerNames);
+          console.log('🔍 [PRODUCT OWNER DEBUG - FINAL] Selected owners:', Array.from(selectedProductOwners));
+          console.log('🔍 [PRODUCT OWNER DEBUG - FINAL] Filtered owner names for report title:', filteredOwnerNames);
+          
+          return filteredOwnerNames;
         })(),
         timePeriod: (() => {
           // Get the latest date from IRR date selections
@@ -2747,14 +2772,19 @@ Please select a different valuation date or ensure all active funds have valuati
     // Get unique product owner names using the extractProductOwners function that properly handles known_as field
     const productOwnerNames = (() => {
       const includedProducts = relatedProducts.filter(product => !excludedProductIds.has(product.id));
-      return extractProductOwners(includedProducts);
+      const ownerNames = extractProductOwners(includedProducts);
+      
+      // Filter owner names based on selected product owners
+      const filteredOwnerNames = ownerNames.filter(ownerName => selectedProductOwners.has(ownerName));
+      
+      return filteredOwnerNames;
     })();
 
     return {
       timePeriod,
       productOwnerNames
     };
-  }, [selectedValuationDate, earliestTransactionDate, productSummaries, relatedProducts, excludedProductIds]);
+  }, [selectedValuationDate, earliestTransactionDate, productSummaries, relatedProducts, excludedProductIds, selectedProductOwners]);
 
   // PHASE 2.2: Memoize expensive date filtering calculations
   const getFilteredDatesForProduct = useCallback((productId: number): Array<{value: string, label: string}> => {
@@ -3408,7 +3438,7 @@ Please select a different valuation date or ensure all active funds have valuati
               <div className="mb-6">
                 <h3 className="text-sm font-medium text-gray-700 mb-2">Product Owners Display Order</h3>
                 <p className="text-xs text-gray-500 mb-3">
-                  Set the order in which product owners appear in the report. Drag to reorder or use arrows.
+                  Check/uncheck owners to include/exclude them from the report title. Set the order in which product owners appear. Drag to reorder or use arrows.
                 </p>
                 <div className="border rounded-lg p-3 bg-gray-50">
                   <div className="space-y-2">
@@ -3435,6 +3465,23 @@ Please select a different valuation date or ensure all active funds have valuati
                         }}
                       >
                         <div className="flex items-center flex-1">
+                          <div className="mr-2">
+                            <input
+                              type="checkbox"
+                              checked={selectedProductOwners.has(owner)}
+                              onChange={(e) => {
+                                const newSelectedOwners = new Set(selectedProductOwners);
+                                if (e.target.checked) {
+                                  newSelectedOwners.add(owner);
+                                } else {
+                                  newSelectedOwners.delete(owner);
+                                }
+                                setSelectedProductOwners(newSelectedOwners);
+                              }}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                              title={selectedProductOwners.has(owner) ? 'Include in report title' : 'Exclude from report title'}
+                            />
+                          </div>
                           <div className="mr-2 text-gray-400">
                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
@@ -3442,7 +3489,7 @@ Please select a different valuation date or ensure all active funds have valuati
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-gray-900">{owner}</span>
+                              <span className={`text-sm font-medium ${selectedProductOwners.has(owner) ? 'text-gray-900' : 'text-gray-400'}`}>{owner}</span>
                               <span className="text-xs text-gray-500">
                                 ({(() => {
                                   console.log(`🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "${owner}"`);
@@ -3549,7 +3596,26 @@ Please select a different valuation date or ensure all active funds have valuati
                     ))}
                   </div>
                   
-                  <div className="mt-3 flex justify-end">
+                  <div className="mt-3 flex justify-between">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          const allOwners = new Set(productOwnerOrder);
+                          setSelectedProductOwners(allOwners);
+                        }}
+                        className="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                      >
+                        Select All
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedProductOwners(new Set());
+                        }}
+                        className="px-3 py-1 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+                      >
+                        Deselect All
+                      </button>
+                    </div>
                     <button
                       onClick={() => {
                         const currentOwners = extractProductOwners(relatedProducts);
