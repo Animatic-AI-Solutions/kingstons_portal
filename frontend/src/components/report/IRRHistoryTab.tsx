@@ -1339,7 +1339,8 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                 })
               : productSelectedDates;
               
-            const sortedDates = productHistoricalDates.slice().sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+            // Use ALL selected dates from report generator, not just dates where this product has data
+            const sortedDates = memoizedHistoricalDatesOnly.slice().sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
             // Create lookup maps for quick access
             const portfolioIrrMap = new Map();
             if (productHistory.portfolio_historical_irr) {
@@ -2040,9 +2041,9 @@ Available database dates: ${productHistory.portfolio_historical_irr.map((r: any)
                                   }
                                 })()}
                               </td>
-                              {sortedDates.map((date, index) => {
-                                // Get the corresponding normalized date for lookup
-                                const normalizedDate = normalizedSelectedDates[index];
+                              {sortedDates.map((date) => {
+                                // Normalize the date for lookup (same format as database)
+                                const normalizedDate = date.includes('T') ? date.split('T')[0] : date.split(' ')[0];
                                 return (
                                   <td key={date} className="px-2 py-2 text-xs font-bold text-left text-black">
                                     {(() => {
