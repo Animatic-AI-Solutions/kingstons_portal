@@ -479,23 +479,12 @@
     page-break-inside: avoid !important;
   }
   
-  /* Force IRR History product cards to match Summary tab spacing */
-  .irr-history-section .product-card.mb-8 {
-    margin-bottom: 0.25rem !important;
-  }
-  
-  /* Additional specificity for IRR History card spacing */
-  .irr-history-section div.product-card {
-    margin-bottom: 0.25rem !important;
-  }
-  
-  .irr-history-section .mb-8.product-card.print-clean {
-    margin-bottom: 0.25rem !important;
-  }
-  
-  /* Maximum specificity rule to ensure spacing works */
-  .irr-history-section .mb-8.bg-white.shadow-sm.rounded-lg.border.border-gray-200.p-6.w-full.product-card.print-clean {
-    margin-bottom: 0.25rem !important;
+  /* History tab product card spacing - reduced from mb-8 to mb-4 */
+  .history-product-card,
+  .irr-history-section .history-product-card,
+  .irr-history-section .mb-4.product-card.print-clean.history-product-card,
+  .irr-history-section div.mb-4.product-card.print-clean.history-product-card {
+    margin-bottom: 1rem !important; /* 16px instead of 32px */
   }
   
   /* Reduce spacing between IRR history title and content */
@@ -1254,6 +1243,13 @@ h3.text-xl.font-semibold {
   line-height: 1.75rem !important; /* Tailwind text-xl line-height */
 }
 
+/* Summary tab product card spacing - reduced from mb-8 to mb-4 */
+.summary-product-card,
+.mb-4.product-card.print-clean.summary-product-card,
+div.mb-4.product-card.print-clean.summary-product-card {
+  margin-bottom: 1rem !important; /* 16px instead of 32px */
+}
+
 @media print {
   /* Performance cards - remove bottom margin completely */
   .investment-performance-container,
@@ -1291,5 +1287,24 @@ h3.text-xl.font-semibold {
     font-size: 1.25rem !important; /* text-xl equivalent: 20px */
     font-weight: 600 !important; /* font-semibold equivalent */
     line-height: 1.75rem !important; /* Tailwind text-xl line-height */
+  }
+  
+  /* Summary tab product card spacing in print - ensure it's applied */
+  .summary-product-card,
+  .mb-4.product-card.print-clean.summary-product-card,
+  div.mb-4.product-card.print-clean.summary-product-card,
+  html body .summary-product-card,
+  html body div.summary-product-card {
+    margin-bottom: 1rem !important; /* 16px instead of 32px */
+  }
+  
+  /* History tab product card spacing in print - ensure it's applied */
+  .history-product-card,
+  .irr-history-section .history-product-card,
+  .irr-history-section .mb-4.product-card.print-clean.history-product-card,
+  .irr-history-section div.mb-4.product-card.print-clean.history-product-card,
+  html body .irr-history-section .history-product-card,
+  html body .history-product-card {
+    margin-bottom: 1rem !important; /* 16px instead of 32px */
   }
 }

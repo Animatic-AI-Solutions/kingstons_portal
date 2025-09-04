@@ -1364,7 +1364,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
             return (
               <div 
                 key={index} 
-                className={`mb-8 bg-white shadow-sm rounded-lg border border-gray-200 w-full product-card print-clean ${product?.status === 'inactive' ? 'opacity-60 bg-gray-50' : ''}`}
+                className={`mb-4 bg-white shadow-sm rounded-lg border border-gray-200 w-full product-card print-clean history-product-card ${product?.status === 'inactive' ? 'opacity-60 bg-gray-50' : ''}`}
                 style={{
                   borderLeft: product?.provider_theme_color ? `4px solid ${product.provider_theme_color}` : '4px solid #e5e7eb',
                   borderTop: product?.provider_theme_color ? `1px solid ${product.provider_theme_color}` : undefined,
@@ -1372,8 +1372,8 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                   borderBottom: product?.provider_theme_color ? `1px solid ${product.provider_theme_color}` : undefined,
                 }}
               >
-                <div className="px-2 py-2">
-                  <div className="flex items-center gap-3 mb-2">
+                <div className="px-2 pt-1 pb-0">
+                  <div className="flex items-center gap-3 mb-0">
                     {product?.provider_theme_color && (
                       <div
                         className="w-4 h-4 rounded-full"
@@ -1388,7 +1388,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                     </h3>
                   </div>
                 </div>
-                <div className="px-2 py-2">
+                <div className="px-2 pt-0 pb-2">
                   <div className="overflow-x-auto product-table">
                   <table className="w-full table-fixed divide-y divide-gray-300 landscape-table irr-history-table">
                     <colgroup>
@@ -1418,7 +1418,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                             {(() => {
                               const dateObj = new Date(date);
                               const year = dateObj.getFullYear();
-                              const month = dateObj.toLocaleDateString('en-US', { month: 'long' });
+                              const month = dateObj.toLocaleDateString('en-US', { month: 'short' });
                               return `${month} ${year}`;
                             })()}
                           </th>

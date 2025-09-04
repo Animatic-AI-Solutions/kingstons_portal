@@ -58,15 +58,17 @@ export const extractProductOwnerNickname = (product: ProductPeriodSummary): stri
       });
       
       const knownAs = (owner.known_as && owner.known_as.trim()) || '';
+      
       if (knownAs) {
-        console.log('🔍 [PRODUCT TITLE DEBUG] Using known_as:', knownAs);
+        // Use only 'known_as' for product titles (no surname)
+        console.log('🔍 [PRODUCT TITLE DEBUG] Using known_as only:', knownAs);
         return knownAs;
       }
       
       // Fallback to firstname if no known_as
       const firstname = (owner.firstname && owner.firstname.trim()) || '';
       if (firstname) {
-        console.log('🔍 [PRODUCT TITLE DEBUG] Fallback to firstname:', firstname);
+        console.log('🔍 [PRODUCT TITLE DEBUG] Fallback to firstname only:', firstname);
         return firstname;
       }
     }
@@ -145,10 +147,8 @@ export const generateDefaultProductTitle = (product: ProductPeriodSummary, optio
 
   let title = `${product.provider_name || 'Unknown Provider'}`;
   
-  if (product.product_type) {
-    // Simplify bond types to just "Bond"
-    const simplifiedType = product.product_type.toLowerCase().includes('bond') ? 'Bond' : product.product_type;
-    title += ` - ${simplifiedType}`;
+  if (product.product_name) {
+    title += ` - ${product.product_name}`;
   }
   
   // Add plan number if available (moved before owner nickname)
@@ -237,10 +237,25 @@ export const generateProductDisplayName = (product: any): string => {
     if (product.product_owners.length > 1) {
       parts.push('Joint');
     } else {
-      // Extract first name from single owner
+      // Extract name from single owner using only known_as for product display
       const owner = product.product_owners[0];
-      const firstName = owner.known_as || owner.firstname || 'Owner';
-      parts.push(firstName);
+      const knownAs = (owner.known_as && owner.known_as.trim()) || '';
+      
+      let ownerName = '';
+      if (knownAs) {
+        // Use only 'known_as' for product display names (no surname)
+        ownerName = knownAs;
+      } else {
+        // Fallback to firstname if no known_as
+        const firstname = (owner.firstname && owner.firstname.trim()) || '';
+        if (firstname) {
+          ownerName = firstname;
+        } else {
+          ownerName = 'Owner';
+        }
+      }
+      
+      parts.push(ownerName);
     }
   }
 

@@ -29,14 +29,14 @@ export const formatDateFallback = (dateString: string | null): string => {
     if (isNaN(year) || isNaN(month)) return dateString;
     const dateObj = new Date(year, month - 1);
     if (isNaN(dateObj.getTime())) return dateString;
-    return dateObj.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    return dateObj.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
   }
   
   // Handle full dates (YYYY-MM-DD)
   if (parts.length === 3) {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return dateString;
-    return date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
   }
   
   return dateString;

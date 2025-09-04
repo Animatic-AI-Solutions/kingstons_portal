@@ -13,8 +13,8 @@ export interface ProductOwner {
 
 /**
  * Gets the formal display name for a product owner (for report headers, general display).
- * Logic: Use firstname + surname if both exist, otherwise fallback to known_as.
- * This ensures proper formal name display: prefer formal names over nicknames.
+ * Logic: Use known_as + surname if both exist, otherwise just known_as, fallback to firstname + surname.
+ * This follows site-wide UI guidance to prefer known_as format over formal names.
  */
 export const getProductOwnerFormalDisplayName = (owner: ProductOwner): string => {
   console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal):', {
@@ -34,17 +34,18 @@ export const getProductOwnerFormalDisplayName = (owner: ProductOwner): string =>
     knownAs
   });
   
-  // Priority 1: If both firstname and surname exist, use formal name
-  if (firstname && surname) {
-    const result = `${firstname} ${surname}`;
-    console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (firstname + surname):', result);
+  // Priority 1: If known_as exists, use 'known_as + surname' format or just known_as
+  if (knownAs) {
+    const result = surname ? `${knownAs} ${surname}` : knownAs;
+    console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (known_as + surname or known_as only):', result);
     return result;
   }
   
-  // Priority 2: If known_as exists, use it as fallback
-  if (knownAs) {
-    console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 2 (known_as fallback):', knownAs);
-    return knownAs;
+  // Priority 2: Fallback to firstname + surname if both exist (when no known_as)
+  if (firstname && surname) {
+    const result = `${firstname} ${surname}`;
+    console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 2 (firstname + surname fallback):', result);
+    return result;
   }
   
   // Priority 3: Use whatever single field exists

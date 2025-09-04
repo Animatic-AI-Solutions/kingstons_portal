@@ -190,6 +190,8 @@ interface IRRDateSelectionGridProps {
   maxDates: number;
   getCurrentUniqueCount: () => number;
   wouldExceedLimit: (productId: number, newDates: string[]) => boolean;
+  customTitles: Map<number, string>;
+  productOwnerOrder: string[];
 }
 
 const IRRDateSelectionGrid: React.FC<IRRDateSelectionGridProps> = ({
@@ -205,7 +207,9 @@ const IRRDateSelectionGrid: React.FC<IRRDateSelectionGridProps> = ({
   onClearAllForAllProducts,
   maxDates,
   getCurrentUniqueCount,
-  wouldExceedLimit
+  wouldExceedLimit,
+  customTitles,
+  productOwnerOrder
 }) => {
   const handleDateToggle = (productId: number, dateStr: string, isGreyedOut: boolean) => {
     if (isGreyedOut) return; // Don't allow selection of greyed out dates
@@ -3659,6 +3663,8 @@ Please select a different valuation date or ensure all active funds have valuati
                   maxDates={MAX_IRR_DATES}
                   getCurrentUniqueCount={() => uniqueSelectedDatesCount}
                   wouldExceedLimit={(productId: number, newDates: string[]) => wouldExceedLimit(selectedIRRDates, productId, newDates)}
+                  customTitles={customTitles}
+                  productOwnerOrder={productOwnerOrder}
                 />
               </div>
             )}

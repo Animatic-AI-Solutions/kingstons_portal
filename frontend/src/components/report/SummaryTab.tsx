@@ -541,7 +541,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
             return (
               <div
                 key={`${product.id}-${index}`}
-                className={`mb-8 bg-white shadow-sm rounded-lg border border-gray-200 w-full product-card print-clean ${isInactive ? 'opacity-60 bg-gray-50' : ''}`}
+                className={`mb-4 bg-white shadow-sm rounded-lg border border-gray-200 w-full product-card print-clean summary-product-card ${isInactive ? 'opacity-60 bg-gray-50' : ''}`}
                 style={{
                   borderLeft: product.provider_theme_color ? `4px solid ${product.provider_theme_color}` : '4px solid #e5e7eb',
                   borderTop: product.provider_theme_color ? `1px solid ${product.provider_theme_color}` : undefined,

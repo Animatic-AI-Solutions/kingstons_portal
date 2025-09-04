@@ -567,7 +567,7 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
                         {(() => {
                           const dateObj = new Date(date);
                           const year = dateObj.getFullYear();
-                          const month = dateObj.toLocaleDateString('en-US', { month: 'long' });
+                          const month = dateObj.toLocaleDateString('en-US', { month: 'short' });
                           return `${month} ${year}`;
                         })()}
                       </th>
