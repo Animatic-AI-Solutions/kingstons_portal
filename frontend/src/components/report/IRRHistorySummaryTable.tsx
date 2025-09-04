@@ -520,7 +520,14 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
 
   return (
     <div className={`irr-history-section ${className}`}>
-      <div className="mb-4 product-card print-clean">
+      <div className="mb-4 bg-white shadow-sm rounded-lg border border-gray-200 w-full product-card print-clean"
+        style={{
+          borderLeft: '4px solid #6b7280', // Dark grey left border like product cards
+          borderTop: '1px solid #6b7280',   // Dark grey top border
+          borderRight: '1px solid #6b7280', // Dark grey right border  
+          borderBottom: '1px solid #6b7280' // Dark grey bottom border
+        }}
+      >
         <div className="px-2 py-2">
           <h2 className="text-lg font-semibold text-gray-900 mb-2">History Summary</h2>
           <div className="overflow-x-auto product-table">
