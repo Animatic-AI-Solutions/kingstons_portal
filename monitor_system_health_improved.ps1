@@ -380,14 +380,37 @@ function Test-SystemHealth {
             $type = $pathInfo.Type
             $isCritical = $pathInfo.Critical
             
-            if (Test-Path $path) {
+            # Enhanced file/directory detection with better hidden file support
+            $pathExists = $false
+            $pathInfo = ""
+            
+            try {
                 if ($type -eq "File") {
-                    $fileSize = (Get-Item $path -ErrorAction SilentlyContinue).Length
-                    Write-Log "[OK] $type exists: $path ($fileSize bytes)" "SUCCESS"
+                    # Use Get-Item with Force to detect hidden files like .env
+                    $item = Get-Item $path -Force -ErrorAction SilentlyContinue
+                    if ($item -and !$item.PSIsContainer) {
+                        $pathExists = $true
+                        $pathInfo = "($($item.Length) bytes)"
+                    }
                 } else {
-                    $itemCount = (Get-ChildItem $path -ErrorAction SilentlyContinue | Measure-Object).Count
-                    Write-Log "[OK] $type exists: $path ($itemCount items)" "SUCCESS"
+                    # Directory check
+                    $item = Get-Item $path -Force -ErrorAction SilentlyContinue
+                    if ($item -and $item.PSIsContainer) {
+                        $pathExists = $true
+                        $itemCount = (Get-ChildItem $path -Force -ErrorAction SilentlyContinue | Measure-Object).Count
+                        $pathInfo = "($itemCount items)"
+                    }
                 }
+            } catch {
+                # Fallback to Test-Path if Get-Item fails
+                $pathExists = Test-Path $path -PathType $(if ($type -eq "File") { "Leaf" } else { "Container" })
+                if ($pathExists) {
+                    $pathInfo = "(detected via fallback)"
+                }
+            }
+            
+            if ($pathExists) {
+                Write-Log "[OK] $type exists: $path $pathInfo" "SUCCESS"
             } else {
                 if ($isCritical) {
                     Write-Log "[ERROR] Missing critical $type : $path" "CRITICAL"
