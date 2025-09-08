@@ -329,7 +329,12 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                         </td>
                         <td className="px-2 py-2 whitespace-nowrap text-base text-right">
                           {(() => {
-                            const formatted = formatCurrencyWithVisualSigningWrapper((product.total_investment || 0) + (product.total_regular_investment || 0), 'investment');
+                            const totalInvestment = product.total_investment || 0;
+                            const totalRegularInvestment = product.total_regular_investment || 0;
+                            const investmentSum = totalInvestment + totalRegularInvestment;
+                            
+                            
+                            const formatted = formatCurrencyWithVisualSigningWrapper(investmentSum, 'investment');
                             return <span className={formatted.className}>{formatted.value}</span>;
                           })()}
                         </td>

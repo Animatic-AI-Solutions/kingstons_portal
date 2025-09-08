@@ -463,7 +463,7 @@ router = APIRouter()
 @router.get("/holding_activity_logs", response_model=List[HoldingActivityLog])
 async def get_holding_activity_logs(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
-    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
+    limit: int = Query(500, ge=1, le=1000, description="Max number of records to return"),
     product_id: Optional[int] = None,
     portfolio_fund_id: Optional[int] = None,
     portfolio_id: Optional[int] = None,

@@ -335,7 +335,7 @@ async def get_bulk_client_data_optimized(db = Depends(get_db)):
 @router.get("/client_groups", response_model=List[ClientGroup])
 async def get_client_groups(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
-    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
+    limit: int = Query(500, ge=1, le=1000, description="Max number of records to return"),
     status: Optional[str] = Query(None, description="Filter by status"),
     search: Optional[str] = Query(None, description="Search by name, email, account number"),
     sort_by: Optional[str] = Query(None, description="Field to sort by"),
@@ -429,7 +429,7 @@ async def get_client_groups(
 @router.get("/client_groups/dormant", response_model=List[ClientGroup])
 async def get_dormant_client_groups(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
-    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
+    limit: int = Query(500, ge=1, le=1000, description="Max number of records to return"),
     db = Depends(get_db)
 ):
     """
@@ -964,7 +964,7 @@ async def delete_client_group_products(
 async def get_client_group_products(
     client_group_id: int,
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
-    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
+    limit: int = Query(500, ge=1, le=1000, description="Max number of records to return"),
     db = Depends(get_db)
 ):
     """

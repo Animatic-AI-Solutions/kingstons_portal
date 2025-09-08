@@ -17,7 +17,7 @@ router = APIRouter()
 async def get_funds(
     db = Depends(get_db),
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
-    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
+    limit: int = Query(500, ge=1, le=1000, description="Max number of records to return"),
     search: Optional[str] = None
 ):
     """Get all funds with optional search"""

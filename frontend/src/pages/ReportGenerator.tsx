@@ -634,7 +634,7 @@ const ReportGenerator: React.FC = () => {
         setIsLoadingAllProducts(true);
         
         try {
-          const allProductsRes = await api.get('/client_products_with_owners');
+          const allProductsRes = await api.get('/client_products_with_owners?limit=1000');
           const productsTime = Date.now() - productsStart;
           const totalTime = Date.now() - startTime;
           
@@ -730,7 +730,7 @@ const ReportGenerator: React.FC = () => {
             const clientGroupPromises = uncachedClientGroups.map(async (scg) => {
               const clientGroupId = Number(scg);
               try {
-                const response = await api.get(`/client_products_with_owners?client_id=${clientGroupId}`);
+                const response = await api.get(`/client_products_with_owners?client_id=${clientGroupId}&limit=1000`);
                 const clientGroupProducts = (response.data || []) as Product[];
                 
                 // Cache the results immediately
@@ -1538,7 +1538,7 @@ const ReportGenerator: React.FC = () => {
         // Get activity logs for all fund IDs
         console.log(`Fetching activity logs for ${productPortfolioFunds.length} portfolio funds:`, productPortfolioFunds.map(pf => pf.id));
         const activityLogsPromises = productPortfolioFunds.map(pf => 
-          api.get(`/holding_activity_logs?portfolio_fund_id=${pf.id}`)
+          api.get(`/holding_activity_logs?portfolio_fund_id=${pf.id}&limit=500`)
       );
       const activityResponses = await Promise.all(activityLogsPromises);
       const allActivityLogs = activityResponses.flatMap(res => res.data);
@@ -1692,6 +1692,8 @@ const ReportGenerator: React.FC = () => {
         
         // Process activity logs
         console.log(`Processing ${allActivityLogs.length} activity logs for product ${productDetails.product_name}`);
+        
+        
       allActivityLogs.forEach((log: any) => {
           if (!log.activity_timestamp || !log.amount) return;
         const parsedAmount = parseFloat(log.amount);
@@ -1746,6 +1748,7 @@ const ReportGenerator: React.FC = () => {
           productStartDate,
           activityLogsCount: allActivityLogs.length
         });
+        
         
         // Calculate current valuation (from active funds, or all funds for inactive products)
         let mostRecentValuationDate: string | null = null;

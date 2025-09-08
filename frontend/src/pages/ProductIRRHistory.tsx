@@ -269,7 +269,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
         
         for (const fund of portfolioFunds) {
           try {
-            const valuationResponse = await api.get(`/fund_valuations?portfolio_fund_id=${fund.id}&order=valuation_date.desc`);
+            const valuationResponse = await api.get(`/fund_valuations?portfolio_fund_id=${fund.id}&order=valuation_date.desc&limit=500`);
             const valuations = valuationResponse.data || [];
             
             const fundDates = valuations.map((v: any) => v.valuation_date.split('T')[0]); // Extract YYYY-MM-DD

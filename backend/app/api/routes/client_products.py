@@ -17,7 +17,7 @@ router = APIRouter()
 @router.get("/client_products_with_owners", response_model=List[dict])
 async def get_client_products_with_owners(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
-    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
+    limit: int = Query(500, ge=1, le=2000, description="Max number of records to return"),
     client_id: Optional[int] = None,
     provider_id: Optional[int] = None,
     status: Optional[str] = None,
@@ -246,7 +246,7 @@ async def get_client_products_with_owners(
 @router.get("/products_display", response_model=List[dict])
 async def get_products_display(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
-    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
+    limit: int = Query(500, ge=1, le=2000, description="Max number of records to return"),
     client_id: Optional[int] = None,
     provider_id: Optional[int] = None,
     status: Optional[str] = None,
@@ -530,7 +530,7 @@ async def get_portfolio_types(db = Depends(get_db)):
 @router.get("/client_products", response_model=List[Clientproduct])
 async def get_client_products(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
-    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
+    limit: int = Query(500, ge=1, le=2000, description="Max number of records to return"),
     client_id: Optional[int] = None,
     provider_id: Optional[int] = None,
     status: Optional[str] = None,

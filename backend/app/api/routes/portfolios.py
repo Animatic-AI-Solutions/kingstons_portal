@@ -58,7 +58,7 @@ router = APIRouter()
 @router.get("/portfolios", response_model=Union[List[Portfolio], Dict[str, int]])
 async def get_portfolios(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
-    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
+    limit: int = Query(500, ge=1, le=1000, description="Max number of records to return"),
     status: Optional[str] = None,
     template_generation_id: Optional[int] = None,
     count_only: bool = False,
@@ -211,7 +211,7 @@ async def create_portfolio(portfolio: PortfolioCreate, db = Depends(get_db)):
 @router.get("/portfolios/with-template", response_model=List[PortfolioWithTemplate])
 async def get_portfolios_with_template(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
-    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
+    limit: int = Query(500, ge=1, le=1000, description="Max number of records to return"),
     status: Optional[str] = None,
     db = Depends(get_db)
 ):
