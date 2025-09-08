@@ -208,7 +208,7 @@ function Test-SystemHealth {
             # Test API with actual endpoint
             try {
                 Write-Log "Testing API functionality with data endpoint..." "INFO"
-                $dataTest = Invoke-WebRequest -Uri "http://intranet.kingston.local:8001/api/clients?limit=1" -TimeoutSec 10 -UseBasicParsing -ErrorAction Stop
+                $dataTest = Invoke-WebRequest -Uri "http://intranet.kingston.local:8001/api/client_groups?limit=1" -TimeoutSec 10 -UseBasicParsing -ErrorAction Stop
                 if ($dataTest.StatusCode -eq 200) {
                     Write-Log "[OK] API data endpoint functional" "SUCCESS"
                     $healthReport.Metrics["APIDataEndpoint"] = "Functional"
