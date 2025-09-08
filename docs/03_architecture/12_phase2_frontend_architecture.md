@@ -52,6 +52,744 @@ Kingston's Portal Phase 2 represents a fundamental paradigm shift from aesthetic
 
 ---
 
+## 5-Category Page Architecture
+
+### Category-Based Navigation Structure
+
+The Phase 2 enhancement introduces a **5-category approach** replacing the single information items page with specialized category pages, each optimized for specific data types and user workflows.
+
+#### Navigation Structure
+
+```typescript
+// CategoryNavigation component for 5-table approach
+interface CategoryPage {
+  category: 'basic_detail' | 'income_expenditure' | 'assets_liabilities' | 'protection' | 'vulnerability_health';
+  title: string;
+  icon: string;
+  interface: 'table' | 'cards';
+  endpoint: string;
+  component: React.ComponentType;
+}
+
+const CATEGORY_PAGES: CategoryPage[] = [
+  {
+    category: 'basic_detail',
+    title: 'Basic Details',
+    icon: 'user',
+    interface: 'table',
+    endpoint: '/api/client_groups/{id}/basic_details',
+    component: BasicDetailsTable
+  },
+  {
+    category: 'income_expenditure', 
+    title: 'Income & Expenditure',
+    icon: 'currency',
+    interface: 'table',
+    endpoint: '/api/client_groups/{id}/income_expenditure',
+    component: IncomeExpenditureTable
+  },
+  {
+    category: 'assets_liabilities',
+    title: 'Assets & Liabilities', 
+    icon: 'portfolio',
+    interface: 'cards', // ONLY category using cards
+    endpoint: '/api/client_groups/{id}/assets_liabilities',
+    component: AssetsLiabilitiesCards
+  },
+  {
+    category: 'protection',
+    title: 'Protection',
+    icon: 'shield',
+    interface: 'table',
+    endpoint: '/api/client_groups/{id}/protection',
+    component: ProtectionTable
+  },
+  {
+    category: 'vulnerability_health',
+    title: 'Vulnerability & Health',
+    icon: 'health',
+    interface: 'cards', // Product owner grouped cards
+    endpoint: '/api/client_groups/{id}/vulnerability_health',  
+    component: VulnerabilityHealthCards
+  }
+];
+```
+
+#### Category Page Routing
+
+```typescript
+// CategoryRouter component for 5-category pages
+const CategoryRouter: React.FC<CategoryRouterProps> = ({ clientGroupId }) => {
+  const [activeCategory, setActiveCategory] = useState<string>('basic_detail');
+  const [categoryData, setCategoryData] = useState<Record<string, any>>({});
+  
+  return (
+    <div className="category-container">
+      {/* Category Tab Navigation */}
+      <div className="category-tabs">
+        {CATEGORY_PAGES.map(category => (
+          <button
+            key={category.category}
+            className={`category-tab ${activeCategory === category.category ? 'active' : ''}`}
+            onClick={() => setActiveCategory(category.category)}
+          >
+            <Icon name={category.icon} />
+            {category.title}
+          </button>
+        ))}
+      </div>
+      
+      {/* Category Content */}
+      <div className="category-content">
+        <Suspense fallback={<CategoryPageSkeleton />}>
+          {CATEGORY_PAGES.map(category => (
+            activeCategory === category.category && (
+              <category.component
+                key={category.category}
+                clientGroupId={clientGroupId}
+                endpoint={category.endpoint}
+                interface={category.interface}
+              />
+            )
+          ))}
+        </Suspense>
+      </div>
+    </div>
+  );
+};
+```
+
+### Hybrid Interface Strategy
+
+**Table Interface** (4 out of 5 categories):
+- Basic Details, Income & Expenditure, Protection
+- Dense 12+ row tables with 32-40px row height
+- Standard filtering, sorting, and pagination
+- Inline editing capabilities
+
+**Card Interface** (Assets & Liabilities only):
+- Ultra-thin card format optimized for financial data
+- Managed/unmanaged product unification
+- Expand/collapse functionality for detailed views
+
+---
+
+## Assets & Liabilities Card Components
+
+### Ultra-Thin Card Architecture
+
+The **Assets & Liabilities category** is the ONLY category using a card interface, specifically designed for financial product visualization with managed/unmanaged product unification.
+
+#### Card Component Structure
+
+```typescript
+// AssetLiabilityCard - Ultra-thin card format
+interface AssetLiabilityCard {
+  id: string;
+  type: 'managed' | 'unmanaged';
+  productName: string;
+  currentValue: number;
+  startDate: string; // DD/MM/YYYY format
+  currency: string;
+  isExpanded: boolean;
+  managedProductSync?: 'synchronized' | 'conflict' | 'pending';
+}
+
+const AssetLiabilityCard: React.FC<AssetLiabilityCardProps> = ({
+  item,
+  onExpand,
+  onEdit,
+  onDelete
+}) => {
+  return (
+    <div className={`asset-card ${item.type} ${item.isExpanded ? 'expanded' : ''}`}>
+      {/* Ultra-thin collapsed view: 32-40px height */}
+      <div className="card-header" onClick={() => onExpand(item.id)}>
+        <div className="card-main-info">
+          <span className="product-name">{item.productName}</span>
+          <span className="current-value">£{item.currentValue.toLocaleString()}</span>
+          <span className="start-date">{item.startDate}</span>
+          <ChevronRightIcon className="expand-icon" />
+        </div>
+        {item.managedProductSync && (
+          <SyncStatusIndicator status={item.managedProductSync} />
+        )}
+      </div>
+      
+      {/* Expanded view: Full details */}
+      {item.isExpanded && (
+        <div className="card-expanded-details">
+          <CardDetailsForm
+            item={item}
+            onSave={onEdit}
+            onCancel={() => onExpand(item.id)}
+            inlineEditing={item.type === 'unmanaged'}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+#### Card Layout Optimization
+
+```typescript
+// AssetsLiabilitiesCards - Main container component
+const AssetsLiabilitiesCards: React.FC<AssetsLiabilitiesCardsProps> = ({
+  clientGroupId,
+  endpoint
+}) => {
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [virtualizedView, setVirtualizedView] = useState(false);
+  
+  const { data, isLoading } = useQuery(['assets-liabilities', clientGroupId], 
+    () => api.get(endpoint)
+  );
+  
+  // Enable virtualization for 100+ items
+  useEffect(() => {
+    if (data?.items?.length > 100) {
+      setVirtualizedView(true);
+    }
+  }, [data?.items?.length]);
+  
+  return (
+    <div className="assets-liabilities-container">
+      {/* Cards summary header */}
+      <div className="cards-summary">
+        <SummaryStats
+          totalAssets={data?.unified_summary?.total_assets}
+          totalLiabilities={data?.unified_summary?.total_liabilities}
+          netPosition={data?.unified_summary?.net_position}
+        />
+      </div>
+      
+      {/* Card list - virtualized if needed */}
+      {virtualizedView ? (
+        <VirtualizedCardList
+          items={data?.items || []}
+          cardHeight={40} // Base card height
+          expandedCardHeight={320} // Expanded card height
+          expandedCards={expandedCards}
+          onCardToggle={handleCardToggle}
+        />
+      ) : (
+        <div className="card-list">
+          {data?.items?.map(item => (
+            <AssetLiabilityCard
+              key={item.id}
+              item={item}
+              onExpand={handleCardToggle}
+              onEdit={handleCardEdit}
+              onDelete={handleCardDelete}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+### Managed/Unmanaged Product Unification
+
+```typescript
+// ManagedProductSync component for conflict resolution
+const ManagedProductSync: React.FC<ManagedProductSyncProps> = ({
+  managedProduct,
+  unmanagedItem,
+  onResolveConflict
+}) => {
+  return (
+    <div className="sync-conflict-resolution">
+      <div className="conflict-header">
+        <AlertTriangleIcon className="warning-icon" />
+        <span>Product exists in both systems</span>
+      </div>
+      
+      <div className="conflict-comparison">
+        <div className="managed-version">
+          <h4>Managed System</h4>
+          <ProductDetails product={managedProduct} />
+          <button onClick={() => onResolveConflict('prefer-managed')}>
+            Use Managed Data
+          </button>
+        </div>
+        
+        <div className="unmanaged-version">
+          <h4>Information Items</h4>
+          <ProductDetails product={unmanagedItem} />
+          <button onClick={() => onResolveConflict('prefer-unmanaged')}>
+            Use Information Item
+          </button>
+        </div>
+      </div>
+      
+      <button
+        className="merge-button"
+        onClick={() => onResolveConflict('merge')}
+      >
+        Merge Both Sources
+      </button>
+    </div>
+  );
+};
+```
+
+---
+
+## Category-Specific Table Components
+
+### Enhanced Table Components for Each Category
+
+#### BasicDetailsTable Component
+
+```typescript
+// BasicDetailsTable - Standard table with last_modified column
+const BasicDetailsTable: React.FC<BasicDetailsTableProps> = ({
+  clientGroupId,
+  endpoint
+}) => {
+  const columns: TableColumn[] = [
+    { key: 'item_type', title: 'Type', sortable: true },
+    { key: 'name', title: 'Name', sortable: true },
+    { key: 'summary', title: 'Summary', truncate: true },
+    { key: 'last_modified', title: 'Last Modified', sortable: true, type: 'datetime' },
+    { key: 'priority', title: 'Priority', type: 'badge' },
+    { key: 'status', title: 'Status', type: 'status' },
+    { key: 'actions', title: 'Actions', type: 'actions' }
+  ];
+  
+  return (
+    <DenseDataTable
+      columns={columns}
+      endpoint={endpoint}
+      rowHeight={36}
+      minRows={12}
+      enableInlineEdit={true}
+      enableVirtualScroll={true}
+      virtualScrollThreshold={200}
+    />
+  );
+};
+```
+
+#### ProtectionTable Component (Cover Type Emphasis)
+
+```typescript
+// ProtectionTable - Emphasis on Cover Type over Policy Type
+const ProtectionTable: React.FC<ProtectionTableProps> = ({
+  clientGroupId,
+  endpoint
+}) => {
+  const columns: TableColumn[] = [
+    { key: 'name', title: 'Policy Name', sortable: true },
+    { key: 'cover_type', title: 'Cover Type', sortable: true, highlight: true }, // EMPHASIZED
+    { key: 'provider', title: 'Provider', sortable: true },
+    { key: 'sum_assured', title: 'Sum Assured', type: 'currency' },
+    { key: 'premium_amount', title: 'Premium', type: 'currency' },
+    { key: 'premium_frequency', title: 'Frequency' },
+    { key: 'last_modified', title: 'Last Modified', type: 'datetime' },
+    { key: 'actions', title: 'Actions', type: 'actions' }
+  ];
+  
+  return (
+    <DenseDataTable
+      columns={columns}
+      endpoint={endpoint}
+      rowHeight={36}
+      minRows={12}
+      customRenderers={{
+        cover_type: (value) => (
+          <span className="cover-type-highlight">{value}</span>
+        )
+      }}
+    />
+  );
+};
+```
+
+#### IncomeExpenditureTable Component (Item Type Classification)
+
+```typescript
+// IncomeExpenditureTable - With item type classification
+const IncomeExpenditureTable: React.FC<IncomeExpenditureTableProps> = ({
+  clientGroupId,
+  endpoint
+}) => {
+  const [filterByType, setFilterByType] = useState<'all' | 'income' | 'expenditure'>('all');
+  
+  const columns: TableColumn[] = [
+    { key: 'item_type', title: 'Type', sortable: true },
+    { key: 'item_classification', title: 'Classification', type: 'badge' }, // Income/Expenditure
+    { key: 'name', title: 'Description', sortable: true },
+    { key: 'current_amount', title: 'Amount', type: 'currency', sortable: true },
+    { key: 'frequency', title: 'Frequency' },
+    { key: 'last_modified', title: 'Last Modified', type: 'datetime' },
+    { key: 'actions', title: 'Actions', type: 'actions' }
+  ];
+  
+  return (
+    <div className="income-expenditure-container">
+      <div className="classification-filter">
+        <button 
+          className={filterByType === 'all' ? 'active' : ''}
+          onClick={() => setFilterByType('all')}
+        >
+          All ({data?.summary?.total_items || 0})
+        </button>
+        <button 
+          className={filterByType === 'income' ? 'active' : ''}
+          onClick={() => setFilterByType('income')}
+        >
+          Income (£{data?.summary?.total_income_annual?.toLocaleString() || 0})
+        </button>
+        <button 
+          className={filterByType === 'expenditure' ? 'active' : ''}
+          onClick={() => setFilterByType('expenditure')}
+        >
+          Expenditure (£{data?.summary?.total_expenditure_annual?.toLocaleString() || 0})
+        </button>
+      </div>
+      
+      <DenseDataTable
+        columns={columns}
+        endpoint={`${endpoint}?income_type=${filterByType === 'all' ? '' : filterByType}`}
+        rowHeight={36}
+        minRows={12}
+        summary={data?.summary}
+      />
+    </div>
+  );
+};
+```
+
+#### VulnerabilityHealthCards Component (Product Owner Grouping)
+
+```typescript
+// VulnerabilityHealthCards - Product owner grouped card display
+const VulnerabilityHealthCards: React.FC<VulnerabilityHealthCardsProps> = ({
+  clientGroupId,
+  endpoint
+}) => {
+  const { data, isLoading } = useQuery(['vulnerability-health', clientGroupId], 
+    () => api.get(endpoint)
+  );
+  
+  return (
+    <div className="vulnerability-health-container">
+      {/* Product Owner Groups */}
+      {data?.owner_groups?.map(group => (
+        <div key={group.product_owner.id} className="owner-group-card">
+          <div className="owner-group-header">
+            <h3>{group.product_owner.name}</h3>
+            <span className="item-count">{group.items.length} items</span>
+          </div>
+          
+          <div className="owner-group-items">
+            {group.items.map(item => (
+              <div key={item.id} className="health-item-card">
+                <div className="item-header">
+                  <span className="item-type">{item.item_type}</span>
+                  <span className="item-name">{item.name}</span>
+                  <span className="last-modified">
+                    {formatDate(item.last_modified)}
+                  </span>
+                </div>
+                
+                {/* Encrypted health data requires special handling */}
+                {item.item_type === 'Health Issues' ? (
+                  <EncryptedHealthDataDisplay item={item} />
+                ) : (
+                  <RiskAssessmentSummary item={item} />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+      
+      {/* Ungrouped Items */}
+      {data?.ungrouped_items?.length > 0 && (
+        <div className="ungrouped-items">
+          <h3>General Items</h3>
+          {data.ungrouped_items.map(item => (
+            <div key={item.id} className="health-item-card">
+              <EncryptedHealthDataDisplay item={item} />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+---
+
+## Virtual Scrolling and Performance Requirements
+
+### Information Density Performance Standards
+
+**Mandatory Performance Targets**:
+- **Sub-500ms rendering** for dense tables with 100+ rows
+- **32-40px row height** consistently maintained across all table components  
+- **12+ rows visible** per screen without scrolling
+- **Virtual scrolling activation** at 200+ items threshold
+- **Memory management** for datasets up to 1000+ items
+
+#### Virtual Scrolling Implementation
+
+```typescript
+// VirtualizedTable component for high-performance large datasets
+const VirtualizedTable: React.FC<VirtualizedTableProps> = ({
+  items,
+  rowHeight = 36,
+  containerHeight = 600,
+  renderRow
+}) => {
+  const [scrollTop, setScrollTop] = useState(0);
+  const [containerRef, setContainerRef] = useState<HTMLDivElement | null>(null);
+  
+  const visibleStartIndex = Math.floor(scrollTop / rowHeight);
+  const visibleEndIndex = Math.min(
+    visibleStartIndex + Math.ceil(containerHeight / rowHeight) + 1,
+    items.length
+  );
+  
+  const visibleItems = items.slice(visibleStartIndex, visibleEndIndex);
+  const totalHeight = items.length * rowHeight;
+  const offsetY = visibleStartIndex * rowHeight;
+  
+  return (
+    <div 
+      ref={setContainerRef}
+      className="virtualized-table"
+      style={{ height: containerHeight, overflowY: 'auto' }}
+      onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
+    >
+      <div style={{ height: totalHeight, position: 'relative' }}>
+        <div style={{ transform: `translateY(${offsetY}px)` }}>
+          {visibleItems.map((item, index) => (
+            <div
+              key={visibleStartIndex + index}
+              style={{ height: rowHeight }}
+            >
+              {renderRow(item, visibleStartIndex + index)}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+```
+
+#### VirtualizedCardList for Assets & Liabilities
+
+```typescript
+// VirtualizedCardList - Optimized for card-based display
+const VirtualizedCardList: React.FC<VirtualizedCardListProps> = ({
+  items,
+  cardHeight,
+  expandedCardHeight,
+  expandedCards,
+  onCardToggle
+}) => {
+  const getItemHeight = (index: number) => {
+    const item = items[index];
+    return expandedCards.has(item.id) ? expandedCardHeight : cardHeight;
+  };
+  
+  const [visibleRange, setVisibleRange] = useState({ start: 0, end: 10 });
+  
+  // Dynamic height calculation for expanded cards
+  const calculateTotalHeight = useCallback(() => {
+    return items.reduce((total, item, index) => 
+      total + getItemHeight(index), 0
+    );
+  }, [items, expandedCards]);
+  
+  return (
+    <VariableSizeList
+      height={600}
+      itemCount={items.length}
+      itemSize={getItemHeight}
+      onItemsRendered={({ visibleStartIndex, visibleStopIndex }) => {
+        setVisibleRange({ start: visibleStartIndex, end: visibleStopIndex });
+      }}
+    >
+      {({ index, style }) => (
+        <div style={style}>
+          <AssetLiabilityCard
+            item={items[index]}
+            onExpand={onCardToggle}
+            isExpanded={expandedCards.has(items[index].id)}
+          />
+        </div>
+      )}
+    </VariableSizeList>
+  );
+};
+```
+
+---
+
+## Responsive Design and Mobile Optimization
+
+### Responsive Category Navigation
+
+```typescript
+// ResponsiveCategoryTabs - Optimized for tablet and desktop
+const ResponsiveCategoryTabs: React.FC<ResponsiveCategoryTabsProps> = ({
+  categories,
+  activeCategory,
+  onCategoryChange
+}) => {
+  const [isMobileView, setIsMobileView] = useState(false);
+  
+  useEffect(() => {
+    const checkViewport = () => {
+      setIsMobileView(window.innerWidth < 768);
+    };
+    
+    checkViewport();
+    window.addEventListener('resize', checkViewport);
+    return () => window.removeEventListener('resize', checkViewport);
+  }, []);
+  
+  if (isMobileView) {
+    // Mobile: Dropdown selector
+    return (
+      <select 
+        value={activeCategory}
+        onChange={(e) => onCategoryChange(e.target.value)}
+        className="mobile-category-selector"
+      >
+        {categories.map(category => (
+          <option key={category.category} value={category.category}>
+            {category.title}
+          </option>
+        ))}
+      </select>
+    );
+  }
+  
+  // Desktop/Tablet: Tab navigation
+  return (
+    <div className="desktop-category-tabs">
+      {categories.map(category => (
+        <button
+          key={category.category}
+          className={`category-tab ${activeCategory === category.category ? 'active' : ''}`}
+          onClick={() => onCategoryChange(category.category)}
+        >
+          <Icon name={category.icon} />
+          <span>{category.title}</span>
+        </button>
+      ))}
+    </div>
+  );
+};
+```
+
+### Information Density Responsive Rules
+
+**Minimum Requirements by Screen Size**:
+- **Desktop (1200px+)**: 12+ rows, 5-column layouts, full category tabs
+- **Tablet (768px-1199px)**: 10+ rows, 3-column layouts, compressed category tabs  
+- **Mobile (<768px)**: 8+ rows, 2-column layouts, dropdown category selector
+
+---
+
+## Accessibility and WCAG 2.1 AA Compliance
+
+### Enhanced Accessibility for Information-Dense Interfaces
+
+```typescript
+// AccessibleDenseTable - WCAG 2.1 AA compliant dense table
+const AccessibleDenseTable: React.FC<AccessibleDenseTableProps> = ({
+  columns,
+  data,
+  caption,
+  summaryText
+}) => {
+  const [focusedCell, setFocusedCell] = useState<{row: number, col: number} | null>(null);
+  
+  const handleKeyNavigation = (e: KeyboardEvent, rowIndex: number, colIndex: number) => {
+    switch (e.key) {
+      case 'ArrowRight':
+        e.preventDefault();
+        setFocusedCell({ row: rowIndex, col: Math.min(colIndex + 1, columns.length - 1) });
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        setFocusedCell({ row: rowIndex, col: Math.max(colIndex - 1, 0) });
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        setFocusedCell({ row: Math.min(rowIndex + 1, data.length - 1), col: colIndex });
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setFocusedCell({ row: Math.max(rowIndex - 1, 0), col: colIndex });
+        break;
+    }
+  };
+  
+  return (
+    <table 
+      className="dense-accessible-table"
+      role="grid"
+      aria-label={caption}
+      aria-describedby="table-summary"
+    >
+      <caption className="sr-only">{caption}</caption>
+      <div id="table-summary" className="sr-only">{summaryText}</div>
+      
+      <thead>
+        <tr role="row">
+          {columns.map((column, index) => (
+            <th
+              key={column.key}
+              role="columnheader"
+              aria-sort={column.sortable ? 'none' : undefined}
+              tabIndex={0}
+            >
+              {column.title}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      
+      <tbody>
+        {data.map((row, rowIndex) => (
+          <tr key={row.id} role="row">
+            {columns.map((column, colIndex) => (
+              <td
+                key={column.key}
+                role="gridcell"
+                tabIndex={focusedCell?.row === rowIndex && focusedCell?.col === colIndex ? 0 : -1}
+                onKeyDown={(e) => handleKeyNavigation(e, rowIndex, colIndex)}
+                aria-describedby={`cell-${rowIndex}-${colIndex}-desc`}
+              >
+                <span id={`cell-${rowIndex}-${colIndex}-desc`} className="sr-only">
+                  {column.title}: {row[column.key]}
+                </span>
+                {row[column.key]}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+};
+```
+
+---
+
 ## Component Architecture - Dense Table Components
 
 ### Information-Dense Component Library Structure

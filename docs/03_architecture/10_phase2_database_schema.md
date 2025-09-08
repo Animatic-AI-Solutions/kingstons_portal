@@ -323,25 +323,56 @@ interface EncryptionStrategy {
 **Integration**: Works alongside existing client data, no conflicts
 
 ```sql
--- Enhanced client_information_items with priority/status for professional interface
+-- Enhanced client_information_items with 70+ item types for comprehensive client data management
 CREATE TABLE client_information_items (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     client_group_id BIGINT NOT NULL,
-    item_type VARCHAR(50) NOT NULL CHECK (
+    item_type VARCHAR(100) NOT NULL CHECK (
         item_type IN (
-            'basic_detail', 'income_expenditure', 'assets_liabilities', 
-            'protection', 'vulnerability_health'
+            -- Basic Detail Items
+            'Basic Personal Details', 'Address', 'Email Address', 'Phone Number', 
+            'Special Relationships', 'Client Management', 'Meeting Schedule',
+            'Client Declaration', 'Privacy Declaration', '3 Words & Share With',
+            'Ongoing Fee Agreement', 'AML Check',
+            
+            -- Income & Expenditure Items
+            'Basic Salary', 'Bonuses/Commissions', 'Benefits in Kind', 'State Pension',
+            'Drawdown Income', 'UFPLS', 'Annuities', 'State Benefit - Taxable',
+            'State Benefit - Non-Taxable', 'Rental Profit', 'Interest', 'Dividends',
+            'Trust Distribution', 'Directors Salary', 'Directors Dividend',
+            'Rent', 'Council Tax', 'Utility Bills', 'Insurance Costs', 'Transport Costs',
+            'Household Expenditure', 'Debt Service Costs', 'Leisure & Entertainment',
+            'Holidays', 'Clothing', 'Personal Care', 'Children Expenses',
+            'Regular Charitable Giving', 'Care Home Fees',
+            
+            -- Assets & Liabilities Items  
+            'Cash Accounts', 'Premium Bonds', 'Cash ISA', 'Stocks and Shares ISA',
+            'General Investment Account', 'Onshore Investment Bond', 'Offshore Investment Bond',
+            'Individual Shares', 'Personal Pensions (Unmanaged)', 'Workplace Pensions (Unmanaged)',
+            'Property', 'Business Assets', 'Collectibles', 'Artwork', 'Cars', 'Jewelry',
+            'Other Physical Assets', 'Mortgage', 'Personal Loans', 'Credit Cards',
+            'Overdrafts', 'Business Debts', 'Student Loans', 'Car Finance',
+            
+            -- Protection Items
+            'Protection Policy',
+            
+            -- Vulnerability & Health Items
+            'Risk Questionnaire - Family', 'Risk Questionnaire - Business', 'Risk Questionnaire - Trust',
+            'Manual Risk Assessment - Family', 'Manual Risk Assessment - Business', 'Manual Risk Assessment - Trust',
+            'Health Issues'
         )
     ),
-    item_category VARCHAR(100) NOT NULL,  -- e.g., "Home Address", "Bank Account"
+    category VARCHAR(50) NOT NULL CHECK (
+        category IN ('basic_detail', 'income_expenditure', 'assets_liabilities', 'protection', 'vulnerability_health')
+    ), -- Big 5 categories
+    name VARCHAR(255), -- Instance name to distinguish multiple items of same item_type
     priority VARCHAR(20) DEFAULT 'standard' CHECK (
         priority IN ('low', 'standard', 'high', 'critical')
     ),
     status VARCHAR(50) DEFAULT 'current' CHECK (
         status IN ('current', 'outdated', 'pending_review', 'verified', 'archived')
     ),
-    quick_summary TEXT, -- Brief summary for dense table display
-    data_content JSONB NOT NULL DEFAULT '{}',
+    data_content JSONB NOT NULL DEFAULT '{}', -- JSON storage for item-specific fields
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     last_edited_by BIGINT NOT NULL,
@@ -366,7 +397,7 @@ CREATE TABLE client_information_items (
 -- Performance Indexes (Enhanced for Dense UI)
 CREATE INDEX idx_client_items_client_group ON client_information_items(client_group_id);
 CREATE INDEX idx_client_items_type ON client_information_items(item_type);
-CREATE INDEX idx_client_items_category ON client_information_items(item_category);
+CREATE INDEX idx_client_items_category ON client_information_items(category);
 CREATE INDEX idx_client_items_priority ON client_information_items(priority);
 CREATE INDEX idx_client_items_status ON client_information_items(status);
 CREATE INDEX idx_client_items_updated_at ON client_information_items(updated_at DESC);
@@ -391,7 +422,7 @@ CREATE INDEX idx_client_items_recent ON client_information_items (client_group_i
 WHERE updated_at > (NOW() - INTERVAL '1 year');
 
 -- Critical items index for priority filtering
-CREATE INDEX idx_client_items_critical ON client_information_items (client_group_id, item_category, updated_at DESC)
+CREATE INDEX idx_client_items_critical ON client_information_items (client_group_id, category, updated_at DESC)
 WHERE priority IN ('high', 'critical');
 
 -- Outdated items index for review workflows
@@ -400,77 +431,223 @@ WHERE status IN ('outdated', 'pending_review');
 
 -- Composite index for complex queries
 CREATE INDEX idx_client_items_type_client ON client_information_items 
-(client_group_id, item_type, item_category);
+(client_group_id, item_type, category);
 ```
 
-**JSON Structure Examples**:
+**JSON Structure Examples** (Updated with Full Item Types Specification):
 
 ```json
--- Basic Detail: Home Address
+-- Basic Detail: Address (item_type="Address", category="basic_detail")
 {
   "address_line_one": "1 New Street",
   "address_line_two": "Neverland", 
   "postcode": "N0TH 3R3",
-  "country": "United Kingdom",
   "residence_type": "Primary",
-  "date_from": "2020-01-01",
-  "current_residence": true
+  "notes": "Current primary residence"
 }
 
--- Assets/Liabilities: Bank Account with Ownership
+-- Basic Detail: Phone Number (item_type="Phone Number", category="basic_detail")
 {
-  "bank": "Barclays",
-  "account_type": "Current Account",
-  "latest_valuation": 2500.00,
-  "valuation_date": "2024-08-26",
+  "phone_number": "07712345678",
+  "phone_type": "Mobile",
+  "is_primary": true,
+  "notes": "Primary contact number"
+}
+
+-- Income/Expenditure: Basic Salary (item_type="Basic Salary", category="income_expenditure")
+{
+  "employer": "Tech Solutions Ltd",
+  "current_amount": 45000.00,
+  "frequency": "Annual",
+  "gross_net": "Gross",
+  "currency": "GBP",
+  "associated_product_owners": {
+    "association_type": "joint_tenants",
+    "123": 100.00
+  },
+  "notes": "Annual salary review due in March"
+}
+
+-- Assets/Liabilities: Cash Accounts (item_type="Cash Accounts", category="assets_liabilities")
+{
+  "provider": "Barclays",
+  "product_name": "Premier Current Account",
+  "current_value": 2500.00,
+  "start_date": "15/03/2020",
+  "account_number": "12345678",
+  "sort_code": "20-00-00",
   "associated_product_owners": {
     "association_type": "tenants_in_common",
-    "123": 60,
-    "456": 40
-  }
+    "123": 60.00,
+    "456": 40.00
+  },
+  "notes": "Main household account"
 }
 
--- Income/Expenditure: Employment Income
+-- Assets/Liabilities: Property (item_type="Property", category="assets_liabilities")
 {
-  "income_type": "Employment",
-  "employer": "Tech Solutions Ltd",
-  "annual_gross": 45000.00,
-  "annual_net": 35000.00,
-  "frequency": "Monthly",
-  "currency": "GBP"
+  "property_address": {
+    "address_line_one": "123 Oak Street",
+    "address_line_two": "Manchester",
+    "postcode": "M1 1AA"
+  },
+  "current_value": 450000.00,
+  "start_date": "01/06/2018",
+  "property_type": "Residential",
+  "mortgage_outstanding": 280000.00,
+  "associated_product_owners": {
+    "association_type": "joint_tenants",
+    "123": 50.00,
+    "456": 50.00
+  },
+  "notes": "Family home, recent valuation"
+}
+
+-- Protection: Protection Policy (item_type="Protection Policy", category="protection")
+{
+  "provider": "Aviva",
+  "policy_number": "POL123456",
+  "cover_type": "Term Life",
+  "sum_assured": 100000.00,
+  "premium_amount": 25.50,
+  "premium_frequency": "Monthly",
+  "policy_start_date": "01/01/2020",
+  "policy_end_date": "01/01/2045",
+  "associated_product_owners": {
+    "association_type": "joint_tenants",
+    "123": 50.00,
+    "456": 50.00
+  },
+  "notes": "Level term policy"
+}
+
+-- Vulnerability/Health: Risk Questionnaire (item_type="Risk Questionnaire - Family", category="vulnerability_health")
+{
+  "questionnaire_date": "15/08/2024",
+  "risk_score": 6,
+  "risk_category": "Balanced",
+  "investment_experience": "Some",
+  "time_horizon": "10+ years",
+  "attitude_to_loss": "Accept fluctuations for potential growth",
+  "associated_product_owners": {
+    "association_type": "joint_tenants",
+    "123": 50.00,
+    "456": 50.00
+  },
+  "notes": "Completed jointly, both parties in agreement"
 }
 ```
 
+### Big 5 Category Integration
+
+**Architecture**: Each item type is categorized into one of the "Big 5" categories for organizational and UI purposes:
+
+| Category | Purpose | Item Types | Date Field |
+|----------|---------|------------|------------|
+| **basic_detail** | Personal and contact information | Basic Personal Details, Address, Email Address, Phone Number, Special Relationships, Client Management, Meeting Schedule, Client Declaration, Privacy Declaration, 3 Words & Share With, Ongoing Fee Agreement, AML Check | updated_at (last_modified) |
+| **income_expenditure** | Income and expense tracking | Basic Salary, Bonuses/Commissions, Benefits in Kind, State Pension, Drawdown Income, UFPLS, Annuities, State Benefits, Rental Profit, Interest, Dividends, Trust Distribution, Directors Salary/Dividend, Rent, Council Tax, Utility Bills, Insurance Costs, Transport Costs, Household Expenditure, Debt Service Costs, Leisure & Entertainment, Holidays, Clothing, Personal Care, Children Expenses, Regular Charitable Giving, Care Home Fees | updated_at (last_modified) |
+| **assets_liabilities** | Financial assets and debts | Cash Accounts, Premium Bonds, Cash ISA, Stocks and Shares ISA, General Investment Account, Onshore/Offshore Investment Bond, Individual Shares, Personal/Workplace Pensions (Unmanaged), Property, Business Assets, Collectibles, Artwork, Cars, Jewelry, Other Physical Assets, Mortgage, Personal Loans, Credit Cards, Overdrafts, Business Debts, Student Loans, Car Finance | start_date + updated_at |
+| **protection** | Insurance and protection policies | Protection Policy | updated_at (last_modified) |
+| **vulnerability_health** | Risk assessment and health information | Risk Questionnaire (Family/Business/Trust), Manual Risk Assessment (Family/Business/Trust), Health Issues | updated_at (last_modified) |
+
+**Category-Specific Behavior**:
+- **Assets & Liabilities**: Only category with `start_date` in JSON + card interface display
+- **All Other Categories**: Use `updated_at` timestamp as last_modified + table interface display
+
 ### Standardized JSON Structure Requirements
 
-**Design Philosophy**: Maintain consistent JSON structures across item types while allowing flexibility
+**Design Philosophy**: Maintain consistent JSON structures across item types while supporting category-specific requirements
 
-**Common JSON Fields** (used across multiple item types):
+**Common JSON Fields** (standardized across multiple item types):
+
+**Date Fields (DD/MM/YYYY format)**:
 ```json
 {
-  // Standard valuation fields (for assets/liabilities)
-  "latest_valuation": 25000.00,
-  "valuation_date": "2024-08-26",
-  "currency": "GBP",
-  
-  // Standard ownership fields (when applicable)
+  "start_date": "15/03/2020",     // Assets & Liabilities only - when item commenced
+  // updated_at timestamp used as last_modified for all other categories
+}
+```
+
+**Address Block Structure** (standardized format):
+```json
+{
+  "address_line_one": "123 High Street",    // Building number and street
+  "address_line_two": "Manchester",         // Town/city/area (optional)
+  "postcode": "M1 1AA"                      // Postcode (required)
+}
+```
+
+**Product Owner Relationships** (standardized ownership structure):
+```json
+{
   "associated_product_owners": {
-    "association_type": "tenants_in_common",
-    "123": 33.33,
-    "456": 33.33,
-    "789": 33.34
-  },
-  
-  // Standard contact fields (for addresses, employment)
-  "address_line_one": "string",
-  "address_line_two": "string",
-  "postcode": "string",
-  "country": "United Kingdom",
-  
-  // Configurable dropdown fields (advisor-maintainable)
-  "gender": "Male",  // Options: Male, Female, Non-binary, Prefer not to say, [Custom: Pineapple]
-  "marital_status": "Married",  // Options: Single, Married, Divorced, Widowed, [Custom additions]
+    "association_type": "tenants_in_common", // or "joint_tenants"
+    "123": 60.00, // product_owner_id: percentage (must total 100.00)
+    "456": 40.00
+  }
+}
+```
+
+**Currency and Financial Fields** (standardized validation):
+```json
+{
+  "current_value": 25000.00,      // Assets: current_value
+  "current_amount": 3500.00,      // Income/Expenditure: current_amount  
+  "sum_assured": 100000.00,       // Protection: sum_assured
+  "currency": "GBP",              // Always GBP unless specified
+  "frequency": "Monthly"          // Annual, Monthly, Weekly, etc.
+}
+```
+
+**Notes Field** (available on all item types):
+```json
+{
+  "notes": "Free-form text for additional information"
+}
+```
+
+**Dropdown Enhancement** (all dropdowns support custom entries):
+```json
+{
+  "employment_type": "Permanent",  // Standard options + "Other" with custom text input
+  "phone_type": "Mobile",          // Standard: Mobile, House Phone, Work, Other + custom additions
   "employment_status": "Employed"  // Options: Employed, Self-employed, Retired, Unemployed, [Custom additions]
+}
+```
+
+**Field-Level Encryption Requirements**:
+```json
+{
+  // Sensitive fields requiring AES-256-GCM encryption
+  "phone_number": "encrypted_value",        // Phone numbers
+  "account_number": "encrypted_value",      // Bank account numbers
+  "sort_code": "encrypted_value",           // Bank sort codes
+  "policy_number": "encrypted_value",       // Insurance policy numbers
+  "national_insurance_number": "encrypted_value", // NI numbers
+  "date_of_birth": "encrypted_value"        // Date of birth
+}
+```
+
+**Conditional Field Logic** (dynamic form behavior):
+```json
+{
+  // Example: Protection Policy conditional fields
+  "cover_type": "Term Life",
+  // If cover_type == "Term Life", show policy_end_date
+  "policy_end_date": "01/01/2045",
+  // If cover_type == "Whole of Life", hide policy_end_date
+  
+  // Example: Income conditional fields  
+  "income_source": "Employment",
+  // If income_source == "Employment", show employer field
+  "employer": "Tech Solutions Ltd",
+  // If income_source == "Self-Employment", show business_name field
+  
+  // Example: Asset conditional fields
+  "asset_type": "Property", 
+  // If asset_type == "Property", show property_address
+  "property_address": { "address_line_one": "123 Oak Street", ... }
+  // If asset_type == "Investment", show provider and fund_name
 }
 ```
 

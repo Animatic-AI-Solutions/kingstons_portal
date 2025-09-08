@@ -268,7 +268,494 @@ Phase 2 enhances Kingston's Portal with **supplementary API endpoints** that int
 
 ---
 
-## Client Information Items API
+## Category-Specific Information Items API
+
+The Phase 2 enhancement introduces **category-specific endpoints** to support the 5-table approach and hybrid card/table interface. These endpoints provide optimized responses for each of the Big 5 categories.
+
+### Overview of Category Endpoints
+
+| Category | Endpoint | Interface Type | Special Features |
+|----------|----------|----------------|------------------|
+| **basic_detail** | `/api/client_groups/{id}/basic_details` | Table | Standard table layout |
+| **income_expenditure** | `/api/client_groups/{id}/income_expenditure` | Table | Item type classification |
+| **assets_liabilities** | `/api/client_groups/{id}/assets_liabilities` | **Cards** | Ultra-thin cards with start_date |
+| **protection** | `/api/client_groups/{id}/protection` | Table | Cover type display |
+| **vulnerability_health** | `/api/client_groups/{id}/vulnerability_health` | Cards | Product owner grouping |
+
+---
+
+### GET /api/client_groups/{client_group_id}/basic_details
+
+**Purpose**: Retrieve basic detail items (addresses, phones, personal info) for table display
+**Authentication**: Required
+**Method**: GET
+
+#### Query Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| limit | integer | No | Results limit (default: 50, max: 200) |
+| offset | integer | No | Pagination offset |
+| search | string | No | Search within item names and JSON content |
+| sort_by | string | No | Sort field (updated_at, name, item_type) default: updated_at |
+| sort_order | string | No | Sort direction (asc, desc) default: desc |
+| priority | string | No | Filter by priority (low, standard, high, critical) |
+| status | string | No | Filter by status (current, outdated, pending_review, verified, archived) |
+
+#### Response Format
+
+```json
+{
+  "items": [
+    {
+      "id": 123,
+      "item_type": "Address",
+      "name": "Home Address",
+      "priority": "standard", 
+      "status": "current",
+      "last_modified": "2024-08-27T10:30:00Z",
+      "data_content": {
+        "address_line_one": "123 High Street",
+        "address_line_two": "Manchester", 
+        "postcode": "M1 1AA",
+        "residence_type": "Primary",
+        "notes": "Current primary residence"
+      },
+      "last_edited_by": {
+        "id": 101,
+        "name": "John Advisor"
+      }
+    }
+  ],
+  "pagination": {
+    "total": 15,
+    "limit": 50,
+    "offset": 0,
+    "has_more": false
+  },
+  "category": "basic_detail"
+}
+```
+
+---
+
+### GET /api/client_groups/{client_group_id}/assets_liabilities
+
+**Purpose**: Retrieve assets & liabilities for ultra-thin card interface with managed/unmanaged unification
+**Authentication**: Required
+**Method**: GET
+
+#### Query Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| limit | integer | No | Results limit (default: 100, max: 500) |
+| offset | integer | No | Pagination offset |
+| search | string | No | Search within product names and providers |
+| sort_by | string | No | Sort field (start_date, current_value, name, item_type) default: start_date |
+| sort_order | string | No | Sort direction (asc, desc) default: desc |
+| include_managed | boolean | No | Include managed products (default: true) |
+| include_unmanaged | boolean | No | Include unmanaged information items (default: true) |
+| asset_type | string | No | Filter by asset/liability type |
+
+#### Card Format Response
+
+```json
+{
+  "items": [
+    {
+      "id": 456,
+      "type": "unmanaged", // or "managed"
+      "item_type": "Cash Accounts",
+      "name": "Halifax Current Account",
+      "card_display": {
+        "product_name": "Halifax Current Account",
+        "current_value": 2500.00,
+        "start_date": "15/03/2020",
+        "currency": "GBP"
+      },
+      "managed_product_sync": null, // or sync status if managed
+      "expanded_details": {
+        "provider": "Halifax",
+        "account_number": "***5678", // Masked for security
+        "sort_code": "11-11-11",
+        "associated_product_owners": {
+          "association_type": "joint_tenants",
+          "123": 50.00,
+          "456": 50.00
+        },
+        "notes": "Main household account"
+      },
+      "last_modified": "2024-08-25T14:20:00Z"
+    }
+  ],
+  "pagination": {
+    "total": 28,
+    "limit": 100,
+    "offset": 0,
+    "has_more": false
+  },
+  "unified_summary": {
+    "total_assets": 245000.00,
+    "total_liabilities": 185000.00,
+    "net_position": 60000.00,
+    "managed_items": 8,
+    "unmanaged_items": 20
+  },
+  "category": "assets_liabilities"
+}
+```
+
+---
+
+### GET /api/client_groups/{client_group_id}/income_expenditure
+
+**Purpose**: Retrieve income and expenditure items for table display with item type classification
+**Authentication**: Required
+**Method**: GET
+
+#### Query Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| limit | integer | No | Results limit (default: 50, max: 200) |
+| offset | integer | No | Pagination offset |
+| search | string | No | Search within employers, sources, and descriptions |
+| sort_by | string | No | Sort field (current_amount, frequency, item_type) default: current_amount |
+| sort_order | string | No | Sort direction (asc, desc) default: desc |
+| income_type | string | No | Filter by income/expenditure (income, expenditure) |
+| frequency | string | No | Filter by frequency (Annual, Monthly, Weekly) |
+
+#### Response Format
+
+```json
+{
+  "items": [
+    {
+      "id": 789,
+      "item_type": "Basic Salary",
+      "name": "Primary Employment",
+      "item_classification": "Income", // Income or Expenditure
+      "priority": "high",
+      "status": "current",
+      "last_modified": "2024-08-20T09:15:00Z",
+      "data_content": {
+        "employer": "Tech Solutions Ltd",
+        "current_amount": 45000.00,
+        "frequency": "Annual",
+        "gross_net": "Gross",
+        "currency": "GBP",
+        "associated_product_owners": {
+          "association_type": "joint_tenants",
+          "123": 100.00
+        },
+        "notes": "Annual review due March"
+      }
+    }
+  ],
+  "summary": {
+    "total_income_annual": 52000.00,
+    "total_expenditure_annual": 28000.00,
+    "net_annual": 24000.00
+  },
+  "category": "income_expenditure"
+}
+```
+
+---
+
+### GET /api/client_groups/{client_group_id}/protection
+
+**Purpose**: Retrieve protection policies for table display with cover type emphasis
+**Authentication**: Required  
+**Method**: GET
+
+#### Response Format
+
+```json
+{
+  "items": [
+    {
+      "id": 321,
+      "item_type": "Protection Policy",
+      "name": "Life Insurance Policy",
+      "cover_type": "Term Life", // Emphasized over Policy Type
+      "priority": "standard",
+      "status": "current", 
+      "last_modified": "2024-08-15T16:45:00Z",
+      "data_content": {
+        "provider": "Aviva",
+        "policy_number": "***3456", // Masked for security
+        "sum_assured": 100000.00,
+        "premium_amount": 25.50,
+        "premium_frequency": "Monthly",
+        "policy_start_date": "01/01/2020",
+        "policy_end_date": "01/01/2045",
+        "associated_product_owners": {
+          "association_type": "joint_tenants",
+          "123": 50.00,
+          "456": 50.00
+        }
+      }
+    }
+  ],
+  "protection_summary": {
+    "total_sum_assured": 250000.00,
+    "total_annual_premiums": 1200.00,
+    "policies_active": 3
+  },
+  "category": "protection"
+}
+```
+
+---
+
+### GET /api/client_groups/{client_group_id}/vulnerability_health
+
+**Purpose**: Retrieve vulnerability and health items grouped by product owner for card-based display
+**Authentication**: Required
+**Method**: GET
+
+#### Response Format
+
+```json
+{
+  "owner_groups": [
+    {
+      "product_owner": {
+        "id": 123,
+        "name": "John Smith"
+      },
+      "items": [
+        {
+          "id": 654,
+          "item_type": "Risk Questionnaire - Family", 
+          "name": "Annual Risk Assessment 2024",
+          "priority": "standard",
+          "status": "current",
+          "last_modified": "2024-08-15T11:30:00Z",
+          "data_content": {
+            "questionnaire_date": "15/08/2024",
+            "risk_score": 6,
+            "risk_category": "Balanced",
+            "investment_experience": "Some",
+            "time_horizon": "10+ years"
+          }
+        }
+      ]
+    }
+  ],
+  "ungrouped_items": [
+    {
+      "id": 987,
+      "item_type": "Health Issues",
+      "name": "Medical Conditions",
+      "data_content": {
+        "condition_summary": "Encrypted health information",
+        "last_updated": "12/07/2024"
+      }
+    }
+  ],
+  "category": "vulnerability_health"
+}
+```
+
+---
+
+## Category-Specific CRUD Operations
+
+All category-specific endpoints support full CRUD operations with category-optimized validation and responses.
+
+### POST Endpoints for Each Category
+
+#### POST /api/client_groups/{client_group_id}/basic_details
+#### POST /api/client_groups/{client_group_id}/income_expenditure  
+#### POST /api/client_groups/{client_group_id}/assets_liabilities
+#### POST /api/client_groups/{client_group_id}/protection
+#### POST /api/client_groups/{client_group_id}/vulnerability_health
+
+**Purpose**: Create new item in specific category
+**Authentication**: Required
+**Method**: POST
+
+##### Request Body Schema (varies by category)
+
+```json
+{
+  "item_type": "Address", // Must match category's valid item types
+  "name": "Home Address", // Instance identifier
+  "priority": "standard", // Optional: low, standard, high, critical
+  "status": "current", // Optional: current, outdated, pending_review, verified
+  "data_content": {
+    // Category-specific fields based on item_type
+    "address_line_one": "123 High Street",
+    "address_line_two": "Manchester",
+    "postcode": "M1 1AA",
+    "notes": "Primary residence"
+  }
+}
+```
+
+##### Category-Specific Validation
+
+**Assets & Liabilities**: Requires `start_date` in data_content
+**Income & Expenditure**: Requires `current_amount` and `frequency`
+**Protection**: Requires `sum_assured` and `cover_type`
+**Basic Detail**: Address validation for address items
+**Vulnerability & Health**: Encryption validation for sensitive items
+
+##### Response Format
+
+```json
+{
+  "item": {
+    "id": 123,
+    "item_type": "Address",
+    "name": "Home Address",
+    "category": "basic_detail",
+    "priority": "standard",
+    "status": "current",
+    "data_content": { /* full data */ },
+    "created_at": "2024-08-27T10:30:00Z",
+    "updated_at": "2024-08-27T10:30:00Z",
+    "last_edited_by": {
+      "id": 101,
+      "name": "John Advisor"
+    }
+  }
+}
+```
+
+### PUT Endpoints for Each Category
+
+#### PUT /api/client_groups/{client_group_id}/basic_details/{item_id}
+#### PUT /api/client_groups/{client_group_id}/income_expenditure/{item_id}
+#### PUT /api/client_groups/{client_group_id}/assets_liabilities/{item_id}
+#### PUT /api/client_groups/{client_group_id}/protection/{item_id}
+#### PUT /api/client_groups/{client_group_id}/vulnerability_health/{item_id}
+
+**Purpose**: Update existing item in specific category
+**Authentication**: Required
+**Method**: PUT
+
+Request/response format same as POST with updated timestamps.
+
+### DELETE Endpoints for Each Category
+
+#### DELETE /api/client_groups/{client_group_id}/basic_details/{item_id}
+#### DELETE /api/client_groups/{client_group_id}/income_expenditure/{item_id}
+#### DELETE /api/client_groups/{client_group_id}/assets_liabilities/{item_id}
+#### DELETE /api/client_groups/{client_group_id}/protection/{item_id}
+#### DELETE /api/client_groups/{client_group_id}/vulnerability_health/{item_id}
+
+**Purpose**: Delete item from specific category (soft delete with audit trail)
+**Authentication**: Required
+**Method**: DELETE
+
+Response: `{"message": "Item deleted successfully", "deleted_at": "2024-08-27T10:30:00Z"}`
+
+---
+
+## Managed/Unmanaged Product Unification API
+
+### GET /api/client_groups/{client_group_id}/assets_liabilities/unified
+
+**Purpose**: Unified view of managed and unmanaged products for Assets & Liabilities cards
+**Authentication**: Required
+**Method**: GET
+
+#### Unification Logic
+
+The API automatically merges:
+- **Managed products** from existing product management system
+- **Unmanaged information items** from client_information_items table
+- **Conflict resolution** when products appear in both systems
+
+#### Response Format
+
+```json
+{
+  "unified_items": [
+    {
+      "id": "managed_456", // Prefixed to indicate source
+      "source": "managed",
+      "product_name": "Aviva Pension Plan",
+      "current_value": 125000.00,
+      "start_date": "01/04/2015",
+      "sync_status": "synchronized",
+      "managed_product_id": 456,
+      "provider": "Aviva",
+      "product_type": "Personal Pension"
+    },
+    {
+      "id": "unmanaged_789",
+      "source": "unmanaged", 
+      "product_name": "Halifax Savings Account",
+      "current_value": 5000.00,
+      "start_date": "15/03/2020",
+      "item_id": 789,
+      "item_type": "Cash Accounts",
+      "inline_editable": true
+    }
+  ],
+  "conflict_resolution": [
+    {
+      "managed_id": "managed_123",
+      "unmanaged_id": "unmanaged_456", 
+      "conflict_type": "duplicate_product",
+      "resolution": "prefer_managed",
+      "confidence": 0.95
+    }
+  ],
+  "unification_summary": {
+    "total_unified": 24,
+    "managed_products": 8,
+    "unmanaged_items": 16,
+    "conflicts_resolved": 2
+  }
+}
+```
+
+---
+
+## Performance Requirements
+
+### Response Time Targets
+
+| Endpoint Type | Target Response Time | Max Concurrent Users |
+|---------------|---------------------|---------------------|
+| Category GET requests | <500ms | 4 users |
+| Card interface (A&L) | <300ms | 4 users |
+| CRUD operations | <1000ms | 4 users |
+| Unified product view | <800ms | 2 users |
+| Search operations | <600ms | 4 users |
+
+### Caching Strategy
+
+**Category-Specific Caching**:
+- Basic details: 5 minutes (low change frequency)
+- Assets & Liabilities: No caching (high change frequency)
+- Income & Expenditure: 2 minutes 
+- Protection: 10 minutes (very low change frequency)
+- Vulnerability & Health: 15 minutes (lowest change frequency)
+
+---
+
+## Error Handling
+
+### Category-Specific Error Codes
+
+| HTTP Status | Scenario | Response |
+|-------------|----------|----------|
+| 422 | Invalid item_type for category | `{"detail": "item_type 'Basic Salary' not valid for category 'basic_detail'"}` |
+| 422 | Missing required fields | `{"detail": "start_date required for assets_liabilities category"}` |
+| 422 | Ownership percentage validation | `{"detail": "Product owner percentages must total 100.00%"}` |
+| 409 | Managed/unmanaged conflict | `{"detail": "Product already exists in managed system"}` |
+| 403 | Sensitive data access | `{"detail": "Insufficient permissions for encrypted health data"}` |
+
+---
+
+## Legacy Information Items API (Maintained for Compatibility)
 
 ### GET /api/client_groups/{client_group_id}/information_items
 
