@@ -108,11 +108,19 @@ function Test-SystemHealth {
                 $healthReport.Metrics["ServiceStartTime"] = $service.StartTime
                 
                 # Check service responsiveness by testing if process exists
-                $pythonProcess = Get-Process | Where-Object {$_.ProcessName -like "*python*" -and $_.StartTime -ge $service.StartTime}
-                if ($pythonProcess) {
+                $pythonProcesses = Get-Process | Where-Object {$_.ProcessName -like "*python*" -and $_.StartTime -ge $service.StartTime}
+                if ($pythonProcesses) {
+                    # Handle case where multiple python processes might exist - take the first one
+                    $pythonProcess = $pythonProcesses | Select-Object -First 1
                     Write-Log "[OK] Python process found (PID: $($pythonProcess.Id))" "SUCCESS"
                     $healthReport.Metrics["ProcessPID"] = $pythonProcess.Id
                     $healthReport.Metrics["ProcessMemoryMB"] = [math]::Round($pythonProcess.WorkingSet64 / 1MB, 2)
+                    
+                    # If multiple processes found, log the count
+                    if (($pythonProcesses | Measure-Object).Count -gt 1) {
+                        Write-Log "[INFO] Multiple Python processes found: $(($pythonProcesses | Measure-Object).Count)" "INFO"
+                        $healthReport.Metrics["PythonProcessCount"] = ($pythonProcesses | Measure-Object).Count
+                    }
                 } else {
                     Write-Log "[WARN] Service running but Python process not found" "WARN"
                     $healthReport.Issues += "Service running but process not detectable"
