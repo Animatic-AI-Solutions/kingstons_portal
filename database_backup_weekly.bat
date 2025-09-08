@@ -36,8 +36,10 @@ echo Database: %DB_NAME%
 echo Backup file: %BACKUP_FILE%
 echo ============================================================================
 
-REM Set PostgreSQL password
-set PGPASSWORD=KingstonApp2024!
+REM Load PostgreSQL password from .env file
+for /f "usebackq tokens=1,2 delims==" %%a in ("%~dp0.env") do (
+    if "%%a"=="PGPASSWORD" set PGPASSWORD=%%b
+)
 
 REM Create compressed backup using custom format (better for large databases)
 echo Creating compressed weekly backup...

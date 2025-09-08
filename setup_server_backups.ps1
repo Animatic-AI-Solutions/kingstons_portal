@@ -44,9 +44,9 @@ $DailyPrincipal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType Service
 
 try {
     Register-ScheduledTask -TaskName "KingstonsPortal-DailyBackup" -Action $DailyAction -Trigger $DailyTrigger -Settings $DailySettings -Principal $DailyPrincipal -Force
-    Write-Host "  ✓ Daily backup task created (runs at 2:00 AM every day)" -ForegroundColor Green
+    Write-Host "  + Daily backup task created (runs at 2:00 AM every day)" -ForegroundColor Green
 } catch {
-    Write-Host "  ✗ Failed to create daily backup task: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "  X Failed to create daily backup task: $($_.Exception.Message)" -ForegroundColor Red
 }
 
 # Create weekly backup task (Sundays at 3:00 AM)
@@ -57,9 +57,9 @@ $WeeklyPrincipal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType Servic
 
 try {
     Register-ScheduledTask -TaskName "KingstonsPortal-WeeklyBackup" -Action $WeeklyAction -Trigger $WeeklyTrigger -Settings $WeeklySettings -Principal $WeeklyPrincipal -Force
-    Write-Host "  ✓ Weekly backup task created (runs at 3:00 AM every Sunday)" -ForegroundColor Green
+    Write-Host "  + Weekly backup task created (runs at 3:00 AM every Sunday)" -ForegroundColor Green
 } catch {
-    Write-Host "  ✗ Failed to create weekly backup task: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "  X Failed to create weekly backup task: $($_.Exception.Message)" -ForegroundColor Red
 }
 
 Write-Host "`nChecking PostgreSQL installation..." -ForegroundColor Green
@@ -67,9 +67,9 @@ Write-Host "`nChecking PostgreSQL installation..." -ForegroundColor Green
 # Check if pg_dump is available
 try {
     $pgDumpVersion = & pg_dump --version 2>$null
-    Write-Host "  ✓ PostgreSQL tools found: $pgDumpVersion" -ForegroundColor Green
+    Write-Host "  + PostgreSQL tools found: $pgDumpVersion" -ForegroundColor Green
 } catch {
-    Write-Host "  ✗ PostgreSQL tools (pg_dump) not found in PATH!" -ForegroundColor Red
+    Write-Host "  X PostgreSQL tools (pg_dump) not found in PATH!" -ForegroundColor Red
     Write-Host "    Please ensure PostgreSQL client tools are installed and in PATH" -ForegroundColor Yellow
     Write-Host "    Common locations:" -ForegroundColor Yellow
     Write-Host "      C:\Program Files\PostgreSQL\<version>\bin" -ForegroundColor Gray
@@ -78,18 +78,37 @@ try {
 
 Write-Host "`nTesting database connection..." -ForegroundColor Green
 
+# Load environment variables from .env file
+$envVars = @{}
+if (Test-Path ".env") {
+    Get-Content ".env" | ForEach-Object {
+        if ($_ -match '^([^#][^=]+)=(.*)') {
+            $key = $matches[1].Trim()
+            $value = $matches[2].Trim()
+            $value = $value -replace '^["''](.*)["'']$', '$1'
+            $envVars[$key] = $value
+        }
+    }
+} else {
+    Write-Host "  X .env file not found!" -ForegroundColor Red
+}
+
 # Test database connection
-$env:PGPASSWORD = "KingstonApp2024!"
+if ($envVars.ContainsKey("PGPASSWORD")) {
+    $env:PGPASSWORD = $envVars["PGPASSWORD"]
+} else {
+    Write-Host "  X PGPASSWORD not found in .env file!" -ForegroundColor Red
+}
 try {
     $testResult = & psql -h localhost -p 5432 -U kingstons_app -d kingstons_portal -c "SELECT 1;" 2>$null
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "  ✓ Database connection successful" -ForegroundColor Green
+        Write-Host "  + Database connection successful" -ForegroundColor Green
     } else {
-        Write-Host "  ✗ Database connection failed" -ForegroundColor Red
+        Write-Host "  X Database connection failed" -ForegroundColor Red
         Write-Host "    Please verify database server is running and credentials are correct" -ForegroundColor Yellow
     }
 } catch {
-    Write-Host "  ✗ Cannot test database connection: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "  X Cannot test database connection: $($_.Exception.Message)" -ForegroundColor Red
 }
 finally {
     Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue
@@ -98,7 +117,8 @@ finally {
 Write-Host "`nCreating .pgpass file for secure authentication..." -ForegroundColor Green
 
 # Create .pgpass file for secure authentication (alternative to environment variable)
-$pgpassContent = "localhost:5432:kingstons_portal:kingstons_app:KingstonApp2024!"
+$pgpassPassword = if ($envVars.ContainsKey("PGPASSWORD")) { $envVars["PGPASSWORD"] } else { "KingstonApp2024!" }
+$pgpassContent = "localhost:5432:kingstons_portal:kingstons_app:$pgpassPassword"
 $pgpassPath = "$env:APPDATA\.pgpass"
 try {
     $pgpassContent | Set-Content -Path $pgpassPath -Encoding ASCII
@@ -108,9 +128,9 @@ try {
     $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($env:USERNAME, "FullControl", "Allow")
     $acl.SetAccessRule($accessRule)
     Set-Acl -Path $pgpassPath -AclObject $acl
-    Write-Host "  ✓ Created .pgpass file at $pgpassPath" -ForegroundColor Green
+    Write-Host "  + Created .pgpass file at $pgpassPath" -ForegroundColor Green
 } catch {
-    Write-Host "  ✗ Failed to create .pgpass file: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "  X Failed to create .pgpass file: $($_.Exception.Message)" -ForegroundColor Red
 }
 
 Write-Host "`nSetup Summary:" -ForegroundColor Cyan
@@ -119,14 +139,14 @@ Write-Host "Backup Location: $BackupBaseDir" -ForegroundColor White
 Write-Host "Scripts Location: $ScriptsDir" -ForegroundColor White
 Write-Host ""
 Write-Host "SCHEDULED TASKS:" -ForegroundColor Yellow
-Write-Host "  • Daily backups: Every day at 2:00 AM" -ForegroundColor White
-Write-Host "  • Weekly backups: Every Sunday at 3:00 AM" -ForegroundColor White
-Write-Host "  • Monthly backups: Automatic (first week of each month)" -ForegroundColor White
+Write-Host "  - Daily backups: Every day at 2:00 AM" -ForegroundColor White
+Write-Host "  - Weekly backups: Every Sunday at 3:00 AM" -ForegroundColor White
+Write-Host "  - Monthly backups: Automatic (first week of each month)" -ForegroundColor White
 Write-Host ""
 Write-Host "RETENTION POLICY:" -ForegroundColor Yellow
-Write-Host "  • Daily backups: 7 days" -ForegroundColor White
-Write-Host "  • Weekly backups: 4 weeks (28 days)" -ForegroundColor White
-Write-Host "  • Monthly backups: 12 months" -ForegroundColor White
+Write-Host "  - Daily backups: 7 days" -ForegroundColor White
+Write-Host "  - Weekly backups: 4 weeks (28 days)" -ForegroundColor White
+Write-Host "  - Monthly backups: 12 months" -ForegroundColor White
 Write-Host ""
 
 Write-Host "NEXT STEPS:" -ForegroundColor Yellow
@@ -137,8 +157,8 @@ Write-Host "4. Test restore procedure with: $ScriptsDir\database_restore.bat" -F
 Write-Host ""
 
 Write-Host "MONITORING:" -ForegroundColor Yellow
-Write-Host "• Check logs: $BackupBaseDir\backup_log.txt" -ForegroundColor White
-Write-Host "• View scheduled tasks: Task Scheduler > KingstonsPortal-*" -ForegroundColor White
+Write-Host "- Check logs: $BackupBaseDir\backup_log.txt" -ForegroundColor White
+Write-Host "- View scheduled tasks: Task Scheduler > KingstonsPortal-*" -ForegroundColor White
 Write-Host ""
 
 Write-Host "============================================================================" -ForegroundColor Cyan
