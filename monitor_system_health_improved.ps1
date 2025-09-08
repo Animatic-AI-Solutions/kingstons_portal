@@ -103,23 +103,23 @@ function Test-SystemHealth {
         if ($service) {
             $healthReport.ComponentStatus["Service"] = "Found"
             if ($service.Status -eq "Running") {
-                Write-Log "✓ OfficeFastAPIService is running" "SUCCESS"
+                Write-Log "[OK] OfficeFastAPIService is running" "SUCCESS"
                 $healthReport.Metrics["ServiceStatus"] = "Running"
                 $healthReport.Metrics["ServiceStartTime"] = $service.StartTime
                 
                 # Check service responsiveness by testing if process exists
                 $pythonProcess = Get-Process | Where-Object {$_.ProcessName -like "*python*" -and $_.StartTime -ge $service.StartTime}
                 if ($pythonProcess) {
-                    Write-Log "✓ Python process found (PID: $($pythonProcess.Id))" "SUCCESS"
+                    Write-Log "[OK] Python process found (PID: $($pythonProcess.Id))" "SUCCESS"
                     $healthReport.Metrics["ProcessPID"] = $pythonProcess.Id
                     $healthReport.Metrics["ProcessMemoryMB"] = [math]::Round($pythonProcess.WorkingSet64 / 1MB, 2)
                 } else {
-                    Write-Log "⚠ Service running but Python process not found" "WARN"
+                    Write-Log "[WARN] Service running but Python process not found" "WARN"
                     $healthReport.Issues += "Service running but process not detectable"
                 }
                 
             } else {
-                Write-Log "✗ OfficeFastAPIService is $($service.Status)" "ERROR"
+                Write-Log "[ERROR] OfficeFastAPIService is $($service.Status)" "ERROR"
                 $healthReport.Issues += "Service not running: $($service.Status)"
                 $healthReport.OverallStatus = "UNHEALTHY"
                 $healthReport.Metrics["ServiceStatus"] = $service.Status
@@ -141,30 +141,30 @@ function Test-SystemHealth {
                     
                     $service = Get-Service -Name "OfficeFastAPIService"
                     if ($service.Status -eq "Running") {
-                        Write-Log "✓ Service restart successful" "SUCCESS"
+                        Write-Log "[OK] Service restart successful" "SUCCESS"
                         $healthReport.Metrics["ServiceRestartAttempt"] = "Successful"
                         # Update status since restart worked
                         $healthReport.Metrics["ServiceStatus"] = "Running"
                     } else {
-                        Write-Log "✗ Service restart failed - status: $($service.Status)" "ERROR"
+                        Write-Log "[ERROR] Service restart failed - status: $($service.Status)" "ERROR"
                         $healthReport.Issues += "Service restart failed - status: $($service.Status)"
                         $healthReport.Metrics["ServiceRestartAttempt"] = "Failed"
                     }
                 } catch {
-                    Write-Log "✗ Service restart error: $($_.Exception.Message)" "ERROR"
+                    Write-Log "[ERROR] Service restart error: $($_.Exception.Message)" "ERROR"
                     $healthReport.Issues += "Service restart error: $($_.Exception.Message)"
                     $healthReport.Metrics["ServiceRestartAttempt"] = "Error"
                 }
             }
         } else {
-            Write-Log "✗ OfficeFastAPIService not found" "CRITICAL"
+            Write-Log "[ERROR] OfficeFastAPIService not found" "CRITICAL"
             $healthReport.Issues += "OfficeFastAPIService not found - service may not be installed"
             $healthReport.OverallStatus = "CRITICAL"
             $healthReport.Metrics["ServiceStatus"] = "NotFound"
             $healthReport.ComponentStatus["Service"] = "Missing"
         }
     } catch {
-        Write-Log "✗ Service check failed: $($_.Exception.Message)" "ERROR"
+        Write-Log "[ERROR] Service check failed: $($_.Exception.Message)" "ERROR"
         $healthReport.Issues += "Service check failed: $($_.Exception.Message)"
         $healthReport.ComponentStatus["Service"] = "Error"
     }
@@ -182,18 +182,18 @@ function Test-SystemHealth {
         }
         
         if ($apiResult.Response.StatusCode -eq 200) {
-            Write-Log "✓ API Health Check: $($apiResult.Response.StatusCode) (${apiResult.Time}ms)" "SUCCESS"
+            Write-Log "[OK] API Health Check: $($apiResult.Response.StatusCode) (${apiResult.Time}ms)" "SUCCESS"
             $healthReport.Metrics["APIStatus"] = "Healthy"
             $healthReport.Metrics["APIResponseTime"] = $apiResult.Time
             $healthReport.ComponentStatus["API"] = "Healthy"
             
             # Enhanced response time analysis
             if ($apiResult.Time -gt 10000) {
-                Write-Log "✗ API response extremely slow: ${apiResult.Time}ms" "ERROR"
+                Write-Log "[ERROR] API response extremely slow: ${apiResult.Time}ms" "ERROR"
                 $healthReport.Issues += "API response extremely slow: ${apiResult.Time}ms"
                 $healthReport.OverallStatus = "UNHEALTHY"
             } elseif ($apiResult.Time -gt 5000) {
-                Write-Log "⚠ API response slow: ${apiResult.Time}ms" "WARN"
+                Write-Log "[WARN] API response slow: ${apiResult.Time}ms" "WARN"
                 $healthReport.Issues += "API response slow: ${apiResult.Time}ms"
             }
             
@@ -202,27 +202,27 @@ function Test-SystemHealth {
                 Write-Log "Testing API functionality with data endpoint..." "INFO"
                 $dataTest = Invoke-WebRequest -Uri "http://intranet.kingston.local:8001/api/clients?limit=1" -TimeoutSec 10 -UseBasicParsing -ErrorAction Stop
                 if ($dataTest.StatusCode -eq 200) {
-                    Write-Log "✓ API data endpoint functional" "SUCCESS"
+                    Write-Log "[OK] API data endpoint functional" "SUCCESS"
                     $healthReport.Metrics["APIDataEndpoint"] = "Functional"
                 } else {
-                    Write-Log "⚠ API data endpoint returned: $($dataTest.StatusCode)" "WARN"
+                    Write-Log "[WARN] API data endpoint returned: $($dataTest.StatusCode)" "WARN"
                     $healthReport.Metrics["APIDataEndpoint"] = "Warning"
                 }
             } catch {
-                Write-Log "⚠ API data endpoint test failed: $($_.Exception.Message)" "WARN"
+                Write-Log "[WARN] API data endpoint test failed: $($_.Exception.Message)" "WARN"
                 $healthReport.Issues += "API data endpoint not accessible"
                 $healthReport.Metrics["APIDataEndpoint"] = "Failed"
             }
             
         } else {
-            Write-Log "✗ API Health Check failed: $($apiResult.Response.StatusCode)" "ERROR"
+            Write-Log "[ERROR] API Health Check failed: $($apiResult.Response.StatusCode)" "ERROR"
             $healthReport.Issues += "API health check failed: $($apiResult.Response.StatusCode)"
             $healthReport.OverallStatus = "UNHEALTHY"
             $healthReport.Metrics["APIStatus"] = "Unhealthy"
             $healthReport.ComponentStatus["API"] = "Unhealthy"
         }
     } catch {
-        Write-Log "✗ API connectivity failed: $($_.Exception.Message)" "ERROR"
+        Write-Log "[ERROR] API connectivity failed: $($_.Exception.Message)" "ERROR"
         $healthReport.Issues += "API connectivity failed: $($_.Exception.Message)"
         $healthReport.OverallStatus = "CRITICAL"
         $healthReport.Metrics["APIStatus"] = "Failed"
@@ -242,34 +242,34 @@ function Test-SystemHealth {
         }
         
         if ($frontendResult.Response.StatusCode -eq 200) {
-            Write-Log "✓ Frontend accessible: $($frontendResult.Response.StatusCode) (${frontendResult.Time}ms)" "SUCCESS"
+            Write-Log "[OK] Frontend accessible: $($frontendResult.Response.StatusCode) (${frontendResult.Time}ms)" "SUCCESS"
             $healthReport.Metrics["FrontendStatus"] = "Accessible"
             $healthReport.Metrics["FrontendResponseTime"] = $frontendResult.Time
             $healthReport.ComponentStatus["Frontend"] = "Accessible"
             
             # Content validation
             if ($frontendResult.Response.Content -match "<!DOCTYPE html>" -or $frontendResult.Response.Content -match "<html") {
-                Write-Log "✓ Frontend serving HTML content" "SUCCESS"
+                Write-Log "[OK] Frontend serving HTML content" "SUCCESS"
                 $healthReport.Metrics["FrontendContent"] = "Valid"
             } else {
-                Write-Log "⚠ Frontend not serving expected HTML content" "WARN"
+                Write-Log "[WARN] Frontend not serving expected HTML content" "WARN"
                 $healthReport.Issues += "Frontend serving unexpected content"
                 $healthReport.Metrics["FrontendContent"] = "Unexpected"
             }
             
             if ($frontendResult.Time -gt 8000) {
-                Write-Log "⚠ Frontend load time is slow: ${frontendResult.Time}ms" "WARN"
+                Write-Log "[WARN] Frontend load time is slow: ${frontendResult.Time}ms" "WARN"
                 $healthReport.Issues += "Slow frontend load: ${frontendResult.Time}ms"
             }
         } else {
-            Write-Log "✗ Frontend check failed: $($frontendResult.Response.StatusCode)" "ERROR"
+            Write-Log "[ERROR] Frontend check failed: $($frontendResult.Response.StatusCode)" "ERROR"
             $healthReport.Issues += "Frontend not accessible: $($frontendResult.Response.StatusCode)"
             $healthReport.OverallStatus = "UNHEALTHY"
             $healthReport.Metrics["FrontendStatus"] = "Inaccessible"
             $healthReport.ComponentStatus["Frontend"] = "Failed"
         }
     } catch {
-        Write-Log "✗ Frontend connectivity failed: $($_.Exception.Message)" "ERROR"
+        Write-Log "[ERROR] Frontend connectivity failed: $($_.Exception.Message)" "ERROR"
         $healthReport.Issues += "Frontend connectivity failed: $($_.Exception.Message)"
         $healthReport.OverallStatus = "UNHEALTHY"
         $healthReport.Metrics["FrontendStatus"] = "Failed"
@@ -292,14 +292,14 @@ function Test-SystemHealth {
         $healthReport.Metrics["CPUUsage"] = $cpuUsage
         
         if ($cpuUsage -gt 90) {
-            Write-Log "✗ Critical CPU usage: $cpuUsage%" "CRITICAL"
+            Write-Log "[ERROR] Critical CPU usage: $cpuUsage%" "CRITICAL"
             $healthReport.Issues += "Critical CPU usage: $cpuUsage%"
             $healthReport.OverallStatus = "CRITICAL"
         } elseif ($cpuUsage -gt 80) {
-            Write-Log "⚠ High CPU usage: $cpuUsage%" "WARN"
+            Write-Log "[WARN] High CPU usage: $cpuUsage%" "WARN"
             $healthReport.Issues += "High CPU usage: $cpuUsage%"
         } else {
-            Write-Log "✓ CPU usage: $cpuUsage%" "SUCCESS"
+            Write-Log "[OK] CPU usage: $cpuUsage%" "SUCCESS"
         }
         
         # Enhanced Memory Analysis
@@ -314,14 +314,14 @@ function Test-SystemHealth {
         $healthReport.Metrics["AvailableMemoryGB"] = $availableMemoryGB
         
         if ($memoryUsagePercent -gt 95) {
-            Write-Log "✗ Critical memory usage: $memoryUsagePercent% (Available: ${availableMemoryGB}GB)" "CRITICAL"
+            Write-Log "[ERROR] Critical memory usage: $memoryUsagePercent% (Available: ${availableMemoryGB}GB)" "CRITICAL"
             $healthReport.Issues += "Critical memory usage: $memoryUsagePercent%"
             $healthReport.OverallStatus = "CRITICAL"
         } elseif ($memoryUsagePercent -gt 85) {
-            Write-Log "⚠ High memory usage: $memoryUsagePercent% (Available: ${availableMemoryGB}GB)" "WARN"
+            Write-Log "[WARN] High memory usage: $memoryUsagePercent% (Available: ${availableMemoryGB}GB)" "WARN"
             $healthReport.Issues += "High memory usage: $memoryUsagePercent%"
         } else {
-            Write-Log "✓ Memory usage: $memoryUsagePercent% (Available: ${availableMemoryGB}GB)" "SUCCESS"
+            Write-Log "[OK] Memory usage: $memoryUsagePercent% (Available: ${availableMemoryGB}GB)" "SUCCESS"
         }
         
         # Enhanced Disk Space Analysis with multiple drives
@@ -335,21 +335,21 @@ function Test-SystemHealth {
             $healthReport.Metrics["Disk$($drive.DeviceID)FreeGB"] = $freeSpaceGB
             
             if ($diskUsagePercent -gt 95) {
-                Write-Log "✗ Critical disk usage $($drive.DeviceID): $diskUsagePercent% (Free: ${freeSpaceGB}GB)" "CRITICAL"
+                Write-Log "[ERROR] Critical disk usage $($drive.DeviceID): $diskUsagePercent% (Free: ${freeSpaceGB}GB)" "CRITICAL"
                 $healthReport.Issues += "Critical disk usage $($drive.DeviceID): $diskUsagePercent%"
                 $healthReport.OverallStatus = "CRITICAL"
             } elseif ($diskUsagePercent -gt 90) {
-                Write-Log "⚠ High disk usage $($drive.DeviceID): $diskUsagePercent% (Free: ${freeSpaceGB}GB)" "WARN"
+                Write-Log "[WARN] High disk usage $($drive.DeviceID): $diskUsagePercent% (Free: ${freeSpaceGB}GB)" "WARN"
                 $healthReport.Issues += "High disk usage $($drive.DeviceID): $diskUsagePercent%"
             } else {
-                Write-Log "✓ Disk usage $($drive.DeviceID): $diskUsagePercent% (Free: ${freeSpaceGB}GB)" "SUCCESS"
+                Write-Log "[OK] Disk usage $($drive.DeviceID): $diskUsagePercent% (Free: ${freeSpaceGB}GB)" "SUCCESS"
             }
         }
         
         $healthReport.ComponentStatus["Resources"] = "OK"
         
     } catch {
-        Write-Log "✗ Resource check failed: $($_.Exception.Message)" "ERROR"
+        Write-Log "[ERROR] Resource check failed: $($_.Exception.Message)" "ERROR"
         $healthReport.Issues += "Resource check failed: $($_.Exception.Message)"
         $healthReport.ComponentStatus["Resources"] = "Error"
     }
@@ -375,19 +375,19 @@ function Test-SystemHealth {
             if (Test-Path $path) {
                 if ($type -eq "File") {
                     $fileSize = (Get-Item $path -ErrorAction SilentlyContinue).Length
-                    Write-Log "✓ $type exists: $path ($fileSize bytes)" "SUCCESS"
+                    Write-Log "[OK] $type exists: $path ($fileSize bytes)" "SUCCESS"
                 } else {
                     $itemCount = (Get-ChildItem $path -ErrorAction SilentlyContinue | Measure-Object).Count
-                    Write-Log "✓ $type exists: $path ($itemCount items)" "SUCCESS"
+                    Write-Log "[OK] $type exists: $path ($itemCount items)" "SUCCESS"
                 }
             } else {
                 if ($isCritical) {
-                    Write-Log "✗ Missing critical $type : $path" "CRITICAL"
+                    Write-Log "[ERROR] Missing critical $type : $path" "CRITICAL"
                     $healthReport.Issues += "Missing critical $type : $path"
                     $healthReport.OverallStatus = "CRITICAL"
                     $missingCritical++
                 } else {
-                    Write-Log "⚠ Missing optional $type : $path" "WARN"
+                    Write-Log "[WARN] Missing optional $type : $path" "WARN"
                     $healthReport.Issues += "Missing optional $type : $path"
                 }
             }
@@ -400,7 +400,7 @@ function Test-SystemHealth {
         }
         
     } catch {
-        Write-Log "✗ File system check failed: $($_.Exception.Message)" "ERROR"
+        Write-Log "[ERROR] File system check failed: $($_.Exception.Message)" "ERROR"
         $healthReport.Issues += "File system check failed: $($_.Exception.Message)"
         $healthReport.ComponentStatus["FileSystem"] = "Error"
     }
@@ -423,25 +423,25 @@ function Test-SystemHealth {
             try {
                 $portCheck = Test-NetConnection -ComputerName "localhost" -Port $port -WarningAction SilentlyContinue -ErrorAction Stop
                 if ($portCheck.TcpTestSucceeded) {
-                    Write-Log "✓ Port $port accessible ($service)" "SUCCESS"
+                    Write-Log "[OK] Port $port accessible ($service)" "SUCCESS"
                 } else {
                     if ($isCritical) {
-                        Write-Log "✗ Port $port not accessible ($service)" "ERROR"
+                        Write-Log "[ERROR] Port $port not accessible ($service)" "ERROR"
                         $healthReport.Issues += "Port $port not accessible ($service)"
                         $healthReport.OverallStatus = "UNHEALTHY"
                     } else {
-                        Write-Log "⚠ Port $port not accessible ($service) - may be remote" "WARN"
+                        Write-Log "[WARN] Port $port not accessible ($service) - may be remote" "WARN"
                     }
                 }
             } catch {
-                Write-Log "⚠ Could not test port $port ($service): $($_.Exception.Message)" "WARN"
+                Write-Log "[WARN] Could not test port $port ($service): $($_.Exception.Message)" "WARN"
             }
         }
         
         $healthReport.ComponentStatus["Network"] = "Tested"
         
     } catch {
-        Write-Log "✗ Network check failed: $($_.Exception.Message)" "ERROR"
+        Write-Log "[ERROR] Network check failed: $($_.Exception.Message)" "ERROR"
         $healthReport.Issues += "Network check failed: $($_.Exception.Message)"
         $healthReport.ComponentStatus["Network"] = "Error"
     }
@@ -476,9 +476,9 @@ function Send-AlertEmail {
     
     try {
         $severity = switch ($HealthReport.OverallStatus) {
-            "CRITICAL" { "🚨 CRITICAL ALERT" }
-            "UNHEALTHY" { "⚠️ WARNING ALERT" }
-            default { "ℹ️ INFO ALERT" }
+            "CRITICAL" { "[CRITICAL] CRITICAL ALERT" }
+            "UNHEALTHY" { "[WARN]️ WARNING ALERT" }
+            default { "[INFO] INFO ALERT" }
         }
         
         $subject = "Kingston's Portal $severity - Status: $($HealthReport.OverallStatus)"
@@ -487,14 +487,14 @@ function Send-AlertEmail {
         foreach ($component in $HealthReport.ComponentStatus.Keys) {
             $status = $HealthReport.ComponentStatus[$component]
             $icon = switch ($status) {
-                "OK" { "✅" }
-                "Healthy" { "✅" }
-                "Accessible" { "✅" }
-                "Running" { "✅" }
-                "Found" { "✅" }
-                "Tested" { "ℹ️" }
-                "Testing" { "🔄" }
-                default { "❌" }
+                "OK" { "[OK]" }
+                "Healthy" { "[OK]" }
+                "Accessible" { "[OK]" }
+                "Running" { "[OK]" }
+                "Found" { "[OK]" }
+                "Tested" { "[INFO]" }
+                "Testing" { "[TESTING]" }
+                default { "[ERROR]" }
             }
             $componentStatus += "$icon $component : $status`n"
         }
@@ -529,7 +529,7 @@ Response Required: $(if ($HealthReport.OverallStatus -eq "CRITICAL") { "IMMEDIAT
         # Send-MailMessage -To $AlertEmail -Subject $subject -Body $body -SmtpServer "your-smtp-server"
         
     } catch {
-        Write-Log "✗ Failed to send enhanced alert email: $($_.Exception.Message)" "ERROR"
+        Write-Log "[ERROR] Failed to send enhanced alert email: $($_.Exception.Message)" "ERROR"
     }
 }
 
@@ -576,7 +576,7 @@ $($HealthReport.Issues -join "`n")
         Write-Log "Human-readable summary saved: $summaryPath" "SUCCESS"
         
     } catch {
-        Write-Log "✗ Failed to save enhanced health report: $($_.Exception.Message)" "ERROR"
+        Write-Log "[ERROR] Failed to save enhanced health report: $($_.Exception.Message)" "ERROR"
     }
 }
 
@@ -620,7 +620,7 @@ try {
     }
 
 } catch {
-    Write-Log "✗ Enhanced health monitoring failed: $($_.Exception.Message)" "CRITICAL"
+    Write-Log "[ERROR] Enhanced health monitoring failed: $($_.Exception.Message)" "CRITICAL"
     Write-Log "Stack trace: $($_.ScriptStackTrace)" "ERROR"
 } finally {
     Write-Log "Enhanced health check completed" "INFO"
