@@ -1,56 +1,13 @@
-(venv) PS C:\Users\kingstonadmin\Documents\kingstons_portal> ./setup_server_backups.ps1
-At C:\Users\kingstonadmin\Documents\kingstons_portal\setup_server_backups.ps
-1:93 char:17
-+     Write-Host "  âœ— .env file not found!" -ForegroundColor Red
-+                 ~
-Missing ']' after array index expression.
-At C:\Users\kingstonadmin\Documents\kingstons_portal\setup_server_backups.ps
-1:105 char:23
-+         Write-Host "  âœ“ Database connection successful" -Foreground ...
-+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Unexpected token 'âœ“ Database connection successful"' in expression or
-statement.
-At C:\Users\kingstonadmin\Documents\kingstons_portal\setup_server_backups.ps
-1:106 char:6
-+     } else {
-+      ~
-The Try statement is missing its Catch or Finally block.
-At C:\Users\kingstonadmin\Documents\kingstons_portal\setup_server_backups.ps
-1:110 char:1
-+ } catch {
-+ ~
-Unexpected token '}' in expression or statement.
-At C:\Users\kingstonadmin\Documents\kingstons_portal\setup_server_backups.ps
-1:148 char:47
-+ Write-Host "  â€¢ Weekly backups: 4 weeks (28 days)" -ForegroundColor ...
-+                                               ~~~~
-Unexpected token 'days' in expression or statement.
-At C:\Users\kingstonadmin\Documents\kingstons_portal\setup_server_backups.ps
-1:148 char:46
-+ Write-Host "  â€¢ Weekly backups: 4 weeks (28 days)" -ForegroundColor ...
-+                                              ~
-Missing closing ')' in expression.
-At C:\Users\kingstonadmin\Documents\kingstons_portal\setup_server_backups.ps
-1:123 char:5
-+ try {
-+     ~
-Missing closing '}' in statement block or type definition.
-At C:\Users\kingstonadmin\Documents\kingstons_portal\setup_server_backups.ps
-1:148 char:51
-+ Write-Host "  â€¢ Weekly backups: 4 weeks (28 days)" -ForegroundColor ...
-+                                                   ~
-The Try statement is missing its Catch or Finally block.
-At C:\Users\kingstonadmin\Documents\kingstons_portal\setup_server_backups.ps
-1:148 char:51
-+ Write-Host "  â€¢ Weekly backups: 4 weeks (28 days)" -ForegroundColor ...
-+                                                   ~
-Unexpected token ')' in expression or statement.
-At C:\Users\kingstonadmin\Documents\kingstons_portal\setup_server_backups.ps
-1:149 char:15
-+ Write-Host "  â€¢ Monthly backups: 12 months" -ForegroundColor White
-+               ~~~
-Unexpected token 'â€¢' in expression or statement.
-Not all parse errors were reported.  Correct the reported errors and try
-again.
-    + CategoryInfo          : ParserError: (:) [], ParseException
-    + FullyQualifiedErrorId : MissingEndSquareBracket
+the main navigation does not include defintions as this was split inot what we see now which is templates and product owners and funds
+
+clienst actually dont have a know as or a first or second nam ejust a name, the known as and other names are in regatrds to product owners
+
+make sure to clarify what a client group (client as a whole) represents and what product owners (individuals inside the client group) represent
+
+clarify that all funds in a portfolio need to have a vllautaion befroe an IRR is caluclated
+
+when you generate a report yo dont select the start and end date, instead you select dates to include for each product and theybmuist all share the most recent date younsleect for each of them
+
+there si only one report available which is the IRR report
+
+

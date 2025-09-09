@@ -12,6 +12,7 @@ import Cookies from './pages/Cookies';
 import Profile from './pages/Profile';
 import ReportGenerator from './pages/ReportGenerator';
 import ReportDisplayPage from './pages/ReportDisplayPage';
+import UserGuide from './pages/UserGuide';
 
 // Auth Components - User authentication related components
 import LoginForm from './components/auth/LoginForm';
@@ -92,6 +93,9 @@ const AppContent: React.FC = () => {
           
           {/* Profile Page */}
           <Route path="/profile" element={<AppLayout><Profile /></AppLayout>} />
+          
+          {/* User Guide - Help and documentation */}
+          <Route path="/user-guide" element={<AppLayout><UserGuide /></AppLayout>} />
           
           {/* Client Management Section - CRUD operations for clients */}
           <Route path="/client_groups" element={<AppLayout><Clients /></AppLayout>} />

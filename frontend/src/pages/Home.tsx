@@ -2,6 +2,7 @@ import React, { Suspense, useState } from 'react';
 import { StatBox, FundDistributionChart, DataTable, StatBoxSkeleton, ChartSkeleton, TableSkeleton, UpcomingMeetings, RiskDifferences } from '../components/ui';
 import useDashboardData from '../hooks/useDashboardData';
 import DynamicPageContainer from '../components/DynamicPageContainer';
+import HolidayBanner from '../components/HolidayBanner';
 
 // Icons for the stats boxes
 const CurrencyIcon = () => (
@@ -76,11 +77,13 @@ const Home: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('charts');
 
   return (
-    <DynamicPageContainer 
-      maxWidth="2000px"
-      className="py-6"
-    >
-      {/* Main Content */}
+    <div>
+      <HolidayBanner />
+      <DynamicPageContainer 
+        maxWidth="2000px"
+        className="py-6"
+      >
+        {/* Main Content */}
         {loading && !metrics ? (
           <div className="flex flex-col gap-6">
             {/* Stats grid - full width */}
@@ -291,7 +294,8 @@ const Home: React.FC = () => {
             </button>
           </div>
         )}
-    </DynamicPageContainer>
+      </DynamicPageContainer>
+    </div>
   );
 };
 
