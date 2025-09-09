@@ -364,14 +364,6 @@ const UserGuide: React.FC = () => {
               </div>
               
               <div className="bg-red-100 p-3 rounded">
-                <p><strong>📋 Portfolio Template Limitations:</strong></p>
-                <ul className="list-disc list-inside ml-4 text-sm space-y-1">
-                  <li>Cannot delete whole portfolio templates once created</li>
-                  <li>Can only add new generations or modify existing ones</li>
-                </ul>
-              </div>
-              
-              <div className="bg-red-100 p-3 rounded">
                 <p><strong>📊 Data Issues:</strong></p>
                 <ul className="list-disc list-inside ml-4 text-sm space-y-1">
                   <li>Some products may drop off to a separate page - this is being worked on</li>
