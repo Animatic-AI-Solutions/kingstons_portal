@@ -625,7 +625,10 @@ async def create_portfolio_from_template(data: PortfolioFromTemplate, db = Depen
 @router.delete("/{portfolio_id}", response_model=dict)
 async def delete_available_portfolio(portfolio_id: int, db = Depends(get_db)):
     """
-    Delete a portfolio template and all its associated generations and funds.
+    Delete a portfolio template and all its associated data with proper cascade handling.
+    
+    SAFETY: This function carefully checks for and handles all linked data to prevent
+    accidentally deleting unrelated products.
     
     Args:
         portfolio_id: The ID of the portfolio template to delete
@@ -634,53 +637,151 @@ async def delete_available_portfolio(portfolio_id: int, db = Depends(get_db)):
         A success message and details of what was deleted
     """
     try:
-        logger.info(f"Deleting portfolio template with ID: {portfolio_id}")
+        logger.info(f"🗑️ SAFE DELETION: Starting template deletion for ID: {portfolio_id}")
         
         # First check if portfolio exists
-        check_result = await db.fetchrow("SELECT id FROM available_portfolios WHERE id = $1", portfolio_id)
+        check_result = await db.fetchrow("SELECT id, name FROM available_portfolios WHERE id = $1", portfolio_id)
         if not check_result:
             raise HTTPException(status_code=404, detail=f"Portfolio template with ID {portfolio_id} not found")
         
-        # Get all generations for this portfolio
-        generations_result = await db.fetch("SELECT id FROM template_portfolio_generations WHERE available_portfolio_id = $1", portfolio_id)
+        template_name = check_result['name'] or f"Template {portfolio_id}"
+        logger.info(f"🔍 Found template: '{template_name}'")
         
-        # Calculate total number of generations
+        # Get all generations for this portfolio template
+        generations_result = await db.fetch(
+            "SELECT id, generation_name FROM template_portfolio_generations WHERE available_portfolio_id = $1", 
+            portfolio_id
+        )
+        
         generations_count = len(generations_result) if generations_result else 0
-        logger.info(f"Found {generations_count} generations for portfolio template {portfolio_id}")
+        logger.info(f"📊 Found {generations_count} generation(s) for template {portfolio_id}")
+        
+        # Get generation IDs for checking client_products
+        generation_ids = [gen['id'] for gen in generations_result] if generations_result else []
+        
+        # SAFETY CHECK: Find all data that references this template's generations
+        client_products_deleted = 0
+        portfolios_deleted = 0
+        
+        if generation_ids:
+            # Step 1: Check for and delete client_products that reference these generations
+            client_products_result = await db.fetch(
+                "SELECT id, product_name, template_generation_id FROM client_products WHERE template_generation_id = ANY($1::int[])",
+                generation_ids
+            )
+            
+            client_products_count = len(client_products_result) if client_products_result else 0
+            logger.info(f"🔍 Found {client_products_count} client_product(s) using template {portfolio_id}")
+            
+            if client_products_count > 0:
+                # Log which products will be deleted for safety
+                for product in client_products_result:
+                    generation = next((g for g in generations_result if g['id'] == product['template_generation_id']), None)
+                    generation_name = generation['generation_name'] if generation else f"Gen {product['template_generation_id']}"
+                    logger.info(f"🗑️ Will delete: Product '{product['product_name']}' → Generation '{generation_name}' → Template '{template_name}'")
+                
+                # Double-check: Ensure all products ACTUALLY belong to THIS template
+                verified_products = []
+                for product in client_products_result:
+                    if product['template_generation_id'] in generation_ids:
+                        verified_products.append(product)
+                    else:
+                        logger.error(f"❌ SAFETY VIOLATION: Product {product['id']} has generation_id {product['template_generation_id']} not in template {portfolio_id}")
+                
+                logger.info(f"🔒 VERIFIED: {len(verified_products)} products confirmed to belong to template {portfolio_id}")
+                
+                # Delete verified client_products
+                for product in verified_products:
+                    try:
+                        await db.execute("DELETE FROM client_products WHERE id = $1", product['id'])
+                        client_products_deleted += 1
+                        logger.info(f"✅ Deleted client_product {product['id']}: '{product['product_name']}'")
+                    except Exception as product_err:
+                        logger.error(f"❌ Failed to delete client_product {product['id']}: {str(product_err)}")
+                        # Continue with other products but log the error
+            
+            # Step 2: Check for and delete portfolios that reference these generations
+            portfolios_result = await db.fetch(
+                "SELECT id, portfolio_name, template_generation_id FROM portfolios WHERE template_generation_id = ANY($1::int[])",
+                generation_ids
+            )
+            
+            portfolios_count = len(portfolios_result) if portfolios_result else 0
+            logger.info(f"🔍 Found {portfolios_count} portfolio(s) using template {portfolio_id}")
+            
+            if portfolios_count > 0:
+                # Log which portfolios will be deleted for safety
+                for portfolio in portfolios_result:
+                    generation = next((g for g in generations_result if g['id'] == portfolio['template_generation_id']), None)
+                    generation_name = generation['generation_name'] if generation else f"Gen {portfolio['template_generation_id']}"
+                    logger.info(f"🗑️ Will delete: Portfolio '{portfolio['portfolio_name']}' → Generation '{generation_name}' → Template '{template_name}'")
+                
+                # Double-check: Ensure all portfolios ACTUALLY belong to THIS template
+                verified_portfolios = []
+                for portfolio in portfolios_result:
+                    if portfolio['template_generation_id'] in generation_ids:
+                        verified_portfolios.append(portfolio)
+                    else:
+                        logger.error(f"❌ SAFETY VIOLATION: Portfolio {portfolio['id']} has generation_id {portfolio['template_generation_id']} not in template {portfolio_id}")
+                
+                logger.info(f"🔒 VERIFIED: {len(verified_portfolios)} portfolios confirmed to belong to template {portfolio_id}")
+                
+                # Delete verified portfolios
+                for portfolio in verified_portfolios:
+                    try:
+                        await db.execute("DELETE FROM portfolios WHERE id = $1", portfolio['id'])
+                        portfolios_deleted += 1
+                        logger.info(f"✅ Deleted portfolio {portfolio['id']}: '{portfolio['portfolio_name']}'")
+                    except Exception as portfolio_err:
+                        logger.error(f"❌ Failed to delete portfolio {portfolio['id']}: {str(portfolio_err)}")
+                        # Continue with other portfolios but log the error
         
         # Get total count of funds across all generations
         funds_count = 0
-        if generations_count > 0:
-            # For each generation, count its funds
-            for generation in generations_result:
-                generation_id = generation['id']
+        if generation_ids:
+            for generation_id in generation_ids:
                 funds_result = await db.fetch("SELECT id FROM available_portfolio_funds WHERE template_portfolio_generation_id = $1", generation_id)
                 funds_count += len(funds_result) if funds_result else 0
         
-        # Delete the template generations (this will cascade delete funds due to ON DELETE CASCADE)
+        # Now safely delete the template structure
+        # Step 1: Delete template generations (this cascades to delete funds)
         if generations_count > 0:
             await db.execute("DELETE FROM template_portfolio_generations WHERE available_portfolio_id = $1", portfolio_id)
-            logger.info(f"Deleted {generations_count} generations from portfolio template {portfolio_id}")
+            logger.info(f"✅ Deleted {generations_count} generation(s) (and {funds_count} associated funds)")
         
-        # Now delete the portfolio template
+        # Step 2: Delete the portfolio template itself
         result = await db.fetchrow("DELETE FROM available_portfolios WHERE id = $1 RETURNING *", portfolio_id)
         
         if not result:
             raise HTTPException(status_code=500, detail="Failed to delete portfolio template")
         
+        logger.info(f"✅ DELETION COMPLETED: Template '{template_name}' and all associated data deleted successfully")
+        
         return {
-            "message": f"Portfolio template with ID {portfolio_id} deleted successfully",
+            "message": f"Portfolio template '{template_name}' deleted successfully",
             "details": {
-                "portfolio_deleted": 1,
+                "template_deleted": 1,
                 "generations_deleted": generations_count,
-                "funds_deleted": funds_count
+                "funds_deleted": funds_count,
+                "client_products_deleted": client_products_deleted,
+                "portfolios_deleted": portfolios_deleted,
+                "template_name": template_name
             }
         }
+        
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error deleting portfolio template: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        logger.error(f"❌ Error during template deletion: {str(e)}")
+        # Check if it's a foreign key constraint error
+        error_msg = str(e).lower()
+        if 'foreign key' in error_msg or 'constraint' in error_msg:
+            raise HTTPException(
+                status_code=409, 
+                detail="Cannot delete template: There are still references to this template in the database. This may indicate a data integrity issue - please contact support."
+            )
+        else:
+            raise HTTPException(status_code=500, detail=f"Database error during template deletion: {str(e)}")
 
 @router.put("/{portfolio_id}", response_model=dict)
 async def update_portfolio_template(portfolio_id: int, template_update: PortfolioTemplateUpdate, db = Depends(get_db)):
