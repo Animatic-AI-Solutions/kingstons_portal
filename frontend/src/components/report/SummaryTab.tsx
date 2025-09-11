@@ -511,7 +511,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
       </div>
 
       {/* Individual Product Cards */}
-      <div className="mb-8 print:break-before-page">
+      <div className="mb-8 print:mb-4 print:break-before-page">
         {organizeProductsByType(reportData.productSummaries)
           .filter(product => {
             // Filter out inactive products when checkbox is unchecked

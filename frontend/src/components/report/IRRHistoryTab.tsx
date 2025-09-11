@@ -1096,7 +1096,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
   // Show loading state if data is being loaded
   if (loadingIrrHistory) {
     return (
-      <div className="irr-history-section print:block print:mt-8">
+      <div className="irr-history-content print:block print:mt-8">
         <div className="flex items-center justify-center py-12">
         <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -1109,7 +1109,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
   // Show no data message if no IRR history data is available
   if (!irrHistoryData || irrHistoryData.length === 0) {
     return (
-      <div className="irr-history-section print:block print:mt-8">
+      <div className="irr-history-content print:block print:mt-8">
         <h2 className="text-lg font-semibold text-gray-900 mb-2">History</h2>
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
           <p className="text-yellow-700 mb-2">No IRR history data available</p>
@@ -1121,7 +1121,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
     );
   }
   return (
-    <div className="irr-history-section print:block print:mt-8 report-section" id="irr-history-tab-panel" role="tabpanel" aria-labelledby="history-tab">
+    <div className="irr-history-content print:block print:mt-8 report-section" id="irr-history-tab-panel" role="tabpanel" aria-labelledby="history-tab">
       {/* Header with controls */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
         <h2 className="text-lg font-semibold text-gray-900 mb-2">History</h2>
@@ -1163,7 +1163,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       </div>
       {/* Chart View */}
       {viewMode === 'chart' && (
-        <div className="mb-8 irr-history-chart print-hide">
+        <div className="mb-8 print:mb-0 irr-history-chart print-hide">
           {/* Chart Controls */}
           <div className="bg-gray-50 p-4 rounded-lg mb-6">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -1313,7 +1313,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
         </div>
       )}
       {/* Table View */}
-      <div className={`mb-8 irr-history-table ${viewMode === 'table' ? '' : 'hidden print:block'}`}>
+      <div className={`mb-8 print:mb-4 irr-history-table ${viewMode === 'table' ? '' : 'hidden print:block'}`}>
         {(() => {
           // Use the memoized filtered products to avoid expensive recalculation
           const filteredProducts = memoizedTableData;
@@ -2084,7 +2084,7 @@ Available database dates: ${productHistory.portfolio_historical_irr.map((r: any)
           clientGroupIds={undefined}
           realTimeTotalIRR={memoizedTotalIRR}
           reportData={memoizedReportData}
-          className="mt-8"
+          className="mt-8 print:mt-0"
         />
       </div>
     </div>

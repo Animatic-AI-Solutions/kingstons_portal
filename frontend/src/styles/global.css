@@ -1136,3 +1136,52 @@ div.mb-4.product-card.print-clean.summary-product-card {
     margin-bottom: 1rem !important; /* 16px instead of 32px */
   }
 }
+
+/* IRR History Summary Table - Non-breaking version */
+.irr-history-summary {
+  display: block !important;
+}
+
+@media print {
+  .irr-history-summary {
+    margin-top: 0.5rem !important;
+    page-break-before: auto !important; /* Don't force page breaks */
+    page-break-inside: avoid !important;
+    break-before: auto !important; /* Don't force page breaks */
+    break-inside: avoid !important;
+  }
+  
+  /* Apply same styling as irr-history-section but without forced page breaks */
+  .irr-history-summary h2 {
+    margin-bottom: 0.5rem !important;
+    font-size: 1.125rem !important;
+    font-weight: 600 !important;
+    color: #111827 !important;
+  }
+  
+  .irr-history-summary .product-card {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  
+  /* IRR History Content - Main wrapper without forced page breaks */
+  .irr-history-content {
+    display: block !important;
+    page-break-before: auto !important; /* Don't force page breaks */
+    page-break-inside: auto !important; /* Allow content to break naturally */
+    break-before: auto !important; /* Don't force page breaks */
+    break-inside: auto !important; /* Allow content to break naturally */
+  }
+  
+  .irr-history-content h2 {
+    margin-bottom: 0.5rem !important;
+    font-size: 1.125rem !important;
+    font-weight: 600 !important;
+    color: #111827 !important;
+  }
+  
+  .irr-history-content .product-card {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+}

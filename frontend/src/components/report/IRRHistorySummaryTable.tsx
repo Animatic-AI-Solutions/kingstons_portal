@@ -519,7 +519,7 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
   }
 
   return (
-    <div className={`irr-history-section ${className}`}>
+    <div className={`irr-history-summary ${className}`}>
       <div className="mb-4 bg-white shadow-sm rounded-lg border border-gray-200 w-full product-card print-clean"
         style={{
           borderLeft: '4px solid #6b7280', // Dark grey left border like product cards
