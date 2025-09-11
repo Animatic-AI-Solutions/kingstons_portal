@@ -33,7 +33,7 @@ def serialize_datetime(dt):
 
 @router.get("/analytics/fund_distribution")
 async def get_fund_distribution(
-    limit: int = Query(20, ge=1, le=100, description="Maximum number of funds to return"),
+    limit: int = Query(20, ge=1, le=1000, description="Maximum number of funds to return"),
     db = Depends(get_db)
 ):
     """
@@ -140,7 +140,7 @@ async def get_fund_distribution(
 
 @router.get("/analytics/provider_distribution")
 async def get_provider_distribution(
-    limit: int = Query(20, ge=1, le=100, description="Maximum number of providers to return"),
+    limit: int = Query(20, ge=1, le=500, description="Maximum number of providers to return"),
     db = Depends(get_db)
 ):
     """
@@ -341,7 +341,7 @@ async def get_performance_data(
     date_range: Literal["all-time", "ytd", "12m", "3y", "5y"] = "all-time",
     entity_type: Literal["overview", "clients", "products", "portfolios", "funds", "products", "providers"] = "overview",
     sort_order: Literal["highest", "lowest"] = "highest",
-    limit: int = Query(5, ge=1, le=100),
+    limit: int = Query(5, ge=1, le=1000),
     db = Depends(get_db)
 ):
     try:
@@ -1152,13 +1152,14 @@ async def calculate_company_irr(db):
     logger.info("🔄 Cache miss - calculating fresh company IRR...")
     
     try:
-        # Step 1: Get all portfolio fund IDs in a single query
-        portfolio_funds_response = await db.fetch("SELECT id FROM portfolio_funds WHERE status = 'active'")
+        # Step 1: Get ALL portfolio fund IDs (including inactive/sold funds for complete historical IRR)
+        # FIXED: Include inactive funds as they represent sold positions crucial for accurate IRR
+        portfolio_funds_response = await db.fetch("SELECT id FROM portfolio_funds")
         
         all_portfolio_fund_ids = [dict(fund)['id'] for fund in portfolio_funds_response]
         
         if not all_portfolio_fund_ids:
-            logger.warning("No active portfolio funds found")
+            logger.warning("No portfolio funds found (active or inactive)")
             return 0.0
         
         # Step 2: Use the standardized multiple IRR endpoint
@@ -1241,7 +1242,8 @@ async def get_company_irr_endpoint(db = Depends(get_db)):
         total_products = await db.fetchval("SELECT COUNT(*) FROM client_products WHERE status = 'active'")
         total_products = int(total_products) if total_products is not None else 0
         
-        portfolio_funds_result = await db.fetch("SELECT id, amount_invested FROM portfolio_funds WHERE status = 'active'")
+        # FIXED: Include all funds (active and inactive) for complete historical IRR accounting
+        portfolio_funds_result = await db.fetch("SELECT id, amount_invested FROM portfolio_funds")
         total_portfolio_funds = len(portfolio_funds_result) if portfolio_funds_result else 0
         
         # Calculate total investment for backward compatibility
@@ -1646,7 +1648,7 @@ async def get_portfolio_irr(portfolio_id: int, db = Depends(get_db)):
 
 @router.get("/analytics/portfolio_template_distribution")
 async def get_portfolio_template_distribution(
-    limit: int = Query(20, ge=1, le=100, description="Maximum number of portfolio templates to return"),
+    limit: int = Query(20, ge=1, le=200, description="Maximum number of portfolio templates to return"),
     db = Depends(get_db)
 ):
     """
@@ -1810,9 +1812,9 @@ async def get_portfolio_template_distribution(
 
 @router.get("/analytics/dashboard_all")
 async def get_dashboard_all_data(
-    fund_limit: int = Query(10, ge=1, le=50, description="Maximum number of funds to return"),
-    provider_limit: int = Query(10, ge=1, le=50, description="Maximum number of providers to return"),
-    template_limit: int = Query(10, ge=1, le=50, description="Maximum number of templates to return"),
+    fund_limit: int = Query(10, ge=1, le=1000, description="Maximum number of funds to return"),
+    provider_limit: int = Query(10, ge=1, le=500, description="Maximum number of providers to return"),
+    template_limit: int = Query(10, ge=1, le=200, description="Maximum number of templates to return"),
     db = Depends(get_db)
 ):
     """
@@ -1981,13 +1983,15 @@ async def get_dashboard_all_data(
             for item in template_items[:template_limit]
         ]
         
-        # 8. Use total_fum from valuations, fallback to investments if needed
-        final_fum = total_fum if total_fum > 0 else total_from_investments
-        
-        # FIXED: Log data consistency information for debugging
+        # 8. FIXED: Use fund distribution total for consistency with UI
         fund_distribution_total = sum(fund_totals.values())
         provider_distribution_total = sum(provider_totals.values())
         template_distribution_total = sum(template_totals.values())
+        
+        # Use fund distribution total as the authoritative FUM for consistency
+        final_fum = fund_distribution_total if fund_distribution_total > 0 else (total_fum if total_fum > 0 else total_from_investments)
+        
+        # FIXED: Log data consistency information for debugging
         
         logger.info(f"📊 FUM Distribution Consistency Check:")
         logger.info(f"   Total FUM: £{final_fum:,.2f}")
@@ -2042,7 +2046,7 @@ async def get_dashboard_all_data(
 
 @router.get("/analytics/risk_differences")
 async def get_products_risk_differences(
-    limit: int = Query(10, ge=1, le=50, description="Number of products to return"),
+    limit: int = Query(10, ge=1, le=1000, description="Number of products to return"),
     db = Depends(get_db)
 ):
     """
@@ -2226,9 +2230,9 @@ async def reset_company_irr_cache():
 
 @router.get("/analytics/dashboard-fast")
 async def get_ultra_fast_dashboard(
-    fund_limit: int = Query(10, ge=1, le=50),
-    provider_limit: int = Query(10, ge=1, le=50), 
-    template_limit: int = Query(10, ge=1, le=50),
+    fund_limit: int = Query(10, ge=1, le=1000),
+    provider_limit: int = Query(10, ge=1, le=500), 
+    template_limit: int = Query(10, ge=1, le=200),
     db = Depends(get_db)
 ):
     """

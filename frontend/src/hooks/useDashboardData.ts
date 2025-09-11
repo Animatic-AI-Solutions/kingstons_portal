@@ -55,9 +55,9 @@ export const useDashboardData = () => {
     console.log('Fetching dashboard data with React Query...');
     const { data } = await api.get<DashboardAllResponse>('/analytics/dashboard_all', {
       params: {
-        fund_limit: 50,  // INCREASED: Get more items to avoid truncation issues
-        provider_limit: 50,  // INCREASED: Get more items to avoid truncation issues  
-        template_limit: 50,  // INCREASED: Get more items to avoid truncation issues
+        fund_limit: 1000,  // GROWTH-READY: Support up to 1000 funds
+        provider_limit: 500,  // GROWTH-READY: Support up to 500 providers  
+        template_limit: 200,  // GROWTH-READY: Support up to 200 templates
       },
     });
 
