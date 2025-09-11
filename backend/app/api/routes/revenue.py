@@ -41,14 +41,23 @@ async def get_company_revenue_analytics(db = Depends(get_db)):
         # The view returns a single row with aggregated data
         revenue_data = dict(result[0])
         
+        # Extract available fields from the view
+        total_annual_revenue = float(revenue_data.get("total_annual_revenue", 0) or 0)
+        active_products = int(revenue_data.get("active_products", 0) or 0)
+        
+        # Calculate derived metrics
+        avg_revenue_per_product = (total_annual_revenue / active_products) if active_products > 0 else 0
+        # For revenue_generating_products, we'll use active_products as a proxy since the view doesn't distinguish
+        revenue_generating_products = active_products
+        
         # Ensure all values are properly formatted
         formatted_data = {
-            "total_annual_revenue": float(revenue_data.get("total_annual_revenue", 0) or 0),
+            "total_annual_revenue": total_annual_revenue,
             "total_fixed_revenue": float(revenue_data.get("total_fixed_revenue", 0) or 0),
             "total_percentage_revenue": float(revenue_data.get("total_percentage_revenue", 0) or 0),
-            "active_products": int(revenue_data.get("active_products", 0) or 0),
-            "revenue_generating_products": int(revenue_data.get("revenue_generating_products", 0) or 0),
-            "avg_revenue_per_product": float(revenue_data.get("avg_revenue_per_product", 0) or 0),
+            "active_products": active_products,
+            "revenue_generating_products": revenue_generating_products,
+            "avg_revenue_per_product": avg_revenue_per_product,
             "active_providers": int(revenue_data.get("active_providers", 0) or 0)
         }
         
@@ -62,7 +71,8 @@ async def get_company_revenue_analytics(db = Depends(get_db)):
 async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
     """
     Get revenue breakdown by client groups, showing each client group's revenue and percentage of total.
-    Updated to handle 2-state revenue status logic:
+    Updated to include ALL products (active and inactive) for complete business analytics.
+    Revenue status logic:
     - complete: All products have complete valuations (green dot - hidden in UI)
     - needs_valuation: At least one product missing valuations (amber dot)
     """
@@ -71,11 +81,11 @@ async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
         company_revenue_result = await db.fetchrow("SELECT total_annual_revenue FROM company_revenue_analytics")
         total_company_revenue = float(company_revenue_result["total_annual_revenue"]) if company_revenue_result else 0
         
-        # Get all active client groups
-        client_groups = await db.fetch("SELECT id, name, status FROM client_groups WHERE status = 'active'")
+        # Get all client groups (active and dormant for complete analytics)
+        client_groups = await db.fetch("SELECT id, name, status FROM client_groups WHERE status IN ('active', 'dormant')")
         
         if not client_groups:
-            logger.warning("No active client groups found")
+            logger.warning("No client groups found")
             return []
         
         revenue_breakdown = []
@@ -84,9 +94,9 @@ async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
             client_id = client_group["id"]
             client_name = client_group["name"]
             
-            # Get all active products for this client group
+            # Get all products for this client group (active and inactive for complete analytics)
             products = await db.fetch(
-                "SELECT id, fixed_cost, percentage_fee, portfolio_id FROM client_products WHERE client_id = $1 AND status = 'active'",
+                "SELECT id, fixed_cost, percentage_fee, portfolio_id FROM client_products WHERE client_id = $1",
                 client_id
             )
             
@@ -218,9 +228,9 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
     try:
 
         # Get a hash of all revenue-relevant data to check if recalculation is needed
-        # Get all active client products with revenue configuration
+        # Get all client products with revenue configuration (active and inactive for complete analytics)
         products_for_hash = await db.fetch(
-            "SELECT id, client_id, fixed_cost, percentage_fee, portfolio_id, status FROM client_products WHERE status = 'active'"
+            "SELECT id, client_id, fixed_cost, percentage_fee, portfolio_id, status FROM client_products"
         )
         
         # Get all latest valuations
@@ -241,11 +251,11 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
             _revenue_cache["data"] is not None):
             return _revenue_cache["data"]
         
-        # Get all active client groups
-        client_groups = await db.fetch("SELECT id, name, status FROM client_groups WHERE status = 'active'")
+        # Get all client groups (active and dormant for complete analytics)
+        client_groups = await db.fetch("SELECT id, name, status FROM client_groups WHERE status IN ('active', 'dormant')")
         
         if not client_groups:
-            logger.warning("No active client groups found")
+            logger.warning("No client groups found")
             return {
                 "total_revenue": 0,
                 "total_fum": 0,
@@ -263,9 +273,9 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
             client_id = client_group["id"]
             client_name = client_group["name"]
             
-            # Get all active products for this client group
+            # Get all products for this client group (active and inactive for complete analytics)
             products = await db.fetch(
-                "SELECT id, fixed_cost, percentage_fee, portfolio_id FROM client_products WHERE client_id = $1 AND status = 'active'",
+                "SELECT id, fixed_cost, percentage_fee, portfolio_id FROM client_products WHERE client_id = $1",
                 client_id
             )
             

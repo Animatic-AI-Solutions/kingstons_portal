@@ -49,7 +49,8 @@ import CreateClientProducts from './pages/CreateClientProducts';
 
 // Reporting Pages - Analytics and performance reporting
 import Reporting from './pages/Reporting';
-import Analytics from './pages/Analytics';
+// import Analytics from './pages/Analytics'; // Temporarily disabled for maintenance
+import AnalyticsMaintenance from './pages/AnalyticsMaintenance';
 import Revenue from './pages/Revenue';
 
 
@@ -140,7 +141,7 @@ const AppContent: React.FC = () => {
           <Route path="/create-client-group-products" element={<AppLayout><CreateClientProducts /></AppLayout>} />
           
           {/* Reporting Section - Financial performance analytics and reporting */}
-          <Route path="/analytics" element={<AppLayout><Analytics /></AppLayout>} />
+          <Route path="/analytics" element={<AppLayout><AnalyticsMaintenance /></AppLayout>} />
           <Route path="/revenue" element={<AppLayout><Revenue /></AppLayout>} />
           <Route path="/report-generator" element={<AppLayout><ReportGenerator /></AppLayout>} />
           <Route path="/report-display" element={<AppLayout><ReportDisplayPage /></AppLayout>} />
