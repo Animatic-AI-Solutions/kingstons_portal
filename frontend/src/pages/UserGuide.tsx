@@ -380,17 +380,113 @@ const UserGuide: React.FC = () => {
         </div>
       </section>
 
+      {/* System Maintenance Section */}
+      <section className="mb-12">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center">
+          <ChevronRightIcon className="h-6 w-6 text-orange-600 mr-2" />
+          System Maintenance & Technical Documentation
+        </h2>
+        
+        <div className="space-y-6">
+          <div className="bg-orange-50 border-l-4 border-orange-400 p-6">
+            <h3 className="text-xl font-medium text-orange-900 mb-3">🔧 For System Administration & Emergency Maintenance</h3>
+            <div className="text-orange-800 space-y-3">
+              <p><strong>Project Continuity Guide:</strong> If Jacob is unavailable and you need to maintain, troubleshoot, or understand the system technical details, a comprehensive technical guide is available.</p>
+              
+              <div className="bg-orange-100 p-4 rounded mt-4">
+                <p className="font-medium text-orange-900 mb-2">📋 Complete Technical Documentation:</p>
+                <ul className="list-disc list-inside ml-4 space-y-1 text-sm">
+                  <li><strong>Location:</strong> <code>docs/PROJECT_CONTINUITY_GUIDE.md</code></li>
+                  <li><strong>Contains:</strong> Database access, server details, deployment procedures, backup processes</li>
+                  <li><strong>Emergency contacts:</strong> Jacob McNulty (07505755664), Gabriella Cuba (07715898405)</li>
+                  <li><strong>Server details:</strong> Kingston03 VM, database credentials, environment setup</li>
+                  <li><strong>Backup location:</strong> C:\DatabaseBackups\KingstonsPortal\</li>
+                </ul>
+              </div>
+              
+              <div className="bg-red-100 p-4 rounded mt-4">
+                <p className="font-medium text-red-900 mb-2">🚨 Emergency System Access:</p>
+                <ul className="list-disc list-inside ml-4 space-y-1 text-sm">
+                  <li><strong>Production System:</strong> http://intranet.kingston.local</li>
+                  <li><strong>API Documentation:</strong> http://intranet.kingston.local:8001/docs</li>
+                  <li><strong>Database:</strong> PostgreSQL on Kingston03 server (192.168.0.223)</li>
+                  <li><strong>Health Check:</strong> http://intranet.kingston.local:8001/api/health</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-6">
+            <h3 className="text-xl font-medium text-yellow-900 mb-3">📚 Additional Technical Resources</h3>
+            <div className="text-yellow-800 space-y-3">
+              <p>The project includes extensive technical documentation in the <code>docs/</code> folder:</p>
+              <ul className="list-disc list-inside ml-4 space-y-1">
+                <li><strong>Architecture:</strong> System design and database schema</li>
+                <li><strong>Development:</strong> Setup procedures and coding standards</li>
+                <li><strong>Operations:</strong> Deployment and maintenance procedures</li>
+                <li><strong>Security:</strong> Authentication and access control details</li>
+              </ul>
+              <p className="text-sm italic mt-3">This documentation is designed to enable any qualified developer to maintain the system in Jacob's absence.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Contact Section */}
       <section className="bg-blue-50 rounded-lg p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Still Need Help?</h2>
-        <div className="text-gray-700 space-y-2">
-          <p>If this guide doesn't answer your question or you're experiencing issues:</p>
-          <p>
-            <strong>Contact Jacob:</strong> 
-            <a href="mailto:jacob.b.mcnulty.2019@gmail.com" className="text-blue-600 underline ml-2">jacob.b.mcnulty.2019@gmail.com</a> | 
-            <a href="tel:07505755664" className="text-blue-600 underline ml-1">07505 755 664</a>
-          </p>
-          <p className="text-sm text-gray-600">Please include screenshots and describe what you were trying to do when the issue occurred.</p>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Need Help? Follow This Order</h2>
+        
+        <div className="space-y-4">
+          <div className="bg-white border-l-4 border-blue-500 p-4 rounded-r">
+            <h3 className="font-semibold text-gray-900 mb-2">📋 Step-by-Step Support Process</h3>
+            <div className="space-y-3 text-gray-700">
+              <div className="flex items-start">
+                <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mr-3 mt-0.5">1</span>
+                <div>
+                  <p><strong>First:</strong> Ask Dawn or Sean for help - they know the system well and can resolve most user questions.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start">
+                <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mr-3 mt-0.5">2</span>
+                <div>
+                  <p><strong>Then:</strong> If they can't help, work through this User Guide carefully - most questions are answered here.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start">
+                <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mr-3 mt-0.5">3</span>
+                <div>
+                  <p><strong>Finally:</strong> If you still need help, contact Jacob:</p>
+                  <div className="ml-4 mt-2 space-y-1">
+                    <p>
+                      <strong>📧 Email:</strong> 
+                      <a href="mailto:jacob.b.mcnulty.2019@gmail.com" className="text-blue-600 underline ml-2">jacob.b.mcnulty.2019@gmail.com</a>
+                    </p>
+                    <p>
+                      <strong>📞 Phone:</strong> 
+                      <a href="tel:07505755664" className="text-blue-600 underline ml-2">07505 755 664</a>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r">
+            <h3 className="font-medium text-yellow-800 mb-2">💡 When Contacting Jacob:</h3>
+            <ul className="text-yellow-700 text-sm space-y-1 list-disc list-inside">
+              <li>Include screenshots of the issue</li>
+              <li>Describe exactly what you were trying to do</li>
+              <li>Mention that you've already asked Dawn/Sean and checked this guide</li>
+              <li>For urgent technical/system issues when Jacob is unavailable, contact Gabriella Cuba: <a href="tel:07715898405" className="text-yellow-600 underline">07715 898 405</a></li>
+            </ul>
+          </div>
+          
+          <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-r">
+            <h3 className="font-medium text-red-800 mb-2">🚨 System Emergency (Jacob Unavailable):</h3>
+            <p className="text-red-700 text-sm">For critical system failures when Jacob cannot be reached, refer to the <strong>System Maintenance & Technical Documentation</strong> section above for emergency procedures and technical contacts.</p>
+          </div>
         </div>
       </section>
     </div>
