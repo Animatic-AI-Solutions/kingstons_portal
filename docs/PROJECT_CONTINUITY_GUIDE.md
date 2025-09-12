@@ -433,17 +433,16 @@ API_HOST=0.0.0.0
    ```
 
 2. **Navigate to Authentication Endpoints:**
-   - Look for `/auth/signup` endpoint in the API docs
+   - Look for `/auth/register` endpoint in the API docs
    - Click on the endpoint to expand it
 
 3. **Create Account via API:**
    ```json
-   POST /auth/signup
+   POST /auth/register
    {
      "email": "user@company.com",
      "password": "secure_password_123",
-     "first_name": "User",
-     "last_name": "Name"
+     "full_name": "User Full Name"
    }
    ```
 
@@ -464,23 +463,10 @@ API_HOST=0.0.0.0
 
 **Reset User Password:**
 ```bash
-# Step 1: Request password reset
-POST /auth/forgot-password
-{
-  "email": "user@company.com"
-}
-
-# Step 2: Verify reset token (from email)
-POST /auth/verify-reset-token
-{
-  "token": "reset_token_from_email"
-}
-
-# Step 3: Set new password
+# Via API endpoint
 POST /auth/reset-password
 {
-  "token": "verified_token",
-  "new_password": "new_secure_password"
+  "email": "user@company.com"
 }
 ```
 
@@ -787,7 +773,7 @@ The project follows a 5-phase SPARC development process:
 **Authentication:**
 - JWT tokens expire after 24 hours (configurable)
 - Password reset tokens expire after 1 hour
-- No current implementation of 2FA
+- No current implementation of 2FA (consider for Phase 2)
 
 **Data Protection:**
 - Sensitive financial data is stored in database (ensure encryption at rest)
@@ -803,26 +789,25 @@ The project follows a 5-phase SPARC development process:
 
 ## 🚀 FUTURE DEVELOPMENT PLANS
 
-### **Phase 2: Client Data Enhancement**
+### **Phase 2 Expansion Plans**
 
-**✅ ACTUAL Phase 2 Specification** (as documented in `docs/specifications/Phase2_Client_Data_Enhancement_Specification.md`):
+**Enhanced Analytics (Priority 1):**
+- Real-time dashboard updates with WebSocket connections
+- Advanced charting with interactive graphs
+- Custom report builder with drag-and-drop interface
+- Automated report scheduling and email delivery
 
-**Core Business Driver:**
-- **Problem:** Need historical snapshots of client data for compliance ("What did we know when we made this decision?")
-- **Solution:** Dual-track system preserving existing managed products + adding unmanaged client data
-- **Benefit:** Complete client picture with point-in-time audit trails for KYC and networth statements
+**Mobile Application (Priority 2):**
+- React Native mobile app for iOS/Android
+- Offline mode for field use
+- Push notifications for important updates
+- Mobile-optimized reporting
 
-**System Enhancement Philosophy:**
-- **Existing managed products:** Preserve ALL current IRR calculations, analytics, and performance tracking
-- **NEW unmanaged products:** Simple valuation tracking for KYC/networth purposes only  
-- **NEW client information:** JSON-based flexible data for comprehensive client profiles
-- **Historical preservation:** Snapshot capability for compliance and decision audit trails
-
-**Key Features:**
-- Enhanced client groups with flexible optional data
-- Product owner relationships with ownership models
-- Item-based architecture: `Client Group → Items (JSON data) → Product Owner Associations`
-- Dual-track system maintaining existing managed product functionality
+**Advanced Features (Priority 3):**
+- Document management system with OCR
+- Integration with external financial data providers
+- Advanced user roles and permissions system
+- API for third-party integrations
 
 ### **Technical Improvements**
 
@@ -851,8 +836,7 @@ The project follows a 5-phase SPARC development process:
 ### **Regular Maintenance Tasks**
 
 **Daily:**
-- Monitor system health via `/api/health` endpoint
-- Check database connection and backup status
+- Monitor system health and error logs
 - Verify backup completion
 - Check database performance metrics
 
@@ -870,9 +854,9 @@ The project follows a 5-phase SPARC development process:
 ### **Monitoring and Logging**
 
 **System Monitoring:**
-- Debug files: `backend_logs.txt` and `frontend_logs.txt` (temporary files only)
-- Database logs: PostgreSQL server logs (if configured)
-- IIS logs: Windows IIS server logs for production frontend
+- Application logs: `backend/logs/` directory  
+- Database logs: PostgreSQL log files
+- Web server logs: [Add location based on deployment]
 
 **Key Metrics to Monitor:**
 - Database connection pool utilization
@@ -986,45 +970,6 @@ REFRESH MATERIALIZED VIEW view_name;
 4. Restore from last known good backup
 5. Replay transactions if possible
 6. Verify data integrity before resuming operations
-
----
-
-## 📞 VENDOR RELATIONSHIPS
-
-### **Critical Service Providers**
-
-**Hosting/Infrastructure:**
-- Provider: [Add provider name]
-- Account Manager: [Add contact info]
-- Support: [Add support contact]
-- Account Details: [Add account information]
-
-**Database Service:**  
-- Provider: [Add provider name]
-- Account: [Add account details]
-- Backup Location: [Add backup service details]
-
-**Domain Registration:**
-- Registrar: [Add registrar name]
-- Account: [Add account details]  
-- Renewal Date: [Add renewal information]
-
-**Development Tools:**
-- GitHub: [Add account details]
-- Other services: [Add as applicable]
-
-### **Legal and Compliance**
-
-**Data Protection:**
-- Data Controller: Kingston's [Add full legal name]
-- Data Protection Officer: [Add contact if applicable]
-- Privacy Policy: Available at `/privacy` route in application
-- Terms of Service: Available at `/terms` route in application
-
-**Intellectual Property:**
-- Code ownership: [Add ownership details]
-- Third-party licenses: [Add license information]
-- Trademark considerations: [Add if applicable]
 
 ---
 
@@ -1177,7 +1122,7 @@ npm run build  # Frontend build test
 ### **Critical File Locations**
 - **Environment Config:** `.env` (at project root)
 - **Database Backups:** C:\DatabaseBackups\KingstonsPortal\
-- **Debug Files:** `backend_logs.txt` and `frontend_logs.txt` (temporary debug files only)
+- **Log Files:** `backend/logs/` and system logs
 - **SSL Certificates:** Not configured (HTTP only)
 
 ### **Remember**
