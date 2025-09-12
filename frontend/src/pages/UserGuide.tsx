@@ -416,6 +416,167 @@ const UserGuide: React.FC = () => {
             </div>
           </div>
 
+          {/* Source Code Access Instructions */}
+          <div className="bg-blue-50 border-l-4 border-blue-400 p-6">
+            <h3 className="text-xl font-medium text-blue-900 mb-3">📥 Accessing Source Code & Technical Documentation</h3>
+            <div className="text-blue-800 space-y-4">
+              <div className="bg-blue-100 p-3 rounded border-l-4 border-blue-500">
+                <p className="font-semibold text-blue-900 mb-2">🎯 PRIMARY OBJECTIVE: Access PROJECT_CONTINUITY_GUIDE.md</p>
+                <p className="text-sm">
+                  This critical document contains complete system handover procedures, database details, 
+                  emergency contacts, and troubleshooting information essential for system continuity.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-semibold text-blue-900 mb-2">📂 Source Code Access Options</h4>
+                <div className="space-y-3">
+                  <div className="bg-green-50 border-l-4 border-green-400 p-3 rounded">
+                    <p className="font-semibold text-green-800 mb-2">🌟 Recommended: Clone from Git Repository</p>
+                    <div className="text-sm text-green-700">
+                      <p className="mb-2">The official Kingston's Portal repository is hosted on GitHub:</p>
+                      <div className="bg-white p-2 rounded border">
+                        <code className="text-xs font-mono text-gray-800">
+                          https://github.com/Animatic-AI-Solutions/kingstons_portal
+                        </code>
+                      </div>
+                      <p className="text-xs mt-1 text-green-600">
+                        ✓ Always up-to-date ✓ Version controlled ✓ Complete history ✓ All documentation included
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+                    <p className="font-semibold text-blue-800 mb-2">💻 Alternative: VM Access</p>
+                    <div className="text-sm text-blue-700 space-y-2">
+                      <div>
+                        <p className="font-semibold">Jacob's Development VM:</p>
+                        <p className="text-xs">Cloned repository available locally</p>
+                      </div>
+                      <div>
+                        <p className="font-semibold">Kingston03 Production VM (192.168.0.223):</p>
+                        <ul className="text-xs space-y-1 ml-3">
+                          <li>• Cloned repository available</li>
+                          <li>• Production deployment: <code className="bg-gray-100 px-1 rounded">C:\Apps\portal_api\</code></li>
+                          <li>• Frontend deployment: <code className="bg-gray-100 px-1 rounded">C:\inetpub\wwwroot\OfficeIntranet\</code></li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-semibold text-blue-900 mb-2">🔍 How to Access the Critical Documentation</h4>
+                
+                <div className="space-y-3">
+                  <div className="bg-white p-3 rounded border">
+                    <p className="font-semibold text-gray-800 text-sm mb-2">Method 1: Clone Git Repository (Recommended)</p>
+                    <div className="text-xs text-gray-600 space-y-2">
+                      <div className="bg-yellow-50 p-2 rounded mb-2">
+                        <p className="text-yellow-800"><strong>Prerequisites:</strong> Git must be installed on your system</p>
+                        <p className="text-yellow-700 text-xs mt-1">
+                          Don't have Git? Download from <a href="https://git-scm.com/download/windows" className="text-blue-600 underline">https://git-scm.com/download/windows</a>
+                        </p>
+                      </div>
+                      <p><strong>Step-by-step instructions:</strong></p>
+                      <ol className="ml-3 space-y-1">
+                        <li>1. Open Command Prompt or PowerShell</li>
+                        <li>2. Navigate to where you want to download the code (e.g., <code className="bg-gray-100 px-1 rounded">cd C:\</code>)</li>
+                        <li>3. Clone the repository:</li>
+                      </ol>
+                      <div className="bg-gray-100 p-2 rounded mt-2">
+                        <code className="text-xs font-mono">
+                          git clone https://github.com/Animatic-AI-Solutions/kingstons_portal.git<br/>
+                          cd kingstons_portal<br/>
+                          git checkout main
+                        </code>
+                      </div>
+                      <p className="mt-2"><strong>Access documentation:</strong></p>
+                      <div className="bg-gray-100 p-2 rounded">
+                        <code className="text-xs font-mono">
+                          type docs\PROJECT_CONTINUITY_GUIDE.md
+                        </code>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white p-3 rounded border">
+                    <p className="font-semibold text-gray-800 text-sm mb-2">Method 2: Access via Jacob's VM</p>
+                    <div className="text-xs text-gray-600 space-y-1">
+                      <p><strong>Requirements:</strong> Access to Jacob's development environment</p>
+                      <ol className="ml-3 space-y-1 mt-1">
+                        <li>1. Connect to Jacob's development VM</li>
+                        <li>2. Navigate to the cloned repository location</li>
+                        <li>3. Open the <code className="bg-gray-100 px-1 rounded">docs</code> folder</li>
+                        <li>4. Access <strong>PROJECT_CONTINUITY_GUIDE.md</strong></li>
+                      </ol>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white p-3 rounded border">
+                    <p className="font-semibold text-gray-800 text-sm mb-2">Method 3: Access via Kingston03 VM</p>
+                    <div className="text-xs text-gray-600 space-y-1">
+                      <p><strong>Requirements:</strong> Company network access + Kingston03 admin credentials</p>
+                      <ol className="ml-3 space-y-1 mt-1">
+                        <li>1. Connect to company network (VPN if remote)</li>
+                        <li>2. Remote Desktop to 192.168.0.223 (Kingston03)</li>
+                        <li>3. Navigate to the cloned repository location</li>
+                        <li>4. Access <code className="bg-gray-100 px-1 rounded">docs\PROJECT_CONTINUITY_GUIDE.md</code></li>
+                      </ol>
+                      <div className="bg-yellow-50 p-2 rounded mt-2">
+                        <p className="text-yellow-700 text-xs">
+                          <strong>Note:</strong> Production files are deployed separately at <code>C:\Apps\portal_api\</code> 
+                          and <code>C:\inetpub\wwwroot\OfficeIntranet\</code> but the full repository with 
+                          documentation is also available on this VM.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-semibold text-blue-900 mb-2">📁 Complete Project Structure</h4>
+                <div className="bg-white p-3 rounded border">
+                  <div className="bg-gray-100 p-2 rounded font-mono text-xs overflow-x-auto">
+                    <pre>{`kingstons_portal/
+├── 📁 backend/              # Python FastAPI Backend
+├── 📁 frontend/             # React TypeScript Frontend  
+├── 📁 docs/                 # 📚 COMPREHENSIVE DOCUMENTATION
+│   ├── 📄 README.md         # Main navigation hub
+│   ├── 📄 PROJECT_CONTINUITY_GUIDE.md  # ⚠️ CRITICAL DOCUMENT
+│   └── 📁 [01-10]_*/       # 10 organized documentation sections
+├── 📄 .env                  # Environment configuration
+├── 📄 deploy_minimal.ps1    # Deployment automation
+└── 📄 database_backup_organized.ps1  # Backup procedures`}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-semibold text-blue-900 mb-2">📋 Next Steps After Accessing Source Code</h4>
+                <div className="bg-white p-3 rounded border">
+                  <ol className="text-sm space-y-2">
+                    <li><strong>1. Read PROJECT_CONTINUITY_GUIDE.md</strong> - Emergency procedures and system details</li>
+                    <li><strong>2. Explore docs/README.md</strong> - Complete system overview and navigation</li>
+                    <li><strong>3. Review docs/03_architecture/</strong> - Technical architecture details</li>
+                    <li><strong>4. Check docs/02_getting_started/</strong> - Development setup instructions</li>
+                  </ol>
+                </div>
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
+                <h4 className="font-semibold text-yellow-800 mb-2">🔒 Security Note</h4>
+                <p className="text-yellow-700 text-sm">
+                  Source code contains sensitive configuration information. Access should be limited 
+                  to authorized personnel only. Never commit <code className="bg-yellow-100 px-1 rounded">.env</code> files 
+                  to version control and protect database credentials.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-6">
             <h3 className="text-xl font-medium text-yellow-900 mb-3">📚 Additional Technical Resources</h3>
             <div className="text-yellow-800 space-y-3">
