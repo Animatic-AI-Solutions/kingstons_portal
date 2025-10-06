@@ -34,6 +34,7 @@ export interface MultiSelectSearchableDropdownProps {
  * SearchableDropdown Component
  * 
  * A dropdown component with search functionality that allows users to filter options by typing.
+ * Options are automatically sorted alphabetically for better user experience.
  * 
  * @param {SearchableDropdownProps} props - Component props
  * @returns {JSX.Element} - Rendered component
@@ -60,10 +61,12 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   const selectedOption = options.find(option => option.value === value);
   const displayValue = selectedOption ? selectedOption.label : placeholder;
   
-  // Filter options based on search term
-  const filteredOptions = options.filter(option => 
-    option.label.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter options based on search term and sort alphabetically
+  const filteredOptions = options
+    .filter(option => 
+      option.label.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => a.label.localeCompare(b.label));
   
   // Reset focused index when filtered options change
   useEffect(() => {
@@ -318,10 +321,12 @@ export const MultiSelectSearchableDropdown: React.FC<MultiSelectSearchableDropdo
   const optionsRef = useRef<HTMLUListElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Filter options based on search term
-  const filteredOptions = options.filter(option =>
-    option.label.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter options based on search term and sort alphabetically
+  const filteredOptions = options
+    .filter(option =>
+      option.label.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => a.label.localeCompare(b.label));
 
   // Reset focused index when filtered options change
   useEffect(() => {

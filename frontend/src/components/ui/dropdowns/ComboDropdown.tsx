@@ -23,6 +23,12 @@ export interface ComboDropdownProps {
   minSearchLength?: number;
 }
 
+/**
+ * ComboDropdown Component
+ * 
+ * A combobox component that allows typing to filter options or enter custom values.
+ * Options are automatically sorted alphabetically for better user experience.
+ */
 const ComboDropdown = React.forwardRef<HTMLInputElement, ComboDropdownProps>(({
   label,
   error,
@@ -57,12 +63,16 @@ const ComboDropdown = React.forwardRef<HTMLInputElement, ComboDropdownProps>(({
   // Determine variant based on error state
   const currentVariant = error ? 'error' : variant;
   
-  // Filter options based on input value
+  // Filter options based on input value and sort alphabetically
   const filteredOptions = value.length >= minSearchLength
-    ? options.filter(option => 
-        option.label.toLowerCase().includes(value.toLowerCase()) && !option.disabled
-      )
-    : options.filter(option => !option.disabled);
+    ? options
+        .filter(option => 
+          option.label.toLowerCase().includes(value.toLowerCase()) && !option.disabled
+        )
+        .sort((a, b) => a.label.localeCompare(b.label))
+    : options
+        .filter(option => !option.disabled)
+        .sort((a, b) => a.label.localeCompare(b.label));
   
   // Close dropdown when clicking outside - improved reliability
   useEffect(() => {

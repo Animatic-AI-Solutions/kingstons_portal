@@ -22,6 +22,13 @@ export interface MultiSelectDropdownProps {
   maxSelectedDisplay?: number;
 }
 
+/**
+ * MultiSelectDropdown Component
+ * 
+ * A multi-select dropdown with search functionality and tag display.
+ * Options are automatically sorted alphabetically for better user experience.
+ * Used in Report Generator for client group selection and other multi-select scenarios.
+ */
 const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdownProps>(({
   label,
   error,
@@ -62,12 +69,16 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
   // Get selected options
   const selectedOptions = options.filter(option => values.includes(option.value));
   
-  // Filter options based on search term
+  // Filter options based on search term and sort alphabetically
   const filteredOptions = searchable && searchTerm
-    ? options.filter(option => 
-        option.label.toLowerCase().includes(searchTerm.toLowerCase()) && !option.disabled
-      )
-    : options.filter(option => !option.disabled);
+    ? options
+        .filter(option => 
+          option.label.toLowerCase().includes(searchTerm.toLowerCase()) && !option.disabled
+        )
+        .sort((a, b) => a.label.localeCompare(b.label))
+    : options
+        .filter(option => !option.disabled)
+        .sort((a, b) => a.label.localeCompare(b.label));
   
   // Improved click-outside detection - more granular
   useEffect(() => {
