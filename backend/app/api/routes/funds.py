@@ -255,9 +255,22 @@ async def get_fund_products_with_owners(
         if not fund_result:
             raise HTTPException(status_code=404, detail=f"Fund with ID {fund_id} not found")
 
-        # Get all portfolio_funds that use this fund
+        # Get all portfolio_funds that use this fund with actual weighting calculation
         portfolio_funds = await db.fetch(
-            "SELECT portfolio_id FROM portfolio_funds WHERE available_funds_id = $1 AND status = 'active'",
+            """
+            SELECT 
+                pf.portfolio_id,
+                pf.target_weighting,
+                CASE 
+                    WHEN lpv.valuation > 0 AND lpfv.valuation IS NOT NULL 
+                    THEN ROUND((lpfv.valuation / lpv.valuation * 100)::numeric, 2)
+                    ELSE pf.target_weighting 
+                END as actual_weighting
+            FROM portfolio_funds pf
+            LEFT JOIN latest_portfolio_fund_valuations lpfv ON pf.id = lpfv.portfolio_fund_id
+            LEFT JOIN latest_portfolio_valuations lpv ON pf.portfolio_id = lpv.portfolio_id
+            WHERE pf.available_funds_id = $1 AND pf.status = 'active'
+            """,
             fund_id
         )
         
@@ -267,9 +280,15 @@ async def get_fund_products_with_owners(
         # Get all portfolio IDs
         portfolio_ids = [pf["portfolio_id"] for pf in portfolio_funds]
         
-        # Get all products that use these portfolios
+        # Get all products that use these portfolios with provider and client group info
         products_result = await db.fetch(
-            "SELECT * FROM client_products WHERE portfolio_id = ANY($1)",
+            """
+            SELECT cp.*, ap.name as provider_name, cg.name as client_group_name
+            FROM client_products cp
+            LEFT JOIN available_providers ap ON cp.provider_id = ap.id
+            LEFT JOIN client_groups cg ON cp.client_id = cg.id
+            WHERE cp.portfolio_id = ANY($1)
+            """,
             portfolio_ids
         )
         
@@ -346,9 +365,11 @@ async def get_fund_products_with_owners(
                 "product_type": product["product_type"],
                 "status": product["status"],
                 "portfolio_name": portfolio.get("portfolio_name", ""),
-                "target_weighting": portfolio_fund.get("target_weighting", 0),
+                "target_weighting": portfolio_fund.get("actual_weighting", 0),
                 "start_date": product["start_date"],
-                "product_owner_name": product_owner_name
+                "product_owner_name": product_owner_name,
+                "provider_name": product.get("provider_name", "Unknown"),
+                "client_group_name": product.get("client_group_name", "Unknown")
             }
             
             products_with_owners.append(product_entry)

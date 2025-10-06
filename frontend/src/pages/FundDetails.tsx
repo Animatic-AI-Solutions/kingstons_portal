@@ -38,6 +38,8 @@ interface ProductWithOwner {
   portfolio_name: string;
   weighting: number;
   start_date: string;
+  provider_name: string;
+  client_group_name: string;
 }
 
 interface PortfolioFundWithRelations {
@@ -178,6 +180,8 @@ const FundDetails: React.FC = () => {
           portfolio_name: item.portfolio_name,
           weighting: item.target_weighting || 0,
           start_date: item.start_date,
+          provider_name: item.provider_name || 'Unknown',
+          client_group_name: item.client_group_name || 'Unknown',
         }));
         setProductsWithOwners(transformedData);
       }
@@ -217,8 +221,15 @@ const FundDetails: React.FC = () => {
       control: 'filter'
     },
     {
-      key: 'product_type',
-      label: 'Type',
+      key: 'provider_name',
+      label: 'Provider',
+      dataType: 'category',
+      alignment: 'left',
+      control: 'filter'
+    },
+    {
+      key: 'client_group_name',
+      label: 'Client Group',
       dataType: 'category',
       alignment: 'left',
       control: 'filter'
@@ -230,13 +241,6 @@ const FundDetails: React.FC = () => {
       alignment: 'left',
       control: 'sort',
       format: (value) => `${value}%`
-    },
-    {
-      key: 'start_date',
-      label: 'Start Date',
-      dataType: 'date',
-      alignment: 'left',
-      control: 'sort'
     },
     {
       key: 'product_status',
@@ -389,9 +393,9 @@ const FundDetails: React.FC = () => {
       'Product Name',
       'Product Owner',
       'Portfolio',
-      'Product Type',
+      'Provider',
+      'Client Group',
       'Weighting (%)',
-      'Start Date',
       'Status'
     ];
 
@@ -400,10 +404,10 @@ const FundDetails: React.FC = () => {
       product.product_name,
       product.product_owner_name,
       product.portfolio_name,
-      product.product_type,
-      product.weighting.toString(),
-      new Date(product.start_date).toLocaleDateString(),
-      product.product_status
+      product.provider_name,
+      product.client_group_name,
+      product.target_weighting.toString(),
+      product.status
     ]);
 
     // Combine headers and data
