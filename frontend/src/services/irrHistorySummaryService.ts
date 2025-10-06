@@ -203,7 +203,7 @@ export class IRRHistorySummaryService {
   /**
    * Format IRR value for display with different precision based on context
    * @param irrValue - The IRR value to format
-   * @param formatType - Type of formatting: 'total' for portfolio totals, 'inactive' for inactive products, 'default' for individual products
+   * @param formatType - Type of formatting: 'total' for portfolio totals (1 decimal), 'inactive' for inactive products (1 decimal), 'default' for individual products (2 decimals)
    */
   static formatIRRValue(irrValue: number | null, formatType: 'total' | 'inactive' | 'default' = 'default'): string {
     if (irrValue === null || irrValue === undefined) {
@@ -216,10 +216,8 @@ export class IRRHistorySummaryService {
         return `${irrValue.toFixed(1)}%`;
         
       case 'inactive':
-        // Inactive products: 0 decimal places if whole number, 1 decimal place otherwise
-        // Use the same smart logic as ReportGenerator.tsx formatRiskFallback
-        const rounded = Math.round(irrValue * 10) / 10;
-        return `${rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1)}%`;
+        // Inactive products: Always show 1 decimal place for consistency (e.g., "3.0%")
+        return `${irrValue.toFixed(1)}%`;
         
       case 'default':
       default:

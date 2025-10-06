@@ -18,6 +18,9 @@ async def global_search(
     Uses the global_search_entities database function for efficient searching
     Function signature: global_search_entities(search_term text)
     Returns: entity_type, entity_id, entity_name, entity_description, relevance_score
+    
+    Note: Includes ALL products regardless of status (active/inactive).
+    Inactive products are marked with "(LAPSED)" in the description.
     """
     try:
         logger.info(f"Performing global search with query: '{query}'")

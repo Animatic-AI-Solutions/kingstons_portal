@@ -1012,6 +1012,10 @@ $function$
 -- FUNCTION: global_search_entities
 -- Arguments: search_term text
 -- Returns: TABLE(entity_type text, entity_id bigint, entity_name text, entity_description text, relevance_score integer)
+-- 
+-- Note: Function includes ALL products regardless of status (active/inactive).
+-- Inactive products are marked with "(LAPSED)" in the description.
+-- This allows users to search and find both active and lapsed products.
 CREATE OR REPLACE FUNCTION public.global_search_entities(search_term text)
  RETURNS TABLE(entity_type text, entity_id bigint, entity_name text, entity_description text, relevance_score integer)
  LANGUAGE plpgsql
@@ -1125,7 +1129,8 @@ BEGIN
 
         cp.product_name as entity_name,
 
-        CONCAT('Product: ', cp.product_name, ' - Client: ', cg.name, ' - Provider: ', ap.name) as entity_description,
+        CONCAT('Product: ', cp.product_name, ' - Client: ', cg.name, ' - Provider: ', ap.name, 
+               CASE WHEN cp.status = 'inactive' THEN ' (LAPSED)' ELSE '' END) as entity_description,
 
         CASE 
 
@@ -1149,7 +1154,7 @@ BEGIN
 
     JOIN available_providers ap ON cp.provider_id = ap.id
 
-    WHERE cp.status = 'active' AND cg.status = 'active'
+    WHERE cg.status = 'active'
 
         AND (
 

@@ -25,6 +25,10 @@ interface SearchResult {
  * 
  * A search bar that allows users to search across all entities in the system
  * including client groups, products, funds, providers, and portfolios.
+ * 
+ * Note: Includes ALL products regardless of status (active/inactive).
+ * Inactive products are marked with "(LAPSED)" in search results.
+ * 
  * Follows Group 1 design system standards.
  */
 const GlobalSearch: React.FC = () => {
