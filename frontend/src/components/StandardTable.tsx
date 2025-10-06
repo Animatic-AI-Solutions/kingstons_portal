@@ -288,6 +288,17 @@ const filterData = (data: any[], filters: TableFilters): any[] => {
   });
 };
 
+/**
+ * StandardTable Component
+ * 
+ * A comprehensive table component with automatic data type detection, filtering, and sorting.
+ * 
+ * Features:
+ * - Automatic status field filtering: Status columns default to showing only 'active' items
+ * - Auto-detection of data types (category, currency, date, percentage, etc.)
+ * - Responsive design with font scaling
+ * - Built-in filtering and sorting controls
+ */
 const StandardTable: React.FC<StandardTableProps> = ({
   data,
   columns,
@@ -297,7 +308,31 @@ const StandardTable: React.FC<StandardTableProps> = ({
   onRowClick
 }) => {
   const [sort, setSort] = useState<TableSort | null>(null);
-  const [filters, setFilters] = useState<TableFilters>({});
+  
+  // Initialize filters with default 'active' status for status columns
+  const [filters, setFilters] = useState<TableFilters>(() => {
+    const defaultFilters: TableFilters = {};
+    
+    // Look for status-related columns and set default to 'active'
+    columns.forEach(column => {
+      if (column.key.toLowerCase() === 'status' || 
+          column.label.toLowerCase() === 'status' ||
+          column.key.toLowerCase().includes('status')) {
+        // Check if the data contains 'active' status values
+        const hasActiveStatus = data.some(row => 
+          row[column.key] && 
+          row[column.key].toString().toLowerCase() === 'active'
+        );
+        
+        if (hasActiveStatus) {
+          defaultFilters[column.key] = ['active'];
+        }
+      }
+    });
+    
+    return defaultFilters;
+  });
+  
   const [containerWidth, setContainerWidth] = useState<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
