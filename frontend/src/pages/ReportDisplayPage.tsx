@@ -92,12 +92,20 @@ const ReportDisplayPage: React.FC = () => {
           // Calculate real-time total IRR using all activities from all products selected
           try {
             // Extract all portfolio fund IDs from all selected products
+            // IMPORTANT: Include both active funds AND inactive funds (from Previous Funds virtual entry)
             const allPortfolioFundIds: number[] = [];
             data.productSummaries.forEach(product => {
               if (product.funds) {
                 product.funds.forEach(fund => {
-                  // Filter out virtual funds and ensure valid ID (same logic as ReportGenerator)
-                  if (!fund.isVirtual && fund.id > 0) {
+                  if (fund.isVirtual && fund.inactiveFunds) {
+                    // Extract inactive fund IDs from "Previous Funds" virtual entry
+                    fund.inactiveFunds.forEach(inactiveFund => {
+                      if (inactiveFund.id > 0) {
+                        allPortfolioFundIds.push(inactiveFund.id);
+                      }
+                    });
+                  } else if (!fund.isVirtual && fund.id > 0) {
+                    // Add active fund IDs
                     allPortfolioFundIds.push(fund.id);
                   }
                 });

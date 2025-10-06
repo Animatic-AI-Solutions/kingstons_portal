@@ -385,7 +385,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                         </td>
                         <td className="px-2 py-2 whitespace-nowrap text-base text-right">
                           {product.weighted_risk !== undefined && product.weighted_risk !== null ? (
-                            formatWeightedRisk(product.weighted_risk)
+                            formatWeightedRiskConsistent(product.weighted_risk)
                           ) : (
                             <span className="text-gray-400">N/A</span>
                           )}
@@ -468,19 +468,55 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                   <td className="px-2 py-2 text-base font-bold text-right text-black">
                     {(() => {
                       // Calculate weighted risk across all products
-                      let weightedRisk = 0;
+                      // IMPORTANT: Include both active funds' risk and inactive funds' risk from "Previous Funds" virtual entry
+                      let totalRiskWeightedValue = 0;
                       let totalValue = 0;
-                      
-                      reportData.productSummaries.forEach(product => {
+
+                      console.log('🔍 Investment Total Risk Calculation Debug:');
+
+                      reportData.productSummaries.forEach((product, index) => {
+                        console.log(`Product ${index}:`, {
+                          name: product.product_name,
+                          weighted_risk: product.weighted_risk,
+                          current_valuation: product.current_valuation,
+                          funds_count: product.funds?.length
+                        });
+
+                        // Add active funds' weighted risk contribution
                         if (product.weighted_risk !== undefined && product.weighted_risk !== null) {
                           const productValue = product.current_valuation || 0;
-                          weightedRisk += product.weighted_risk * productValue;
+                          const contribution = product.weighted_risk * productValue;
+                          console.log(`  - Active funds contribution: ${product.weighted_risk} × ${productValue} = ${contribution}`);
+                          totalRiskWeightedValue += contribution;
                           totalValue += productValue;
                         }
+
+                        // Add inactive funds' weighted risk contribution from "Previous Funds" virtual entry
+                        if (product.funds) {
+                          const previousFundsEntry = product.funds.find(fund => fund.isVirtual && fund.fund_name === 'Previous Funds');
+                          console.log(`  - Previous Funds entry found:`, previousFundsEntry ? {
+                            risk_factor: previousFundsEntry.risk_factor,
+                            current_valuation: previousFundsEntry.current_valuation
+                          } : 'None');
+
+                          if (previousFundsEntry && previousFundsEntry.risk_factor !== undefined && previousFundsEntry.risk_factor !== null) {
+                            const previousFundsValue = previousFundsEntry.current_valuation || 0;
+                            const contribution = previousFundsEntry.risk_factor * previousFundsValue;
+                            console.log(`  - Inactive funds contribution: ${previousFundsEntry.risk_factor} × ${previousFundsValue} = ${contribution}`);
+                            totalRiskWeightedValue += contribution;
+                            totalValue += previousFundsValue;
+                          }
+                        }
                       });
-                      
+
+                      console.log('Investment Total Risk Result:', {
+                        totalRiskWeightedValue,
+                        totalValue,
+                        finalRisk: totalValue > 0 ? totalRiskWeightedValue / totalValue : 'N/A'
+                      });
+
                       if (totalValue > 0) {
-                        return formatWeightedRiskConsistent(weightedRisk / totalValue);
+                        return formatWeightedRiskConsistent(totalRiskWeightedValue / totalValue);
                       } else {
                         return 'N/A';
                       }

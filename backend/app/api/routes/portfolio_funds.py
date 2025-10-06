@@ -2300,21 +2300,24 @@ async def calculate_multiple_portfolio_funds_irr(
         # CRITICAL FIX: Filter out portfolio funds without valuations for this date
         # This prevents products like AJ1055J from distorting IRR calculations
         # when they have activities but no valuations for a specific historical date
+        logger.error(f"🔍 DEBUG: ORIGINAL FUND IDs REQUESTED: {portfolio_fund_ids}")
+
         portfolio_fund_ids_with_valuations = [
-            fund_id for fund_id in portfolio_fund_ids 
+            fund_id for fund_id in portfolio_fund_ids
             if fund_valuations.get(fund_id) is not None
         ]
-        
+
         excluded_funds = [
-            fund_id for fund_id in portfolio_fund_ids 
+            fund_id for fund_id in portfolio_fund_ids
             if fund_valuations.get(fund_id) is None
         ]
-        
+
         if excluded_funds:
             logger.warning(f"💰 DEBUG: ⚠️ Excluding {len(excluded_funds)} funds without valuations from IRR calculation: {excluded_funds}")
             logger.warning(f"💰 DEBUG: ✅ Including {len(portfolio_fund_ids_with_valuations)} funds with valuations: {portfolio_fund_ids_with_valuations}")
-        
+
         # Update portfolio_fund_ids to only include funds with valuations
+        logger.error(f"🔍 DEBUG: FUND IDs AFTER FILTERING (only with valuations): {portfolio_fund_ids_with_valuations}")
         portfolio_fund_ids = portfolio_fund_ids_with_valuations
         
         # If no funds remain after filtering, return 0% IRR
@@ -2347,14 +2350,14 @@ async def calculate_multiple_portfolio_funds_irr(
         # Convert date to end of day to include activities saved on the same day
         from datetime import time
         irr_datetime_end = datetime.combine(irr_date_obj, time.max)
-        
+
         activities_response = await db.fetch("""
-            SELECT * FROM holding_activity_log 
-            WHERE portfolio_fund_id = ANY($1::int[]) 
-            AND activity_timestamp <= $2 
+            SELECT * FROM holding_activity_log
+            WHERE portfolio_fund_id = ANY($1::int[])
+            AND activity_timestamp <= $2
             ORDER BY activity_timestamp
         """, portfolio_fund_ids, irr_datetime_end)
-        
+
         activities = [dict(record) for record in activities_response]
         
         # 📊 PERFORMANCE: Reduced logging - detailed debugging disabled for production speed
@@ -2382,7 +2385,7 @@ async def calculate_multiple_portfolio_funds_irr(
         # 🔧 FIXED: Separate cash flows for activities (start of month) and valuations (end of month)
         # This ensures proper IRR calculation even when activities and valuations are in the same calendar month
         cash_flows_by_date = {}
-        
+
         # Process activities - these happen at the START of the month (day 1)
         for activity in activities:
             # Handle both string and datetime object types for activity_timestamp
@@ -2394,20 +2397,20 @@ async def calculate_multiple_portfolio_funds_irr(
                 activity_date = activity_timestamp.date() if hasattr(activity_timestamp, 'date') else activity_timestamp
             # Activities happen at START of month
             activity_start_key = activity_date.replace(day=1)
-            
+
             if activity_start_key not in cash_flows_by_date:
                 cash_flows_by_date[activity_start_key] = 0.0
-            
+
             # Apply sign conventions based on activity type
             amount = float(activity["amount"])
             activity_type = activity["activity_type"]
-            
+
             # Safety check for activity_type
             if not isinstance(activity_type, str):
                 logger.error(f"🚨 CRITICAL: activity_type is not a string! Type: {type(activity_type)}, Value: {activity_type}")
                 # Skip this activity to prevent crash
                 continue
-            
+
             # Wrap all activity type checks in try-catch to identify exact failure point
             try:
                 if any(keyword in activity_type.lower() for keyword in ["investment"]):
@@ -2434,9 +2437,10 @@ async def calculate_multiple_portfolio_funds_irr(
                 logger.error(f"🚨 ACTIVITY TYPE ERROR: {str(activity_error)} for activity_type: {activity_type}")
                 # Skip this activity and continue
                 continue
-        
+
         # Process valuations - these happen at the BEGINNING of the NEXT month for IRR calculation
         # This ensures proper separation from activities in the same calendar month
+
         # Calculate total valuation, treating None values as 0 for calculation purposes
         total_valuation = sum(v for v in fund_valuations.values() if v is not None)
         
@@ -2455,10 +2459,6 @@ async def calculate_multiple_portfolio_funds_irr(
             if next_month_key not in cash_flows_by_date:
                 cash_flows_by_date[next_month_key] = 0.0
             cash_flows_by_date[next_month_key] += total_valuation  # Add valuation to next month
-        
-        logger.info(f"💰 DEBUG: Separated cash flows by date:")
-        for date_key, amount in sorted(cash_flows_by_date.items()):
-            logger.info(f"💰 DEBUG: {date_key}: £{amount}")
             
         # Convert to the format expected by IRR calculation
         cash_flows = cash_flows_by_date
@@ -2504,12 +2504,6 @@ async def calculate_multiple_portfolio_funds_irr(
         sorted_months = sorted(cash_flows.keys())
         amounts = [cash_flows[month] for month in sorted_months]
         dates = [month.strftime("%Y-%m-%dT00:00:00") for month in sorted_months]
-        
-        # DEBUG: Log the actual data being passed to IRR calculation
-        logger.info(f"💰 DEBUG: About to call calculate_excel_style_irr with:")
-        logger.info(f"💰 DEBUG: Dates: {dates}")
-        logger.info(f"💰 DEBUG: Amounts: {amounts}")
-        logger.info(f"💰 DEBUG: First amount: {amounts[0]}, Last amount: {amounts[-1]}")
         
         # Calculate IRR using Excel-style method
         irr_result = calculate_excel_style_irr(dates, amounts)
@@ -3014,12 +3008,6 @@ async def calculate_single_portfolio_fund_irr(
         sorted_months = sorted(cash_flows.keys())
         amounts = [cash_flows[month] for month in sorted_months]
         dates = [month.strftime("%Y-%m-%dT00:00:00") for month in sorted_months]
-        
-        # DEBUG: Log the actual data being passed to IRR calculation
-        logger.info(f"💰 DEBUG: About to call calculate_excel_style_irr with:")
-        logger.info(f"💰 DEBUG: Dates: {dates}")
-        logger.info(f"💰 DEBUG: Amounts: {amounts}")
-        logger.info(f"💰 DEBUG: First amount: {amounts[0]}, Last amount: {amounts[-1]}")
         
         # Calculate IRR using Excel-style method
         irr_result = calculate_excel_style_irr(dates, amounts)
