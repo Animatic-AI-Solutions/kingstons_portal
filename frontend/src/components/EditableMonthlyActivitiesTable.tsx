@@ -2353,8 +2353,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       : 'border border-gray-200 rounded-b-lg';
 
     return (
-      <div className={`flex justify-center items-center space-x-2 py-3 bg-gray-50 ${borderClass}`}>
-        <div className="flex items-center space-x-1">
+      <div className={`flex flex-col justify-center items-center gap-2 py-3 bg-gray-50 ${borderClass}`}>
+        <div className="flex flex-wrap justify-center items-center gap-1">
           {/* Previous button */}
           <button
             onClick={() => {
@@ -2371,7 +2371,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           </button>
 
           {/* Year buttons */}
-          <div className="flex">
+          <div className="flex flex-wrap justify-center">
             {availableYears.map((year, index) => (
               <button
                 key={year}
