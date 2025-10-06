@@ -1161,6 +1161,18 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
           </button>
         </div>
       </div>
+      
+      {/* History Summary Table */}
+      <IRRHistorySummaryTable
+        productIds={memoizedProductIds}
+        selectedDates={memoizedSelectedDates}
+        perProductDates={memoizedPerProductDates}
+        clientGroupIds={undefined}
+        realTimeTotalIRR={memoizedTotalIRR}
+        reportData={memoizedReportData}
+        className="mb-8 print:mb-4"
+      />
+      
       {/* Chart View */}
       {viewMode === 'chart' && (
         <div className="mb-8 print:mb-0 irr-history-chart print-hide">
@@ -2076,16 +2088,6 @@ Available database dates: ${productHistory.portfolio_historical_irr.map((r: any)
             );
           }).filter(Boolean);
         })()}
-        {/* History Summary Table */}
-        <IRRHistorySummaryTable
-          productIds={memoizedProductIds}
-          selectedDates={memoizedSelectedDates}
-          perProductDates={memoizedPerProductDates}
-          clientGroupIds={undefined}
-          realTimeTotalIRR={memoizedTotalIRR}
-          reportData={memoizedReportData}
-          className="mt-8 print:mt-0"
-        />
       </div>
     </div>
   );
