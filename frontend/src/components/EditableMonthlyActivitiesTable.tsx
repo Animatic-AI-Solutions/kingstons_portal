@@ -1305,6 +1305,134 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     }
   };
 
+  // Auto-populate zero valuations up to the earliest non-zero valuation for a fund
+  // Only fills zeros for months where other funds in the portfolio have valuations
+  const autoPopulateZeroValuations = (fundId: number) => {
+    console.log(`🔍 AUTO-POPULATE DEBUG: Starting auto-populate for fund ${fundId}`);
+
+    // Find all months that have existing valuations for this specific fund
+    const existingValuations = new Map<string, number>();
+
+    // Check both existing fund valuations and pending edits for this fund
+    months.forEach(month => {
+      // Check existing valuation
+      const valuation = getFundValuation(fundId, month);
+      if (valuation && valuation.valuation > 0) {
+        existingValuations.set(month, valuation.valuation);
+      }
+
+      // Check pending edits for valuations
+      const pendingEdit = pendingEdits.find(edit =>
+        edit.fundId === fundId &&
+        edit.month === month &&
+        edit.activityType === 'Current Value' &&
+        !edit.toDelete
+      );
+      if (pendingEdit && parseFloat(pendingEdit.value) > 0) {
+        existingValuations.set(month, parseFloat(pendingEdit.value));
+      }
+    });
+
+    // If no non-zero valuations exist for this fund, don't auto-populate
+    if (existingValuations.size === 0) {
+      console.log(`🔍 AUTO-POPULATE DEBUG: No non-zero valuations found for fund ${fundId}`);
+      return;
+    }
+
+    // Find the earliest month with a non-zero valuation for this fund
+    const sortedValuationMonths = Array.from(existingValuations.keys()).sort((a, b) => {
+      const dateA = new Date(a + '-01');
+      const dateB = new Date(b + '-01');
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    const earliestNonZeroMonth = sortedValuationMonths[0];
+    console.log(`🔍 AUTO-POPULATE DEBUG: Earliest non-zero valuation month for this fund: ${earliestNonZeroMonth}`);
+
+    // Check which months have valuations from OTHER funds in the portfolio
+    const monthsWithOtherFundValuations = new Set<string>();
+
+    funds.forEach(fund => {
+      // Skip the current fund and inactive funds
+      if (fund.id === fundId || fund.isActive === false) {
+        return;
+      }
+
+      months.forEach(month => {
+        const valuation = getFundValuation(fund.id, month);
+        if (valuation && valuation.valuation !== null && valuation.valuation !== undefined) {
+          monthsWithOtherFundValuations.add(month);
+        }
+
+        // Also check pending edits for other funds
+        const pendingEdit = pendingEdits.find(edit =>
+          edit.fundId === fund.id &&
+          edit.month === month &&
+          edit.activityType === 'Current Value' &&
+          !edit.toDelete &&
+          edit.value !== ''
+        );
+        if (pendingEdit) {
+          monthsWithOtherFundValuations.add(month);
+        }
+      });
+    });
+
+    console.log(`🔍 AUTO-POPULATE DEBUG: Found ${monthsWithOtherFundValuations.size} months with other fund valuations`);
+
+    // Auto-populate zeros only for months that:
+    // 1. Are before the earliest non-zero valuation for this fund
+    // 2. Have valuations from other funds in the portfolio
+    const newEdits: CellEdit[] = [];
+
+    for (const month of months) {
+      const monthDate = new Date(month + '-01');
+      const earliestDate = new Date(earliestNonZeroMonth + '-01');
+
+      // Only process months before the earliest non-zero valuation
+      if (monthDate >= earliestDate) {
+        break;
+      }
+
+      // Check if other funds have valuations for this month
+      if (!monthsWithOtherFundValuations.has(month)) {
+        console.log(`🔍 AUTO-POPULATE DEBUG: Skipping ${month} - no other fund valuations`);
+        continue;
+      }
+
+      // Check if this month already has a valuation (existing or pending) for this fund
+      const hasExistingValuation = getFundValuation(fundId, month);
+      const hasPendingEdit = pendingEdits.find(edit =>
+        edit.fundId === fundId &&
+        edit.month === month &&
+        edit.activityType === 'Current Value'
+      );
+
+      // Only add zero if no valuation exists and no pending edit exists
+      if (!hasExistingValuation && !hasPendingEdit) {
+        const newEdit: CellEdit = {
+          fundId,
+          month,
+          activityType: 'Current Value',
+          value: '0',
+          isNew: true,
+          originalActivityId: undefined,
+          toDelete: false
+        };
+        newEdits.push(newEdit);
+        console.log(`🔍 AUTO-POPULATE DEBUG: Adding zero valuation for ${month} (has other fund valuations)`);
+      }
+    }
+
+    // Add all new edits to pending edits
+    if (newEdits.length > 0) {
+      setPendingEdits(prev => [...prev, ...newEdits]);
+      console.log(`🔍 AUTO-POPULATE DEBUG: Added ${newEdits.length} zero valuations for fund ${fundId}`);
+    } else {
+      console.log(`🔍 AUTO-POPULATE DEBUG: No months needed zero valuations for fund ${fundId}`);
+    }
+  };
+
   // Update the handleCellValueChange function to allow mathematical operators
   const handleCellValueChangeEnhanced = (fundId: number, month: string, activityType: string, value: string) => {
     console.log(`🔍 CELL EDIT DEBUG: handleCellValueChangeEnhanced called with:`, { fundId, month, activityType, value });
@@ -2742,6 +2870,15 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                 {reactivatingFunds.has(fund.id) ? 'Reactivating...' : 'Reactivate'}
                               </button>
                             )}
+                            {fund.isActive !== false && !fund.isInactiveBreakdown && (
+                              <button
+                                onClick={() => autoPopulateZeroValuations(fund.id)}
+                                className="ml-2 px-2 py-1 text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 rounded border border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
+                                title="Auto-populate zero valuations up to earliest non-zero valuation"
+                              >
+                                Fill Zeros
+                              </button>
+                            )}
                           </div>
                             <div className="font-bold text-red-700 text-sm mt-1">
                           Total Activities
@@ -2855,6 +2992,15 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                       className="ml-2 px-2 py-1 text-xs bg-green-50 hover:bg-green-100 text-green-700 rounded border border-green-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                       {reactivatingFunds.has(fund.id) ? 'Reactivating...' : 'Reactivate'}
+                                    </button>
+                                  )}
+                                  {fund.isActive !== false && !fund.isInactiveBreakdown && (
+                                    <button
+                                      onClick={() => autoPopulateZeroValuations(fund.id)}
+                                      className="ml-2 px-2 py-1 text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 rounded border border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
+                                      title="Auto-populate zero valuations up to earliest non-zero valuation"
+                                    >
+                                      Fill Zeros
                                     </button>
                                   )}
                                 </div>
