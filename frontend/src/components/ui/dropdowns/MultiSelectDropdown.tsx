@@ -26,8 +26,10 @@ export interface MultiSelectDropdownProps {
  * MultiSelectDropdown Component
  * 
  * A multi-select dropdown with search functionality and tag display.
- * Options are automatically sorted alphabetically for better user experience.
- * Used in Report Generator for client group selection and other multi-select scenarios.
+ * Features:
+ * - Options are automatically sorted alphabetically for better user experience
+ * - Search text persists after selecting options for easy multi-selection
+ * - Used in Report Generator for client group selection and other multi-select scenarios
  */
 const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdownProps>(({
   label,
@@ -183,8 +185,8 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
     }
     onChange(newValues);
     
-    // Clear search term after selection for smooth keyboard workflow
-    setSearchTerm('');
+    // Keep search term after selection so user can continue typing for multiple selections
+    // This allows users to type a common prefix and select multiple matching options
     
     // Keep dropdown open so user can continue typing for next selection
     // Focus back to input for immediate typing
