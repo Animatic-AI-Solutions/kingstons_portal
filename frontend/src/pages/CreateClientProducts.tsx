@@ -535,6 +535,19 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     });
   }, [products.map(product => product.provider_id).join(',')]); // Only re-run when provider selections change
 
+  // Auto-generate one product form when navigating from client details page
+  useEffect(() => {
+    // Only auto-generate if:
+    // 1. Coming from client details page
+    // 2. Client is selected
+    // 3. No products exist yet
+    // 4. Clients and funds are loaded
+    if (isFromClientDetailsPage() && selectedClientId && products.length === 0 && clients.length > 0 && funds.length > 0) {
+      console.log('🔍 Auto-generating initial product form for client:', selectedClientId);
+      handleAddProduct();
+    }
+  }, [selectedClientId, clients.length, funds.length]); // Run when client is set and data is loaded
+
   // Modify the function to load funds regardless of provider selection
   const loadFundsForProduct = async (providerId: number, productId: string) => {
     // We don't need to check for providerId existence anymore since funds should be available regardless
