@@ -20,6 +20,14 @@ import type { ReportData } from '../../types/reportTypes';
 import ProductTitleModal from './ProductTitleModal';
 import ProductOwnerModal from './ProductOwnerModal';
 import PrintInstructionsModal from '../ui/PrintInstructionsModal';
+import { formatFamilyNames, testFamilyNameFormatting } from '../../utils/familyNameFormatter';
+
+// Extend window interface for development testing
+declare global {
+  interface Window {
+    familyFormatterTestRun?: boolean;
+  }
+}
 
 interface ReportContainerProps {
   reportData: ReportData;
@@ -157,9 +165,17 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
     }
 
     // reportData.productOwnerNames now contains properly formatted names with known_as support
-    // from the extractProductOwners function, so we can use them directly
-    const result = reportData.productOwnerNames.join(' & ');
-    console.log('🔍 [REPORT CONTAINER DEBUG] Final display result:', result);
+    // from the extractProductOwners function, format them with family grouping logic
+    
+    // Run tests only once on development
+    if (process.env.NODE_ENV === 'development' && !window.familyFormatterTestRun) {
+      testFamilyNameFormatting();
+      window.familyFormatterTestRun = true;
+    }
+    
+    const result = formatFamilyNames(reportData.productOwnerNames);
+    console.log('🔍 [REPORT CONTAINER DEBUG] Original names:', reportData.productOwnerNames);
+    console.log('🔍 [REPORT CONTAINER DEBUG] Final display result (with family formatting):', result);
     return result;
   }, [reportData.productOwnerNames, customProductOwnerNames]);
 
