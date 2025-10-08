@@ -2058,16 +2058,18 @@ const Phase2TabNavigation: React.FC<{
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Mock data for demonstration
+  // Mock data for demonstration - Updated with Phase 2 Product Owner Patterns
   const mockInformationItems = [
+    // PATTERN 1: Simple array (basic_detail, income_expenditure, vulnerability_health)
     {
       id: 1,
       item_type: 'basic_detail',
-      item_category: 'Home Address',
+      item_category: 'Address',
       data_content: {
-        address_line_one: '123 Main Street',
+        product_owners: [123, 456], // Pattern 1: Simple array
+        address_line_one: '123 Oak Street',
         address_line_two: 'Apartment 4B',
-        postcode: 'SW1A 1AA',
+        postcode: 'M1 1AA',
         country: 'United Kingdom',
         residence_type: 'Primary'
       },
@@ -2076,21 +2078,178 @@ const Phase2TabNavigation: React.FC<{
     },
     {
       id: 2,
-      item_type: 'assets_liabilities',
-      item_category: 'Bank Account',
+      item_type: 'basic_detail',
+      item_category: 'Email Address',
       data_content: {
-        bank: 'Barclays',
+        product_owners: [123], // Pattern 1: Single owner
+        email: 'john.smith@email.com',
+        email_type: 'Personal',
+        primary: true
+      },
+      updated_at: '2024-08-26T14:00:00Z',
+      last_edited_by_name: 'John Advisor'
+    },
+    {
+      id: 3,
+      item_type: 'basic_detail',
+      item_category: 'Phone Number',
+      data_content: {
+        product_owners: [123],
+        phone_number: '07700 900123',
+        phone_type: 'Mobile',
+        primary: true
+      },
+      updated_at: '2024-08-26T13:45:00Z',
+      last_edited_by_name: 'John Advisor'
+    },
+    {
+      id: 4,
+      item_type: 'income_expenditure',
+      item_category: 'Basic Salary',
+      data_content: {
+        product_owners: [123], // Pattern 1: Income/Expenditure uses simple array
+        description: 'Tech Solutions Ltd',
+        amount: 45000.00,
+        frequency: 'Annually',
+        date: '15/03/2024',
+        notes: 'Annual salary review'
+      },
+      updated_at: '2024-08-26T12:30:00Z',
+      last_edited_by_name: 'Jane Smith'
+    },
+    {
+      id: 5,
+      item_type: 'income_expenditure',
+      item_category: 'Income Tax',
+      data_content: {
+        product_owners: [123],
+        description: 'Annual Income Tax',
+        amount: 9000.00,
+        frequency: 'Annually',
+        date: '05/04/2024'
+      },
+      updated_at: '2024-08-26T12:15:00Z',
+      last_edited_by_name: 'Jane Smith'
+    },
+    {
+      id: 6,
+      item_type: 'vulnerability_health',
+      item_category: 'Risk Questionnaire',
+      data_content: {
+        product_owners: [123, 456], // Pattern 1: Both owners completed questionnaire
+        risk_level: 'Moderate',
+        questionnaire_date: '2024-08-15',
+        notes: 'Comfortable with balanced portfolio approach'
+      },
+      updated_at: '2024-08-25T16:00:00Z',
+      last_edited_by_name: 'John Advisor'
+    },
+    // PATTERN 2: Complex ownership (assets_liabilities, protection)
+    {
+      id: 7,
+      item_type: 'assets_liabilities',
+      item_category: 'Cash Accounts',
+      data_content: {
+        associated_product_owners: { // Pattern 2: Complex ownership
+          association_type: 'joint_tenants',
+          '123': 50.00,
+          '456': 50.00
+        },
+        provider: 'Barclays',
         account_type: 'Current Account',
-        latest_valuation: 15000,
-        valuation_date: '2024-08-26',
-        associated_product_owners: {
-          association_type: 'joint_ownership',
-          '123': 50,
-          '456': 50
-        }
+        current_value: 2500.00,
+        valuation_date: '2024-08-26'
       },
       updated_at: '2024-08-25T10:30:00Z',
       last_edited_by_name: 'Jane Smith'
+    },
+    {
+      id: 8,
+      item_type: 'assets_liabilities',
+      item_category: 'ISAs',
+      data_content: {
+        associated_product_owners: { // Pattern 2: Individual ownership
+          association_type: 'individual',
+          '123': 100.00
+        },
+        provider: 'Halifax',
+        product_name: 'Cash ISA',
+        current_value: 15000.00,
+        valuation_date: '2024-08-26'
+      },
+      updated_at: '2024-08-25T11:00:00Z',
+      last_edited_by_name: 'Jane Smith'
+    },
+    {
+      id: 9,
+      item_type: 'assets_liabilities',
+      item_category: 'Land and Property',
+      data_content: {
+        associated_product_owners: {
+          association_type: 'joint_tenants',
+          '123': 50.00,
+          '456': 50.00
+        },
+        property_type: 'Primary Residence',
+        current_value: 450000.00,
+        valuation_date: '2024-08-01',
+        address: '123 Oak Street, M1 1AA'
+      },
+      updated_at: '2024-08-24T15:30:00Z',
+      last_edited_by_name: 'John Advisor'
+    },
+    {
+      id: 10,
+      item_type: 'assets_liabilities',
+      item_category: 'General Investment Account',
+      data_content: {
+        associated_product_owners: { // Pattern 2: Tenants in common with different percentages
+          association_type: 'tenants_in_common',
+          '123': 60.00,
+          '456': 40.00
+        },
+        provider: 'Fidelity',
+        current_value: 45000.00,
+        valuation_date: '2024-08-26'
+      },
+      updated_at: '2024-08-25T09:00:00Z',
+      last_edited_by_name: 'Jane Smith'
+    },
+    {
+      id: 11,
+      item_type: 'assets_liabilities',
+      item_category: 'Mortgages',
+      data_content: {
+        associated_product_owners: {
+          association_type: 'joint_tenants',
+          '123': 50.00,
+          '456': 50.00
+        },
+        lender: 'Nationwide',
+        outstanding_balance: 320000.00,
+        monthly_payment: 1850.00,
+        term_end_date: '2044-08-15'
+      },
+      updated_at: '2024-08-24T15:30:00Z',
+      last_edited_by_name: 'John Advisor'
+    },
+    {
+      id: 12,
+      item_type: 'protection',
+      item_category: 'Life Cover',
+      data_content: {
+        associated_product_owners: { // Pattern 2: Protection items use complex ownership
+          association_type: 'joint_tenants',
+          '123': 50.00,
+          '456': 50.00
+        },
+        provider: 'Aviva',
+        sum_assured: 500000.00,
+        monthly_premium: 45.00,
+        policy_end_date: '2054-08-15'
+      },
+      updated_at: '2024-08-23T14:00:00Z',
+      last_edited_by_name: 'John Advisor'
     }
   ];
 
@@ -2104,7 +2263,7 @@ const Phase2TabNavigation: React.FC<{
       valuation_date: '2024-08-26',
       ownership_details: {
         association_type: 'individual',
-        '123': 100
+        '123': 100.00
       },
       status: 'active'
     },
@@ -2116,9 +2275,23 @@ const Phase2TabNavigation: React.FC<{
       latest_valuation: 8500,
       valuation_date: '2024-08-26',
       ownership_details: {
-        association_type: 'joint_ownership',
-        '123': 50,
-        '456': 50
+        association_type: 'joint_tenants', // Updated to correct Phase 2 pattern
+        '123': 50.00,
+        '456': 50.00
+      },
+      status: 'active'
+    },
+    {
+      id: 3,
+      product_name: 'Barclays Savings',
+      product_type: 'Savings_Accounts',
+      provider_name: 'Barclays',
+      latest_valuation: 12500,
+      valuation_date: '2024-08-26',
+      ownership_details: {
+        association_type: 'tenants_in_common', // Tenants in common example
+        '123': 60.00,
+        '456': 40.00
       },
       status: 'active'
     }
@@ -2194,157 +2367,184 @@ const ClientOverviewTab: React.FC<{ client: Client | null; clientAccounts: Clien
     <div>
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-medium text-gray-900">Enhanced Client Overview</h3>
-        <span className="text-sm text-gray-500">Phase 2 Preview - Enhanced with product owner cards</span>
+        <span className="text-sm text-gray-500">Phase 2 Preview - 3-Section Product Owner Cards</span>
       </div>
-      
-      {/* Product Owner Cards Preview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        {/* John Smith Product Owner Card */}
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
-              JS
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-900">John Smith</h4>
-              <p className="text-sm text-gray-600">Primary Client</p>
+
+      {/* Phase 2 Pattern Explanation */}
+      <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <h4 className="text-sm font-semibold text-blue-900 mb-2">Basic Personal Details Define Product Owners</h4>
+        <p className="text-xs text-blue-800">
+          Product owners are created using Basic Personal Details fields (Title, Forename, Middle Names, Surname, Known As, DOB, Previous Name(s)).
+          Client Information Items then reference these product owners using two patterns based on category.
+        </p>
+      </div>
+
+      {/* Product Owner Cards - 3-Section Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* John Smith Product Owner Card - 3-Section Layout */}
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border-2 border-blue-200 overflow-hidden">
+          {/* SECTION 1: Header with Avatar and Full Name */}
+          <div className="bg-white bg-opacity-80 px-6 py-4 border-b border-blue-200">
+            <div className="flex items-center space-x-4">
+              <div className="w-14 h-14 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                JS
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-gray-900">Mr John Michael Smith</h4>
+                <p className="text-sm text-gray-600">Known As: John • ID: 123</p>
+              </div>
             </div>
           </div>
-          
-          <div className="space-y-2 text-sm">
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <span className="text-gray-600 font-medium">Email:</span>
-                <div className="text-gray-900">john.smith@email.com</div>
+
+          {/* SECTION 2: 2-Column Grid - Personal Details + Contact Information */}
+          <div className="grid grid-cols-2 gap-6 px-6 py-4">
+            {/* Left Column: Personal Details (Basic Personal Details Fields) */}
+            <div className="space-y-2">
+              <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">Personal Details</h5>
+              <div className="text-sm">
+                <span className="text-gray-600 font-medium block">Date of Birth:</span>
+                <div className="text-gray-900">15/03/1975 (Age 49)</div>
               </div>
-              <div>
-                <span className="text-gray-600 font-medium">Phone:</span>
-                <div className="text-gray-900">07700 900123</div>
+              <div className="text-sm">
+                <span className="text-gray-600 font-medium block">Previous Name(s):</span>
+                <div className="text-gray-900">None</div>
               </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <span className="text-gray-600 font-medium">DOB:</span>
-                <div className="text-gray-900">15/03/1975</div>
-              </div>
-              <div>
-                <span className="text-gray-600 font-medium">Known As:</span>
-                <div className="text-gray-900">John</div>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <span className="text-gray-600 font-medium">Title:</span>
-                <div className="text-gray-900">Mr</div>
-              </div>
-              <div>
-                <span className="text-gray-600 font-medium">NI Number:</span>
+              <div className="text-sm">
+                <span className="text-gray-600 font-medium block">NI Number:</span>
                 <div className="text-gray-900">AB123456C</div>
               </div>
+              <div className="text-sm">
+                <span className="text-gray-600 font-medium block">Status:</span>
+                <div className="text-green-600 font-semibold">Active</div>
+              </div>
             </div>
-            
-            <div className="mt-3 pt-2 border-t border-blue-200">
-              <div className="mb-2">
-                <span className="text-gray-600 font-medium">Security Words:</span>
-                <div className="text-gray-900">Summer, London, Football</div>
+
+            {/* Right Column: Contact Information */}
+            <div className="space-y-2">
+              <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">Contact Information</h5>
+              <div className="text-sm">
+                <span className="text-gray-600 font-medium block">Primary Email:</span>
+                <div className="text-gray-900 truncate">john.smith@email.com</div>
               </div>
-              
-              <div className="mb-2">
-                <span className="text-gray-600 font-medium">Notes:</span>
-                <div className="text-gray-900 text-xs">Prefers morning appointments. Retired teacher.</div>
+              <div className="text-sm">
+                <span className="text-gray-600 font-medium block">Primary Phone:</span>
+                <div className="text-gray-900">07700 900123</div>
               </div>
-              
-              <div className="grid grid-cols-1 gap-1">
-                <div>
-                  <span className="text-gray-600 font-medium">Next Meeting:</span>
-                  <div className="text-gray-900 text-xs">15/09/2024 10:00 AM</div>
-                </div>
-                <div>
-                  <span className="text-gray-600 font-medium">Last T&Cs:</span>
-                  <div className="text-gray-900 text-xs">12/01/2024</div>
-                </div>
-                <div>
-                  <span className="text-gray-600 font-medium">Last Fee Agreement:</span>
-                  <div className="text-gray-900 text-xs">12/01/2024</div>
-                </div>
+              <div className="text-sm">
+                <span className="text-gray-600 font-medium block">Primary Address:</span>
+                <div className="text-gray-900">123 Oak Street, M1 1AA</div>
               </div>
+            </div>
+          </div>
+
+          {/* SECTION 3: Full-Width Bottom - Compliance & Notes */}
+          <div className="px-6 pb-4 border-t border-blue-200 pt-4 bg-white bg-opacity-50">
+            <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">Compliance & Notes</h5>
+            <div className="grid grid-cols-3 gap-4 text-xs mb-3">
+              <div>
+                <span className="text-gray-600 font-medium block">Next Meeting:</span>
+                <div className="text-gray-900">15/09/2024 10:00 AM</div>
+              </div>
+              <div>
+                <span className="text-gray-600 font-medium block">Last T&Cs:</span>
+                <div className="text-gray-900">12/01/2024</div>
+              </div>
+              <div>
+                <span className="text-gray-600 font-medium block">Last Fee Agreement:</span>
+                <div className="text-gray-900">12/01/2024</div>
+              </div>
+            </div>
+            <div className="mb-2 text-sm">
+              <span className="text-gray-600 font-medium">Security Words:</span>
+              <span className="text-gray-900 ml-2">Summer, London, Football</span>
+            </div>
+            <div className="text-xs">
+              <span className="text-gray-600 font-medium">Notes:</span>
+              <div className="text-gray-900 mt-1 italic">Prefers morning appointments. Retired teacher. Available via mobile most days.</div>
             </div>
           </div>
         </div>
 
-        {/* Mary Smith Product Owner Card */}
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
-              MS
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-900">Mary Smith</h4>
-              <p className="text-sm text-gray-600">Spouse</p>
+        {/* Mary Smith Product Owner Card - 3-Section Layout */}
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border-2 border-purple-200 overflow-hidden">
+          {/* SECTION 1: Header with Avatar and Full Name */}
+          <div className="bg-white bg-opacity-80 px-6 py-4 border-b border-purple-200">
+            <div className="flex items-center space-x-4">
+              <div className="w-14 h-14 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                MS
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-gray-900">Mrs Mary Anne Smith</h4>
+                <p className="text-sm text-gray-600">Known As: Mary • ID: 456</p>
+              </div>
             </div>
           </div>
-          
-          <div className="space-y-2 text-sm">
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <span className="text-gray-600 font-medium">Email:</span>
-                <div className="text-gray-900">mary.smith@email.com</div>
+
+          {/* SECTION 2: 2-Column Grid - Personal Details + Contact Information */}
+          <div className="grid grid-cols-2 gap-6 px-6 py-4">
+            {/* Left Column: Personal Details (Basic Personal Details Fields) */}
+            <div className="space-y-2">
+              <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">Personal Details</h5>
+              <div className="text-sm">
+                <span className="text-gray-600 font-medium block">Date of Birth:</span>
+                <div className="text-gray-900">22/07/1978 (Age 46)</div>
               </div>
-              <div>
-                <span className="text-gray-600 font-medium">Phone:</span>
-                <div className="text-gray-900">07700 900124</div>
+              <div className="text-sm">
+                <span className="text-gray-600 font-medium block">Previous Name(s):</span>
+                <div className="text-gray-900">Mary Anne Johnson</div>
               </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <span className="text-gray-600 font-medium">DOB:</span>
-                <div className="text-gray-900">22/07/1978</div>
-              </div>
-              <div>
-                <span className="text-gray-600 font-medium">Known As:</span>
-                <div className="text-gray-900">Mary</div>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <span className="text-gray-600 font-medium">Title:</span>
-                <div className="text-gray-900">Mrs</div>
-              </div>
-              <div>
-                <span className="text-gray-600 font-medium">NI Number:</span>
+              <div className="text-sm">
+                <span className="text-gray-600 font-medium block">NI Number:</span>
                 <div className="text-gray-900">CD789012F</div>
               </div>
+              <div className="text-sm">
+                <span className="text-gray-600 font-medium block">Status:</span>
+                <div className="text-green-600 font-semibold">Active</div>
+              </div>
             </div>
-            
-            <div className="mt-3 pt-2 border-t border-purple-200">
-              <div className="mb-2">
-                <span className="text-gray-600 font-medium">Security Words:</span>
-                <div className="text-gray-900">Garden, Paris, Reading</div>
+
+            {/* Right Column: Contact Information */}
+            <div className="space-y-2">
+              <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">Contact Information</h5>
+              <div className="text-sm">
+                <span className="text-gray-600 font-medium block">Primary Email:</span>
+                <div className="text-gray-900 truncate">mary.smith@email.com</div>
               </div>
-              
-              <div className="mb-2">
-                <span className="text-gray-600 font-medium">Notes:</span>
-                <div className="text-gray-900 text-xs">Works from home. Architect. Prefers video calls.</div>
+              <div className="text-sm">
+                <span className="text-gray-600 font-medium block">Primary Phone:</span>
+                <div className="text-gray-900">07700 900124</div>
               </div>
-              
-              <div className="grid grid-cols-1 gap-1">
-                <div>
-                  <span className="text-gray-600 font-medium">Next Meeting:</span>
-                  <div className="text-gray-900 text-xs">15/09/2024 10:00 AM</div>
-                </div>
-                <div>
-                  <span className="text-gray-600 font-medium">Last T&Cs:</span>
-                  <div className="text-gray-900 text-xs">12/01/2024</div>
-                </div>
-                <div>
-                  <span className="text-gray-600 font-medium">Last Fee Agreement:</span>
-                  <div className="text-gray-900 text-xs">12/01/2024</div>
-                </div>
+              <div className="text-sm">
+                <span className="text-gray-600 font-medium block">Primary Address:</span>
+                <div className="text-gray-900">123 Oak Street, M1 1AA</div>
               </div>
+            </div>
+          </div>
+
+          {/* SECTION 3: Full-Width Bottom - Compliance & Notes */}
+          <div className="px-6 pb-4 border-t border-purple-200 pt-4 bg-white bg-opacity-50">
+            <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">Compliance & Notes</h5>
+            <div className="grid grid-cols-3 gap-4 text-xs mb-3">
+              <div>
+                <span className="text-gray-600 font-medium block">Next Meeting:</span>
+                <div className="text-gray-900">15/09/2024 10:00 AM</div>
+              </div>
+              <div>
+                <span className="text-gray-600 font-medium block">Last T&Cs:</span>
+                <div className="text-gray-900">12/01/2024</div>
+              </div>
+              <div>
+                <span className="text-gray-600 font-medium block">Last Fee Agreement:</span>
+                <div className="text-gray-900">12/01/2024</div>
+              </div>
+            </div>
+            <div className="mb-2 text-sm">
+              <span className="text-gray-600 font-medium">Security Words:</span>
+              <span className="text-gray-900 ml-2">Garden, Paris, Reading</span>
+            </div>
+            <div className="text-xs">
+              <span className="text-gray-600 font-medium">Notes:</span>
+              <div className="text-gray-900 mt-1 italic">Works from home. Architect. Prefers video calls. Busy weekdays, available evenings.</div>
             </div>
           </div>
         </div>
@@ -2359,10 +2559,10 @@ const ClientOverviewTab: React.FC<{ client: Client | null; clientAccounts: Clien
             </svg>
           </div>
           <div>
-            <h4 className="text-sm font-medium text-blue-900">Client Overview Enhancement</h4>
+            <h4 className="text-sm font-medium text-blue-900">Phase 2 3-Section Layout</h4>
             <p className="text-sm text-blue-700 mt-1">
-              This tab will display enhanced product owner cards with detailed information, inception dates, and vulnerability indicators. 
-              Your existing client products functionality remains unchanged below.
+              Product owner cards use a professional 3-section layout: (1) Header with full name and avatar, (2) Two-column grid for Personal Details and Contact Info, (3) Full-width Compliance & Notes section.
+              All Basic Personal Details fields are displayed including Title, Forename, Middle Names, Surname, Known As, DOB, and Previous Name(s).
             </p>
           </div>
         </div>
@@ -2376,6 +2576,12 @@ const MainListTab: React.FC<{ informationItems: any[] }> = ({ informationItems }
   const [selectedType, setSelectedType] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
 
+  // Mock product owners for display
+  const mockProductOwners = [
+    { id: 123, name: 'John Smith' },
+    { id: 456, name: 'Mary Smith' }
+  ];
+
   const itemTypes = [
     { value: 'all', label: 'All Items' },
     { value: 'basic_detail', label: 'Basic Details' },
@@ -2385,11 +2591,73 @@ const MainListTab: React.FC<{ informationItems: any[] }> = ({ informationItems }
     { value: 'vulnerability_health', label: 'Vulnerability & Health' }
   ];
 
+  // Helper function to get product owner names and pattern badge
+  const getProductOwnerInfo = (item: any) => {
+    // Pattern 1: Simple array (basic_detail, income_expenditure, vulnerability_health)
+    if (item.data_content.product_owners) {
+      const ownerIds = item.data_content.product_owners;
+      const ownerNames = ownerIds.map((id: number) => {
+        const owner = mockProductOwners.find(po => po.id === id);
+        return owner?.name || `ID:${id}`;
+      });
+      return {
+        pattern: 'Pattern 1: Simple Array',
+        patternColor: 'bg-green-100 text-green-800',
+        owners: ownerNames.join(', ')
+      };
+    }
+
+    // Pattern 2: Complex ownership (assets_liabilities, protection)
+    if (item.data_content.associated_product_owners) {
+      const ownership = item.data_content.associated_product_owners;
+      const { association_type, ...percentages } = ownership;
+      const ownerEntries = Object.entries(percentages).map(([id, pct]) => {
+        const owner = mockProductOwners.find(po => po.id === parseInt(id));
+        return `${owner?.name || `ID:${id}`} (${pct}%)`;
+      });
+
+      const prefix = association_type === 'joint_tenants' ? 'Joint: ' :
+                     association_type === 'tenants_in_common' ? 'TIC: ' :
+                     'Individual: ';
+
+      return {
+        pattern: 'Pattern 2: Complex Ownership',
+        patternColor: 'bg-purple-100 text-purple-800',
+        owners: prefix + ownerEntries.join(', ')
+      };
+    }
+
+    return {
+      pattern: 'No Pattern',
+      patternColor: 'bg-gray-100 text-gray-800',
+      owners: 'N/A'
+    };
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-medium text-gray-900">Client Information Items</h3>
         <AddButton onClick={() => setShowCreateModal(true)} context="Information Item" />
+      </div>
+
+      {/* Pattern Legend */}
+      <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <h4 className="text-sm font-semibold text-blue-900 mb-2">Product Owner Patterns</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-blue-800">
+          <div>
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 mr-2">
+              Pattern 1
+            </span>
+            <span className="font-medium">Simple Array:</span> Used for Basic Details, Income/Expenditure, Vulnerability/Health
+          </div>
+          <div>
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 mr-2">
+              Pattern 2
+            </span>
+            <span className="font-medium">Complex Ownership:</span> Used for Assets/Liabilities, Protection (with percentages)
+          </div>
+        </div>
       </div>
 
       {/* Search and Filter */}
@@ -2418,45 +2686,70 @@ const MainListTab: React.FC<{ informationItems: any[] }> = ({ informationItems }
             <span className="text-sm text-gray-500">{informationItems.length} items</span>
           </div>
         </div>
-        
+
         <div className="divide-y divide-gray-200">
-          {informationItems.map((item) => (
-            <div key={item.id} className="px-6 py-4 hover:bg-gray-50">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      item.item_type === 'basic_detail' ? 'bg-blue-100 text-blue-800' :
-                      item.item_type === 'assets_liabilities' ? 'bg-green-100 text-green-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {item.item_type.replace('_', ' ')}
-                    </span>
-                    <h5 className="font-medium text-gray-900">{item.item_category}</h5>
+          {informationItems.map((item) => {
+            const ownerInfo = getProductOwnerInfo(item);
+            return (
+              <div key={item.id} className="px-6 py-4 hover:bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        item.item_type === 'basic_detail' ? 'bg-blue-100 text-blue-800' :
+                        item.item_type === 'income_expenditure' ? 'bg-yellow-100 text-yellow-800' :
+                        item.item_type === 'assets_liabilities' ? 'bg-green-100 text-green-800' :
+                        item.item_type === 'protection' ? 'bg-red-100 text-red-800' :
+                        item.item_type === 'vulnerability_health' ? 'bg-purple-100 text-purple-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {item.item_type.replace(/_/g, ' ')}
+                      </span>
+                      <h5 className="font-medium text-gray-900">{item.item_category}</h5>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${ownerInfo.patternColor}`}>
+                        {ownerInfo.pattern}
+                      </span>
+                    </div>
+
+                    <div className="mt-2 text-sm text-gray-600">
+                      <div className="font-medium text-gray-700 mb-1">Product Owners: {ownerInfo.owners}</div>
+                      {item.item_type === 'basic_detail' && item.item_category === 'Address' && (
+                        <p>{item.data_content.address_line_one}, {item.data_content.postcode}</p>
+                      )}
+                      {item.item_type === 'basic_detail' && item.item_category === 'Email Address' && (
+                        <p>{item.data_content.email} ({item.data_content.email_type})</p>
+                      )}
+                      {item.item_type === 'basic_detail' && item.item_category === 'Phone Number' && (
+                        <p>{item.data_content.phone_number} ({item.data_content.phone_type})</p>
+                      )}
+                      {item.item_type === 'income_expenditure' && (
+                        <p>{item.data_content.description} - £{item.data_content.amount?.toLocaleString()} {item.data_content.frequency}</p>
+                      )}
+                      {item.item_type === 'assets_liabilities' && (
+                        <p>{item.data_content.provider || item.data_content.lender || 'N/A'} - £{(item.data_content.current_value || item.data_content.outstanding_balance)?.toLocaleString()}</p>
+                      )}
+                      {item.item_type === 'protection' && (
+                        <p>{item.data_content.provider} - Sum Assured: £{item.data_content.sum_assured?.toLocaleString()}</p>
+                      )}
+                      {item.item_type === 'vulnerability_health' && (
+                        <p>Risk Level: {item.data_content.risk_level}</p>
+                      )}
+                    </div>
+
+                    <div className="mt-2 flex items-center space-x-4 text-xs text-gray-500">
+                      <span>Updated: {new Date(item.updated_at).toLocaleDateString()}</span>
+                      <span>By: {item.last_edited_by_name}</span>
+                    </div>
                   </div>
-                  
-                  <div className="mt-2 text-sm text-gray-600">
-                    {item.item_type === 'basic_detail' && (
-                      <p>{item.data_content.address_line_one}, {item.data_content.postcode}</p>
-                    )}
-                    {item.item_type === 'assets_liabilities' && (
-                      <p>{item.data_content.bank} - £{item.data_content.latest_valuation?.toLocaleString()}</p>
-                    )}
+
+                  <div className="flex items-center space-x-2">
+                    <EditButton size="sm" />
+                    <DeleteButton size="sm" />
                   </div>
-                  
-                  <div className="mt-2 flex items-center space-x-4 text-xs text-gray-500">
-                    <span>Updated: {new Date(item.updated_at).toLocaleDateString()}</span>
-                    <span>By: {item.last_edited_by_name}</span>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <EditButton size="sm" />
-                  <DeleteButton size="sm" />
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
