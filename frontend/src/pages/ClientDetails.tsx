@@ -76,6 +76,7 @@ interface ClientAccount {
   portfolio_id?: number;
   total_value?: number;
   previous_value?: number;
+  valuation_date?: string;
   irr?: number | string;
   risk_rating?: number;
   provider_theme_color?: string;
@@ -675,14 +676,15 @@ const ProductCard: React.FC<{
   
   // Log to debug theme color and template info
   console.log(`Product card for ${account.product_name}:`, {
-    provider: account.provider_name, 
+    provider: account.provider_name,
     provider_id: account.provider_id,
     provider_theme_color: account.provider_theme_color,
     using_color: themeColor,
     template_generation_id: account.template_generation_id,
     template_info: account.template_info,
     fum: account.total_value,
-    irr: account.irr
+    irr: account.irr,
+    valuation_date: account.valuation_date
   });
   
   // Memoize style objects for performance
@@ -857,6 +859,15 @@ const ProductCard: React.FC<{
             <div className="text-xl font-light text-gray-900">
               {formatCurrency(displayValue)}
             </div>
+            {account.valuation_date && (
+              <div className="text-xs text-gray-500 mt-0.5">
+                As of {new Date(account.valuation_date).toLocaleDateString('en-GB', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric'
+                })}
+              </div>
+            )}
             {account.irr !== undefined && account.irr !== null && account.irr !== "-" && typeof account.irr === 'number' && (
               <div className="flex items-center justify-end mt-1">
                 <span className={`text-sm font-medium ${
@@ -864,7 +875,7 @@ const ProductCard: React.FC<{
                 }`}>
                   {formatPercentage(account.irr)}
                 </span>
-                <div 
+                <div
                   className="ml-2 h-2 w-2 rounded-full"
                   style={{ backgroundColor: themeColor }}
                 />

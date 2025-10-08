@@ -12,18 +12,18 @@ logger = logging.getLogger(__name__)
 @router.get("/product_owners", response_model=List[ProductOwner])
 async def get_product_owners_list(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
-    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
-    status: Optional[str] = Query(None, description="Filter by status (e.g., 'active')"),
+    limit: int = Query(1000, ge=1, le=1000, description="Max number of records to return"),
+    status: Optional[str] = Query(None, description="Filter by status (e.g., 'active', 'inactive')"),
     search: Optional[str] = Query(None, description="Search by name"),
     db = Depends(get_db)
 ):
     """
     Retrieves a list of product owners, with optional filtering and pagination.
-    Excludes 'inactive' product owners by default if no specific status is provided.
+    Returns all product owners by default (including inactive). Use status parameter to filter.
     """
     try:
         logger.info(f"Fetching product owners with skip={skip}, limit={limit}, status={status}, search={search}")
-        
+
         # Build dynamic WHERE clause
         where_conditions = []
         params = []
@@ -33,11 +33,6 @@ async def get_product_owners_list(
             param_count += 1
             where_conditions.append(f"status = ${param_count}")
             params.append(status)
-        else:
-            # Default to excluding inactive if no specific status is requested
-            param_count += 1
-            where_conditions.append(f"status != ${param_count}")
-            params.append("inactive")
             
         if search:
             # Basic search by name fields (case-insensitive)
@@ -61,19 +56,36 @@ async def get_product_owners_list(
         params.append(skip)
         
         query = f"""
-            SELECT id, firstname, surname, known_as, status, created_at 
-            FROM product_owners 
+            SELECT id, firstname, surname, known_as, status, created_at
+            FROM product_owners
             {where_clause}
-            ORDER BY firstname, surname
+            ORDER BY firstname NULLS LAST, surname NULLS LAST
             {limit_clause} {offset_clause}
         """
-        
+
+        logger.info(f"Executing query: {query}")
+        logger.info(f"Query params: {params}")
+
         result = await db.fetch(query, *params)
-        
+
+        logger.info(f"Query returned {len(result)} product owners")
+
+        # Check if Steven Smart is in the database at all
+        steven_check = await db.fetchrow(
+            "SELECT id, firstname, surname, known_as, status FROM product_owners WHERE known_as ILIKE '%steven%' OR firstname ILIKE '%steven%' OR surname ILIKE '%smart%'"
+        )
+        if steven_check:
+            logger.info(f"🔍 Steven Smart found in database: {dict(steven_check)}")
+            # Check if he's in the result set
+            steven_in_results = any(r['id'] == steven_check['id'] for r in result)
+            logger.info(f"🔍 Steven Smart in current result set: {steven_in_results}")
+        else:
+            logger.warning("🔍 Steven Smart NOT found in database")
+
         if not result:
             logger.warning("No product owners found with the given criteria.")
             return []
-            
+
         return [dict(row) for row in result]
         
     except Exception as e:

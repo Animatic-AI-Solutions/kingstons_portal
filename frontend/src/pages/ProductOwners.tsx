@@ -44,8 +44,31 @@ const ProductOwners: React.FC = () => {
           api.get('/api/product_owners'),
           api.get('/api/client_products')
         ]);
-        
-        setProductOwners(productOwnersResponse.data || []);
+
+        const owners = productOwnersResponse.data || [];
+        console.log('🔍 Received product owners from API:', owners.length);
+
+        // Check if Steven Smart is in the data
+        const stevenSmart = owners.find((po: ProductOwner) =>
+          po.known_as?.toLowerCase().includes('steven') ||
+          po.firstname?.toLowerCase().includes('steven') ||
+          po.surname?.toLowerCase().includes('smart')
+        );
+
+        if (stevenSmart) {
+          console.log('🔍 Steven Smart found in API response:', stevenSmart);
+        } else {
+          console.warn('🔍 Steven Smart NOT found in API response');
+          console.log('🔍 All product owners:', owners.map((po: ProductOwner) => ({
+            id: po.id,
+            firstname: po.firstname,
+            surname: po.surname,
+            known_as: po.known_as,
+            status: po.status
+          })));
+        }
+
+        setProductOwners(owners);
         setProducts(productsResponse.data || []);
       } catch (err) {
         setError('Failed to fetch data');

@@ -1306,7 +1306,7 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
         # Step 4: Get portfolio IDs to fetch all fund data in bulk
         portfolio_ids = list(set([p["portfolio_id"] for p in products_result if p["portfolio_id"]]))
         logger.info(f"Found {len(portfolio_ids)} unique portfolios")
-        
+
         # Step 5: Fetch all fund data for all portfolios in one bulk query with joins
         funds_data = {}
         if portfolio_ids:
@@ -1448,6 +1448,15 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                 logger.info(f"Created Previous Funds entry for {len(inactive_funds)} inactive funds in product {product['id']} with IDs: {[fund['portfolio_fund_id'] for fund in inactive_funds]}")
             
             # Build complete product object
+            # Get latest valuation date from the funds (since portfolio-level valuations may not exist)
+            valuation_date_value = None
+            if portfolio_funds:
+                # Find the latest valuation date from all active funds
+                fund_dates = [f.get("valuation_date") for f in portfolio_funds if f.get("valuation_date") and f.get("status") == "active"]
+                if fund_dates:
+                    valuation_date_value = max(fund_dates)
+            logger.info(f"Product {product['id']} ({product['product_name']}) portfolio {portfolio_id}: valuation_date = {valuation_date_value} (from {len(portfolio_funds)} funds)")
+
             processed_product = {
                 "id": product["id"],
                 "product_name": product["product_name"],
@@ -1468,6 +1477,7 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                     else 0
                     for fund in portfolio_funds
                 ),
+                "valuation_date": valuation_date_value,  # Latest valuation date from portfolio view lookup
                 "irr": None,  # Will be calculated using standardized method below
                 "active_fund_count": product.get("active_fund_count", 0),
                 "inactive_fund_count": product.get("inactive_fund_count", 0),

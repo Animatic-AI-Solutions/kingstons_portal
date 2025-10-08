@@ -26,6 +26,7 @@ export interface ClientAccount {
   portfolio_id?: number;
   total_value?: number;
   previous_value?: number;
+  valuation_date?: string;
   irr?: number | string;
   risk_rating?: number;
   provider_theme_color?: string;
