@@ -178,7 +178,7 @@ const FundDetails: React.FC = () => {
           product_status: item.status,
           product_owner_name: item.product_owner_name || 'Unknown',
           portfolio_name: item.portfolio_name,
-          weighting: item.target_weighting || 0,
+          weighting: item.actual_weighting || 0,
           start_date: item.start_date,
           provider_name: item.provider_name || 'Unknown',
           client_group_name: item.client_group_name || 'Unknown',
@@ -406,8 +406,8 @@ const FundDetails: React.FC = () => {
       product.portfolio_name,
       product.provider_name,
       product.client_group_name,
-      product.target_weighting.toString(),
-      product.status
+      product.weighting.toString(),
+      product.product_status
     ]);
 
     // Combine headers and data

@@ -256,19 +256,29 @@ async def get_fund_products_with_owners(
             raise HTTPException(status_code=404, detail=f"Fund with ID {fund_id} not found")
 
         # Get all portfolio_funds that use this fund with actual weighting calculation
+        # Weighting is ALWAYS calculated from latest valuations (fund valuation / portfolio total * 100)
+        # Portfolio total is calculated as sum of all fund valuations in the portfolio
         portfolio_funds = await db.fetch(
             """
-            SELECT 
+            WITH portfolio_totals AS (
+                SELECT
+                    pf.portfolio_id,
+                    SUM(lpfv.valuation) as total_valuation
+                FROM portfolio_funds pf
+                LEFT JOIN latest_portfolio_fund_valuations lpfv ON pf.id = lpfv.portfolio_fund_id
+                WHERE pf.status = 'active'
+                GROUP BY pf.portfolio_id
+            )
+            SELECT
                 pf.portfolio_id,
-                pf.target_weighting,
-                CASE 
-                    WHEN lpv.valuation > 0 AND lpfv.valuation IS NOT NULL 
-                    THEN ROUND((lpfv.valuation / lpv.valuation * 100)::numeric, 2)
-                    ELSE pf.target_weighting 
+                CASE
+                    WHEN pt.total_valuation > 0 AND lpfv.valuation IS NOT NULL
+                    THEN ROUND((lpfv.valuation / pt.total_valuation * 100)::numeric, 2)
+                    ELSE 0
                 END as actual_weighting
             FROM portfolio_funds pf
             LEFT JOIN latest_portfolio_fund_valuations lpfv ON pf.id = lpfv.portfolio_fund_id
-            LEFT JOIN latest_portfolio_valuations lpv ON pf.portfolio_id = lpv.portfolio_id
+            LEFT JOIN portfolio_totals pt ON pf.portfolio_id = pt.portfolio_id
             WHERE pf.available_funds_id = $1 AND pf.status = 'active'
             """,
             fund_id
@@ -365,7 +375,7 @@ async def get_fund_products_with_owners(
                 "product_type": product["product_type"],
                 "status": product["status"],
                 "portfolio_name": portfolio.get("portfolio_name", ""),
-                "target_weighting": portfolio_fund.get("actual_weighting", 0),
+                "actual_weighting": portfolio_fund.get("actual_weighting", 0),
                 "start_date": product["start_date"],
                 "product_owner_name": product_owner_name,
                 "provider_name": product.get("provider_name", "Unknown"),
