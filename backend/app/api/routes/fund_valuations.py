@@ -591,7 +591,7 @@ async def get_latest_valuation_date():
 async def get_latest_fund_valuations(
     portfolio_fund_id: Optional[int] = Query(None, description="Filter by portfolio fund ID"),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
-    limit: int = Query(500, ge=1, le=1000, description="Number of records to return"),
+    limit: int = Query(100000, ge=1, le=100000, description="Number of records to return"),
     db = Depends(get_db)
 ):
     """

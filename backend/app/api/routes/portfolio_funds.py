@@ -475,7 +475,7 @@ router = APIRouter()
 @router.get("/portfolio_funds", response_model=List[PortfolioFund])
 async def get_portfolio_funds(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
-    limit: int = Query(500, ge=1, le=1000, description="Max number of records to return"),
+    limit: int = Query(100000, ge=1, le=100000, description="Max number of records to return"),
     portfolio_id: Optional[int] = None,
     available_funds_id: Optional[int] = None,
     select: Optional[str] = "*",  # Add select parameter to allow choosing fields

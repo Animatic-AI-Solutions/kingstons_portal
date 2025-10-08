@@ -5,7 +5,7 @@ const testHistoricalIRR = async (productId = 160) => {
   try {
     console.log(`🔍 Testing historical IRR endpoint for product ${productId}`);
     
-    const url = `/api/historical-irr/combined/${productId}?limit=12`;
+    const url = `/api/historical-irr/combined/${productId}?limit=100000`;
     console.log(`📡 URL: ${url}`);
     
     const response = await fetch(url, {

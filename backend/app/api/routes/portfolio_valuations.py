@@ -18,7 +18,7 @@ router = APIRouter()
 @router.get("/portfolio_valuations", response_model=List[PortfolioValuation])
 async def get_portfolio_valuations(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
-    limit: int = Query(500, ge=1, le=1000, description="Max number of records to return"),
+    limit: int = Query(100000, ge=1, le=100000, description="Max number of records to return"),
     portfolio_id: Optional[int] = Query(None, description="Filter by portfolio ID"),
     db = Depends(get_db)
 ):
@@ -329,7 +329,7 @@ async def delete_portfolio_valuation(valuation_id: int, db = Depends(get_db)):
 async def get_portfolio_valuations_by_portfolio(
     portfolio_id: int,
     skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=100),
+    limit: int = Query(100000, ge=1, le=100000),
     db = Depends(get_db)
 ):
     """

@@ -10,7 +10,7 @@ router = APIRouter()
 @router.get("/search")
 async def global_search(
     query: str = Query(..., description="Search query string"),
-    limit: int = Query(20, description="Maximum number of results to return (function has built-in limit of 50)"),
+    limit: int = Query(100000, description="Maximum number of results to return (function has built-in limit of 50)"),
     db = Depends(get_db)
 ):
     """

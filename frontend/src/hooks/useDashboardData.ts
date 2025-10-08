@@ -55,9 +55,9 @@ export const useDashboardData = () => {
     console.log('Fetching dashboard data with React Query...');
     const { data } = await api.get<DashboardAllResponse>('/analytics/dashboard_all', {
       params: {
-        fund_limit: 1000,  // GROWTH-READY: Support up to 1000 funds
-        provider_limit: 500,  // GROWTH-READY: Support up to 500 providers  
-        template_limit: 200,  // GROWTH-READY: Support up to 200 templates
+        fund_limit: 100000,  // GROWTH-READY: Support up to 100,000 funds
+        provider_limit: 100000,  // GROWTH-READY: Support up to 100,000 providers
+        template_limit: 100000,  // GROWTH-READY: Support up to 100,000 templates
       },
     });
 

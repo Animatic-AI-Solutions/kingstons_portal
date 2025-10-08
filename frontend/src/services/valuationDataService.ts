@@ -171,8 +171,8 @@ export class ValuationDataService {
       
       const requests = fundIds.map(async (fundId) => {
         try {
-          const response = await this.api.get(`/fund_valuations`, { 
-            params: { portfolio_fund_id: fundId, limit: 500 } 
+          const response = await this.api.get(`/fund_valuations`, {
+            params: { portfolio_fund_id: fundId, limit: 100000 }
           });
           return { fundId, data: response.data || [] };
         } catch (err) {

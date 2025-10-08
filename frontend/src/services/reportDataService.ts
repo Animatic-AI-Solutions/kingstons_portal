@@ -80,7 +80,7 @@ export class ReportDataService {
         params: { 
           ids: productIds.join(','),
           include_provider: true,
-          limit: 1000 // Ensure we get all products
+          limit: 100000 // Ensure we get all products
         }
       });
       
@@ -119,7 +119,7 @@ export class ReportDataService {
       const fundsResponse = await this.api.get('/portfolio_funds', {
         params: {
           portfolio_ids: portfolioIds.join(','),
-          limit: 10000
+          limit: 100000
         }
       });
 

@@ -15,7 +15,7 @@ router = APIRouter()
 @router.get("/client_groups", response_model=List[ClientGroup])
 async def get_client_groups(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
-    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
+    limit: int = Query(100000, ge=1, le=100000, description="Max number of records to return"),
     status: Optional[str] = Query(None, description="Filter by status"),
     search: Optional[str] = Query(None, description="Search by name, email, account number"),
     sort_by: Optional[str] = Query(None, description="Field to sort by"),
@@ -109,7 +109,7 @@ async def get_client_groups(
 @router.get("/client_groups/dormant", response_model=List[ClientGroup])
 async def get_dormant_client_groups(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
-    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
+    limit: int = Query(100000, ge=1, le=100000, description="Max number of records to return"),
     db = Depends(get_db)
 ):
     """

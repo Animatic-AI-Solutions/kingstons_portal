@@ -33,7 +33,7 @@ def serialize_datetime(dt):
 
 @router.get("/analytics/fund_distribution")
 async def get_fund_distribution(
-    limit: int = Query(20, ge=1, le=1000, description="Maximum number of funds to return"),
+    limit: int = Query(100000, ge=1, le=100000, description="Maximum number of funds to return"),
     db = Depends(get_db)
 ):
     """
@@ -140,7 +140,7 @@ async def get_fund_distribution(
 
 @router.get("/analytics/provider_distribution")
 async def get_provider_distribution(
-    limit: int = Query(20, ge=1, le=500, description="Maximum number of providers to return"),
+    limit: int = Query(100000, ge=1, le=100000, description="Maximum number of providers to return"),
     db = Depends(get_db)
 ):
     """
@@ -341,7 +341,7 @@ async def get_performance_data(
     date_range: Literal["all-time", "ytd", "12m", "3y", "5y"] = "all-time",
     entity_type: Literal["overview", "clients", "products", "portfolios", "funds", "products", "providers"] = "overview",
     sort_order: Literal["highest", "lowest"] = "highest",
-    limit: int = Query(5, ge=1, le=1000),
+    limit: int = Query(100000, ge=1, le=100000),
     db = Depends(get_db)
 ):
     try:
@@ -1648,7 +1648,7 @@ async def get_portfolio_irr(portfolio_id: int, db = Depends(get_db)):
 
 @router.get("/analytics/portfolio_template_distribution")
 async def get_portfolio_template_distribution(
-    limit: int = Query(20, ge=1, le=200, description="Maximum number of portfolio templates to return"),
+    limit: int = Query(100000, ge=1, le=100000, description="Maximum number of portfolio templates to return"),
     db = Depends(get_db)
 ):
     """
@@ -1812,9 +1812,9 @@ async def get_portfolio_template_distribution(
 
 @router.get("/analytics/dashboard_all")
 async def get_dashboard_all_data(
-    fund_limit: int = Query(10, ge=1, le=1000, description="Maximum number of funds to return"),
-    provider_limit: int = Query(10, ge=1, le=500, description="Maximum number of providers to return"),
-    template_limit: int = Query(10, ge=1, le=200, description="Maximum number of templates to return"),
+    fund_limit: int = Query(100000, ge=1, le=100000, description="Maximum number of funds to return"),
+    provider_limit: int = Query(100000, ge=1, le=100000, description="Maximum number of providers to return"),
+    template_limit: int = Query(100000, ge=1, le=100000, description="Maximum number of templates to return"),
     db = Depends(get_db)
 ):
     """
@@ -2046,7 +2046,7 @@ async def get_dashboard_all_data(
 
 @router.get("/analytics/risk_differences")
 async def get_products_risk_differences(
-    limit: int = Query(10, ge=1, le=1000, description="Number of products to return"),
+    limit: int = Query(100000, ge=1, le=100000, description="Number of products to return"),
     db = Depends(get_db)
 ):
     """
@@ -2230,9 +2230,9 @@ async def reset_company_irr_cache():
 
 @router.get("/analytics/dashboard-fast")
 async def get_ultra_fast_dashboard(
-    fund_limit: int = Query(10, ge=1, le=1000),
-    provider_limit: int = Query(10, ge=1, le=500), 
-    template_limit: int = Query(10, ge=1, le=200),
+    fund_limit: int = Query(100000, ge=1, le=100000),
+    provider_limit: int = Query(100000, ge=1, le=100000), 
+    template_limit: int = Query(100000, ge=1, le=100000),
     db = Depends(get_db)
 ):
     """

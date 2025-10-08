@@ -14,7 +14,7 @@ router = APIRouter()
 @router.get("/available_products", response_model=List[Product])
 async def get_products(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
-    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
+    limit: int = Query(100000, ge=1, le=100000, description="Max number of records to return"),
     status: Optional[str] = None,
     available_providers_id: Optional[int] = None,
     product_type: Optional[str] = None,

@@ -109,7 +109,7 @@ async def create_provider_switch_log(provider_switch: ProviderSwitchLogCreate, d
 @router.get("/provider_switch_log", response_model=List[ProviderSwitchLog])
 async def get_provider_switch_logs(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
-    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
+    limit: int = Query(100000, ge=1, le=100000, description="Max number of records to return"),
     client_product_id: Optional[int] = None,
     db = Depends(get_db)
 ):

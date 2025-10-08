@@ -38,7 +38,7 @@ DEFAULT_COLORS = [
 @router.get("/available_providers", response_model=List[AvailableProvider])
 async def get_available_providers(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
-    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
+    limit: int = Query(100000, ge=1, le=100000, description="Max number of records to return"),
     status: Optional[str] = Query(None, description="Filter by status"),
     db = Depends(get_db)
 ):
@@ -392,7 +392,7 @@ async def update_provider_theme_colors(db = Depends(get_db)):
 @router.get("/available_providers_with_count", response_model=List[AvailableProviderWithProductCount])
 async def get_available_providers_with_product_count(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
-    limit: int = Query(100, ge=1, le=100, description="Max number of records to return"),
+    limit: int = Query(100000, ge=1, le=100000, description="Max number of records to return"),
     status: Optional[str] = Query(None, description="Filter by status"),
     db = Depends(get_db)
 ):

@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 @router.get("/product_owners", response_model=List[ProductOwner])
 async def get_product_owners_list(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
-    limit: int = Query(1000, ge=1, le=1000, description="Max number of records to return"),
+    limit: int = Query(100000, ge=1, le=100000, description="Max number of records to return"),
     status: Optional[str] = Query(None, description="Filter by status (e.g., 'active', 'inactive')"),
     search: Optional[str] = Query(None, description="Search by name"),
     db = Depends(get_db)

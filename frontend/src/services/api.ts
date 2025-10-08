@@ -960,9 +960,9 @@ export const getOptimizedAnalyticsDashboard = async (
 
 // Fallback function for original analytics endpoints
 export const getFallbackAnalyticsDashboard = async (
-  fundLimit: number = 10,
-  providerLimit: number = 10,
-  templateLimit: number = 10
+  fundLimit: number = 100000,
+  providerLimit: number = 100000,
+  templateLimit: number = 100000
 ) => {
   console.log('🔄 Using fallback analytics endpoints...');
   
@@ -975,7 +975,7 @@ export const getFallbackAnalyticsDashboard = async (
       params: { fund_limit: fundLimit, provider_limit: providerLimit, template_limit: templateLimit }
     }),
     api.get('/analytics/performance_data', {
-      params: { entity_type: 'overview', sort_order: 'highest', limit: 10 }
+      params: { entity_type: 'overview', sort_order: 'highest', limit: 100000 }
     }).catch(err => {
       console.warn('Performance data failed, continuing without it:', err);
       return { data: { performanceData: [] } };
