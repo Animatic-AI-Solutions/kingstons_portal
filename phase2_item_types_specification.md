@@ -301,12 +301,11 @@ Each item instance includes a `name` field to distinguish multiple items of the 
 ## Basic Details - Product Owner Details
 
 ### Basic Personal Details
-**item_type:** `Basic Personal Details`  
-**category:** `basic_detail`
+
+*Note: Basic Personal Details define Product Owners in the system and are NOT item types within client groups. Product owners are created separately and then referenced in client group items.*
 
 | Field | Type | Options/Validation | Required |
 |-------|------|-------------------|----------|
-| **Name** | Text Input | Instance identifier (e.g., "Primary Details", "Updated Information") | Yes |
 | **Title** | Dropdown + Custom | Mr, Mrs, Miss, Dr, Other (Free Type Box) | Yes |
 | **Forename** | Text Input | Standard text validation | Yes |
 | **Middle Names** | Text Input | Standard text validation (multiple names in one string) | No |
@@ -317,12 +316,13 @@ Each item instance includes a `name` field to distinguish multiple items of the 
 | **Last Modified** | Timestamp | Auto-generated on save | System |
 
 ### Address Item Type
-**item_type:** `Address`  
+**item_type:** `Address`
 **category:** `basic_detail`
 
 | Field | Type | Options/Validation | Required |
 |-------|------|-------------------|----------|
 | **Name** | Text Input | Instance identifier (e.g., "Main Residence", "Work Address", "Previous Address") | Yes |
+| **Product Owners** | Multi-select Dropdown | Select multiple product owners | Yes |
 | **Address Line One** | Text Input | Building number and street | Yes |
 | **Address Line Two** | Text Input | Town/city/area | No |
 | **Postcode** | Text Input | UK postcode format validation | Yes |
@@ -330,12 +330,13 @@ Each item instance includes a `name` field to distinguish multiple items of the 
 | **Last Modified** | Timestamp | Auto-generated on save | System |
 
 ### Email Address Item Type
-**item_type:** `Email Address`  
+**item_type:** `Email Address`
 **category:** `basic_detail`
 
 | Field | Type | Options/Validation | Required |
 |-------|------|-------------------|----------|
 | **Name** | Text Input | Instance identifier (e.g., "Personal Email", "Work Email", "Secondary Email") | Yes |
+| **Product Owners** | Multi-select Dropdown | Select multiple product owners | Yes |
 | **Email Address** | Email Input | Email validation | Yes |
 | **Notes** | Text Area | Free text notes | No |
 
@@ -488,12 +489,13 @@ Each item instance includes a `name` field to distinguish multiple items of the 
 *Note: Multiple Other ID items can be added per client*
 
 ## Phone Number Item Type
-**item_type:** `Phone Number`  
+**item_type:** `Phone Number`
 **category:** `basic_detail`
 
 | Field | Type | Options/Validation | Required |
 |-------|------|-------------------|----------|
 | **Name** | Text Input | Instance identifier (e.g., "Primary Mobile", "Work Phone", "Emergency Contact") | Yes |
+| **Product Owners** | Multi-select Dropdown | Select multiple product owners | Yes |
 | **Phone Type** | Dropdown + Custom | Mobile, Mobile (Work), Home, Work, Other (Free Type Box) | Yes |
 | **Phone Number** | Phone Input | Standard phone validation | Yes |
 | **Notes** | Text Area | Free text notes | No |
@@ -553,12 +555,13 @@ Each item instance includes a `name` field to distinguish multiple items of the 
 ---
 
 ## Basic Salary Item Type
-**item_type:** `Basic Salary`  
+**item_type:** `Basic Salary`
 **category:** `income_expenditure`
 
 | Field | Type | Options/Validation | Required |
 |-------|------|-------------------|----------|
 | **Name** | Text Input | Instance identifier (e.g., "Main Employment", "Part-time Job", "Consulting Income") | Yes |
+| **Product Owners** | Multi-select Dropdown | Select multiple product owners | Yes |
 | **Description** | Text Area | Free text description | No |
 | **Amount** | Currency Input | 2 decimal places, no negative numbers | Yes |
 | **Frequency** | Dropdown | Weekly, 4 Weekly, Monthly, Quarterly, 6 Monthly, Annually | Yes |
@@ -569,6 +572,7 @@ Each item instance includes a `name` field to distinguish multiple items of the 
 
 | Field | Type | Options/Validation | Required |
 |-------|------|-------------------|----------|
+| **Product Owners** | Multi-select Dropdown | Select multiple product owners | Yes |
 | **Description** | Text Area | Free text description | No |
 | **Amount** | Currency Input | 2 decimal places, no negative numbers | Yes |
 | **Frequency** | Dropdown | Weekly, 4 Weekly, Monthly, Quarterly, 6 Monthly, Annually | Yes |
@@ -579,6 +583,7 @@ Each item instance includes a `name` field to distinguish multiple items of the 
 
 | Field | Type | Options/Validation | Required |
 |-------|------|-------------------|----------|
+| **Product Owners** | Multi-select Dropdown | Select multiple product owners | Yes |
 | **Description** | Text Area | Free text description | No |
 | **Amount** | Currency Input | 2 decimal places, no negative numbers | Yes |
 | **Frequency** | Dropdown | Weekly, 4 Weekly, Monthly, Quarterly, 6 Monthly, Annually | Yes |
@@ -589,6 +594,7 @@ Each item instance includes a `name` field to distinguish multiple items of the 
 
 | Field | Type | Options/Validation | Required |
 |-------|------|-------------------|----------|
+| **Product Owners** | Multi-select Dropdown | Select multiple product owners | Yes |
 | **Description** | Text Area | Free text description | No |
 | **Amount** | Currency Input | 2 decimal places, no negative numbers | Yes |
 | **Frequency** | Dropdown | Weekly, 4 Weekly, Monthly, Quarterly, 6 Monthly, Annually | Yes |
@@ -599,6 +605,7 @@ Each item instance includes a `name` field to distinguish multiple items of the 
 
 | Field | Type | Options/Validation | Required |
 |-------|------|-------------------|----------|
+| **Product Owners** | Multi-select Dropdown | Select multiple product owners | Yes |
 | **Description** | Text Area | Free text description | No |
 | **Amount** | Currency Input | 2 decimal places, no negative numbers | Yes |
 | **Frequency** | Dropdown | Weekly, 4 Weekly, Monthly, Quarterly, 6 Monthly, Annually | Yes |
@@ -609,6 +616,7 @@ Each item instance includes a `name` field to distinguish multiple items of the 
 
 | Field | Type | Options/Validation | Required |
 |-------|------|-------------------|----------|
+| **Product Owners** | Multi-select Dropdown | Select multiple product owners | Yes |
 | **Description** | Text Area | Free text description | No |
 | **Amount** | Currency Input | 2 decimal places, no negative numbers | Yes |
 | **Frequency** | Dropdown | Weekly, 4 Weekly, Monthly, Quarterly, 6 Monthly, Annually | Yes |
@@ -619,6 +627,7 @@ Each item instance includes a `name` field to distinguish multiple items of the 
 
 | Field | Type | Options/Validation | Required |
 |-------|------|-------------------|----------|
+| **Product Owners** | Multi-select Dropdown | Select multiple product owners | Yes |
 | **Description** | Text Area | Free text description | No |
 | **Amount** | Currency Input | 2 decimal places, no negative numbers | Yes |
 | **Frequency** | Dropdown | Weekly, 4 Weekly, Monthly, Quarterly, 6 Monthly, Annually | Yes |
@@ -629,6 +638,7 @@ Each item instance includes a `name` field to distinguish multiple items of the 
 
 | Field | Type | Options/Validation | Required |
 |-------|------|-------------------|----------|
+| **Product Owners** | Multi-select Dropdown | Select multiple product owners | Yes |
 | **Description** | Text Area | Free text description | No |
 | **Amount** | Currency Input | 2 decimal places, no negative numbers | Yes |
 | **Frequency** | Dropdown | Weekly, 4 Weekly, Monthly, Quarterly, 6 Monthly, Annually | Yes |
@@ -639,6 +649,7 @@ Each item instance includes a `name` field to distinguish multiple items of the 
 
 | Field | Type | Options/Validation | Required |
 |-------|------|-------------------|----------|
+| **Product Owners** | Multi-select Dropdown | Select multiple product owners | Yes |
 | **Description** | Text Area | Free text description | No |
 | **Amount** | Currency Input | 2 decimal places, no negative numbers | Yes |
 | **Frequency** | Dropdown | Weekly, 4 Weekly, Monthly, Quarterly, 6 Monthly, Annually | Yes |
@@ -649,6 +660,7 @@ Each item instance includes a `name` field to distinguish multiple items of the 
 
 | Field | Type | Options/Validation | Required |
 |-------|------|-------------------|----------|
+| **Product Owners** | Multi-select Dropdown | Select multiple product owners | Yes |
 | **Description** | Text Area | Free text description | No |
 | **Amount** | Currency Input | 2 decimal places, no negative numbers | Yes |
 | **Frequency** | Dropdown | Weekly, 4 Weekly, Monthly, Quarterly, 6 Monthly, Annually | Yes |
@@ -659,6 +671,7 @@ Each item instance includes a `name` field to distinguish multiple items of the 
 
 | Field | Type | Options/Validation | Required |
 |-------|------|-------------------|----------|
+| **Product Owners** | Multi-select Dropdown | Select multiple product owners | Yes |
 | **Description** | Text Area | Free text description | No |
 | **Amount** | Currency Input | 2 decimal places, no negative numbers | Yes |
 | **Frequency** | Dropdown | Weekly, 4 Weekly, Monthly, Quarterly, 6 Monthly, Annually | Yes |
@@ -669,6 +682,7 @@ Each item instance includes a `name` field to distinguish multiple items of the 
 
 | Field | Type | Options/Validation | Required |
 |-------|------|-------------------|----------|
+| **Product Owners** | Multi-select Dropdown | Select multiple product owners | Yes |
 | **Description** | Text Area | Free text description | No |
 | **Amount** | Currency Input | 2 decimal places, no negative numbers | Yes |
 | **Frequency** | Dropdown | Weekly, 4 Weekly, Monthly, Quarterly, 6 Monthly, Annually | Yes |
@@ -679,6 +693,7 @@ Each item instance includes a `name` field to distinguish multiple items of the 
 
 | Field | Type | Options/Validation | Required |
 |-------|------|-------------------|----------|
+| **Product Owners** | Multi-select Dropdown | Select multiple product owners | Yes |
 | **Description** | Text Area | Free text description | No |
 | **Amount** | Currency Input | 2 decimal places, no negative numbers | Yes |
 | **Frequency** | Dropdown | Weekly, 4 Weekly, Monthly, Quarterly, 6 Monthly, Annually | Yes |
@@ -689,6 +704,7 @@ Each item instance includes a `name` field to distinguish multiple items of the 
 
 | Field | Type | Options/Validation | Required |
 |-------|------|-------------------|----------|
+| **Product Owners** | Multi-select Dropdown | Select multiple product owners | Yes |
 | **Description** | Text Area | Free text description | No |
 | **Amount** | Currency Input | 2 decimal places, no negative numbers | Yes |
 | **Frequency** | Dropdown | Weekly, 4 Weekly, Monthly, Quarterly, 6 Monthly, Annually | Yes |
@@ -699,6 +715,7 @@ Each item instance includes a `name` field to distinguish multiple items of the 
 
 | Field | Type | Options/Validation | Required |
 |-------|------|-------------------|----------|
+| **Product Owners** | Multi-select Dropdown | Select multiple product owners | Yes |
 | **Description** | Text Area | Free text description | No |
 | **Amount** | Currency Input | 2 decimal places, no negative numbers | Yes |
 | **Frequency** | Dropdown | Weekly, 4 Weekly, Monthly, Quarterly, 6 Monthly, Annually | Yes |
@@ -710,12 +727,13 @@ Each item instance includes a `name` field to distinguish multiple items of the 
 ---
 
 ## Income Tax Item Type
-**item_type:** `Income Tax`  
+**item_type:** `Income Tax`
 **category:** `income_expenditure`
 
 | Field | Type | Options/Validation | Required |
 |-------|------|-------------------|----------|
 | **Name** | Text Input | Instance identifier (e.g., "Annual Income Tax", "PAYE Deductions") | Yes |
+| **Product Owners** | Multi-select Dropdown | Select multiple product owners | Yes |
 | **Description** | Text Area | Free text description | No |
 | **Amount** | Currency Input | 2 decimal places, no negative numbers | Yes |
 | **Frequency** | Dropdown | Weekly, 4 Weekly, Monthly, Quarterly, 6 Monthly, Annually | Yes |
@@ -723,12 +741,13 @@ Each item instance includes a `name` field to distinguish multiple items of the 
 | **Notes** | Text Area | Free text notes | No |
 
 ## Salary Sacrifice Item Type
-**item_type:** `Salary Sacrifice`  
+**item_type:** `Salary Sacrifice`
 **category:** `income_expenditure`
 
 | Field | Type | Options/Validation | Required |
 |-------|------|-------------------|----------|
 | **Name** | Text Input | Instance identifier (e.g., "Pension Contributions", "Cycle to Work Scheme") | Yes |
+| **Product Owners** | Multi-select Dropdown | Select multiple product owners | Yes |
 | **Description** | Text Area | Free text description | No |
 | **Amount** | Currency Input | 2 decimal places, no negative numbers | Yes |
 | **Frequency** | Dropdown | Weekly, 4 Weekly, Monthly, Quarterly, 6 Monthly, Annually | Yes |

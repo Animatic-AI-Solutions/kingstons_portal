@@ -1,0 +1,2806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 2 Item Types - User Review</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #6b21a8;
+            border-bottom: 3px solid #6b21a8;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        h2 {
+            color: #6b21a8;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 2em;
+            border-left: 5px solid #6b21a8;
+            padding-left: 15px;
+        }
+
+        h3 {
+            color: #7c3aed;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        h4 {
+            color: #8b5cf6;
+            margin-top: 25px;
+            margin-bottom: 12px;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .metadata {
+            background-color: #f3f4f6;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+            font-size: 0.95em;
+        }
+
+        .metadata strong {
+            color: #6b21a8;
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .badge-basic_detail {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-income_expenditure {
+            background-color: #dcfce7;
+            color: #15803d;
+        }
+
+        .badge-assets_liabilities {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-protection {
+            background-color: #fce7f3;
+            color: #9f1239;
+        }
+
+        .badge-vulnerability_health {
+            background-color: #f3e8ff;
+            color: #6b21a8;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        thead {
+            background-color: #6b21a8;
+            color: white;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: top;
+        }
+
+        tbody tr:hover {
+            background-color: #f9fafb;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+
+        .required-yes {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .required-no {
+            color: #6b7280;
+        }
+
+        .required-conditional {
+            color: #ea580c;
+            font-weight: 600;
+        }
+
+        .required-system {
+            color: #059669;
+            font-style: italic;
+        }
+
+        .note {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 20px 0;
+            font-style: italic;
+        }
+
+        .toc {
+            background-color: #f9fafb;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 40px;
+        }
+
+        .toc h3 {
+            margin-top: 0;
+            color: #6b21a8;
+        }
+
+        .toc ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .toc li {
+            margin: 8px 0;
+        }
+
+        .toc a {
+            color: #7c3aed;
+            text-decoration: none;
+            padding: 5px 0;
+            display: inline-block;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+            color: #6b21a8;
+        }
+
+        .section-divider {
+            border-top: 2px dashed #d1d5db;
+            margin: 50px 0;
+        }
+
+        .options-list {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+
+        .options-list li {
+            margin: 3px 0;
+        }
+
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+                padding: 20px;
+            }
+
+            .toc {
+                page-break-after: always;
+            }
+
+            h2 {
+                page-break-before: always;
+            }
+
+            table {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Phase 2 Item Types Specification - User Review</h1>
+
+        <div class="metadata">
+            <strong>Purpose:</strong> Review all item types for Family, Business, and Trust client groups<br>
+            <strong>Organized by:</strong> Client Group Type → Category → Item Type<br>
+            <strong>Categories:</strong>
+            <span class="category-badge badge-basic_detail">Basic Detail</span>
+            <span class="category-badge badge-income_expenditure">Income & Expenditure</span>
+            <span class="category-badge badge-assets_liabilities">Assets & Liabilities</span>
+            <span class="category-badge badge-protection">Protection</span>
+            <span class="category-badge badge-vulnerability_health">Vulnerability & Health</span>
+        </div>
+
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ul>
+                <li><a href="#family">1. Family Client Group Type</a></li>
+                <li style="margin-left: 20px;"><a href="#family-basic">Basic Details</a></li>
+                <li style="margin-left: 20px;"><a href="#family-income">Income & Expenditure</a></li>
+                <li style="margin-left: 20px;"><a href="#family-assets">Assets & Liabilities</a></li>
+                <li style="margin-left: 20px;"><a href="#family-protection">Protection</a></li>
+                <li style="margin-left: 20px;"><a href="#family-risk">Risk & Vulnerability</a></li>
+                <li><a href="#business">2. Business Client Group Type</a></li>
+                <li style="margin-left: 20px;"><a href="#business-basic">Business-Specific Items</a></li>
+                <li><a href="#trust">3. Trust Client Group Type</a></li>
+                <li style="margin-left: 20px;"><a href="#trust-basic">Trust-Specific Items</a></li>
+            </ul>
+        </div>
+
+        <!-- FAMILY CLIENT GROUP TYPE -->
+        <h2 id="family">1. Family Client Group Type</h2>
+
+        <h3 id="family-basic">Basic Details <span class="category-badge badge-basic_detail">basic_detail</span></h3>
+
+        <h4>Product Owner Definition (Not an Item Type)</h4>
+        <div class="note">
+            <strong>Important:</strong> This is NOT an item type within client groups. These are the fields that define a Product Owner at the client group level. Product owners are created separately and then referenced in all the item types below.
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Title</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Mr</li>
+                            <li>Mrs</li>
+                            <li>Miss</li>
+                            <li>Dr</li>
+                            <li>Other (type your own)</li>
+                        </ul>
+                    </td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Forename</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Middle Names</strong></td>
+                    <td>Single line of text<br><em>Multiple names can be entered in one field</em></td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Surname</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Known As</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Date of Birth</strong></td>
+                    <td>Date in DD/MM/YYYY format<br><em>Shortcuts: T (Today), T+ (Tomorrow), T- (Yesterday)</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Previous Name(s)</strong></td>
+                    <td>Multiple lines of text<br><em>For maiden names, previous married names, etc.</em></td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Last Modified</strong></td>
+                    <td>Automatically saved when you save the record</td>
+                    <td class="required-system">Automatic</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div style="margin: 30px 0; padding: 15px; background-color: #e0e7ff; border-left: 4px solid #6b21a8;">
+            <strong style="color: #6b21a8;">How Product Owners Work:</strong>
+            <p style="margin-top: 10px; color: #374151;">Product owners are created at the client group level with the fields above. Once created, they can be selected in the "Product Owners" field that appears in Address, Email, Phone, Income/Expenditure, Assets, and Liabilities item types below.</p>
+        </div>
+
+        <h4>Address</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Address | <strong>Category:</strong> basic_detail
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Name</strong></td>
+                    <td>Single line of text<br><em>Example: "Main Residence", "Work Address", "Previous Address"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Address Line One</strong></td>
+                    <td>Single line of text<br><em>Building number and street name</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Address Line Two</strong></td>
+                    <td>Single line of text<br><em>Town, city, or area</em></td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Postcode</strong></td>
+                    <td>UK postcode format<br><em>Example: SW1A 2AA</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Last Modified</strong></td>
+                    <td>Automatically saved when you save the record</td>
+                    <td class="required-system">Automatic</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Email Address</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Email Address | <strong>Category:</strong> basic_detail
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Name</strong></td>
+                    <td>Single line of text<br><em>Example: "Personal Email", "Work Email", "Secondary Email"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Email Address</strong></td>
+                    <td>Email format<br><em>Example: john.smith@example.com</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Phone Number</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Phone Number | <strong>Category:</strong> basic_detail
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Name</strong></td>
+                    <td>Single line of text<br><em>Example: "Primary Mobile", "Work Phone", "Emergency Contact"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Phone Type</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Mobile</li>
+                            <li>Mobile (Work)</li>
+                            <li>Home</li>
+                            <li>Work</li>
+                            <li>Other (type your own)</li>
+                        </ul>
+                    </td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Phone Number</strong></td>
+                    <td>Phone number format<br><em>Example: 07700 900000 or +44 20 7946 0958</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Meeting Schedule</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Meeting Schedule | <strong>Category:</strong> basic_detail
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Name</strong></td>
+                    <td>Single line of text<br><em>Example: "Q1 Annual Review", "Mid-Year Check-in"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Meeting Type</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>AR (Annual Review)</li>
+                            <li>Review</li>
+                            <li>AD-HOC</li>
+                            <li>CG</li>
+                        </ul>
+                    </td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Expected Month</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>January - December</li>
+                        </ul>
+                    </td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Booked</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Yes</li>
+                            <li>No</li>
+                        </ul>
+                    </td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Month Meeting Was Held</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>January - December</li>
+                        </ul>
+                    </td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 id="family-income">Income & Expenditure <span class="category-badge badge-income_expenditure">income_expenditure</span></h3>
+
+        <h4>Basic Salary</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Basic Salary | <strong>Category:</strong> income_expenditure
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Name</strong></td>
+                    <td>Single line of text<br><em>Example: "Main Employment", "Part-time Job", "Consulting Income"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Description</strong></td>
+                    <td>Multiple lines of text for additional details</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Amount</strong></td>
+                    <td>Currency in £0.00 format<br><em>Example: £45,000.00</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Frequency</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Weekly</li>
+                            <li>4 Weekly</li>
+                            <li>Monthly</li>
+                            <li>Quarterly</li>
+                            <li>6 Monthly</li>
+                            <li>Annually</li>
+                        </ul>
+                    </td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Date</strong></td>
+                    <td>Date in DD/MM/YYYY format<br><em>Shortcuts: T (Today), T+ (Tomorrow), T- (Yesterday)</em></td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="note">
+            <strong>Note:</strong> The following income types use the same format as Basic Salary (Product Owners, Description, Amount, Frequency, Date, Notes):
+            <ul style="margin-top: 10px; margin-left: 20px;">
+                <li>Bonuses/Commissions</li>
+                <li>Benefits in Kind</li>
+                <li>State Pension</li>
+                <li>Drawdown Income</li>
+                <li>UFPLS</li>
+                <li>Annuities</li>
+                <li>State Benefit - Taxable</li>
+                <li>State Benefit - Non-Taxable</li>
+                <li>Rental Profit</li>
+                <li>Interest</li>
+                <li>Dividends</li>
+                <li>Non-Taxable Income</li>
+                <li>Chargeable Event</li>
+                <li>Other Income</li>
+            </ul>
+        </div>
+
+        <h4>Income Tax</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Income Tax | <strong>Category:</strong> income_expenditure
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Name</strong></td>
+                    <td>Single line of text<br><em>Example: "Annual Income Tax", "PAYE Deductions"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Description</strong></td>
+                    <td>Multiple lines of text for additional details</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Amount</strong></td>
+                    <td>Currency in £0.00 format<br><em>Example: £12,570.00</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Frequency</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Weekly</li>
+                            <li>4 Weekly</li>
+                            <li>Monthly</li>
+                            <li>Quarterly</li>
+                            <li>6 Monthly</li>
+                            <li>Annually</li>
+                        </ul>
+                    </td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Salary Sacrifice</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Salary Sacrifice | <strong>Category:</strong> income_expenditure
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Name</strong></td>
+                    <td>Single line of text<br><em>Example: "Pension Contributions", "Cycle to Work Scheme"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Description</strong></td>
+                    <td>Multiple lines of text for additional details</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Amount</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Frequency</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Weekly</li>
+                            <li>4 Weekly</li>
+                            <li>Monthly</li>
+                            <li>Quarterly</li>
+                            <li>6 Monthly</li>
+                            <li>Annually</li>
+                        </ul>
+                    </td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="section-divider"></div>
+
+        <h3 id="family-assets">Assets & Liabilities <span class="category-badge badge-assets_liabilities">assets_liabilities</span></h3>
+
+        <h4>Cash Accounts</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Cash Accounts | <strong>Category:</strong> assets_liabilities
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Name</strong></td>
+                    <td>Single line of text<br><em>Example: "Barclays Current Account", "Savings Account"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Managed/Unmanaged</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Managed</li>
+                            <li>Unmanaged</li>
+                        </ul>
+                    </td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners<br>
+                        Then specify:
+                        <ul class="options-list">
+                            <li>Relationship type: Joint Tenants or Tenants in Common</li>
+                            <li>Ownership percentage for each owner (must total 100%)</li>
+                        </ul>
+                    </td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Description</strong></td>
+                    <td>Multiple lines of text for account details</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Current Value</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Value Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Start Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Maturity Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Interest Rate</strong></td>
+                    <td>Percentage from 0-100%<br><em>Example: 4.5%</em></td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Account Number</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Personal Pensions (Unmanaged)</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Personal Pensions (Unmanaged) | <strong>Category:</strong> assets_liabilities
+        </div>
+        <div class="note">
+            <strong>Note:</strong> Managed pensions are handled through the existing product management system
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Name</strong></td>
+                    <td>Single line of text<br><em>Example: "SIPP with Provider X", "Old Company Pension"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Plan Number</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Provider</strong></td>
+                    <td>Single line of text<br><em>Example: "Aviva", "Standard Life"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Current Value</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Value Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Start Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Land and Property</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Land and Property | <strong>Category:</strong> assets_liabilities
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Type of Ownership</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Single</li>
+                            <li>Tenants in Common</li>
+                            <li>Joint Tenants</li>
+                        </ul>
+                    </td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Ownership Percentage Split</strong></td>
+                    <td>Percentage split<br><em>Only appears if "Tenants in Common" selected</em></td>
+                    <td class="required-conditional">If Tenants in Common</td>
+                </tr>
+                <tr>
+                    <td><strong>Type of Property</strong></td>
+                    <td>Single line of text<br><em>Example: "Residential", "Buy-to-Let", "Commercial"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Address</strong></td>
+                    <td>Address in 3 parts:
+                        <ul class="options-list">
+                            <li>Address Line One (building/street)</li>
+                            <li>Address Line Two (town/city)</li>
+                            <li>Postcode</li>
+                        </ul>
+                    </td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Purchase Price</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Date Purchased</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Current Value</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Value Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Premium Bonds</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Premium Bonds | <strong>Category:</strong> assets_liabilities
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Name</strong></td>
+                    <td>Single line of text<br><em>Example: "Premium Bonds Account", "NS&I Premium Bonds"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Bond Holder Number</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Amount Held</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Start Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Cash ISA</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Cash ISA | <strong>Category:</strong> assets_liabilities
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Description</strong></td>
+                    <td>Multiple lines of text for account details</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Current Value</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Value Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Maturity Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Interest Rate</strong></td>
+                    <td>Percentage from 0-100%<br><em>Example: 4.5%</em></td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Account Number</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Stocks and Shares ISA (Unmanaged)</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Stocks and Shares ISA (Unmanaged) | <strong>Category:</strong> assets_liabilities
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Provider</strong></td>
+                    <td>Single line of text<br><em>Example: "Hargreaves Lansdown", "AJ Bell"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Current Value</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Value Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Plan Number</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>General Investment Account (Unmanaged)</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> General Investment Account (Unmanaged) | <strong>Category:</strong> assets_liabilities
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Provider</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Current Value</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Value Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Plan Number</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Onshore Investment Bond (Unmanaged)</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Onshore Investment Bond (Unmanaged) | <strong>Category:</strong> assets_liabilities
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Provider</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Current Value</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Value Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Plan Number</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Offshore Investment Bond (Unmanaged)</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Offshore Investment Bond (Unmanaged) | <strong>Category:</strong> assets_liabilities
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Provider</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Current Value</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Value Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Plan Number</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Individual Shares</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Individual Shares | <strong>Category:</strong> assets_liabilities
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Company</strong></td>
+                    <td>Single line of text<br><em>Example: "Apple Inc", "BP plc"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Number of Shares</strong></td>
+                    <td>Number<br><em>Example: 500</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Current Value</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Value Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Workplace Pensions (Unmanaged)</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Workplace Pensions (Unmanaged) | <strong>Category:</strong> assets_liabilities
+        </div>
+        <div class="note">
+            <strong>Note:</strong> Managed workplace pensions are handled through the existing product management system
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Name</strong></td>
+                    <td>Single line of text<br><em>Example: "Current Employer Scheme", "Previous Job Pension"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Plan Number</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Provider</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Current Value</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Value Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Defined Benefit Pensions</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Defined Benefit Pensions | <strong>Category:</strong> assets_liabilities
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Employer</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Current Pension Administrator</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Reference Number</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Last Forecast Amount Per Annum</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Date of Last Forecast</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Current Contributions Amount</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Current Contributions Frequency</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Weekly</li>
+                            <li>Monthly</li>
+                            <li>Quarterly</li>
+                            <li>Annually</li>
+                        </ul>
+                    </td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Current Contributions Type</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>EIS/VCT/ITS</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> EIS/VCT/ITS | <strong>Category:</strong> assets_liabilities
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Type</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>EIS (Enterprise Investment Scheme)</li>
+                            <li>VCT (Venture Capital Trust)</li>
+                            <li>ITS (Investment Trust Scheme)</li>
+                        </ul>
+                    </td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Provider</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Current Value</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Value Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Whole of Life Plans</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Whole of Life Plans with Surrender Value | <strong>Category:</strong> assets_liabilities
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Provider</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Plan Number</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Surrender Value</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Value Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Sum Assured</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Lives Assured</strong></td>
+                    <td>Multiple lines of text<br><em>Names of people covered by the policy</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Other Assets</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Other Assets | <strong>Category:</strong> assets_liabilities
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Description</strong></td>
+                    <td>Multiple lines of text<br><em>Debts owed, personal possessions, cars, etc.</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Value</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Value Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Mortgage</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Mortgage | <strong>Category:</strong> assets_liabilities (Liability)
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Description</strong></td>
+                    <td>Multiple lines of text</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Mortgage Type</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Residential</li>
+                            <li>BTL (Buy-to-Let)</li>
+                            <li>Consumer BTL</li>
+                            <li>Commercial</li>
+                            <li>Lifetime Mortgage</li>
+                        </ul>
+                    </td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Term Outstanding</strong></td>
+                    <td>Number (months or years)</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Outstanding Amount</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Repayment Type</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Repayment</li>
+                            <li>Interest Only</li>
+                            <li>Part and Part</li>
+                        </ul>
+                    </td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Monthly Payment</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Interest Rate</strong></td>
+                    <td>Percentage from 0-100%<br><em>Example: 3.75%</em></td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>End Date for Fixed Rate</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>ERC Details</strong></td>
+                    <td>Multiple lines of text<br><em>Early Repayment Charge details</em></td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Value of Property</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Property Address</strong></td>
+                    <td>Address in 3 parts (Line One, Line Two, Postcode)</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Loans</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Loans | <strong>Category:</strong> assets_liabilities (Liability)
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Lender</strong></td>
+                    <td>Single line of text<br><em>Example: "Barclays", "NatWest"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Balance Outstanding</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Balance Outstanding Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Payment Frequency</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Weekly</li>
+                            <li>Monthly</li>
+                            <li>Quarterly</li>
+                            <li>Annually</li>
+                        </ul>
+                    </td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Payment Amount</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Interest Rate</strong></td>
+                    <td>Percentage from 0-100%<br><em>Example: 5.5%</em></td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>End Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Car Finance</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Car Finance | <strong>Category:</strong> assets_liabilities (Liability)
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Lender</strong></td>
+                    <td>Single line of text<br><em>Example: "BMW Finance", "VW Financial Services"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Balance Outstanding</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Balance Outstanding Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Payment Frequency</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Weekly</li>
+                            <li>Monthly</li>
+                            <li>Quarterly</li>
+                            <li>Annually</li>
+                        </ul>
+                    </td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Payment Amount</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Interest Rate</strong></td>
+                    <td>Percentage from 0-100%<br><em>Example: 6.9%</em></td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>End Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Family Debts</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Family Debts | <strong>Category:</strong> assets_liabilities (Liability)
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Lender</strong></td>
+                    <td>Single line of text<br><em>Who the debt is owed to</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Balance Outstanding</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Balance Outstanding Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Payment Frequency</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Weekly</li>
+                            <li>Monthly</li>
+                            <li>Quarterly</li>
+                            <li>Annually</li>
+                        </ul>
+                    </td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Payment Amount</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Interest Rate</strong></td>
+                    <td>Percentage from 0-100%</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>End Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Credit Cards</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Credit Cards | <strong>Category:</strong> assets_liabilities (Liability)
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Lender</strong></td>
+                    <td>Single line of text<br><em>Example: "American Express", "Barclaycard"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Balance Outstanding</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Balance Outstanding Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Payment Frequency</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Weekly</li>
+                            <li>Monthly</li>
+                            <li>Quarterly</li>
+                            <li>Annually</li>
+                        </ul>
+                    </td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Payment Amount</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Interest Rate</strong></td>
+                    <td>Percentage from 0-100%<br><em>Example: 19.9%</em></td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>End Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Student Loans</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Student Loans | <strong>Category:</strong> assets_liabilities (Liability)
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Scheme</strong></td>
+                    <td>Single line of text<br><em>Example: "Plan 1", "Plan 2", "Postgraduate Loan"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Balance Outstanding</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Balance Outstanding Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Tax Debt</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Tax Debt | <strong>Category:</strong> assets_liabilities (Liability)
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Amount</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Amount Due Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Type of Tax</strong></td>
+                    <td>Single line of text<br><em>Example: "Income Tax", "Capital Gains Tax", "Self Assessment"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="section-divider"></div>
+
+        <h3 id="family-protection">Protection <span class="category-badge badge-protection">protection</span></h3>
+
+        <h4>Protection Policy</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Protection Policy | <strong>Category:</strong> protection
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Name</strong></td>
+                    <td>Single line of text<br><em>Example: "Life Insurance Policy", "Critical Illness Cover"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Product Owners</strong></td>
+                    <td>Select one or more product owners</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Provider</strong></td>
+                    <td>Single line of text<br><em>Example: "Legal & General", "Aviva"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Policy Number</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Cover Type</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Life</li>
+                            <li>Life & CI (Critical Illness)</li>
+                            <li>CI</li>
+                            <li>Income Protection</li>
+                            <li>Accident and Sickness</li>
+                            <li>Private Medical</li>
+                            <li>Relevant Life – Life</li>
+                            <li>Relevant Life CI</li>
+                            <li>Relevant Life – Life & CI</li>
+                            <li>Key Person Life</li>
+                            <li>Key Person CI</li>
+                            <li>Key Person Life & CI</li>
+                        </ul>
+                    </td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Term Type</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Level Term</li>
+                            <li>Increasing Term</li>
+                            <li>Decreasing Term</li>
+                            <li>Family Income Benefit</li>
+                            <li>WoL First Death</li>
+                            <li>WoL Second Death</li>
+                        </ul>
+                    </td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Lives Assured</strong></td>
+                    <td>Multiple lines of text<br><em>Names of people covered by the policy</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Sum Assured by Cover Type</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Duration</strong></td>
+                    <td>Number of years</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Start Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Monthly Payment</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>End Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Investment Element</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Yes</li>
+                            <li>No</li>
+                        </ul>
+                    </td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Surrender Value</strong></td>
+                    <td>Currency in £0.00 format<br><em>Only appears if Investment Element = Yes</em></td>
+                    <td class="required-conditional">If Investment Element = Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Date of Value</strong></td>
+                    <td>Date in DD/MM/YYYY format<br><em>Only appears if Investment Element = Yes</em></td>
+                    <td class="required-conditional">If Investment Element = Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>In Trust</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Yes</li>
+                            <li>No</li>
+                        </ul>
+                    </td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="section-divider"></div>
+
+        <h3 id="family-risk">Risk & Vulnerability <span class="category-badge badge-vulnerability_health">vulnerability_health</span></h3>
+
+        <h4>Health Information</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Health Information | <strong>Category:</strong> vulnerability_health
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Name</strong></td>
+                    <td>Single line of text<br><em>Example: "Current Health Status", "Health Update 2024"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Health Issues</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Yes</li>
+                            <li>No</li>
+                        </ul>
+                    </td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Health Issues Details</strong></td>
+                    <td>Multiple lines of text<br><em>Only appears if Health Issues = Yes</em></td>
+                    <td class="required-conditional">If Health Issues = Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Medication</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Yes</li>
+                            <li>No</li>
+                            <li>N/A</li>
+                        </ul>
+                    </td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Medication Details</strong></td>
+                    <td>Multiple lines of text<br><em>Only appears if Medication = Yes</em></td>
+                    <td class="required-conditional">If Medication = Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Smoker Status</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Smoker</li>
+                            <li>Non-smoker</li>
+                            <li>Previous Smoker</li>
+                            <li>Vaping</li>
+                        </ul>
+                    </td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Smoker Status Details</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Vulnerability Information</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Vulnerability Information | <strong>Category:</strong> vulnerability_health
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Name</strong></td>
+                    <td>Single line of text<br><em>Example: "Vulnerability Assessment", "Support Needs"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Vulnerable</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Yes</li>
+                            <li>No</li>
+                        </ul>
+                    </td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Vulnerable Details</strong></td>
+                    <td>Multiple lines of text<br><em>Only appears if Vulnerable = Yes</em></td>
+                    <td class="required-conditional">If Vulnerable = Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Vulnerability Adjustments Required</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Yes</li>
+                            <li>No</li>
+                        </ul>
+                    </td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Vulnerability Adjustments Details</strong></td>
+                    <td>Multiple lines of text<br><em>Only appears if Vulnerability Adjustments Required = Yes</em></td>
+                    <td class="required-conditional">If Adjustments Required = Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Risk Questionnaire (Family Groups)</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Risk Questionnaire | <strong>Category:</strong> vulnerability_health
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Name</strong></td>
+                    <td>Single line of text<br><em>Example: "Initial Assessment", "Annual Review 2024"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Score</strong></td>
+                    <td>Number</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Group Description</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>1 - Very Minimal</li>
+                            <li>2 - Minimal</li>
+                            <li>3 - Modest</li>
+                            <li>4 - Medium</li>
+                            <li>5 - More Adventurous</li>
+                            <li>6 - Adventurous</li>
+                            <li>7 - Speculative</li>
+                            <li>Customer Declined</li>
+                            <li>Other (type your own)</li>
+                        </ul>
+                    </td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Capacity for Loss</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Capacity for Loss | <strong>Category:</strong> vulnerability_health
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Capacity for Loss</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Low</li>
+                            <li>Low/Medium</li>
+                            <li>Medium</li>
+                            <li>Medium/High</li>
+                            <li>High</li>
+                            <li>Other (type your own)</li>
+                        </ul>
+                    </td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="section-divider"></div>
+
+        <!-- BUSINESS CLIENT GROUP TYPE -->
+        <h2 id="business">2. Business Client Group Type</h2>
+
+        <div class="note">
+            <strong>Note:</strong> Business groups can use all the same item types as Family groups (Income & Expenditure, Assets & Liabilities, Protection, Risk Assessment), plus the additional business-specific item types shown below.
+        </div>
+
+        <h3 id="business-basic">Business-Specific Items <span class="category-badge badge-basic_detail">basic_detail</span></h3>
+
+        <h4>Business Name</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Business Name | <strong>Category:</strong> basic_detail
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Name of Business</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Companies House Registration</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Companies House Registration | <strong>Category:</strong> basic_detail
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Companies House Registration Number</strong></td>
+                    <td>Single line of text<br><em>Example: 12345678</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Director Details</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Director Details | <strong>Category:</strong> basic_detail
+        </div>
+        <div class="note">
+            <strong>Note:</strong> You can add multiple directors - create a separate Director Details item for each director
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Title</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Mr</li>
+                            <li>Mrs</li>
+                            <li>Miss</li>
+                            <li>Other (type your own)</li>
+                        </ul>
+                    </td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Forenames</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Surname</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Known As</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Gender</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Male</li>
+                            <li>Female</li>
+                            <li>Other (type your own)</li>
+                        </ul>
+                    </td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Vulnerable</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Yes (with space to add details)</li>
+                            <li>No</li>
+                        </ul>
+                    </td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Vulnerability Adjustments Required</strong></td>
+                    <td>Choose from list:
+                        <ul class="options-list">
+                            <li>Yes (with space to add details)</li>
+                            <li>No</li>
+                        </ul>
+                    </td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Shareholder Details</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Shareholder Details | <strong>Category:</strong> basic_detail
+        </div>
+        <div class="note">
+            <strong>Note:</strong> You can add multiple shareholders - create a separate Shareholder Details item for each shareholder
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Shareholder Name</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Type of Shareholding</strong></td>
+                    <td>Single line of text<br><em>Example: "Ordinary Shares", "Preference Shares"</em></td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Amount of Shares</strong></td>
+                    <td>Number</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Business Valuation</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Business Valuation | <strong>Category:</strong> basic_detail
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Business Value</strong></td>
+                    <td>Currency in £0.00 format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Business Value Date</strong></td>
+                    <td>Date in DD/MM/YYYY format</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="section-divider"></div>
+
+        <!-- TRUST CLIENT GROUP TYPE -->
+        <h2 id="trust">3. Trust Client Group Type</h2>
+
+        <div class="note">
+            <strong>Note:</strong> Trust groups can use all the same item types as Family groups (Income & Expenditure, Assets & Liabilities, Protection, Risk Assessment), plus the additional trust-specific item types shown below.
+        </div>
+
+        <h3 id="trust-basic">Trust-Specific Items <span class="category-badge badge-basic_detail">basic_detail</span></h3>
+
+        <h4>Trust Name</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Trust Name | <strong>Category:</strong> basic_detail
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Name of Trust</strong></td>
+                    <td>Single line of text</td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Trust Type</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Trust Type | <strong>Category:</strong> basic_detail
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Type of Trust</strong></td>
+                    <td>Single line of text<br><em>Example: "Discretionary Trust", "Bare Trust"</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Trust Registration</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Trust Registration | <strong>Category:</strong> basic_detail
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Trust Registration Service Registration Number</strong></td>
+                    <td>Single line of text<br><em>HMRC Trust Registration Service number</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Settlor Details</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Settlor Details | <strong>Category:</strong> basic_detail
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Settlor Details</strong></td>
+                    <td>Multiple lines of text<br><em>Name and details of the person who created the trust</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Beneficiary Details</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Beneficiary Details | <strong>Category:</strong> basic_detail
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Beneficiary Details</strong></td>
+                    <td>Multiple lines of text<br><em>Name and details of trust beneficiaries</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Trustee Details</h4>
+        <div class="metadata">
+            <strong>Item Type:</strong> Trustee Details | <strong>Category:</strong> basic_detail
+        </div>
+        <div class="note">
+            <strong>Note:</strong> You can add multiple trustees - create a separate Trustee Details item for each trustee
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Field</th>
+                    <th style="width: 50%;">Format / Options</th>
+                    <th style="width: 25%;">Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Trustee Name</strong></td>
+                    <td>Multiple lines of text<br><em>Name of the trustee (in future, you'll be able to select from product owners)</em></td>
+                    <td class="required-yes">Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>Contact Details</strong></td>
+                    <td>Multiple lines of text for contact information</td>
+                    <td class="required-no">No</td>
+                </tr>
+                <tr>
+                    <td><strong>Notes</strong></td>
+                    <td>Multiple lines of text for additional information</td>
+                    <td class="required-no">No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="section-divider"></div>
+
+        <h2>Feedback Instructions</h2>
+
+        <div class="note">
+            <strong>Please review this document and provide feedback on:</strong>
+            <ul style="margin-top: 10px; margin-left: 20px;">
+                <li>Are all necessary item types included for each client group type?</li>
+                <li>Are the required fields appropriate for each item type?</li>
+                <li>Are any fields missing that should be captured?</li>
+                <li>Are any fields unnecessary or redundant?</li>
+                <li>Are the dropdown options comprehensive and appropriate?</li>
+                <li>Do the field formats make sense (single line vs. multiple lines, currency, dates, etc.)?</li>
+                <li>Does the organization by category (Big 5) make sense?</li>
+                <li>Are there any fields where the "Required" status should be different?</li>
+            </ul>
+        </div>
+
+        <div style="margin-top: 40px; padding: 20px; background-color: #f3f4f6; border-radius: 8px; text-align: center;">
+            <p style="margin: 0; color: #6b7280; font-size: 0.9em;">
+                Generated from Phase 2 Item Types Specification<br>
+                For internal review and feedback only
+            </p>
+        </div>
+    </div>
+</body>
+</html>
