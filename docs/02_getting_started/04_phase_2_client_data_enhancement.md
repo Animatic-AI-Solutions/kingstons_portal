@@ -46,9 +46,12 @@ Each product owner card displays comprehensive client information in a structure
 ### Tab 2: Main List (Information Items) - Columnar Data Display
 - **Information-Dense Table Layout**: Columnar display optimized for maximum data visibility per screen
 - **Required Columns**: Item Category, Item Type, Product Owners Associated
+- **Product Owner Association**: TWO patterns based on item category:
+  - **Simple Multi-Select**: Address, Email, Phone, ALL Income/Expenditure items use simple product owner selection
+  - **Complex Ownership**: Assets, Liabilities, Protection items use ownership percentages (Individual, Joint Tenants, or Tenants in Common)
 - **Slim Row Design**: Minimal padding and vertical spacing to display maximum items per page
 - **5 Information Categories**: Flexible JSON storage across all categories with bulk operations
-- **Advanced Search & Filtering**: Cross-category search with real-time filtering capabilities
+- **Advanced Search & Filtering**: Cross-category search with real-time filtering capabilities including product owner filtering
 - **Inline Editing**: Direct table editing with auto-save functionality
 
 ### Tab 3: Aims, Objectives & Actions (Major Restructure)

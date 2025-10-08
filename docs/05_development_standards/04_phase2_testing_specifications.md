@@ -2393,6 +2393,361 @@ describe('Ownership Schema Validation', () => {
 });
 ```
 
+#### Product Owner Field Pattern Validation
+
+**CRITICAL**: These tests validate the two distinct product owner patterns based on item category.
+
+```typescript
+// src/tests/schemas/product-owner-validation.test.ts
+describe('Client Information Items Validation', () => {
+
+  describe('Product Owner Field Pattern Validation', () => {
+
+    it('should reject Basic Personal Details as item_type', async () => {
+      const invalidItem = {
+        item_type: 'Basic Personal Details',
+        category: 'basic_detail',
+        data_content: {
+          title: 'Mr',
+          forename: 'John',
+          surname: 'Smith'
+        }
+      };
+
+      await expect(
+        createInformationItem(invalidItem)
+      ).rejects.toThrow('Basic Personal Details is not a valid item type');
+    });
+
+    it('should require product_owners field for Address item (basic_detail)', async () => {
+      const invalidItem = {
+        item_type: 'Address',
+        category: 'basic_detail',
+        data_content: {
+          address_line_one: '123 Main St',
+          postcode: 'M1 1AA'
+          // Missing product_owners field
+        }
+      };
+
+      await expect(
+        createInformationItem(invalidItem)
+      ).rejects.toThrow('product_owners field required for basic_detail category');
+    });
+
+    it('should require product_owners field for Basic Salary item (income_expenditure)', async () => {
+      const invalidItem = {
+        item_type: 'Basic Salary',
+        category: 'income_expenditure',
+        data_content: {
+          description: 'Tech Solutions Ltd',
+          amount: 45000.00,
+          frequency: 'Annually'
+          // Missing product_owners field
+        }
+      };
+
+      await expect(
+        createInformationItem(invalidItem)
+      ).rejects.toThrow('product_owners field required for income_expenditure category');
+    });
+
+    it('should require associated_product_owners for Cash Account (assets_liabilities)', async () => {
+      const invalidItem = {
+        item_type: 'Cash Accounts',
+        category: 'assets_liabilities',
+        data_content: {
+          provider: 'Barclays',
+          current_value: 5000.00
+          // Missing associated_product_owners field
+        }
+      };
+
+      await expect(
+        createInformationItem(invalidItem)
+      ).rejects.toThrow('associated_product_owners field required for assets_liabilities category');
+    });
+
+    it('should accept valid simple product_owners array (basic_detail)', async () => {
+      const validItem = {
+        item_type: 'Address',
+        category: 'basic_detail',
+        data_content: {
+          product_owners: [123, 456],  // Simple array pattern
+          address_line_one: '123 Main St',
+          postcode: 'M1 1AA'
+        }
+      };
+
+      const result = await createInformationItem(validItem);
+      expect(result.id).toBeDefined();
+      expect(result.data_content.product_owners).toEqual([123, 456]);
+    });
+
+    it('should accept valid simple product_owners array (income_expenditure)', async () => {
+      const validItem = {
+        item_type: 'Basic Salary',
+        category: 'income_expenditure',
+        data_content: {
+          product_owners: [123],  // Simple array pattern
+          description: 'Tech Solutions Ltd',
+          amount: 45000.00,
+          frequency: 'Annually',
+          date: '15/03/2024'
+        }
+      };
+
+      const result = await createInformationItem(validItem);
+      expect(result.id).toBeDefined();
+      expect(result.data_content.product_owners).toEqual([123]);
+    });
+
+    it('should accept valid complex ownership structure (assets_liabilities)', async () => {
+      const validItem = {
+        item_type: 'Cash Accounts',
+        category: 'assets_liabilities',
+        data_content: {
+          associated_product_owners: {
+            association_type: 'tenants_in_common',
+            '123': 60.00,
+            '456': 40.00
+          },
+          provider: 'Barclays',
+          current_value: 5000.00,
+          value_date: '26/08/2024'
+        }
+      };
+
+      const result = await createInformationItem(validItem);
+      expect(result.id).toBeDefined();
+      expect(result.data_content.associated_product_owners).toBeDefined();
+    });
+
+    it('should validate ownership percentages total 100% for tenants_in_common', async () => {
+      const invalidItem = {
+        item_type: 'Cash Accounts',
+        category: 'assets_liabilities',
+        data_content: {
+          associated_product_owners: {
+            association_type: 'tenants_in_common',
+            '123': 60.00,
+            '456': 50.00  // Total = 110%, invalid
+          },
+          provider: 'Barclays',
+          current_value: 5000.00
+        }
+      };
+
+      await expect(
+        createInformationItem(invalidItem)
+      ).rejects.toThrow('Ownership percentages must total 100.00%');
+    });
+
+    it('should reject product_owners array for assets_liabilities category', async () => {
+      const invalidItem = {
+        item_type: 'Cash Accounts',
+        category: 'assets_liabilities',
+        data_content: {
+          product_owners: [123, 456],  // Wrong pattern for this category
+          provider: 'Barclays',
+          current_value: 5000.00
+        }
+      };
+
+      await expect(
+        createInformationItem(invalidItem)
+      ).rejects.toThrow('associated_product_owners field required for assets_liabilities category');
+    });
+
+    it('should reject associated_product_owners for basic_detail category', async () => {
+      const invalidItem = {
+        item_type: 'Address',
+        category: 'basic_detail',
+        data_content: {
+          associated_product_owners: {  // Wrong pattern for this category
+            association_type: 'individual',
+            '123': 100.00
+          },
+          address_line_one: '123 Main St',
+          postcode: 'M1 1AA'
+        }
+      };
+
+      await expect(
+        createInformationItem(invalidItem)
+      ).rejects.toThrow('product_owners field required for basic_detail category');
+    });
+
+    it('should accept individual ownership (100%) for assets', async () => {
+      const validItem = {
+        item_type: 'Cash Accounts',
+        category: 'assets_liabilities',
+        data_content: {
+          associated_product_owners: {
+            association_type: 'individual',
+            '123': 100.00  // Individual ownership pattern
+          },
+          provider: 'Barclays',
+          current_value: 5000.00
+        }
+      };
+
+      const result = await createInformationItem(validItem);
+      expect(result.id).toBeDefined();
+    });
+
+    it('should accept joint_tenants association type', async () => {
+      const validItem = {
+        item_type: 'Land and Property',
+        category: 'assets_liabilities',
+        data_content: {
+          associated_product_owners: {
+            association_type: 'joint_tenants',
+            '123': 50.00,
+            '456': 50.00
+          },
+          current_value: 450000.00,
+          address: {
+            address_line_one: '123 Oak Street',
+            postcode: 'M1 1AA'
+          }
+        }
+      };
+
+      const result = await createInformationItem(validItem);
+      expect(result.id).toBeDefined();
+      expect(result.data_content.associated_product_owners.association_type).toBe('joint_tenants');
+    });
+
+    it('should validate product_owners is an array, not object', async () => {
+      const invalidItem = {
+        item_type: 'Address',
+        category: 'basic_detail',
+        data_content: {
+          product_owners: { '123': true },  // Should be array, not object
+          address_line_one: '123 Main St'
+        }
+      };
+
+      await expect(
+        createInformationItem(invalidItem)
+      ).rejects.toThrow('product_owners must be an array');
+    });
+
+    it('should validate associated_product_owners is an object, not array', async () => {
+      const invalidItem = {
+        item_type: 'Cash Accounts',
+        category: 'assets_liabilities',
+        data_content: {
+          associated_product_owners: [123, 456],  // Should be object, not array
+          current_value: 5000.00
+        }
+      };
+
+      await expect(
+        createInformationItem(invalidItem)
+      ).rejects.toThrow('associated_product_owners must be an object');
+    });
+
+    it('should require association_type in complex ownership', async () => {
+      const invalidItem = {
+        item_type: 'Cash Accounts',
+        category: 'assets_liabilities',
+        data_content: {
+          associated_product_owners: {
+            // Missing association_type
+            '123': 60.00,
+            '456': 40.00
+          },
+          current_value: 5000.00
+        }
+      };
+
+      await expect(
+        createInformationItem(invalidItem)
+      ).rejects.toThrow('association_type required in associated_product_owners');
+    });
+
+    it('should validate empty product_owners array is allowed', async () => {
+      const validItem = {
+        item_type: 'Address',
+        category: 'basic_detail',
+        data_content: {
+          product_owners: [],  // Empty array allowed
+          address_line_one: '123 Main St',
+          postcode: 'M1 1AA'
+        }
+      };
+
+      const result = await createInformationItem(validItem);
+      expect(result.id).toBeDefined();
+      expect(result.data_content.product_owners).toEqual([]);
+    });
+  });
+
+  describe('Integration Tests - Product Owner Pattern Enforcement', () => {
+
+    it('should enforce correct pattern across all basic_detail item types', async () => {
+      const basicDetailTypes = ['Address', 'Email Address', 'Phone Number'];
+
+      for (const itemType of basicDetailTypes) {
+        const item = {
+          item_type: itemType,
+          category: 'basic_detail',
+          data_content: {
+            product_owners: [123, 456]
+          }
+        };
+
+        const result = await createInformationItem(item);
+        expect(result.id).toBeDefined();
+      }
+    });
+
+    it('should enforce correct pattern across all income_expenditure item types', async () => {
+      const incomeTypes = ['Basic Salary', 'Bonuses/Commissions', 'State Pension', 'Income Tax'];
+
+      for (const itemType of incomeTypes) {
+        const item = {
+          item_type: itemType,
+          category: 'income_expenditure',
+          data_content: {
+            product_owners: [123],
+            amount: 1000.00,
+            frequency: 'Monthly',
+            date: '01/01/2024'
+          }
+        };
+
+        const result = await createInformationItem(item);
+        expect(result.id).toBeDefined();
+      }
+    });
+
+    it('should enforce correct pattern across all assets_liabilities item types', async () => {
+      const assetTypes = ['Cash Accounts', 'Premium Bonds', 'Cash ISA', 'Mortgage', 'Loans'];
+
+      for (const itemType of assetTypes) {
+        const item = {
+          item_type: itemType,
+          category: 'assets_liabilities',
+          data_content: {
+            associated_product_owners: {
+              association_type: 'individual',
+              '123': 100.00
+            },
+            current_value: 10000.00
+          }
+        };
+
+        const result = await createInformationItem(item);
+        expect(result.id).toBeDefined();
+      }
+    });
+  });
+});
+```
+
 #### API Response Schema Validation
 ```typescript
 // src/tests/schemas/api-response.test.ts

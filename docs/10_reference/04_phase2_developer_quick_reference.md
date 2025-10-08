@@ -132,6 +132,144 @@ type ItemDataContent =
   | VulnerabilityHealthItemData;
 ```
 
+### Query Examples for Product Owner Filtering
+
+**Filtering items by product owner across both patterns**:
+
+```sql
+-- Pattern 1: Find items with simple product_owners array (basic_detail, income_expenditure, vulnerability_health)
+-- Find all Address items for product owner ID 123
+SELECT *
+FROM client_information_items
+WHERE item_type IN ('basic_detail', 'income_expenditure', 'vulnerability_health')
+  AND data_content->'product_owners' @> '[123]'::jsonb;
+
+-- Pattern 2: Find items with complex associated_product_owners (assets_liabilities, protection)
+-- Find all assets owned (partially or fully) by product owner ID 123
+SELECT *
+FROM client_information_items
+WHERE item_type IN ('assets_liabilities', 'protection')
+  AND data_content->'associated_product_owners' ? '123';
+
+-- Combined: Find ALL items for a specific product owner (both patterns)
+SELECT *
+FROM client_information_items
+WHERE
+  -- Pattern 1: Simple array
+  (data_content->'product_owners' @> '[123]'::jsonb)
+  OR
+  -- Pattern 2: Complex ownership
+  (data_content->'associated_product_owners' ? '123');
+
+-- Find items with multiple owners (Pattern 1)
+SELECT *
+FROM client_information_items
+WHERE data_content->'product_owners' @> '[123, 456]'::jsonb;
+
+-- Find tenants_in_common items with specific ownership percentage
+SELECT *,
+  (data_content->'associated_product_owners'->>'123')::numeric AS ownership_percentage
+FROM client_information_items
+WHERE data_content->'associated_product_owners'->>'association_type' = 'tenants_in_common'
+  AND data_content->'associated_product_owners' ? '123'
+  AND (data_content->'associated_product_owners'->>'123')::numeric >= 50.00;
+
+-- Validate ownership percentages total 100%
+SELECT id, item_type,
+  data_content->'associated_product_owners' AS ownership,
+  (
+    SELECT SUM((value)::numeric)
+    FROM jsonb_each_text(data_content->'associated_product_owners')
+    WHERE key ~ '^[0-9]+$'  -- Only numeric keys
+  ) AS total_percentage
+FROM client_information_items
+WHERE data_content->'associated_product_owners' IS NOT NULL
+  AND data_content->'associated_product_owners'->>'association_type' = 'tenants_in_common';
+```
+
+```typescript
+// TypeScript/JavaScript query examples using API
+
+// Find all items for a specific product owner
+const getItemsByProductOwner = async (clientGroupId: number, productOwnerId: number) => {
+  const response = await fetch(
+    `/api/client_groups/${clientGroupId}/information_items?product_owner_id=${productOwnerId}`
+  );
+  return response.json();
+};
+
+// Filter by category and product owner
+const getBasicDetailItems = async (clientGroupId: number, productOwnerId: number) => {
+  const items = await fetch(
+    `/api/client_groups/${clientGroupId}/information_items?` +
+    `item_type=basic_detail&product_owner_id=${productOwnerId}`
+  ).then(r => r.json());
+
+  return items.filter(item =>
+    item.data_content.product_owners?.includes(productOwnerId)
+  );
+};
+
+// Get ownership percentage for an asset
+const getOwnershipPercentage = (item: any, productOwnerId: number): number => {
+  if (item.category === 'assets_liabilities' || item.category === 'protection') {
+    const ownership = item.data_content.associated_product_owners;
+    return ownership?.[productOwnerId.toString()] || 0;
+  }
+  return 0; // Not applicable for simple pattern
+};
+
+// Validate ownership percentages
+const validateOwnership = (item: any): { valid: boolean; total: number; error?: string } => {
+  const ownership = item.data_content.associated_product_owners;
+  if (!ownership) return { valid: false, total: 0, error: 'Missing ownership data' };
+
+  const { association_type, ...percentages } = ownership;
+  const total = Object.values(percentages).reduce((sum: number, pct: any) => sum + Number(pct), 0);
+
+  if (association_type === 'tenants_in_common' && Math.abs(total - 100) > 0.01) {
+    return { valid: false, total, error: `Percentages must total 100% (current: ${total.toFixed(2)}%)` };
+  }
+
+  return { valid: true, total };
+};
+```
+
+### Individual Ownership Pattern Clarification
+
+**IMPORTANT**: For individual (100%) ownership, use this format:
+
+```json
+{
+  "associated_product_owners": {
+    "association_type": "individual",
+    "123": 100.00  // product_owner_id as key, 100.00 as value
+  }
+}
+```
+
+**NOT** any of these incorrect formats:
+```json
+// ❌ WRONG - Don't use product_owner_id field
+{
+  "associated_product_owners": {
+    "association_type": "individual",
+    "product_owner_id": 123
+  }
+}
+
+// ❌ WRONG - Don't use array for complex pattern
+{
+  "associated_product_owners": [123]
+}
+
+// ❌ WRONG - Don't mix patterns
+{
+  "product_owners": [123],
+  "associated_product_owners": {...}
+}
+```
+
 ## 🔗 API Endpoints Summary
 
 ### Client Information Items

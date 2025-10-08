@@ -271,6 +271,168 @@ flowchart TD
    **Vulnerability & Health Categories**:
    - Health Condition, Vulnerable Client Status, Special Circumstances
 
+---
+
+## Product Owner Setup Workflow
+
+**IMPORTANT**: Before creating information items, you must first create Product Owners.
+
+### Step 1: Create Product Owners (Basic Personal Details)
+
+**Starting Point**: Client Details Page → Client Overview Tab
+
+1. **Navigate to Client Overview Tab**
+   - Click "Client Overview" tab (1st tab)
+   - **Result**: Product owner cards displayed
+
+2. **Add New Product Owner**
+   - Click "+ Add Product Owner" button
+   - **Result**: Product owner creation modal opens
+
+3. **Complete Basic Personal Details** (This defines a Product Owner)
+   ```
+   Required Fields:
+   Title: [Dropdown: Mr/Mrs/Ms/Dr/Prof]
+   Forename: [Required text field]
+   Middle Names: [Optional text field]
+   Surname: [Required text field]
+   Known As: [Optional text field]
+   Date of Birth: [Date picker]
+   Previous Name(s): [Optional text field]
+
+   Contact Information:
+   Email Address: [Email field]
+   Phone Numbers: [Multiple phone fields with type selection]
+   Home Address: [Address fields]
+   ```
+
+4. **Save Product Owner**
+   - Click "Save" button
+   - **Result**: Product owner created and appears as a card
+   - **Note**: This product owner can now be selected in information items
+
+### Step 2: Create Client Information Items
+
+**IMPORTANT**: Information items reference product owners using TWO different patterns:
+
+#### Pattern 1: Simple Multi-Select (Basic Detail, Income/Expenditure, Vulnerability/Health)
+
+**Used for**: Address, Email Address, Phone Number, ALL income items, ALL expenditure items, Health Issues, Risk Questionnaires
+
+**How it works**:
+- Select one or more product owners from a dropdown
+- No percentage allocation needed
+- Simple association: "Which product owners does this relate to?"
+
+**Example - Creating Address Item**:
+```
+Item Type: Basic Detail
+Item Category: Address
+Product Owners: [Multi-select dropdown]
+  ☑ John Smith (ID: 123)
+  ☑ Jane Smith (ID: 456)
+
+Address Line 1: 123 High Street
+Address Line 2: Manchester
+Postcode: M1 1AA
+Notes: Primary residence
+```
+
+**Example - Creating Basic Salary Item**:
+```
+Item Type: Income & Expenditure
+Item Category: Basic Salary
+Product Owners: [Multi-select dropdown]
+  ☑ John Smith (ID: 123)
+
+Description: Tech Solutions Ltd
+Amount: £45,000.00
+Frequency: Annually
+Date: 15/03/2024
+Notes: Annual review due March
+```
+
+#### Pattern 2: Complex Ownership Editor (Assets/Liabilities, Protection)
+
+**Used for**: ALL assets (Cash Accounts, ISAs, Pensions, Property, etc.) and ALL liabilities (Mortgages, Loans, Credit Cards, etc.), Protection policies
+
+**How it works**:
+- Select ownership type (Individual, Joint Tenants, or Tenants in Common)
+- Assign percentage allocations to each owner
+- Percentages must total 100%
+
+**Example - Creating Cash Account Item (Individual Ownership)**:
+```
+Item Type: Assets & Liabilities
+Item Category: Cash Accounts
+
+Ownership Configuration:
+  Association Type: Individual
+  Product Owner: John Smith (ID: 123) - 100%
+
+Provider: Barclays
+Account Type: Current Account
+Current Value: £2,500.00
+Value Date: 26/08/2024
+Start Date: 15/03/2020
+Notes: Main household account
+```
+
+**Example - Creating Property Item (Joint Tenants)**:
+```
+Item Type: Assets & Liabilities
+Item Category: Land and Property
+
+Ownership Configuration:
+  Association Type: Joint Tenants
+  Product Owners:
+    John Smith (ID: 123) - 50%
+    Jane Smith (ID: 456) - 50%
+  ✓ Total: 100% (Valid)
+
+Address:
+  Address Line 1: 123 Oak Street
+  Postcode: M1 1AA
+Current Value: £450,000.00
+Value Date: 01/09/2024
+Type of Property: Residential
+Notes: Family home, recent valuation
+```
+
+**Example - Creating Investment Account (Tenants in Common)**:
+```
+Item Type: Assets & Liabilities
+Item Category: General Investment Account
+
+Ownership Configuration:
+  Association Type: Tenants in Common
+  Product Owners:
+    John Smith (ID: 123) - 60%
+    Jane Smith (ID: 456) - 40%
+  ✓ Total: 100% (Valid)
+
+Provider: Vanguard
+Current Value: £45,000.00
+Value Date: 26/08/2024
+Account Number: ***1234
+Notes: Main investment portfolio
+```
+
+### Validation Rules
+
+**Pattern 1 (Simple)**:
+- At least one product owner must be selected
+- Empty selection shows: "Please select at least one product owner"
+
+**Pattern 2 (Complex)**:
+- Association type is required
+- For "Tenants in Common": Percentages MUST total 100%
+- For "Joint Tenants": Percentages shown but must be equal (typically 50/50 for 2 owners)
+- For "Individual": Only one owner at 100%
+- Invalid total shows: "Ownership percentages must total 100.00% (current: XX.XX%)"
+
+---
+
 ### Data Entry Process
 
 6. **Complete Item Details Form**
