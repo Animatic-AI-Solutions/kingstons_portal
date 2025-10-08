@@ -317,9 +317,31 @@ interface EncryptionStrategy {
 }
 ```
 
+### Product Owner Definition vs. Client Information Items
+
+**CRITICAL DISTINCTION:**
+
+**Product Owners** are defined by the `product_owners` table and include:
+- **Basic Personal Details fields**: Title, Forename, Middle Names, Surname, Known As, Date of Birth, Previous Name(s), Last Modified
+- **Contact fields**: Email address, phone numbers (via `product_owner_phones` table), home address
+- **Compliance fields**: Meeting dates, T&C signing dates, security words
+- **Purpose**: Define the individuals who can own/be associated with client information items
+
+**Client Information Items** reference product owners but do NOT include Basic Personal Details as an item type:
+- Items in `client_information_items` table have either:
+  - **Simple reference**: `product_owners` array field (for basic_detail, income_expenditure, vulnerability_health)
+  - **Complex ownership**: `associated_product_owners` structure with percentages (for assets_liabilities, protection)
+- **Basic Personal Details is NOT in the `item_type` CHECK constraint**
+- Product owners must be created first, then referenced in information items
+
+**Example Flow**:
+1. Create Product Owner → John Smith (product_owners table with title, forename, surname, DOB, etc.)
+2. Create Information Item → Home Address (client_information_items with `product_owners: [john_smith_id]`)
+3. Create Information Item → Cash Account (client_information_items with `associated_product_owners: {john_smith_id: 100%}`)
+
 ### 4. client_information_items (Enhanced with Priority/Status)
 
-**Purpose**: Flexible storage for all client information using JSON structure
+**Purpose**: Flexible storage for all client information using JSON structure (references product owners, does NOT define them)
 **Integration**: Works alongside existing client data, no conflicts
 
 ```sql
@@ -330,7 +352,8 @@ CREATE TABLE client_information_items (
     item_type VARCHAR(100) NOT NULL CHECK (
         item_type IN (
             -- Basic Detail Items
-            'Basic Personal Details', 'Address', 'Email Address', 'Phone Number', 
+            -- NOTE: 'Basic Personal Details' is NOT an item type - it defines Product Owners in the product_owners table
+            'Address', 'Email Address', 'Phone Number',
             'Special Relationships', 'Client Management', 'Meeting Schedule',
             'Client Declaration', 'Privacy Declaration', '3 Words & Share With',
             'Ongoing Fee Agreement', 'AML Check',
@@ -436,66 +459,89 @@ CREATE INDEX idx_client_items_type_client ON client_information_items
 
 **JSON Structure Examples** (Updated with Full Item Types Specification):
 
+**IMPORTANT**: Product owner field structure depends on category:
+- **basic_detail & income_expenditure & vulnerability_health**: Use simple `product_owners` array
+- **assets_liabilities & protection**: Use complex `associated_product_owners` structure with percentages
+
 ```json
 -- Basic Detail: Address (item_type="Address", category="basic_detail")
+// Uses simple product_owners array
 {
+  "product_owners": [123, 456],  // Simple array of product owner IDs
   "address_line_one": "1 New Street",
-  "address_line_two": "Neverland", 
+  "address_line_two": "Neverland",
   "postcode": "N0TH 3R3",
-  "residence_type": "Primary",
   "notes": "Current primary residence"
 }
 
--- Basic Detail: Phone Number (item_type="Phone Number", category="basic_detail")
+-- Basic Detail: Email Address (item_type="Email Address", category="basic_detail")
+// Uses simple product_owners array
 {
+  "product_owners": [123],  // Simple array
+  "email_address": "john.smith@email.com",
+  "notes": "Primary email"
+}
+
+-- Basic Detail: Phone Number (item_type="Phone Number", category="basic_detail")
+// Uses simple product_owners array
+{
+  "product_owners": [123],  // Simple array
   "phone_number": "07712345678",
   "phone_type": "Mobile",
-  "is_primary": true,
   "notes": "Primary contact number"
 }
 
 -- Income/Expenditure: Basic Salary (item_type="Basic Salary", category="income_expenditure")
+// Uses simple product_owners array
 {
-  "employer": "Tech Solutions Ltd",
-  "current_amount": 45000.00,
-  "frequency": "Annual",
-  "gross_net": "Gross",
-  "currency": "GBP",
-  "associated_product_owners": {
-    "association_type": "joint_tenants",
-    "123": 100.00
-  },
+  "product_owners": [123],  // Simple array for income items
+  "description": "Tech Solutions Ltd",
+  "amount": 45000.00,
+  "frequency": "Annually",
+  "date": "15/03/2024",
   "notes": "Annual salary review due in March"
 }
 
+-- Income/Expenditure: Income Tax (item_type="Income Tax", category="income_expenditure")
+// Uses simple product_owners array
+{
+  "product_owners": [123],  // Simple array
+  "description": "PAYE deductions",
+  "amount": 12500.00,
+  "frequency": "Annually",
+  "date": "05/04/2024",
+  "notes": ""
+}
+
 -- Assets/Liabilities: Cash Accounts (item_type="Cash Accounts", category="assets_liabilities")
+// Uses complex associated_product_owners structure with percentages
 {
   "provider": "Barclays",
-  "product_name": "Premier Current Account",
   "current_value": 2500.00,
+  "value_date": "15/09/2024",
   "start_date": "15/03/2020",
   "account_number": "12345678",
-  "sort_code": "20-00-00",
-  "associated_product_owners": {
+  "associated_product_owners": {  // Complex structure for assets
     "association_type": "tenants_in_common",
-    "123": 60.00,
-    "456": 40.00
+    "123": 60.00,  // Product owner ID: percentage
+    "456": 40.00   // Must total 100.00
   },
   "notes": "Main household account"
 }
 
--- Assets/Liabilities: Property (item_type="Property", category="assets_liabilities")
+-- Assets/Liabilities: Land and Property (item_type="Land and Property", category="assets_liabilities")
+// Uses complex associated_product_owners structure
 {
-  "property_address": {
+  "address": {
     "address_line_one": "123 Oak Street",
     "address_line_two": "Manchester",
     "postcode": "M1 1AA"
   },
   "current_value": 450000.00,
+  "value_date": "01/09/2024",
   "start_date": "01/06/2018",
-  "property_type": "Residential",
-  "mortgage_outstanding": 280000.00,
-  "associated_product_owners": {
+  "type_of_property": "Residential",
+  "associated_product_owners": {  // Complex structure for assets
     "association_type": "joint_tenants",
     "123": 50.00,
     "456": 50.00
@@ -504,16 +550,18 @@ CREATE INDEX idx_client_items_type_client ON client_information_items
 }
 
 -- Protection: Protection Policy (item_type="Protection Policy", category="protection")
+// Uses complex associated_product_owners structure
 {
   "provider": "Aviva",
   "policy_number": "POL123456",
-  "cover_type": "Term Life",
+  "cover_type": "Life",
+  "term_type": "Level Term",
+  "lives_assured": "John Smith, Mary Smith",
   "sum_assured": 100000.00,
-  "premium_amount": 25.50,
-  "premium_frequency": "Monthly",
-  "policy_start_date": "01/01/2020",
-  "policy_end_date": "01/01/2045",
-  "associated_product_owners": {
+  "monthly_payment": 25.50,
+  "start_date": "01/01/2020",
+  "end_date": "01/01/2045",
+  "associated_product_owners": {  // Complex structure for protection
     "association_type": "joint_tenants",
     "123": 50.00,
     "456": 50.00
@@ -521,19 +569,13 @@ CREATE INDEX idx_client_items_type_client ON client_information_items
   "notes": "Level term policy"
 }
 
--- Vulnerability/Health: Risk Questionnaire (item_type="Risk Questionnaire - Family", category="vulnerability_health")
+-- Vulnerability/Health: Risk Questionnaire (item_type="Risk Questionnaire", category="vulnerability_health")
+// Uses simple product_owners array
 {
-  "questionnaire_date": "15/08/2024",
-  "risk_score": 6,
-  "risk_category": "Balanced",
-  "investment_experience": "Some",
-  "time_horizon": "10+ years",
-  "attitude_to_loss": "Accept fluctuations for potential growth",
-  "associated_product_owners": {
-    "association_type": "joint_tenants",
-    "123": 50.00,
-    "456": 50.00
-  },
+  "product_owners": [123, 456],  // Simple array for vulnerability/health
+  "date": "15/08/2024",
+  "score": 6,
+  "group_description": "6 - Adventurous",
   "notes": "Completed jointly, both parties in agreement"
 }
 ```
@@ -544,7 +586,7 @@ CREATE INDEX idx_client_items_type_client ON client_information_items
 
 | Category | Purpose | Item Types | Date Field |
 |----------|---------|------------|------------|
-| **basic_detail** | Personal and contact information | Basic Personal Details, Address, Email Address, Phone Number, Special Relationships, Client Management, Meeting Schedule, Client Declaration, Privacy Declaration, 3 Words & Share With, Ongoing Fee Agreement, AML Check | updated_at (last_modified) |
+| **basic_detail** | Personal and contact information | Address, Email Address, Phone Number, Special Relationships, Client Management, Meeting Schedule, Client Declaration, Privacy Declaration, 3 Words & Share With, Ongoing Fee Agreement, AML Check<br>*Note: Basic Personal Details defines product owners, NOT a client item type* | updated_at (last_modified) |
 | **income_expenditure** | Income and expense tracking | Basic Salary, Bonuses/Commissions, Benefits in Kind, State Pension, Drawdown Income, UFPLS, Annuities, State Benefits, Rental Profit, Interest, Dividends, Trust Distribution, Directors Salary/Dividend, Rent, Council Tax, Utility Bills, Insurance Costs, Transport Costs, Household Expenditure, Debt Service Costs, Leisure & Entertainment, Holidays, Clothing, Personal Care, Children Expenses, Regular Charitable Giving, Care Home Fees | updated_at (last_modified) |
 | **assets_liabilities** | Financial assets and debts | Cash Accounts, Premium Bonds, Cash ISA, Stocks and Shares ISA, General Investment Account, Onshore/Offshore Investment Bond, Individual Shares, Personal/Workplace Pensions (Unmanaged), Property, Business Assets, Collectibles, Artwork, Cars, Jewelry, Other Physical Assets, Mortgage, Personal Loans, Credit Cards, Overdrafts, Business Debts, Student Loans, Car Finance | start_date + updated_at |
 | **protection** | Insurance and protection policies | Protection Policy | updated_at (last_modified) |
@@ -577,7 +619,20 @@ CREATE INDEX idx_client_items_type_client ON client_information_items
 }
 ```
 
-**Product Owner Relationships** (standardized ownership structure):
+**Product Owner Relationships** (TWO standardized patterns based on category):
+
+**Pattern 1: Simple Product Owner Array** (basic_detail, income_expenditure, vulnerability_health):
+```json
+{
+  "product_owners": [123, 456]  // Array of product_owner IDs
+}
+```
+Used by:
+- Address, Email Address, Phone Number (basic_detail)
+- ALL income/expenditure items (Basic Salary, Bonuses, Benefits, State Pension, Drawdown Income, UFPLS, Annuities, State Benefits, Rental Profit, Interest, Dividends, Non-Taxable Income, Chargeable Event, Other Income, Income Tax, Salary Sacrifice)
+- Vulnerability & Health items
+
+**Pattern 2: Complex Ownership Structure** (assets_liabilities, protection):
 ```json
 {
   "associated_product_owners": {
@@ -587,6 +642,9 @@ CREATE INDEX idx_client_items_type_client ON client_information_items
   }
 }
 ```
+Used by:
+- ALL assets_liabilities items (Cash Accounts, Premium Bonds, ISAs, Investment Accounts, Bonds, Shares, Pensions, Property, Mortgage, Loans, Credit Cards, Student Loans, Tax Debt, etc.)
+- Protection items (Life Cover, Critical Illness, Income Protection)
 
 **Currency and Financial Fields** (standardized validation):
 ```json

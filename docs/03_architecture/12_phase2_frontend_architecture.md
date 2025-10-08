@@ -1182,19 +1182,38 @@ const MainListTab: React.FC<MainListTabProps> = ({
     return emojiMap[category] || '📋';
   };
   
-  const formatOwnershipForDenseDisplay = (ownership: any): string => {
-    if (!ownership) return 'N/A';
-    
-    // Complex ownership display logic
-    if (ownership.type === 'individual') {
-      return `${ownership.ownerName} (100%)`;
-    } else if (ownership.type === 'joint') {
-      return `Joint (${ownership.owners.join(', ')})`;
-    } else if (ownership.type === 'tenants_in_common') {
-      return ownership.owners.map(o => `${o.name} (${o.percentage}%)`).join(', ');
+  const formatOwnershipForDenseDisplay = (item: any, productOwners: ProductOwner[]): string => {
+    const { category, data_content } = item;
+
+    // Pattern 1: Simple array (basic_detail, income_expenditure, vulnerability_health)
+    if (['basic_detail', 'income_expenditure', 'vulnerability_health'].includes(category)) {
+      const ownerIds = data_content?.product_owners || [];
+      if (ownerIds.length === 0) return 'N/A';
+
+      const ownerNames = ownerIds.map(id => {
+        const owner = productOwners.find(po => po.id === id);
+        return owner?.name || `ID:${id}`;
+      });
+      return ownerNames.join(', ');
     }
-    
-    return ownership.display || 'Complex';
+
+    // Pattern 2: Complex structure (assets_liabilities, protection)
+    if (['assets_liabilities', 'protection'].includes(category)) {
+      const ownership = data_content?.associated_product_owners;
+      if (!ownership) return 'N/A';
+
+      const { association_type, ...percentages } = ownership;
+      const ownerEntries = Object.entries(percentages).map(([id, pct]) => {
+        const owner = productOwners.find(po => po.id === parseInt(id));
+        return `${owner?.name || `ID:${id}`} (${pct}%)`;
+      });
+
+      return association_type === 'joint_tenants'
+        ? `Joint: ${ownerEntries.join(', ')}`
+        : `TIC: ${ownerEntries.join(', ')}`;
+    }
+
+    return 'N/A';
   };
   
   const toggleExpandDescription = (itemId: number) => {
@@ -1300,7 +1319,9 @@ const MainListTab: React.FC<MainListTabProps> = ({
             title: 'Ownership',
             render: (item) => (
               <OwnershipDisplay
-                ownership={item.data_content.associated_product_owners}
+                item={item}  // Pass full item to determine pattern
+                category={item.category}
+                productOwners={productOwners}
                 clientGroupId={clientGroupId}
               />
             )
@@ -3531,13 +3552,30 @@ interface ItemCreationModalProps {
 }
 
 // OwnershipConfiguration component API
+// Handles TWO ownership patterns based on item category:
+// Pattern 1 (simple): product_owners array for basic_detail, income_expenditure, vulnerability_health
+// Pattern 2 (complex): associated_product_owners object for assets_liabilities, protection
 interface OwnershipConfigurationProps {
-  ownership?: OwnershipDetails;
+  category: 'basic_detail' | 'income_expenditure' | 'assets_liabilities' | 'protection' | 'vulnerability_health';
+  ownership?: SimpleOwnership | ComplexOwnership;  // Union type for both patterns
   productOwners: ProductOwner[];
-  onChange: (ownership: OwnershipDetails) => void;
+  onChange: (ownership: SimpleOwnership | ComplexOwnership) => void;
   className?: string;
   disabled?: boolean;
   showValidation?: boolean;
+}
+
+// Pattern 1: Simple ownership (array of IDs)
+interface SimpleOwnership {
+  product_owners: number[];  // Array of product owner IDs
+}
+
+// Pattern 2: Complex ownership (percentages)
+interface ComplexOwnership {
+  associated_product_owners: {
+    association_type: 'joint_tenants' | 'tenants_in_common';
+    [product_owner_id: string]: number | string;  // ID -> percentage mapping
+  };
 }
 
 // EditableTable component API
@@ -3565,6 +3603,178 @@ interface EditableTableColumn<T> {
   render?: (item: T, index: number) => React.ReactNode;
   accessorFn?: (item: T) => any;
 }
+```
+
+### Product Owner Form Handling
+
+**Two Distinct Patterns Based on Category**:
+
+The form components must handle product owner selection differently based on the item category:
+
+**Pattern 1: Multi-Select Dropdown (Simple Array)**
+
+Used for: `basic_detail`, `income_expenditure`, `vulnerability_health`
+
+```typescript
+// Example: Address item form
+const AddressItemForm = ({ productOwners, onSubmit }) => {
+  const [selectedOwners, setSelectedOwners] = useState<number[]>([]);
+
+  return (
+    <form onSubmit={(e) => {
+      e.preventDefault();
+      onSubmit({
+        item_type: "Address",
+        category: "basic_detail",
+        data_content: {
+          product_owners: selectedOwners,  // Simple array
+          address_line_one: formData.addressLine1,
+          address_line_two: formData.addressLine2,
+          postcode: formData.postcode,
+          notes: formData.notes
+        }
+      });
+    }}>
+      <MultiSelectDropdown
+        label="Product Owners"
+        options={productOwners.map(po => ({ id: po.id, name: po.name }))}
+        value={selectedOwners}
+        onChange={setSelectedOwners}
+        required={true}
+        placeholder="Select one or more product owners"
+      />
+      {/* Other form fields */}
+    </form>
+  );
+};
+
+// Example: Basic Salary item form (income_expenditure)
+const IncomeSalaryForm = ({ productOwners, onSubmit }) => {
+  const [selectedOwners, setSelectedOwners] = useState<number[]>([]);
+
+  return (
+    <form onSubmit={(e) => {
+      e.preventDefault();
+      onSubmit({
+        item_type: "Basic Salary",
+        category: "income_expenditure",
+        data_content: {
+          product_owners: selectedOwners,  // Simple array
+          description: formData.employer,
+          amount: formData.amount,
+          frequency: formData.frequency,
+          date: formData.date,
+          notes: formData.notes
+        }
+      });
+    }}>
+      <MultiSelectDropdown
+        label="Product Owners"
+        options={productOwners}
+        value={selectedOwners}
+        onChange={setSelectedOwners}
+        required={true}
+      />
+      {/* Other form fields */}
+    </form>
+  );
+};
+```
+
+**Pattern 2: Complex Ownership Editor (Percentage Allocation)**
+
+Used for: `assets_liabilities`, `protection`
+
+```typescript
+// Example: Cash Account item form (assets_liabilities)
+const CashAccountForm = ({ productOwners, onSubmit }) => {
+  const [ownership, setOwnership] = useState({
+    association_type: 'individual',
+    percentages: { [productOwners[0]?.id]: 100.00 }
+  });
+
+  const handleOwnershipChange = (newOwnership) => {
+    // Validate percentages total 100%
+    const total = Object.values(newOwnership.percentages).reduce((sum, pct) => sum + pct, 0);
+    if (Math.abs(total - 100.00) < 0.01) {
+      setOwnership(newOwnership);
+    }
+  };
+
+  return (
+    <form onSubmit={(e) => {
+      e.preventDefault();
+
+      // Transform ownership to API format
+      const associated_product_owners = {
+        association_type: ownership.association_type,
+        ...ownership.percentages  // Spread percentages as ID: percentage pairs
+      };
+
+      onSubmit({
+        item_type: "Cash Accounts",
+        category: "assets_liabilities",
+        data_content: {
+          associated_product_owners,  // Complex structure
+          provider: formData.provider,
+          current_value: formData.currentValue,
+          value_date: formData.valueDate,
+          start_date: formData.startDate,
+          notes: formData.notes
+        }
+      });
+    }}>
+      <OwnershipPercentageInput
+        label="Product Owner Allocation"
+        productOwners={productOwners}
+        ownership={ownership}
+        onChange={handleOwnershipChange}
+        required={true}
+        showValidation={true}  // Shows percentage total validation
+      />
+      {/* Other form fields */}
+    </form>
+  );
+};
+```
+
+**Form Validation Rules**:
+
+```typescript
+// Validation function for product owner fields
+const validateProductOwners = (category: string, data_content: any): string | null => {
+  // Pattern 1 validation (simple array)
+  if (['basic_detail', 'income_expenditure', 'vulnerability_health'].includes(category)) {
+    if (!data_content.product_owners || data_content.product_owners.length === 0) {
+      return 'product_owners field required for this category';
+    }
+    return null;
+  }
+
+  // Pattern 2 validation (complex structure)
+  if (['assets_liabilities', 'protection'].includes(category)) {
+    if (!data_content.associated_product_owners) {
+      return 'associated_product_owners field required for this category';
+    }
+
+    const { association_type, ...percentages } = data_content.associated_product_owners;
+    if (!association_type) {
+      return 'association_type is required';
+    }
+
+    // Validate percentages total 100% for tenants_in_common
+    if (association_type === 'tenants_in_common') {
+      const total = Object.values(percentages).reduce((sum: number, pct: any) => sum + Number(pct), 0);
+      if (Math.abs(total - 100.00) > 0.01) {
+        return `Ownership percentages must total 100.00% (current: ${total.toFixed(2)}%)`;
+      }
+    }
+
+    return null;
+  }
+
+  return null;
+};
 ```
 
 ---

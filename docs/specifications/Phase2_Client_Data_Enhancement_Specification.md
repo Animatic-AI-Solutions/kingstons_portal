@@ -77,8 +77,9 @@ client_information_items (
 ```json
 // Home Address - Basic Detail (Dense Table Display)
 {
+  "product_owners": [123, 456],  // Simple array for basic_detail category
   "address_line_one": "1 New Street",
-  "address_line_two": "Neverland", 
+  "address_line_two": "Neverland",
   "postcode": "N0TH 3R3",
   "quick_summary": "1 New Street, N0TH 3R3"
 }
@@ -190,6 +191,17 @@ product_owner_phones (
 ---
 
 ## 3. Data Model - Enhanced Product Owner Architecture
+
+**IMPORTANT DISTINCTION:**
+
+**Product Owners** are defined by the `product_owners` table with Basic Personal Details:
+- Title, Forename, Middle Names, Surname, Known As, Date of Birth, Previous Name(s), Last Modified
+- These fields define individual product owners and are NOT client information items
+- Basic Personal Details is NOT an item_type in the `client_information_items` table
+
+**Client Information Items** reference product owners through two patterns:
+- **Simple Pattern**: `product_owners` array field (for basic_detail, income_expenditure, vulnerability_health)
+- **Complex Pattern**: `associated_product_owners` structure with percentages (for assets_liabilities, protection)
 
 ### 3.1 Product Owner Enhancements for Professional Interface
 ```sql

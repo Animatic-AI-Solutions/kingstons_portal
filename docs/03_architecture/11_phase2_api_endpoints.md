@@ -315,8 +315,9 @@ The Phase 2 enhancement introduces **category-specific endpoints** to support th
       "status": "current",
       "last_modified": "2024-08-27T10:30:00Z",
       "data_content": {
+        "product_owners": [123, 456],  // Simple array for basic_detail category
         "address_line_one": "123 High Street",
-        "address_line_two": "Manchester", 
+        "address_line_two": "Manchester",
         "postcode": "M1 1AA",
         "residence_type": "Primary",
         "notes": "Current primary residence"
@@ -440,15 +441,13 @@ The Phase 2 enhancement introduces **category-specific endpoints** to support th
       "status": "current",
       "last_modified": "2024-08-20T09:15:00Z",
       "data_content": {
-        "employer": "Tech Solutions Ltd",
-        "current_amount": 45000.00,
-        "frequency": "Annual",
+        "product_owners": [123],  // Simple array for income_expenditure category
+        "description": "Tech Solutions Ltd",
+        "amount": 45000.00,
+        "frequency": "Annually",
+        "date": "15/03/2024",
         "gross_net": "Gross",
         "currency": "GBP",
-        "associated_product_owners": {
-          "association_type": "joint_tenants",
-          "123": 100.00
-        },
         "notes": "Annual review due March"
       }
     }
@@ -535,6 +534,7 @@ The Phase 2 enhancement introduces **category-specific endpoints** to support th
           "status": "current",
           "last_modified": "2024-08-15T11:30:00Z",
           "data_content": {
+            "product_owners": [123, 456],  // Simple array for vulnerability_health category
             "questionnaire_date": "15/08/2024",
             "risk_score": 6,
             "risk_category": "Balanced",
@@ -551,6 +551,7 @@ The Phase 2 enhancement introduces **category-specific endpoints** to support th
       "item_type": "Health Issues",
       "name": "Medical Conditions",
       "data_content": {
+        "product_owners": [123],  // Simple array for vulnerability_health category
         "condition_summary": "Encrypted health information",
         "last_updated": "12/07/2024"
       }
@@ -583,11 +584,12 @@ All category-specific endpoints support full CRUD operations with category-optim
 ```json
 {
   "item_type": "Address", // Must match category's valid item types
+  "category": "basic_detail",
   "name": "Home Address", // Instance identifier
   "priority": "standard", // Optional: low, standard, high, critical
   "status": "current", // Optional: current, outdated, pending_review, verified
   "data_content": {
-    // Category-specific fields based on item_type
+    "product_owners": [123, 456],  // Required: Simple array for basic_detail category
     "address_line_one": "123 High Street",
     "address_line_two": "Manchester",
     "postcode": "M1 1AA",
@@ -747,7 +749,10 @@ The API automatically merges:
 
 | HTTP Status | Scenario | Response |
 |-------------|----------|----------|
+| 422 | Invalid item_type (Basic Personal Details) | `{"detail": "item_type 'Basic Personal Details' is not valid - this defines product owners, not client items"}` |
 | 422 | Invalid item_type for category | `{"detail": "item_type 'Basic Salary' not valid for category 'basic_detail'"}` |
+| 422 | Missing product_owners (basic_detail/income_expenditure) | `{"detail": "product_owners field required for basic_detail and income_expenditure items"}` |
+| 422 | Missing associated_product_owners (assets_liabilities) | `{"detail": "associated_product_owners field required for assets_liabilities items"}` |
 | 422 | Missing required fields | `{"detail": "start_date required for assets_liabilities category"}` |
 | 422 | Ownership percentage validation | `{"detail": "Product owner percentages must total 100.00%"}` |
 | 409 | Managed/unmanaged conflict | `{"detail": "Product already exists in managed system"}` |
@@ -809,7 +814,7 @@ Content-Type: application/json
         "valuation_date": "2024-08-26",
         "associated_product_owners": {
           "association_type": "individual",
-          "product_owner_id": 789
+          "789": 100.00  // Complex structure for assets_liabilities category
         }
       },
       "metadata": {
@@ -1929,17 +1934,26 @@ Every API response includes performance context for debugging:
         "bank": "Halifax",
         "account_type": "Current Account",
         "latest_valuation": 5000.00,
-        "valuation_date": "2024-08-26"
+        "valuation_date": "2024-08-26",
+        "associated_product_owners": {
+          "association_type": "individual",
+          "123": 100.00  // Complex structure for assets_liabilities category
+        }
       }
     },
     {
-      "item_type": "assets_liabilities", 
+      "item_type": "assets_liabilities",
       "item_category": "Savings Account",
       "data_content": {
         "bank": "Barclays",
         "account_type": "ISA",
         "latest_valuation": 15000.00,
-        "valuation_date": "2024-08-26"
+        "valuation_date": "2024-08-26",
+        "associated_product_owners": {
+          "association_type": "joint_tenants",
+          "123": 50.00,  // Complex structure for assets_liabilities category
+          "456": 50.00
+        }
       }
     }
   ],

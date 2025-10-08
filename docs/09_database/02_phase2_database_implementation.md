@@ -765,12 +765,14 @@ BEGIN
 END $$;
 
 -- 1. CLIENT INFORMATION ITEMS TABLE
+-- NOTE: 'Basic Personal Details' is NOT an item type - it defines Product Owners in the product_owners table
 CREATE TABLE client_information_items (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     client_group_id BIGINT NOT NULL,
     item_type VARCHAR(50) NOT NULL CHECK (
         item_type IN (
-            'basic_detail', 'income_expenditure', 'assets_liabilities', 
+            -- NOTE: Categories only, not individual item types like 'Address' or 'Basic Salary'
+            'basic_detail', 'income_expenditure', 'assets_liabilities',
             'protection', 'vulnerability_health'
         )
     ),
@@ -975,12 +977,59 @@ ALTER TABLE client_unmanaged_products
 ADD CONSTRAINT valid_ownership_percentages 
 CHECK (validate_ownership_percentages(ownership_details));
 
-ALTER TABLE client_information_items 
-ADD CONSTRAINT valid_item_ownership_percentages 
+ALTER TABLE client_information_items
+ADD CONSTRAINT valid_item_ownership_percentages
 CHECK (
-    NOT (data_content ? 'associated_product_owners') OR 
+    NOT (data_content ? 'associated_product_owners') OR
     validate_ownership_percentages(data_content->'associated_product_owners')
 );
+
+-- Validation function for product owner fields based on item_type
+-- Ensures correct product owner pattern is used for each category
+CREATE OR REPLACE FUNCTION validate_product_owner_fields(item_type VARCHAR, data_content JSONB)
+RETURNS BOOLEAN AS $$
+BEGIN
+    -- Pattern 1: Simple product_owners array required for basic_detail, income_expenditure, vulnerability_health
+    IF item_type IN ('basic_detail', 'income_expenditure', 'vulnerability_health') THEN
+        -- Must have product_owners field as an array
+        IF NOT (data_content ? 'product_owners') THEN
+            RAISE WARNING 'product_owners field required for item_type: %', item_type;
+            RETURN FALSE;
+        END IF;
+        IF jsonb_typeof(data_content->'product_owners') != 'array' THEN
+            RAISE WARNING 'product_owners must be an array for item_type: %', item_type;
+            RETURN FALSE;
+        END IF;
+        RETURN TRUE;
+    END IF;
+
+    -- Pattern 2: Complex associated_product_owners required for assets_liabilities, protection
+    IF item_type IN ('assets_liabilities', 'protection') THEN
+        -- Must have associated_product_owners field as an object
+        IF NOT (data_content ? 'associated_product_owners') THEN
+            RAISE WARNING 'associated_product_owners field required for item_type: %', item_type;
+            RETURN FALSE;
+        END IF;
+        IF jsonb_typeof(data_content->'associated_product_owners') != 'object' THEN
+            RAISE WARNING 'associated_product_owners must be an object for item_type: %', item_type;
+            RETURN FALSE;
+        END IF;
+        -- Must have association_type
+        IF NOT (data_content->'associated_product_owners' ? 'association_type') THEN
+            RAISE WARNING 'association_type required in associated_product_owners';
+            RETURN FALSE;
+        END IF;
+        RETURN TRUE;
+    END IF;
+
+    RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Add validation constraint for product owner field patterns
+ALTER TABLE client_information_items
+ADD CONSTRAINT valid_product_owner_field_pattern
+CHECK (validate_product_owner_fields(item_type, data_content));
 
 -- Log completion
 DO $$

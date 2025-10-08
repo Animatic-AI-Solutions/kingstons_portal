@@ -31,11 +31,25 @@ product_owners.inception_date            -- For ordering/display
 }
 
 // Client Information Items (data_content)
+// Two patterns based on category:
+
+// Pattern 1: Simple array (basic_detail, income_expenditure, vulnerability_health)
 {
+  "product_owners": [123, 456],  // Array of product owner IDs
+  "address_line_one": "123 Main St",
+  "postcode": "M1 1AA"
+}
+
+// Pattern 2: Complex structure (assets_liabilities, protection)
+{
+  "associated_product_owners": {
+    "association_type": "tenants_in_common",
+    "123": 60.00,
+    "456": 40.00
+  },
   "latest_valuation": 25000.00,
-  "valuation_date": "2024-08-26", 
-  "associated_product_owners": { /* ownership object */ },
-  "bank": "Barclays",  // Flexible fields based on item_category
+  "valuation_date": "2024-08-26",
+  "bank": "Barclays",
   "account_type": "Current Account"
 }
 ```
@@ -50,6 +64,72 @@ type ItemType = 'basic_detail' | 'income_expenditure' | 'assets_liabilities' | '
 // income_expenditure: Employment Income, Living Expenses
 // protection: Life Insurance, Income Protection
 // vulnerability_health: Health Conditions, Vulnerable Indicators
+```
+
+### Product Owner Field Patterns
+
+**Rule:** Product owner field structure depends on item category:
+
+| Category | Field Name | Structure | Example |
+|----------|-----------|-----------|---------|
+| basic_detail | `product_owners` | Array of IDs | `[123, 456]` |
+| income_expenditure | `product_owners` | Array of IDs | `[123]` |
+| assets_liabilities | `associated_product_owners` | Ownership object | `{"association_type": "tenants_in_common", "123": 60.00, "456": 40.00}` |
+| protection | `associated_product_owners` | Ownership object | Same as assets |
+| vulnerability_health | `product_owners` | Array of IDs | `[123, 456]` |
+
+```typescript
+// TypeScript type definitions for product owner patterns
+
+// Pattern 1: Simple Product Owner Array
+interface BasicDetailItemData {
+  product_owners: number[];  // Simple array of product owner IDs
+  // ... category-specific fields
+}
+
+interface IncomeExpenditureItemData {
+  product_owners: number[];  // Simple array
+  description: string;
+  amount: number;
+  frequency: string;
+  date: string;
+  notes?: string;
+}
+
+interface VulnerabilityHealthItemData {
+  product_owners: number[];  // Simple array
+  // ... category-specific fields
+}
+
+// Pattern 2: Complex Ownership Structure
+interface AssetsLiabilitiesItemData {
+  associated_product_owners: {
+    association_type: "joint_tenants" | "tenants_in_common" | "individual";
+    [product_owner_id: string]: number | string;  // ID -> percentage mapping
+  };
+  current_value?: number;
+  value_date?: string;
+  start_date?: string;
+  // ... category-specific fields
+}
+
+interface ProtectionItemData {
+  associated_product_owners: {
+    association_type: "joint_tenants" | "tenants_in_common" | "individual";
+    [product_owner_id: string]: number | string;
+  };
+  sum_assured?: number;
+  premium_amount?: number;
+  // ... category-specific fields
+}
+
+// Union type for all item data content
+type ItemDataContent =
+  | BasicDetailItemData
+  | IncomeExpenditureItemData
+  | AssetsLiabilitiesItemData
+  | ProtectionItemData
+  | VulnerabilityHealthItemData;
 ```
 
 ## 🔗 API Endpoints Summary
