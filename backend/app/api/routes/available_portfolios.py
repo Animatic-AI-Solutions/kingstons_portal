@@ -798,8 +798,9 @@ async def update_portfolio_template(portfolio_id: int, template_update: Portfoli
     try:
         logger.info(f"Updating portfolio template with ID: {portfolio_id}")
         
-        # Remove None values from the update data
-        update_data = {k: v for k, v in template_update.model_dump().items() if v is not None}
+        # Use exclude_unset=True to only include fields explicitly provided in the request
+        # This prevents default values from overwriting existing data
+        update_data = template_update.model_dump(exclude_unset=True)
         
         if not update_data:
             raise HTTPException(status_code=400, detail="No valid update data provided")

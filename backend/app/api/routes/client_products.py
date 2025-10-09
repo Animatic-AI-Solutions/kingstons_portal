@@ -1120,18 +1120,24 @@ async def update_client_product(client_product_id: int, client_product_update: C
         6. Returns the updated client product information
     Expected output: A JSON object containing the updated client product's details
     """
-    # Remove None values from the update data, except for nullable revenue fields
-    nullable_fields = {'fixed_cost', 'percentage_fee'}
-    all_data = client_product_update.model_dump()
-    update_data = {}
-    
-    for k, v in all_data.items():
-        # Include the field if:
-        # 1. It's not None, OR
-        # 2. It's None but it's a nullable field (meaning we want to set it to NULL)
-        if v is not None or k in nullable_fields:
-            update_data[k] = v
-    
+    # CRITICAL FIX: Use exclude_unset=True to only include fields that were explicitly provided in the request
+    # This prevents default None values from overwriting existing data (like fixed_cost and percentage_fee)
+    # Bug was: When updating notes, Pydantic would set fixed_cost=None, percentage_fee=None as defaults,
+    # and these would be included in the UPDATE, wiping out existing fee values
+    all_data = client_product_update.model_dump(exclude_unset=True)
+
+    # Now only explicitly provided fields will be in all_data
+    update_data = all_data
+
+    # Additional safety: Prevent accidental NULL fees (they should only be NULL on initial creation)
+    # If someone explicitly wants to clear fees, they should use a dedicated endpoint
+    if 'fixed_cost' in update_data and update_data['fixed_cost'] is None:
+        logger.warning(f"Rejected attempt to set fixed_cost to NULL for product {client_product_id}")
+        del update_data['fixed_cost']  # Remove from update to preserve existing value
+    if 'percentage_fee' in update_data and update_data['percentage_fee'] is None:
+        logger.warning(f"Rejected attempt to set percentage_fee to NULL for product {client_product_id}")
+        del update_data['percentage_fee']  # Remove from update to preserve existing value
+
     if not update_data:
         raise HTTPException(status_code=400, detail="No valid update data provided")
     
