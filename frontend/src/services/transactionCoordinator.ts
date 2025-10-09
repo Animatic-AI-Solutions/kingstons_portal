@@ -58,49 +58,34 @@ export class TransactionCoordinator {
       const activities = edits.filter(edit => edit.activityType !== 'Current Value');
       const valuations = edits.filter(edit => edit.activityType === 'Current Value');
 
-      console.log(`🔄 Transaction Coordinator: Processing ${activities.length} activities and ${valuations.length} valuations`);
-
       // VALIDATION: Check activities before processing to prevent sequence waste
       if (activities.length > 0) {
         const validationErrors = this.validateBulkActivities(activities);
         if (validationErrors.length > 0) {
           throw new Error(`Validation failed: ${validationErrors.join(', ')}`);
         }
-        console.log(`✅ Validation passed for ${activities.length} activities`);
       }
 
       // PHASE 1: Save all activities first (using bulk operations where possible)
       if (activities.length > 0) {
-        console.log('📥 Phase 1: Saving activities in bulk...');
-        
         await this.saveBulkActivities(activities, accountHoldingId);
         result.processedActivities = activities.length;
-        
-        console.log(`✅ Phase 1 Complete: ${result.processedActivities} activities saved in bulk`);
       }
 
       // PHASE 2: Save valuations after all activities are saved
       if (valuations.length > 0) {
-        console.log('💰 Phase 2: Saving valuations...');
-        
         for (const valuation of valuations) {
           await this.saveValuation(valuation);
           result.processedValuations++;
         }
-        
-        console.log(`✅ Phase 2 Complete: ${result.processedValuations} valuations saved`);
       }
 
       // PHASE 3: Trigger IRR recalculation for affected portfolio funds
-      console.log('🔄 Phase 3: Triggering IRR recalculation...');
-      
       // Group activities by fund and month to trigger recalculation
       const fundRecalculationMap = new Map<number, string[]>();
-      
+
       // Process activities
       if (activities.length > 0) {
-        console.log('🔄 Phase 3a: Processing activity-based IRR recalculation...');
-        
         activities.forEach(activity => {
           if (!activity.toDelete) { // Only for non-deleted activities
             const fundId = activity.fundId;
@@ -113,11 +98,9 @@ export class TransactionCoordinator {
           }
         });
       }
-      
+
       // Process valuations - NEW: Also trigger IRR recalculation for valuation changes
       if (valuations.length > 0) {
-        console.log('🔄 Phase 3b: Processing valuation-based IRR recalculation...');
-        
         valuations.forEach(valuation => {
           if (!valuation.toDelete) { // Only for non-deleted valuations
             const fundId = valuation.fundId;
@@ -127,8 +110,6 @@ export class TransactionCoordinator {
               fundRecalculationMap.set(fundId, []);
             }
             fundRecalculationMap.get(fundId)!.push(valuationDate);
-            
-            console.log(`📊 Valuation change detected for fund ${fundId} on ${valuationDate} - will trigger IRR recalculation`);
           }
         });
       }
@@ -139,9 +120,7 @@ export class TransactionCoordinator {
           try {
             // Get the earliest date for this fund to trigger recalculation
             const earliestDate = dates.sort()[0];
-            
-            console.log(`🔄 Triggering IRR recalculation for fund ${fundId} from date ${earliestDate}`);
-            
+
             const recalcResponse = await api.post(`portfolio_funds/${fundId}/recalculate-irr`, {
               activity_date: earliestDate
             });
@@ -149,9 +128,6 @@ export class TransactionCoordinator {
             if (recalcResponse.data?.recalculation_result?.recalculated_existing) {
               const recalculatedCount = recalcResponse.data.recalculation_result.recalculated_existing;
               result.recalculatedIRRs += recalculatedCount;
-              console.log(`✅ Recalculated ${recalculatedCount} IRR values for fund ${fundId}`);
-            } else {
-              console.log(`✅ IRR recalculation triggered for fund ${fundId} (no existing IRRs to recalculate)`);
             }
             
           } catch (error: any) {
@@ -159,13 +135,7 @@ export class TransactionCoordinator {
             // Don't fail the entire transaction for IRR recalculation issues
           }
         }
-        
-        console.log(`✅ Phase 3 Complete: ${result.recalculatedIRRs} IRR values recalculated across ${fundRecalculationMap.size} funds`);
-      } else {
-        console.log('✅ Phase 3 Complete: No IRR recalculation needed (no non-deleted activities or valuations)');
       }
-
-      console.log('🎉 Transaction Coordinator: All saves completed successfully');
       
     } catch (error: any) {
       console.error('❌ Transaction Coordinator Error:', error);
@@ -190,8 +160,6 @@ export class TransactionCoordinator {
       amount: activity.value
     };
 
-    console.log(`📥 Saving activity: ${JSON.stringify(activityData)}`);
-
     if (activity.toDelete && activity.originalActivityId) {
       await api.delete(`holding_activity_logs/${activity.originalActivityId}`);
     } else if (activity.isNew) {
@@ -212,20 +180,17 @@ export class TransactionCoordinator {
     activities: ActivityEdit[], 
     accountHoldingId: number
   ): Promise<void> {
-    
+
     if (activities.length === 0) return;
-    
-    console.log(`🚀 BULK: Saving ${activities.length} activities with sequence reservation`);
-    
+
     // Separate activities by operation type
     const newActivities = activities.filter(activity => activity.isNew && !activity.toDelete);
     const updateActivities = activities.filter(activity => !activity.isNew && !activity.toDelete && activity.originalActivityId);
     const deleteActivities = activities.filter(activity => activity.toDelete && activity.originalActivityId);
-    
+
+
     // Handle bulk creation for new activities
     if (newActivities.length > 0) {
-      console.log(`📥 BULK: Creating ${newActivities.length} new activities...`);
-      
       // Convert to backend format
       const activityData = newActivities.map(activity => ({
         portfolio_fund_id: activity.fundId,
@@ -236,24 +201,20 @@ export class TransactionCoordinator {
       }));
 
       // Use bulk endpoint with sequence reservation
-      const response = await api.post('holding_activity_logs/bulk', activityData, {
+      await api.post('holding_activity_logs/bulk', activityData, {
         params: { skip_irr_calculation: true }
       });
-      
-      console.log(`✅ BULK: Successfully created ${response.data.length} activities`);
     }
     
     // Handle individual updates (can't be bulked due to different IDs)
     if (updateActivities.length > 0) {
-      console.log(`🔄 BULK: Updating ${updateActivities.length} existing activities individually...`);
       for (const activity of updateActivities) {
         await this.saveActivity(activity, accountHoldingId);
       }
     }
-    
+
     // Handle individual deletions (can't be bulked due to different IDs)
     if (deleteActivities.length > 0) {
-      console.log(`🗑️ BULK: Deleting ${deleteActivities.length} activities individually...`);
       for (const activity of deleteActivities) {
         await this.saveActivity(activity, accountHoldingId);
       }
@@ -298,8 +259,6 @@ export class TransactionCoordinator {
       valuation_date: `${valuation.month}-01`,
       valuation: parseFloat(valuation.value)
     };
-
-    console.log(`💰 Saving valuation: ${JSON.stringify(valuationData)}`);
 
     if (valuation.toDelete && valuation.originalActivityId) {
       await api.delete(`fund_valuations/${valuation.originalActivityId}`);

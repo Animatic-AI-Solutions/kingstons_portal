@@ -37,9 +37,7 @@ export class ReportDataService {
    */
   async getReportData(params: ReportDataParams): Promise<CompleteReportData> {
     const { uniqueProductIds, selectedValuationDate } = params;
-    
-    console.log('🚀 Batch fetching report data for products:', uniqueProductIds);
-    
+
     // Batch fetch all required data in parallel (Phase 3: API Call Optimization)
     const [
       productsData,
@@ -58,12 +56,6 @@ export class ReportDataService {
       irrDataResults,
       selectedValuationDate
     );
-
-    console.log('✅ Report data batch fetch complete:', {
-      products: reportData.productSummaries.length,
-      totalValue: reportData.totalValuation,
-      totalIRR: reportData.totalIRR
-    });
 
     return reportData;
   }

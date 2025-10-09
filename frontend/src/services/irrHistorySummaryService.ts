@@ -92,36 +92,29 @@ class IRRHistoryRequestManager {
 
   async executeRequest(request: IRRHistorySummaryRequest): Promise<any> {
     const requestKey = this.generateRequestKey(request);
-    
-    console.log('🔍 [GLOBAL IRR REQUEST MANAGER] Processing request:', requestKey);
 
     // Check cache first
     if (this.cache.has(requestKey)) {
       const cached = this.cache.get(requestKey);
       if (Date.now() - cached.timestamp < this.CACHE_TTL) {
-        console.log('✅ [GLOBAL IRR REQUEST MANAGER] Using cached data for:', requestKey);
         return cached.data;
       } else {
-        console.log('⏰ [GLOBAL IRR REQUEST MANAGER] Cache expired for:', requestKey);
         this.cache.delete(requestKey);
       }
     }
 
     // Check if request is already in progress
     if (this.activeRequests.has(requestKey)) {
-      console.log('🔄 [GLOBAL IRR REQUEST MANAGER] Request already in progress, waiting for existing request:', requestKey);
       const activeRequest = this.activeRequests.get(requestKey)!;
       return activeRequest.promise;
     }
 
     // Create new request
-    console.log('🚀 [GLOBAL IRR REQUEST MANAGER] Starting new request:', requestKey);
     const promise = this.performActualRequest(request).then(
       (data) => {
         // Cache successful response
         this.cache.set(requestKey, { data, timestamp: Date.now() });
         this.activeRequests.delete(requestKey);
-        console.log('✅ [GLOBAL IRR REQUEST MANAGER] Request completed successfully:', requestKey);
         return data;
       },
       (error) => {
@@ -149,7 +142,6 @@ class IRRHistoryRequestManager {
   clearCache(): void {
     this.activeRequests.clear();
     this.cache.clear();
-    console.log('🧹 [GLOBAL IRR REQUEST MANAGER] Cache cleared');
   }
 }
 
@@ -164,17 +156,10 @@ export class IRRHistorySummaryService {
   }
 
   async getIRRHistorySummary(request: IRRHistorySummaryRequest): Promise<IRRHistorySummaryResponse> {
-    console.log('🔍 [IRR HISTORY SUMMARY] Fetching data with request:', request);
-    
     try {
       // Use global request manager for deduplication
       const response = await requestManager.executeRequest(request);
-      
-      console.log('✅ [IRR HISTORY SUMMARY] Data fetched successfully:', {
-        success: true,
-        data: response
-      });
-      
+
       return {
         success: true,
         data: response

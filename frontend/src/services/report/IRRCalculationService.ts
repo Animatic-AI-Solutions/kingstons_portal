@@ -73,23 +73,19 @@ export class IRRCalculationService implements IIRRCalculationService {
     productSummaries: ProductPeriodSummary[]
   ): Promise<PortfolioIRRMap> {
     if (!productSummaries || productSummaries.length === 0) {
-      this.log('No product summaries provided');
       return new Map();
     }
-    
+
     try {
-      this.log('Fetching portfolio IRR values from database...');
-      
       const productIds = productSummaries.map(product => product.id);
-      this.log('Product IDs:', productIds);
-      
+
       // Fetch latest portfolio IRR values for each product
       const irrPromises = productIds.map(async (productId) => {
         return this.fetchSingleProductIRR(productId);
       });
       
       const irrResults = await Promise.all(irrPromises);
-      
+
       // Create a map of product_id to IRR value
       const irrMap = new Map<number, number>();
       irrResults.forEach(({ productId, irr }) => {
@@ -97,8 +93,7 @@ export class IRRCalculationService implements IIRRCalculationService {
           irrMap.set(productId, irr);
         }
       });
-      
-      this.log('Final IRR values map:', Object.fromEntries(irrMap));
+
       return irrMap;
       
     } catch (error) {
@@ -114,32 +109,25 @@ export class IRRCalculationService implements IIRRCalculationService {
   private async fetchSingleProductIRR(productId: number): Promise<{ productId: number; irr: number | null }> {
     try {
       // First, get the portfolio_id for this product from client_products
-      this.log(`Getting portfolio ID for product ${productId}...`);
       const clientProductResponse = await this.api.get(`/client_products/${productId}`);
-      
+
       if (!clientProductResponse.data) {
         console.warn(`No client product found for product ${productId}`);
         return { productId, irr: null };
       }
-      
+
       // Get the portfolio_id from the client product
       const portfolioId = clientProductResponse.data.portfolio_id;
       if (!portfolioId) {
         console.warn(`No portfolio_id found for product ${productId}`);
         return { productId, irr: null };
       }
-      
-      this.log(`Product ${productId} maps to portfolio ${portfolioId}`);
-      
-      // Test both endpoints to see which one works
-              this.log(`Fetching IRR for portfolio ${portfolioId}...`);
-      
+
       // Use the correct endpoint (hyphen, not underscore)
       const response = await this.api.get(`/api/portfolios/${portfolioId}/latest-irr`);
       // Fix: Properly handle zero values - only convert undefined to null
       const irrValue = response.data?.irr_result !== undefined ? response.data.irr_result : null;
-      
-      this.log(`Product ${productId} (portfolio ${portfolioId}) IRR:`, irrValue);
+
       return { productId, irr: irrValue };
       
     } catch (error) {
@@ -158,40 +146,31 @@ export class IRRCalculationService implements IIRRCalculationService {
    */
   async processHistoricalIRRData(reportData: ReportData): Promise<IRRHistoryData[]> {
     if (!reportData || !reportData.productSummaries) {
-      this.log('No report data provided');
       return [];
     }
 
     // Check if we have selected historical IRR dates from report generation
     if (!reportData.selectedHistoricalIRRDates || !reportData.availableHistoricalIRRDates) {
-      this.log('No selected historical IRR dates available');
       return [];
     }
-    
+
     try {
-      this.log('Using pre-selected historical IRR dates from report generation');
-      this.log('Selected dates:', reportData.selectedHistoricalIRRDates);
-      this.log('Available dates:', reportData.availableHistoricalIRRDates);
-      
       // FORCE FRESH DATA: Always fetch fresh historical IRR data to ensure consistency with summary table
       // Skip pre-fetched data to avoid stale data issues where individual cards show different values
       // than the history summary table (e.g., 48.6% vs 58.6% for same product/date)
-      this.log('🔄 [DATA CONSISTENCY] Forcing fresh historical IRR data fetch to match summary table data');
-      
+
       // Always use fresh API calls to ensure data consistency
       if (false && reportData.rawHistoricalIRRData) {
         // Disabled pre-fetched data optimization
       } else {
-        this.log('⚠️ No pre-fetched historical IRR data available, falling back to API calls');
         
         // Fallback to original method with API calls
         const irrHistoryPromises = reportData.productSummaries.map(product => {
           return this.processProductHistoricalIRR(product, reportData.selectedHistoricalIRRDates!);
         });
-        
+
         const irrHistoryResults = await Promise.all(irrHistoryPromises);
-        
-        this.log('Final processed historical IRR data:', irrHistoryResults);
+
         return irrHistoryResults;
       }
     } catch (error) {
@@ -206,21 +185,19 @@ export class IRRCalculationService implements IIRRCalculationService {
    * Helper method extracted from the product loop in fetchIrrHistory
    */
   private async processProductHistoricalIRR(
-    product: ProductPeriodSummary, 
+    product: ProductPeriodSummary,
     selectedHistoricalIRRDates: Record<number, string[]>
   ): Promise<IRRHistoryData> {
     const selectedDates = selectedHistoricalIRRDates[product.id] || [];
-    this.log(`Product ${product.id} (${product.product_name}) selected dates:`, selectedDates);
-    
+
     // Fetch actual historical IRR data from the API
     let portfolioHistoricalIrr: any[] = [];
-    
+
     try {
       // Fetch historical IRR data for this product from the API
       const historicalResponse = await historicalIRRService.getPortfolioHistoricalIRR(product.id, 24); // Get more records to cover selected dates
-      
+
       if (historicalResponse && historicalResponse.portfolio_historical_irr) {
-        this.log(`Fetched ${historicalResponse.portfolio_historical_irr.length} historical IRR records for product ${product.id}`);
         
         // Create portfolio historical IRR data based on actual historical values
         portfolioHistoricalIrr = selectedDates.map(dateStr => {
@@ -246,10 +223,7 @@ export class IRRCalculationService implements IIRRCalculationService {
             provider_name: matchingRecord?.provider_name || null
           };
         });
-        
-        this.log(`Created ${portfolioHistoricalIrr.length} portfolio historical IRR records for product ${product.id}:`, portfolioHistoricalIrr);
       } else {
-        this.log(`No historical IRR data found for product ${product.id}, using current IRR as fallback`);
         // Fallback to current IRR if no historical data available
         portfolioHistoricalIrr = selectedDates.map(dateStr => {
           const fullDate = dateStr.length === 7 ? `${dateStr}-01` : dateStr;
@@ -319,8 +293,7 @@ export class IRRCalculationService implements IIRRCalculationService {
       portfolio_historical_irr: portfolioHistoricalIrr,
       funds_historical_irr: fundsHistoricalIrr
     };
-    
-    this.log(`Created data structure for product ${product.id}:`, result);
+
     return result;
   }
 
@@ -329,18 +302,16 @@ export class IRRCalculationService implements IIRRCalculationService {
    * Optimized version that avoids duplicate API calls
    */
   private async processProductHistoricalIRRWithRawData(
-    product: ProductPeriodSummary, 
+    product: ProductPeriodSummary,
     selectedHistoricalIRRDates: Record<number, string[]>,
     rawHistoricalData: any
   ): Promise<IRRHistoryData> {
     const selectedDates = selectedHistoricalIRRDates[product.id] || [];
-    this.log(`🎯 [OPTIMIZATION] Product ${product.id} (${product.product_name}) using pre-fetched data for dates:`, selectedDates);
-    
+
     let portfolioHistoricalIrr: any[] = [];
-    
+
     try {
       if (rawHistoricalData && rawHistoricalData.portfolio_historical_irr) {
-        this.log(`🎯 [OPTIMIZATION] Using ${rawHistoricalData.portfolio_historical_irr.length} pre-fetched portfolio IRR records for product ${product.id}`);
         
         // Create portfolio historical IRR data based on pre-fetched values
         portfolioHistoricalIrr = selectedDates.map(dateStr => {
@@ -366,10 +337,7 @@ export class IRRCalculationService implements IIRRCalculationService {
             provider_name: matchingRecord?.provider_name || null
           };
         });
-        
-        this.log(`🎯 [OPTIMIZATION] Created ${portfolioHistoricalIrr.length} portfolio historical IRR records for product ${product.id} using pre-fetched data`);
       } else {
-        this.log(`⚠️ No pre-fetched historical IRR data found for product ${product.id}, using current IRR as fallback`);
         // Fallback to current IRR if no historical data available
         portfolioHistoricalIrr = selectedDates.map(dateStr => {
           const fullDate = dateStr.length === 7 ? `${dateStr}-01` : dateStr;
@@ -438,8 +406,7 @@ export class IRRCalculationService implements IIRRCalculationService {
       portfolio_historical_irr: portfolioHistoricalIrr,
       funds_historical_irr: fundsHistoricalIrr
     };
-    
-    this.log(`🎯 [OPTIMIZATION] Created data structure for product ${product.id} using pre-fetched data:`, result);
+
     return result;
   }
 
@@ -453,16 +420,13 @@ export class IRRCalculationService implements IIRRCalculationService {
    */
   async calculateRealTimeTotalIRR(reportData: ReportData): Promise<IRRCalculationResult> {
     if (!reportData || !reportData.productSummaries) {
-      this.log('No report data provided');
       return { success: false, irr: null, error: 'No report data provided' };
     }
-    
+
     try {
-      this.log('Calculating aggregated IRR using multiple portfolio funds...');
-      
       // Collect all portfolio fund IDs from all products
       const allPortfolioFundIds: number[] = [];
-      
+
       reportData.productSummaries.forEach(product => {
         if (product.funds) {
           product.funds.forEach(fund => {
@@ -472,8 +436,6 @@ export class IRRCalculationService implements IIRRCalculationService {
           });
         }
       });
-
-      this.log('Collected portfolio fund IDs:', allPortfolioFundIds);
       
       if (allPortfolioFundIds.length === 0) {
         console.warn('No portfolio fund IDs found');
@@ -488,19 +450,14 @@ export class IRRCalculationService implements IIRRCalculationService {
         irrDate = `${year}-${month}-${lastDayOfMonth.toString().padStart(2, '0')}`;
       }
 
-      this.log(`Using IRR date: ${irrDate}`);
-
       // Call the multiple portfolio funds IRR endpoint
       const response = await this.api.post('/portfolio_funds/multiple/irr', {
         portfolio_fund_ids: allPortfolioFundIds,
         irr_date: irrDate
       });
 
-      this.log('API Response:', response.data);
-
       if (response.data && response.data.irr_percentage !== null && response.data.irr_percentage !== undefined) {
         const totalIRR = response.data.irr_percentage;
-        this.log(`Calculated total IRR: ${totalIRR}%`);
         
         return { 
           success: true, 
@@ -596,15 +553,6 @@ export class IRRCalculationService implements IIRRCalculationService {
   // =============================================================================
 
   /**
-   * Logging helper that respects enableLogging option
-   */
-  private log(...args: any[]): void {
-    if (this.options.enableLogging) {
-      console.log(...args);
-    }
-  }
-
-  /**
    * Retry mechanism for failed IRR calculations
    */
   private async withRetry<T>(
@@ -620,7 +568,6 @@ export class IRRCalculationService implements IIRRCalculationService {
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
         if (i < attempts) {
-          this.log(`Attempt ${i + 1} failed, retrying...`);
           await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
         }
       }

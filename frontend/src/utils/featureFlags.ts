@@ -117,11 +117,7 @@ export const emergencyDisableMiniYearSelectors = (): void => {
 export const logFeatureFlagUsage = (featureName: string, enabled: boolean): void => {
   const flags = getFeatureFlags();
   if (flags.debugMiniYearSelectors) {
-    console.log(`[FeatureFlag] ${featureName}: ${enabled ? 'ENABLED' : 'DISABLED'}`, {
-      flags,
-      isMobile: isMobileDevice(),
-      userAgent: navigator.userAgent
-    });
+    // Debug logging removed for production
   }
 };
 
@@ -131,8 +127,7 @@ export const trackFeaturePerformance = (featureName: string, startTime: number):
   if (flags.debugMiniYearSelectors) {
     const endTime = performance.now();
     const duration = endTime - startTime;
-    console.log(`[FeatureFlag Performance] ${featureName}: ${duration.toFixed(2)}ms`);
-    
+
     // Alert if performance is poor
     if (duration > 50) {
       console.warn(`[FeatureFlag Performance] ${featureName} took ${duration.toFixed(2)}ms - consider optimization`);

@@ -94,7 +94,6 @@ class HistoricalIRRService {
       }
 
       const data = await response.json();
-      console.log(`📊 Portfolio historical IRR fetched for product ${productId}:`, data);
       return data;
     } catch (error) {
       console.error(`Error fetching portfolio historical IRR for product ${productId}:`, error);
@@ -124,7 +123,6 @@ class HistoricalIRRService {
       }
 
       const data = await response.json();
-      console.log(`📊 Funds historical IRR fetched for product ${productId}:`, data);
       return data;
     } catch (error) {
       console.error(`Error fetching funds historical IRR for product ${productId}:`, error);
@@ -140,8 +138,7 @@ class HistoricalIRRService {
   async getCombinedHistoricalIRR(productId: number, limit: number = 12): Promise<CombinedHistoricalIRRResponse> {
     try {
       const url = `${this.baseUrl}/api/historical-irr/combined/${productId}?limit=${limit}`;
-      console.log(`📊 Attempting to fetch combined historical IRR from: ${url}`);
-      
+
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -151,15 +148,10 @@ class HistoricalIRRService {
 
       // Check if response is HTML (error page) instead of JSON
       const contentType = response.headers.get('content-type');
-      console.log(`📊 Response status: ${response.status}, Content-Type: ${contentType}`);
-      
+
       if (contentType && contentType.includes('text/html')) {
         console.warn(`⚠️ Received HTML response instead of JSON for product ${productId}. This likely means the backend endpoint is not available.`);
-        
-        // Try to get the HTML content for debugging
-        const htmlContent = await response.text();
-        console.error(`📋 HTML Response content (first 200 chars): ${htmlContent.substring(0, 200)}`);
-        
+
         // Return empty response as fallback
         return {
           product_id: productId,
@@ -178,7 +170,6 @@ class HistoricalIRRService {
       }
 
       const data = await response.json();
-      console.log(`✅ Combined historical IRR fetched successfully for product ${productId}:`, data);
       return data;
     } catch (error) {
       console.error(`❌ Error fetching combined historical IRR for product ${productId}:`, error);

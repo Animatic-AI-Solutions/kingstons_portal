@@ -33,8 +33,7 @@ export const profileService = {
       if (profileData.preferred_client_view !== undefined) {
         validData.preferred_client_view = profileData.preferred_client_view;
       }
-      
-      console.log('Sending profile data:', validData);
+
       const response = await api.put('/api/auth/update-profile', validData);
       return response.data;
     } catch (error) {

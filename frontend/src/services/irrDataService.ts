@@ -41,24 +41,11 @@ export class IRRDataService {
    */
   async getStoredPortfolioIRR(portfolioId: number): Promise<number | null> {
     try {
-      console.log(`🔍 [IRR DEBUG] Fetching stored portfolio IRR for portfolio ${portfolioId}`);
-      console.log(`🔍 [IRR DEBUG] API endpoint: /api/portfolios/${portfolioId}/latest-irr`);
-      
       const response = await this.api.get(`/api/portfolios/${portfolioId}/latest-irr`);
-      
-      console.log(`🔍 [IRR DEBUG] Portfolio IRR API response:`, {
-        status: response.status,
-        data: response.data,
-        hasData: !!response.data,
-        irrResult: response.data?.irr_result,
-        irrResultType: typeof response.data?.irr_result,
-        irrDate: response.data?.irr_date
-      });
-      
+
       // Fix: Properly handle zero values - only convert undefined/null to null
       const irrResult = response.data?.irr_result !== undefined ? response.data.irr_result : null;
-      console.log(`🔍 [IRR DEBUG] Extracted IRR result: ${irrResult} (type: ${typeof irrResult})`);
-      
+
       return irrResult;
     } catch (error: any) {
       console.error(`❌ [IRR DEBUG] Could not fetch stored IRR for portfolio ${portfolioId}:`, error);
@@ -92,19 +79,14 @@ export class IRRDataService {
    */
   async calculateHistoricalIRR(params: IRRCalculationParams): Promise<number | null> {
     try {
-      console.log('🔄 [IRR DEBUG] Calculating IRR using standardized endpoint:', params);
-      console.log('🔍 DEBUG: irrDataService portfolioFundIds being sent:', params.portfolioFundIds);
-      
       // Import the existing API function
       const { calculateStandardizedMultipleFundsIRR } = await import('./api');
-      
+
       const response = await calculateStandardizedMultipleFundsIRR({
         portfolioFundIds: params.portfolioFundIds,
         irrDate: params.endDate
       });
-      
-      console.log('🔄 [IRR DEBUG] Raw API response from calculateStandardizedMultipleFundsIRR:', response.data);
-      
+
       // Fix: Properly handle zero values - check each field without treating 0 as falsy
       let irrResult = null;
       if (response.data.irr_percentage !== undefined) {
@@ -114,9 +96,7 @@ export class IRRDataService {
       } else if (response.data.irr !== undefined) {
         irrResult = response.data.irr;
       }
-      
-      console.log('🔄 [IRR DEBUG] Extracted IRR result:', irrResult);
-      
+
       return irrResult;
     } catch (error) {
       console.error('❌ [IRR DEBUG] Error calculating historical IRR:', error);
@@ -128,79 +108,47 @@ export class IRRDataService {
    * Smart IRR fetcher - uses stored values when available, calculates only when needed
    */
   async getOptimizedIRRData(reportParams: ReportParams): Promise<IRRDataSet> {
-    console.log(`🚀 [IRR DEBUG] Starting getOptimizedIRRData with params:`, reportParams);
-    
     const { portfolioId, portfolioFundIds, endDate, includeHistorical } = reportParams;
-    
+
     let portfolioIRR: number | null = null;
     let fundIRRs: FundIRR[] = [];
     let historicalIRR: number | null = null;
     let irrDate: string | null = null;
 
     // Strategy 1: Try to get stored portfolio IRR first (most efficient)
-    console.log(`📋 [IRR DEBUG] Strategy 1: Checking for stored portfolio IRR`);
     if (portfolioId) {
-      console.log(`📋 [IRR DEBUG] Portfolio ID provided: ${portfolioId}, fetching stored IRR...`);
       portfolioIRR = await this.getStoredPortfolioIRR(portfolioId);
-      console.log(`📋 [IRR DEBUG] Stored portfolio IRR result: ${portfolioIRR}`);
-      
+
       if (portfolioIRR !== null) {
-        console.log(`✅ [IRR DEBUG] Using stored portfolio IRR: ${portfolioIRR}% for portfolio ${portfolioId}`);
         irrDate = 'latest'; // Could be enhanced to get actual date
-      } else {
-        console.log(`⚠️ [IRR DEBUG] No stored portfolio IRR found for portfolio ${portfolioId}`);
       }
-    } else {
-      console.log(`⚠️ [IRR DEBUG] No portfolio ID provided, skipping stored portfolio IRR lookup`);
     }
 
     // Strategy 2: Get stored fund IRRs if available
     if (portfolioFundIds.length > 0) {
       fundIRRs = await this.getStoredFundIRRs(portfolioFundIds);
-      console.log(`Retrieved ${fundIRRs.length} stored fund IRRs`);
     }
 
     // Strategy 3: Calculate IRR only if:
     // - No stored portfolio IRR found, OR
-    // - Historical comparison is requested, OR  
+    // - Historical comparison is requested, OR
     // - Specific end date is provided (not using latest)
     const needsCalculation = portfolioIRR === null || includeHistorical || endDate;
-    
-    console.log(`📋 [IRR DEBUG] Strategy 3: Checking if IRR calculation is needed`);
-    console.log(`📋 [IRR DEBUG] Calculation decision factors:`, {
-      noStoredIRR: portfolioIRR === null,
-      includeHistorical,
-      hasEndDate: !!endDate,
-      needsCalculation,
-      portfolioFundIdsLength: portfolioFundIds.length
-    });
-    
+
     if (needsCalculation && portfolioFundIds.length > 0) {
-      console.log(`🔄 [IRR DEBUG] Calculating IRR due to:`, {
-        noStoredIRR: portfolioIRR === null,
-        includeHistorical,
-        hasEndDate: !!endDate
-      });
-      
       const calculatedIRR = await this.calculateHistoricalIRR({
         portfolioFundIds,
         endDate
       });
-      
-      console.log(`🔄 [IRR DEBUG] Calculated IRR result: ${calculatedIRR}`);
-      
+
       if (portfolioIRR === null) {
         portfolioIRR = calculatedIRR;
         irrDate = endDate || 'calculated';
-        console.log(`✅ [IRR DEBUG] Using calculated IRR as portfolio IRR: ${portfolioIRR}`);
       }
-      
+
       if (includeHistorical) {
         historicalIRR = calculatedIRR;
-        console.log(`✅ [IRR DEBUG] Set historical IRR: ${historicalIRR}`);
       }
-    } else {
-      console.log(`⏭️ [IRR DEBUG] Skipping IRR calculation - needsCalculation: ${needsCalculation}, fundIds length: ${portfolioFundIds.length}`);
     }
 
     const finalResult = {
@@ -209,9 +157,7 @@ export class IRRDataService {
       historicalIRR,
       irrDate
     };
-    
-    console.log(`🎯 [IRR DEBUG] Final getOptimizedIRRData result:`, finalResult);
-    
+
     return finalResult;
   }
 
@@ -223,8 +169,7 @@ export class IRRDataService {
     const results = await Promise.all(
       requests.map(params => this.getOptimizedIRRData(params))
     );
-    
-    console.log(`Processed ${requests.length} IRR requests in batch`);
+
     return results;
   }
 }

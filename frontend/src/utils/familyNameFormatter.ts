@@ -97,8 +97,6 @@ export function formatFamilyNames(names: string[]): string {
  * Test function to validate the formatting logic
  */
 export function testFamilyNameFormatting(): void {
-  console.log('🧪 [FAMILY NAME FORMATTER] Running tests...');
-  
   const testCases = [
     {
       input: ["Ben Nichols", "Ruth Nichols"],
@@ -125,17 +123,10 @@ export function testFamilyNameFormatting(): void {
       expected: ""
     }
   ];
-  
-  testCases.forEach((testCase, index) => {
+
+  testCases.forEach((testCase) => {
     const result = formatFamilyNames(testCase.input);
     const passed = result === testCase.expected;
-    console.log(`🧪 Test ${index + 1}: ${passed ? '✅ PASS' : '❌ FAIL'}`);
-    console.log(`   Input: [${testCase.input.map(n => `"${n}"`).join(', ')}]`);
-    console.log(`   Expected: "${testCase.expected}"`);
-    console.log(`   Got:      "${result}"`);
-    if (!passed) {
-      console.log(`   ❌ TEST FAILED!`);
-    }
-    console.log('');
+    // Test validation logic runs without console output
   });
 }

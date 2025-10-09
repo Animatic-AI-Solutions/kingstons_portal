@@ -244,47 +244,6 @@ export class ReportFormatter implements IReportFormatter {
     console.warn(`Invalid activity type: ${activityType}. Defaulting to 'investment'.`);
     return 'investment';
   }
-
-  // =============================================================================
-  // DEBUGGING & DEVELOPMENT HELPERS
-  // =============================================================================
-
-  /**
-   * Development helper to log current formatting options
-   * Should be removed in production builds
-   */
-  logOptions(): void {
-    if (process.env.NODE_ENV === 'development') {
-      console.group('ReportFormatter Options');
-      console.log('Hide Zeros:', this.options.hideZeros);
-      console.log('Visual Signing:', this.options.visualSigning);
-      console.log('Format Withdrawals as Negative:', this.options.formatWithdrawalsAsNegative);
-      console.groupEnd();
-    }
-  }
-
-  /**
-   * Development helper to test formatting with sample data
-   */
-  testFormatting(): void {
-    if (process.env.NODE_ENV === 'development') {
-      console.group('ReportFormatter Test Results');
-      
-      const testAmounts = [1000, 0, -500, null, undefined];
-      const testIrrs = [10.5, 0, -2.3, null, undefined];
-      
-      console.log('Currency with Zero Toggle:', 
-        testAmounts.map(amount => this.formatCurrencyWithZeroToggle(amount)));
-      console.log('Withdrawal Amounts:', 
-        testAmounts.map(amount => this.formatWithdrawalAmount(amount)));
-      console.log('Fund IRRs:', 
-        testIrrs.map(irr => this.formatFundIrr(irr)));
-      console.log('Product IRRs:', 
-        testIrrs.map(irr => this.formatProductIrr(irr)));
-      
-      console.groupEnd();
-    }
-  }
 }
 
 // Export factory function for consistent creation

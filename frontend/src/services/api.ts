@@ -44,15 +44,7 @@ api.interceptors.request.use(
     if (config.url && !config.url.startsWith('/api/')) {
       config.url = `/api${config.url.startsWith('/') ? '' : '/'}${config.url}`;
     }
-    
-    // Add logging for fund_valuations requests
-    if (config.url && config.url.includes('fund_valuations')) {
-      console.log('🔍 API REQUEST: Making request to', config.url);
-      console.log('🔍 API REQUEST: Method:', config.method);
-      console.log('🔍 API REQUEST: Data:', config.data);
-      console.log('🔍 API REQUEST: Headers:', config.headers);
-    }
-    
+
     return config;
   },
   (error) => {
@@ -69,12 +61,6 @@ api.interceptors.request.use(
  */
 api.interceptors.response.use(
   (response) => {
-    // Add logging for fund_valuations responses
-    if (response.config.url && response.config.url.includes('fund_valuations')) {
-      console.log('🔍 API RESPONSE: Success response from', response.config.url);
-      console.log('🔍 API RESPONSE: Status:', response.status);
-      console.log('🔍 API RESPONSE: Data:', response.data);
-    }
     return response;
   },
   (error) => {
@@ -311,8 +297,6 @@ export const createFundValuation = (data: {
   valuation_date: string;
   valuation: number;
 }) => {
-  console.log('🔍 API: createFundValuation called with data:', data);
-  console.log('🔍 API: Making POST request to fund_valuations endpoint');
   return api.post('fund_valuations', data);
 };
 
@@ -348,7 +332,6 @@ export const deleteFundValuation = (valuationId: number) => {
  * @returns {Promise} - API response with calculation results
  */
 export const calculatePortfolioIRR = (portfolioId: number) => {
-  console.log(`🔍 DEBUG: API calling POST portfolios/${portfolioId}/calculate-irr`);
   return api.post(`portfolios/${portfolioId}/calculate-irr`);
 };
 
@@ -604,9 +587,6 @@ export const calculateStandardizedMultipleFundsIRR = (params: {
   portfolioFundIds: number[];
   irrDate?: string;
 }) => {
-  console.log('🔍 DEBUG: api.ts calculateStandardizedMultipleFundsIRR called with:', params);
-  console.log('🔍 DEBUG: portfolioFundIds being sent to backend:', params.portfolioFundIds);
-  
   return api.post('portfolio_funds/multiple/irr', {
     portfolio_fund_ids: params.portfolioFundIds,
     irr_date: params.irrDate || null
@@ -823,19 +803,16 @@ export const getCompanyRevenueAnalytics = async () => {
  * @returns {Promise} - API response with client group revenue data
  */
 export const getClientGroupRevenueBreakdown = async () => {
-  console.log('🔍 Calling getClientGroupRevenueBreakdown API');
   return api.get('/revenue/client-groups');
 };
 
 // NEW: Optimized revenue breakdown endpoint
 export const getOptimizedRevenueBreakdown = async () => {
-  console.log('🚀 Calling optimized revenue breakdown API');
   return api.get('/revenue/optimized');
 };
 
 // NEW: Consolidated revenue data fetcher (single API call for all data)
 export const getConsolidatedRevenueData = async () => {
-  console.log('⚡ Calling consolidated revenue data API');
   try {
     // Try to get all data in parallel - use optimized endpoint for clients
     const [companyResponse, clientResponse, revenueRateResponse] = await Promise.all([
@@ -879,37 +856,19 @@ export const getOptimizedAnalyticsDashboard = async (
   templateLimit: number = 10
 ) => {
   const startTime = Date.now();
-  
+
   try {
-    console.log('🚀 Ultra-Fast Phase: Fetching analytics dashboard with pre-computed views...');
-    
     // Primary: Use ultra-fast endpoint with pre-computed views
     const response = await api.get('/analytics/dashboard-fast', {
-      params: { 
-        fund_limit: fundLimit, 
-        provider_limit: providerLimit, 
-        template_limit: templateLimit 
+      params: {
+        fund_limit: fundLimit,
+        provider_limit: providerLimit,
+        template_limit: templateLimit
       }
     });
 
     const endTime = Date.now();
     const loadTime = (endTime - startTime) / 1000;
-    
-    console.log(`✅ Ultra-fast analytics completed in ${loadTime.toFixed(2)}s (target: <2s)`);
-    console.log('📊 Pre-computed data structure:', {
-      metrics: response.data.metrics,
-      distributions: {
-        funds: response.data.distributions?.funds?.length || 0,
-        providers: response.data.distributions?.providers?.length || 0,
-        templates: response.data.distributions?.templates?.length || 0
-      },
-      performance: {
-        topPerformers: response.data.performance?.topPerformers?.length || 0,
-        clientRisks: response.data.performance?.clientRisks?.length || 0
-      },
-      phase: response.data.phase,
-      dataSource: response.data.cache_info?.data_source
-    });
 
     return {
       data: response.data,
@@ -920,29 +879,21 @@ export const getOptimizedAnalyticsDashboard = async (
   } catch (error) {
     const endTime = Date.now();
     const loadTime = (endTime - startTime) / 1000;
-    
+
     console.warn(`⚠️ Ultra-fast endpoint failed after ${loadTime.toFixed(2)}s:`, error);
-    
-    // Check if it's a views not deployed error
-    if (error.response?.status === 503) {
-      console.log('📋 Analytics views not deployed yet. Using fallback endpoint.');
-      console.log('💡 To enable ultra-fast analytics, run: deploy_analytics_views.ps1');
-    }
-    
+
     // Fallback to original optimized endpoint
     try {
       const response = await api.get('/analytics/dashboard_all', {
-        params: { 
-          fund_limit: fundLimit, 
-          provider_limit: providerLimit, 
-          template_limit: templateLimit 
+        params: {
+          fund_limit: fundLimit,
+          provider_limit: providerLimit,
+          template_limit: templateLimit
         }
       });
 
       const fallbackEndTime = Date.now();
       const fallbackLoadTime = (fallbackEndTime - startTime) / 1000;
-      
-      console.log(`✅ Fallback optimization completed in ${fallbackLoadTime.toFixed(2)}s`);
 
       return {
         data: response.data,
@@ -964,8 +915,6 @@ export const getFallbackAnalyticsDashboard = async (
   providerLimit: number = 100000,
   templateLimit: number = 100000
 ) => {
-  console.log('🔄 Using fallback analytics endpoints...');
-  
   const [
     dashboardResponse,
     performanceResponse,

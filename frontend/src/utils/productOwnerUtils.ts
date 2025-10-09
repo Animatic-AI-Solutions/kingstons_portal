@@ -17,49 +17,29 @@ export interface ProductOwner {
  * This follows site-wide UI guidance to prefer known_as format over formal names.
  */
 export const getProductOwnerFormalDisplayName = (owner: ProductOwner): string => {
-  console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (formal):', {
-    id: owner.id,
-    firstname: owner.firstname,
-    surname: owner.surname,
-    known_as: owner.known_as
-  });
-  
   const firstname = (owner.firstname && owner.firstname.trim()) || '';
   const surname = (owner.surname && owner.surname.trim()) || '';
   const knownAs = (owner.known_as && owner.known_as.trim()) || '';
-  
-  console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (formal):', {
-    firstname,
-    surname,
-    knownAs
-  });
-  
+
   // Priority 1: If known_as exists, use 'known_as + surname' format or just known_as
   if (knownAs) {
-    const result = surname ? `${knownAs} ${surname}` : knownAs;
-    console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (known_as + surname or known_as only):', result);
-    return result;
+    return surname ? `${knownAs} ${surname}` : knownAs;
   }
-  
+
   // Priority 2: Fallback to firstname + surname if both exist (when no known_as)
   if (firstname && surname) {
-    const result = `${firstname} ${surname}`;
-    console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 2 (firstname + surname fallback):', result);
-    return result;
+    return `${firstname} ${surname}`;
   }
-  
+
   // Priority 3: Use whatever single field exists
   if (firstname) {
-    console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 3 (firstname only):', firstname);
     return firstname;
   }
-  
+
   if (surname) {
-    console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 3 (surname only):', surname);
     return surname;
   }
-  
-  console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using fallback: Unknown');
+
   return 'Unknown';
 };
 
@@ -69,48 +49,29 @@ export const getProductOwnerFormalDisplayName = (owner: ProductOwner): string =>
  * This ensures product names always show the preferred nickname.
  */
 export const getProductOwnerKnownAsDisplayName = (owner: ProductOwner): string => {
-  console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Input owner (known_as):', {
-    id: owner.id,
-    firstname: owner.firstname,
-    surname: owner.surname,
-    known_as: owner.known_as
-  });
-  
   const firstname = (owner.firstname && owner.firstname.trim()) || '';
   const surname = (owner.surname && owner.surname.trim()) || '';
   const knownAs = (owner.known_as && owner.known_as.trim()) || '';
-  
-  console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Processed fields (known_as):', {
-    firstname,
-    surname,
-    knownAs
-  });
-  
+
   // Priority 1: If known_as exists, always use it
   if (knownAs) {
-    console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 1 (known_as):', knownAs);
     return knownAs;
   }
-  
+
   // Priority 2: Fallback to firstname + surname if both exist
   if (firstname && surname) {
-    const result = `${firstname} ${surname}`;
-    console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 2 (firstname + surname fallback):', result);
-    return result;
+    return `${firstname} ${surname}`;
   }
-  
+
   // Priority 3: Use whatever single field exists
   if (firstname) {
-    console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 3 (firstname only):', firstname);
     return firstname;
   }
-  
+
   if (surname) {
-    console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using Priority 3 (surname only):', surname);
     return surname;
   }
-  
-  console.log('🔍 [PRODUCT OWNER UTILS DEBUG] Using fallback: Unknown');
+
   return 'Unknown';
 };
 

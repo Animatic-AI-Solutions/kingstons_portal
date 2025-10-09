@@ -71,12 +71,7 @@ export const initializeColorService = async (initMissingColors = false): Promise
           }
         }
       });
-      
-      console.log('Provider color service initialized', { 
-        providersLoaded: providers.length,
-        colorsInCache: Object.keys(colorCache).length
-      });
-      
+
       isInitialized = true;
     } catch (fetchError) {
       console.error('Failed to fetch provider colors from API', fetchError);

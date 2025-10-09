@@ -41,15 +41,11 @@ export class ValuationDataService {
         };
       }
 
-      console.log(`🚀 Batch fetching valuations for ${fundIds.length} funds (eliminates ${fundIds.length} individual requests)`);
-
       const response = await this.api.post('/portfolio-funds/batch-valuations', {
         fund_ids: fundIds,
         valuation_date: valuationDate
       });
 
-      console.log(`✅ Batch valuation fetch complete: ${response.data.count} funds processed`);
-      
       return response.data;
     } catch (error) {
       console.error('Error in batch fund valuations:', error);
@@ -142,8 +138,6 @@ export class ValuationDataService {
         return new Map();
       }
 
-      console.log(`🚀 Batch fetching ALL historical valuations for ${fundIds.length} funds (eliminates ${fundIds.length} individual requests)`);
-
       // Use the new batch historical endpoint
       const response = await this.api.post('/portfolio-funds/batch-historical-valuations', {
         fund_ids: fundIds
@@ -154,21 +148,18 @@ export class ValuationDataService {
       // Process the batch response
       if (response.data && response.data.fund_historical_valuations) {
         const historicalData = response.data.fund_historical_valuations;
-        
+
         for (const [fundIdStr, valuations] of Object.entries(historicalData)) {
           const fundId = parseInt(fundIdStr);
           resultMap.set(fundId, valuations as any[]);
         }
       }
 
-      console.log(`✅ Batch historical valuation fetch complete: ${response.data?.total_valuations || 0} total valuations for ${fundIds.length} funds`);
       return resultMap;
     } catch (error) {
       console.error('Error in batch historical valuations:', error);
-      
+
       // Graceful fallback to individual requests if batch fails
-      console.log(`⚠️ Falling back to individual requests for ${fundIds.length} funds`);
-      
       const requests = fundIds.map(async (fundId) => {
         try {
           const response = await this.api.get(`/fund_valuations`, {
