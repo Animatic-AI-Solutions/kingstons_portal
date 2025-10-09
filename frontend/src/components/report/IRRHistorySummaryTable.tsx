@@ -586,27 +586,64 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
               {/* Table Body */}
               <tbody className="bg-white divide-y divide-gray-200">
                 {/* Product Rows */}
-                {organizeProductsByType(getUniqueProducts()).map((product, index) => {
-                  // Determine if this product should be greyed out (same logic as SummaryTab)
-                  const isLapsed = product.status === 'inactive' || product.status === 'lapsed';
-                  
-                  return (
-                    <tr key={`product-${product.product_id}-${index}`} className={`hover:bg-blue-50 ${isLapsed ? 'opacity-50 bg-gray-50' : ''}`}>
+                {(() => {
+                  // Separate active and lapsed products
+                  const organizedProducts = organizeProductsByType(getUniqueProducts());
+                  const activeProducts = organizedProducts.filter(p => p.status !== 'inactive' && p.status !== 'lapsed');
+                  const lapsedProducts = organizedProducts.filter(p => p.status === 'inactive' || p.status === 'lapsed');
+
+                  // Create aggregated "Previous Products" virtual row
+                  const previousProductsRow = lapsedProducts.length > 0 ? {
+                    product_id: 'previous-products-virtual',
+                    isVirtual: true,
+                    product_name: 'Previous Products',
+                    lapsedProductCount: lapsedProducts.length,
+                    provider_theme_color: null,
+                    status: 'virtual',
+                    lapsedProductIds: lapsedProducts.map(p => p.product_id)
+                  } : null;
+
+                  // Combine active products with Previous Products row
+                  const productsToDisplay = [...activeProducts];
+                  if (previousProductsRow) {
+                    productsToDisplay.push(previousProductsRow as any);
+                  }
+
+                  return productsToDisplay.map((product: any, index) => {
+                    // Determine if this is the virtual Previous Products row
+                    const isVirtual = product.isVirtual;
+                    const isLapsed = !isVirtual && (product.status === 'inactive' || product.status === 'lapsed');
+
+                    return (
+                      <tr key={`product-${product.product_id}-${index}`} className={`hover:bg-blue-50 ${isVirtual ? 'bg-gray-100 font-medium' : isLapsed ? 'opacity-50 bg-gray-50' : ''}`}>
                       {/* Product Name Cell */}
-                      <td className={`text-left px-2 py-2 ${isLapsed ? 'text-gray-500' : 'text-gray-800'}`}>
+                      <td className={`text-left px-2 py-2 ${isVirtual ? 'text-gray-800 font-medium' : isLapsed ? 'text-gray-500' : 'text-gray-800'}`}>
                         <div className="flex items-start gap-1.5">
                           {/* Provider Color Indicator */}
                           {product.provider_theme_color && (
-                            <div 
-                              className="w-2.5 h-2.5 rounded-full mt-0.5 flex-shrink-0" 
+                            <div
+                              className="w-2.5 h-2.5 rounded-full mt-0.5 flex-shrink-0"
                               style={{ backgroundColor: product.provider_theme_color }}
                             />
                           )}
                           <div className="flex-1 min-w-0">
                             <div className="text-sm leading-tight">
-                              {getEffectiveProductTitle(product)}
-                              {isLapsed && (
-                                <span className="ml-2 text-sm text-red-600 font-medium">(Lapsed)</span>
+                              {isVirtual ? (
+                                <>
+                                  {product.product_name}
+                                  {product.lapsedProductCount && (
+                                    <span className="ml-2 inline-flex items-center px-1 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-800">
+                                      {product.lapsedProductCount} {product.lapsedProductCount === 1 ? 'product' : 'products'}
+                                    </span>
+                                  )}
+                                </>
+                              ) : (
+                                <>
+                                  {getEffectiveProductTitle(product)}
+                                  {isLapsed && (
+                                    <span className="ml-2 text-sm text-red-600 font-medium">(Lapsed)</span>
+                                  )}
+                                </>
                               )}
                             </div>
                           </div>
@@ -616,6 +653,10 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
                       {/* Current Risk Cell */}
                       <td className="px-2 py-2 text-base text-right">
                         {(() => {
+                          if (isVirtual) {
+                            // Previous Products row always shows 0 risk (no current valuation in lapsed products)
+                            return formatWeightedRisk(0);
+                          }
                           const productRisk = getProductRisk(product.product_id);
                           return productRisk !== null ? (
                             formatWeightedRisk(productRisk)
@@ -627,20 +668,47 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
 
                       {/* IRR Value Cells */}
                       {tableData.dateHeaders.map((date, index) => {
-                        // NEW: Check if this date should be shown for this product
+                        const isCurrentYear = index === 0;
+
+                        // For virtual Previous Products row, calculate aggregated IRR from all lapsed products
+                        if (isVirtual && product.lapsedProductIds) {
+                          const lapsedIrrs: number[] = [];
+                          product.lapsedProductIds.forEach((productId: number) => {
+                            const irr = getIRRValueForProductAndDate(productId, date);
+                            if (irr !== null) {
+                              lapsedIrrs.push(irr);
+                            }
+                          });
+
+                          const avgIrr = lapsedIrrs.length > 0
+                            ? lapsedIrrs.reduce((sum, irr) => sum + irr, 0) / lapsedIrrs.length
+                            : null;
+
+                          return (
+                            <td
+                              key={`${product.product_id}-${date}`}
+                              className={`px-2 py-2 text-base text-right ${isCurrentYear ? 'bg-purple-50' : ''}`}
+                            >
+                              {avgIrr !== null ? (
+                                <span className={avgIrr >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                                  {IRRHistorySummaryService.formatIRRValue(avgIrr, 'total')}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </td>
+                          );
+                        }
+
+                        // For regular products, get individual IRR
                         const shouldShow = shouldShowDateForProduct(product.product_id, date);
                         const irrValue = shouldShow ? getIRRValueForProductAndDate(product.product_id, date) : null;
-                        
-                        // Check if this is the most recent (first) date since dates are sorted newest first
-                        const isCurrentYear = index === 0;
-                        // Use 'total' format type for active products (1 decimal place), 'inactive' for inactive products (smart decimal places)
                         const formatType = isLapsed ? 'inactive' : 'total';
+
                         return (
                           <td
                             key={`${product.product_id}-${date}`}
-                            className={`px-2 py-2 text-base text-right ${
-                              isCurrentYear ? 'bg-purple-50' : ''
-                            }`}
+                            className={`px-2 py-2 text-base text-right ${isCurrentYear ? 'bg-purple-50' : ''}`}
                           >
                             {irrValue !== null ? (
                               <span className={irrValue >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
@@ -654,7 +722,8 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
                       })}
                     </tr>
                   );
-                })}
+                  });
+                })()}
 
                 {/* Portfolio Total Row - Matches Investment Totals Style */}
                 <tr className="bg-gray-50 border-t-2 border-gray-300">

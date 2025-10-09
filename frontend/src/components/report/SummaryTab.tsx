@@ -296,18 +296,49 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {organizeProductsByType(reportData.productSummaries)
-                  .map(product => {
+                {(() => {
+                  // Separate active and lapsed products
+                  const organizedProducts = organizeProductsByType(reportData.productSummaries);
+                  const activeProducts = organizedProducts.filter(p => p.status !== 'inactive' && p.status !== 'lapsed');
+                  const lapsedProducts = organizedProducts.filter(p => p.status === 'inactive' || p.status === 'lapsed');
+
+                  // Create aggregated "Previous Products" virtual row
+                  const previousProductsRow = lapsedProducts.length > 0 ? {
+                    id: 'previous-products-virtual',
+                    isVirtual: true,
+                    product_name: 'Previous Products',
+                    lapsedProductCount: lapsedProducts.length,
+                    total_investment: lapsedProducts.reduce((sum, p) => sum + (p.total_investment || 0), 0),
+                    total_regular_investment: lapsedProducts.reduce((sum, p) => sum + (p.total_regular_investment || 0), 0),
+                    total_tax_uplift: lapsedProducts.reduce((sum, p) => sum + (p.total_tax_uplift || 0), 0),
+                    total_product_switch_in: lapsedProducts.reduce((sum, p) => sum + (p.total_product_switch_in || 0), 0),
+                    total_product_switch_out: lapsedProducts.reduce((sum, p) => sum + (p.total_product_switch_out || 0), 0),
+                    total_withdrawal: lapsedProducts.reduce((sum, p) => sum + (p.total_withdrawal || 0), 0),
+                    current_valuation: lapsedProducts.reduce((sum, p) => sum + (p.current_valuation || 0), 0),
+                    total_fund_switch_in: lapsedProducts.reduce((sum, p) => sum + (p.total_fund_switch_in || 0), 0),
+                    total_fund_switch_out: lapsedProducts.reduce((sum, p) => sum + (p.total_fund_switch_out || 0), 0),
+                    weighted_risk: 0, // Always 0 for lapsed products (no current valuation)
+                    provider_theme_color: null,
+                    lapsedProductIds: lapsedProducts.map(p => p.id) // Store IDs for IRR calculation
+                  } : null;
+
+                  // Combine active products with Previous Products row
+                  const productsToDisplay = [...activeProducts];
+                  if (previousProductsRow) {
+                    productsToDisplay.push(previousProductsRow as any);
+                  }
+
+                  return productsToDisplay.map((product: any) => {
                     const totalGains = (product.current_valuation || 0) + (product.total_withdrawal || 0) + (product.total_product_switch_out || 0) + (product.total_fund_switch_out || 0);
                     const totalCosts = (product.total_investment || 0) + (product.total_regular_investment || 0) + (product.total_tax_uplift || 0) + (product.total_product_switch_in || 0) + (product.total_fund_switch_in || 0);
                     const profit = totalGains - totalCosts;
-                    
-                    // Determine if this inactive product should be greyed out
-                    const isInactive = product.status === 'inactive';
-                    
+
+                    // Determine if this is the virtual Previous Products row
+                    const isVirtual = product.isVirtual;
+
                     return (
-                      <tr key={product.id} className={`hover:bg-blue-50 ${isInactive ? 'opacity-50 bg-gray-50' : ''}`}>
-                        <td className={`product-name-cell text-left px-2 py-2 ${isInactive ? 'text-gray-500' : 'text-gray-800'}`}>
+                      <tr key={product.id || 'previous-products'} className={`hover:bg-blue-50 ${isVirtual ? 'bg-gray-100 font-medium' : ''}`}>
+                        <td className={`product-name-cell text-left px-2 py-2 ${isVirtual ? 'text-gray-800 font-medium' : 'text-gray-800'}`}>
                           <div className="flex items-start gap-1.5">
                             {product.provider_theme_color && (
                               <div 
@@ -317,11 +348,24 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                             )}
                             <div className="flex-1 min-w-0">
                               <div className="text-xs leading-tight">
-                                {generateEffectiveProductTitle(product, customTitles, { 
-                                  omitOwner: reportData.productOwnerOrder && reportData.productOwnerOrder.length <= 1 
-                                })}
-                                {product.status === 'inactive' && (
-                                  <span className="ml-2 text-xs text-red-600 font-medium">(Lapsed)</span>
+                                {isVirtual ? (
+                                  <>
+                                    {product.product_name}
+                                    {product.lapsedProductCount && (
+                                      <span className="ml-2 inline-flex items-center px-1 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-800">
+                                        {product.lapsedProductCount} {product.lapsedProductCount === 1 ? 'product' : 'products'}
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <>
+                                    {generateEffectiveProductTitle(product, customTitles, {
+                                      omitOwner: reportData.productOwnerOrder && reportData.productOwnerOrder.length <= 1
+                                    })}
+                                    {product.status === 'inactive' && (
+                                      <span className="ml-2 text-xs text-red-600 font-medium">(Lapsed)</span>
+                                    )}
+                                  </>
                                 )}
                               </div>
                             </div>
@@ -372,6 +416,29 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                         </td>
                         <td className="px-2 py-2 text-base text-right bg-purple-50">
                           {(() => {
+                            // For virtual Previous Products row, calculate aggregated IRR from all lapsed products
+                            if (isVirtual && product.lapsedProductIds) {
+                              const lapsedIrrs: number[] = [];
+                              product.lapsedProductIds.forEach((id: number) => {
+                                const irr = portfolioIrrValues.get(id);
+                                if (irr !== null && irr !== undefined) {
+                                  lapsedIrrs.push(irr);
+                                }
+                              });
+
+                              if (lapsedIrrs.length > 0) {
+                                // Calculate average IRR across all lapsed products
+                                const avgIrr = lapsedIrrs.reduce((sum, irr) => sum + irr, 0) / lapsedIrrs.length;
+                                return (
+                                  <span className={avgIrr >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                                    {formatIrrWithPrecision(avgIrr)}
+                                  </span>
+                                );
+                              }
+                              return <span className="text-gray-400">N/A</span>;
+                            }
+
+                            // For regular products, get individual IRR
                             const portfolioIrr = portfolioIrrValues.get(product.id);
                             if (portfolioIrr !== null && portfolioIrr !== undefined) {
                               return (
@@ -384,7 +451,10 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                           })()}
                         </td>
                         <td className="px-2 py-2 whitespace-nowrap text-base text-right">
-                          {product.weighted_risk !== undefined && product.weighted_risk !== null ? (
+                          {isVirtual ? (
+                            // Previous Products row always shows 0 risk (no current valuation in lapsed products)
+                            formatWeightedRiskConsistent(0)
+                          ) : product.weighted_risk !== undefined && product.weighted_risk !== null ? (
                             formatWeightedRiskConsistent(product.weighted_risk)
                           ) : (
                             <span className="text-gray-400">N/A</span>
@@ -392,8 +462,9 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                         </td>
                       </tr>
                     );
-                  })}
-                
+                  });
+                })()}
+
                 {/* Investment Totals Row - Matches Product Card Style */}
                 <tr className="bg-gray-50 border-t-2 border-gray-300">
                   <td className="px-1 py-2 text-base font-bold text-black text-left">
