@@ -829,7 +829,6 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
                                     value={bulkData[fund.id]?.[activityType] || ''}
                                     onChange={(e) => handleValueChange(fund.id, activityType, e.target.value)}
                                     onFocus={() => {
-                                      console.log('Focus set for row:', index, 'column:', getDisplayedActivities().indexOf(activityType));
                                       setFocusedCell({ fundIndex: index, activityIndex: getDisplayedActivities().indexOf(activityType) });
                                     }}
                                     onKeyDown={(e) => handleKeyDown(e, index, getDisplayedActivities().indexOf(activityType))}

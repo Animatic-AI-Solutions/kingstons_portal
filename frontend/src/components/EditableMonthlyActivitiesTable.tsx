@@ -895,15 +895,11 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   // Add beforeunload warning for unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      console.log('🔍 DEBUG: beforeunload triggered, pendingEdits.length:', pendingEdits.length);
       if (pendingEdits.length > 0) {
-        console.log('🔍 DEBUG: Showing beforeunload warning due to pending edits:', pendingEdits);
         const message = 'You have unsaved changes in the monthly activities table. Are you sure you want to leave without saving?';
         e.preventDefault();
         e.returnValue = message; // Standard way to show the dialog
         return message; // For older browsers
-      } else {
-        console.log('🔍 DEBUG: No pending edits, allowing navigation');
       }
     };
 
@@ -1229,7 +1225,6 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       return expression;
     } catch (error) {
       // If evaluation fails (syntax error), return the original expression
-      console.log('Error evaluating expression:', error);
       return expression;
     }
   };
@@ -1308,8 +1303,6 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   // Auto-populate zero valuations up to the earliest non-zero valuation for a fund
   // Only fills zeros for months where other funds in the portfolio have valuations
   const autoPopulateZeroValuations = (fundId: number) => {
-    console.log(`🔍 AUTO-POPULATE DEBUG: Starting auto-populate for fund ${fundId}`);
-
     // Find all months that have existing valuations for this specific fund
     const existingValuations = new Map<string, number>();
 
@@ -1335,7 +1328,6 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
     // If no non-zero valuations exist for this fund, don't auto-populate
     if (existingValuations.size === 0) {
-      console.log(`🔍 AUTO-POPULATE DEBUG: No non-zero valuations found for fund ${fundId}`);
       return;
     }
 
@@ -1347,7 +1339,6 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     });
 
     const earliestNonZeroMonth = sortedValuationMonths[0];
-    console.log(`🔍 AUTO-POPULATE DEBUG: Earliest non-zero valuation month for this fund: ${earliestNonZeroMonth}`);
 
     // Check which months have valuations from OTHER funds in the portfolio
     const monthsWithOtherFundValuations = new Set<string>();
@@ -1378,8 +1369,6 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       });
     });
 
-    console.log(`🔍 AUTO-POPULATE DEBUG: Found ${monthsWithOtherFundValuations.size} months with other fund valuations`);
-
     // Auto-populate zeros only for months that:
     // 1. Are before the earliest non-zero valuation for this fund
     // 2. Have valuations from other funds in the portfolio
@@ -1396,7 +1385,6 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
       // Check if other funds have valuations for this month
       if (!monthsWithOtherFundValuations.has(month)) {
-        console.log(`🔍 AUTO-POPULATE DEBUG: Skipping ${month} - no other fund valuations`);
         continue;
       }
 
@@ -1420,42 +1408,33 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           toDelete: false
         };
         newEdits.push(newEdit);
-        console.log(`🔍 AUTO-POPULATE DEBUG: Adding zero valuation for ${month} (has other fund valuations)`);
       }
     }
 
     // Add all new edits to pending edits
     if (newEdits.length > 0) {
       setPendingEdits(prev => [...prev, ...newEdits]);
-      console.log(`🔍 AUTO-POPULATE DEBUG: Added ${newEdits.length} zero valuations for fund ${fundId}`);
-    } else {
-      console.log(`🔍 AUTO-POPULATE DEBUG: No months needed zero valuations for fund ${fundId}`);
     }
   };
 
   // Update the handleCellValueChange function to allow mathematical operators
   const handleCellValueChangeEnhanced = (fundId: number, month: string, activityType: string, value: string) => {
-    console.log(`🔍 CELL EDIT DEBUG: handleCellValueChangeEnhanced called with:`, { fundId, month, activityType, value });
-    
     // Find the fund to check if it's the Previous Funds entry
     const fund = funds.find(f => f.id === fundId);
-    
+
     // Don't allow edits to Previous Funds cells
     if (fund && fund.isActive === false) {
-      console.log(`🔍 CELL EDIT DEBUG: Skipping edit - fund is inactive`);
       return;
     }
 
     // Allow necessary characters for math expressions and ensure zeros are handled correctly
     const sanitizedValue = value === "0" ? "0" : (value.trim() === '' ? '' : value);
-    console.log(`🔍 CELL EDIT DEBUG: Sanitized value:`, sanitizedValue);
-    
+
     // Validate against negative amounts
     if (sanitizedValue !== '') {
       // Try to parse the value to check if it's negative
       const numericValue = parseFloat(sanitizedValue);
       if (!isNaN(numericValue) && numericValue < 0) {
-        console.log(`🔍 CELL EDIT DEBUG: Skipping edit - negative value not allowed`);
         // Show a brief error message and prevent the negative value
         setError('Negative amounts are not allowed');
         // Clear the error after 3 seconds
@@ -1465,11 +1444,11 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         return;
       }
     }
-    
+
     // Get the original value from the database (not from pending edits)
     let originalValue = '';
     let existingId = undefined;
-    
+
     if (activityType === 'Current Value') {
       const valuation = getFundValuation(fundId, month);
       if (valuation) {
@@ -1483,29 +1462,25 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
         existingId = activity.id;
       }
     }
-    
-    console.log(`🔍 CELL EDIT DEBUG: Original value: "${originalValue}", Existing ID: ${existingId}`);
-    
+
     // If the value hasn't actually changed from the original, don't create an edit
     if (sanitizedValue === originalValue) {
-      console.log(`🔍 CELL EDIT DEBUG: Value unchanged, removing any existing pending edit`);
       // Remove any existing pending edit for this cell since we're back to the original value
-      setPendingEdits(prev => prev.filter(edit => 
+      setPendingEdits(prev => prev.filter(edit =>
         !(edit.fundId === fundId && edit.month === month && edit.activityType === activityType)
       ));
       return;
     }
-    
+
     // If both the new value and original value are empty, don't create an edit
     if (sanitizedValue === '' && originalValue === '') {
-      console.log(`🔍 CELL EDIT DEBUG: Both values empty, removing any existing pending edit`);
       // Remove any existing pending edit for this cell
-      setPendingEdits(prev => prev.filter(edit => 
+      setPendingEdits(prev => prev.filter(edit =>
         !(edit.fundId === fundId && edit.month === month && edit.activityType === activityType)
       ));
       return;
     }
-    
+
     // Create the new edit
     const newEdit: CellEdit = {
       fundId,
@@ -1516,16 +1491,13 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       originalActivityId: existingId,
       toDelete: sanitizedValue === '' && !!existingId
     };
-    
-    console.log(`🔍 CELL EDIT DEBUG: Creating new edit:`, newEdit);
-      
+
     // Update pending edits by replacing any existing edit for this cell
     setPendingEdits(prev => {
-      const filtered = prev.filter(edit => 
+      const filtered = prev.filter(edit =>
         !(edit.fundId === fundId && edit.month === month && edit.activityType === activityType)
       );
       const updated = [...filtered, newEdit];
-      console.log(`🔍 CELL EDIT DEBUG: Updated pendingEdits length: ${updated.length}`);
       return updated;
     });
   };
@@ -1625,8 +1597,6 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
   // NEW: Enhanced save logic using TransactionCoordinator for proper ordering
   const saveChangesWithPreservation = async () => {
-    console.log(`🔍 DEBUG: saveChangesWithPreservation called with ${pendingEdits.length} pending edits`);
-    
     if (pendingEdits.length === 0) return;
 
     setIsSubmitting(true);
@@ -1635,33 +1605,24 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     try {
       // Group edits by month and fund combination for preservation analysis
       const editsByMonthAndFund = groupEditsByMonthAndFund(pendingEdits);
-      
+
       // Process each month-fund combination for preservation logging
       for (const [monthFundKey, monthEdits] of Object.entries(editsByMonthAndFund)) {
         const [month, fundIdStr] = monthFundKey.split('_');
         const fundId = parseInt(fundIdStr);
-        
+
         // Analyze activities to preserve when processing edits
         const activitiesToPreserve = getActivitiesToPreserve(fundId, month, monthEdits);
       }
-      
+
       // Filter out empty edits (keep deletions)
-      const editsToProcess = pendingEdits.filter(edit => 
+      const editsToProcess = pendingEdits.filter(edit =>
         edit.value.trim() !== '' || edit.toDelete
       );
-
-      console.log('🔍 DEBUG: Edits to process:', editsToProcess.map(edit => ({
-        activityType: edit.activityType,
-        value: edit.value,
-        trimmedValue: edit.value.trim(),
-        toDelete: edit.toDelete
-      })));
 
       // Process deletions first
       const deletions = editsToProcess.filter(edit => edit.toDelete && edit.originalActivityId);
       const creationsAndUpdates = editsToProcess.filter(edit => !edit.toDelete);
-
-      console.log(`🔍 DEBUG: Processing ${deletions.length} deletions and ${creationsAndUpdates.length} creations/updates`);
 
       // Handle deletions
       for (const edit of deletions) {
@@ -1682,8 +1643,6 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       if (!result.success) {
         throw new Error(`Transaction failed: ${result.errors.join(', ')}`);
       }
-
-      console.log(`🎉 Transaction completed successfully: ${result.processedActivities} activities, ${result.processedValuations} valuations, ${result.recalculatedIRRs} IRR values recalculated`);
       
       // Clear pending edits and refresh data
       setPendingEdits([]);
@@ -2286,9 +2245,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       await api.patch(`portfolio_funds/${portfolioFundId}`, {
         status: 'active'
       });
-      
-      console.log(`Successfully reactivated fund: ${fundName} (ID: ${portfolioFundId})`);
-      
+
       // Refresh the data
       onActivitiesUpdated();
       
@@ -2309,26 +2266,22 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   const handleBulkMonthSave = (bulkData: any) => {
     // Convert bulk data to pending edits format
     const newEdits: CellEdit[] = [];
-    
-    console.log(`🔍 BULK SAVE DEBUG: Received bulk data:`, bulkData);
-    
+
     Object.keys(bulkData).forEach(fundIdStr => {
       const fundId = parseInt(fundIdStr);
       Object.keys(bulkData[fundId]).forEach(activityType => {
         const value = bulkData[fundId][activityType];
-        
+
         // Validate activity type to ensure it's in the expected UI format
         if (!ACTIVITY_TYPES.includes(activityType)) {
           console.error(`🔍 BULK SAVE ERROR: Invalid activity type received: "${activityType}"`);
           console.error(`🔍 BULK SAVE ERROR: Expected one of:`, ACTIVITY_TYPES);
           return; // Skip this invalid activity type
         }
-        
-        console.log(`🔍 BULK SAVE DEBUG: Processing Fund ${fundId}, Activity: "${activityType}", Value: "${value}"`);
-        
+
         // Get current value to check if this is actually a change
         const currentValue = getCellValue(fundId, selectedBulkMonth, activityType);
-        
+
         // Only create an edit if the value actually changed
         if (value !== currentValue) {
         // Get existing activity or valuation
@@ -2340,7 +2293,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           const activity = getActivity(fundId, selectedBulkMonth, activityType);
           existingId = activity?.id;
         }
-        
+
         const newEdit: CellEdit = {
           fundId,
           month: selectedBulkMonth,
@@ -2350,14 +2303,11 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           originalActivityId: existingId,
           toDelete: value === '' && !!existingId
         };
-        
-        console.log(`🔍 BULK SAVE DEBUG: Created edit:`, newEdit);
+
         newEdits.push(newEdit);
         }
       });
     });
-    
-    console.log(`🔍 BULK SAVE DEBUG: Total new edits created:`, newEdits.length);
     
     // Only replace edits for cells that actually changed
     // Remove existing pending edits for the changed cells only
@@ -2465,11 +2415,6 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     
     // Auto-scroll to beginning to show January
     setTimeout(scrollToBeginning, 100);
-    
-    // Optional: Track analytics for year changes
-    if (featureFlags.debugMiniYearSelectors) {
-      console.log(`[Year Change] ${source} selector: ${currentYear} → ${newYear}`);
-    }
   }, [currentYear, featureFlags.debugMiniYearSelectors, scrollToBeginning]);
 
   // Year Pagination Component

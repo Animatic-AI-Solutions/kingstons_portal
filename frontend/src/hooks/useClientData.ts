@@ -58,9 +58,7 @@ export const useClientData = () => {
   const query = useQuery({
     queryKey: ['client-bulk-data'],
     queryFn: async () => {
-      console.log('🚀 Fetching client data with bulk API...');
       const response = await getBulkClientData();
-      console.log(`✅ Loaded ${response.data.client_groups.length} clients with total FUM: £${response.data.total_fum?.toLocaleString() || 0}`);
       return response.data as BulkClientDataResponse;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh

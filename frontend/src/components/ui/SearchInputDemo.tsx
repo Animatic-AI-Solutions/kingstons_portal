@@ -118,7 +118,6 @@ const SearchInputDemo: React.FC = () => {
 
   const handleAutocompleteSelect = (option: AutocompleteOption) => {
     setSelectedOption(option);
-    console.log('Selected option:', option);
   };
 
   return (

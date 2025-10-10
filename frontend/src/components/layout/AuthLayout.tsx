@@ -18,14 +18,11 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   
   // Check if images can be loaded
   useEffect(() => {
-    console.log('Attempting to load images:', carouselImages);
-    
     carouselImages.forEach((src, index) => {
       const img = new Image();
       img.src = src;
-      
+
       img.onload = () => {
-        console.log(`Image ${index} loaded successfully:`, src);
         setImagesLoaded(prev => {
           const newState = [...prev];
           newState[index] = true;

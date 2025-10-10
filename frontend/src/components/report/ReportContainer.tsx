@@ -121,25 +121,11 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
     documentTitle: reportTitle,
     pageStyle: printService.generatePrintStyles(),
     onBeforePrint: async () => {
-      console.log('🖨️ [PRINT] Starting print process...');
-      
-      // Debug: Check product card styles before printing
-      const productCards = printRef.current?.querySelectorAll('.product-card');
-      if (productCards) {
-        console.log('🔍 [PRINT DEBUG] Found', productCards.length, 'product cards');
-      }
-      
       // Note: History loading is handled by individual components
-      if (irrHistoryData && irrHistoryData.length > 0) {
-        console.log('✅ [PRINT] History data available for printing');
-      } else {
-        console.log('ℹ️ [PRINT] No History data available, printing summary only');
-      }
-      
       return Promise.resolve();
     },
     onAfterPrint: () => {
-      console.log('✅ [PRINT] Print process completed');
+      // Print process completed
     },
     onPrintError: (errorLocation, error) => {
       console.error('❌ [PRINT] Print error at', errorLocation, ':', error);
@@ -147,35 +133,25 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
   });
 
   const productOwnerDisplay = useMemo(() => {
-    console.log('🔍 [REPORT CONTAINER DEBUG] productOwnerDisplay calculation:', {
-      customProductOwnerNames,
-      reportDataProductOwnerNames: reportData.productOwnerNames,
-      reportDataProductOwnerNamesLength: reportData.productOwnerNames.length
-    });
-    
     // Use custom names if they exist, otherwise use the properly formatted names from reportData
     if (customProductOwnerNames) {
-      console.log('🔍 [REPORT CONTAINER DEBUG] Using custom names:', customProductOwnerNames);
       return customProductOwnerNames;
     }
-    
+
     if (reportData.productOwnerNames.length === 0) {
-      console.log('🔍 [REPORT CONTAINER DEBUG] No product owner names found, returning empty string');
       return '';
     }
 
     // reportData.productOwnerNames now contains properly formatted names with known_as support
     // from the extractProductOwners function, format them with family grouping logic
-    
+
     // Run tests only once on development
     if (process.env.NODE_ENV === 'development' && !window.familyFormatterTestRun) {
       testFamilyNameFormatting();
       window.familyFormatterTestRun = true;
     }
-    
+
     const result = formatFamilyNames(reportData.productOwnerNames);
-    console.log('🔍 [REPORT CONTAINER DEBUG] Original names:', reportData.productOwnerNames);
-    console.log('🔍 [REPORT CONTAINER DEBUG] Final display result (with family formatting):', result);
     return result;
   }, [reportData.productOwnerNames, customProductOwnerNames]);
 

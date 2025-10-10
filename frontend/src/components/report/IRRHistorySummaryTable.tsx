@@ -69,23 +69,6 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
     [clientGroupIds?.length, clientGroupIds?.join(',')]
   );
 
-  // Debug: Track memoization effectiveness
-  useEffect(() => {
-    console.log('🎯 [IRR SUMMARY MEMOIZATION] ProductIds memoized:', {
-      rawLength: productIds.length,
-      memoizedLength: memoizedProductIds.length,
-      sameReference: productIds === memoizedProductIds
-    });
-  }, [memoizedProductIds]);
-
-  useEffect(() => {
-    console.log('🎯 [IRR SUMMARY MEMOIZATION] SelectedDates memoized:', {
-      rawLength: selectedDates.length,
-      memoizedLength: memoizedSelectedDates.length,
-      sameReference: selectedDates === memoizedSelectedDates
-    });
-  }, [memoizedSelectedDates]);
-
   // Get custom titles from state manager
   const {
     state: { customTitles }
@@ -144,8 +127,7 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
       } else {
         // CRITICAL FIX: Don't silently drop products without product summaries
         // This was causing AJ1055J (Product 37) to be filtered out
-        console.warn(`⚠️ [IRR SUMMARY] Product ${product.product_id} (${product.product_name}) not found in product summaries - including anyway`);
-        
+
         // Create a fallback group for products without summaries
         const fallbackType = 'Other';
         if (!groupedProducts[fallbackType]) {
@@ -246,17 +228,8 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
 
   // Fetch IRR history summary data
   useEffect(() => {
-    console.log('🔄 [IRR SUMMARY TABLE] useEffect triggered:', {
-      productIdsLength: memoizedProductIds.length,
-      selectedDatesLength: memoizedSelectedDates.length,
-      clientGroupIds: memoizedClientGroupIds,
-      productIds: memoizedProductIds.slice(0, 3),
-      selectedDates: memoizedSelectedDates.slice(0, 2)
-    });
-    
     const fetchSummaryData = async () => {
       if (memoizedProductIds.length === 0 || memoizedSelectedDates.length === 0) {
-        console.log('⚠️ [IRR SUMMARY TABLE] Early return - empty productIds or selectedDates');
         setTableData({ productRows: [], portfolioTotals: [], dateHeaders: [] });
         return;
       }
@@ -265,22 +238,8 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
       setError(null);
 
       try {
-        // Debug: Check for duplicate product IDs
+        // Check for duplicate product IDs
         const uniqueProductIds = [...new Set(memoizedProductIds)];
-        if (uniqueProductIds.length !== memoizedProductIds.length) {
-          console.warn('⚠️ [IRR SUMMARY TABLE] Duplicate product IDs detected!', {
-            original: memoizedProductIds,
-            unique: uniqueProductIds,
-            duplicateCount: memoizedProductIds.length - uniqueProductIds.length
-          });
-        }
-
-        console.log('🔍 [IRR SUMMARY TABLE] Request details:', {
-          productIds: memoizedProductIds,
-          uniqueProductIds: uniqueProductIds,
-          selectedDates: memoizedSelectedDates.sort(),
-          clientGroupIds: memoizedClientGroupIds
-        });
 
         const request: IRRHistorySummaryRequest = {
           product_ids: uniqueProductIds, // Use deduplicated product IDs
@@ -288,39 +247,20 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
           client_group_ids: memoizedClientGroupIds
         };
 
-        console.log('🔍 [IRR HISTORY SUMMARY] Fetching data with request:', request);
-
         const response = await irrSummaryService.getIRRHistorySummary(request);
-
-        console.log('🔍 [IRR SUMMARY TABLE] Backend response analysis:', {
-          productRowsCount: response.data.product_irr_history.length,
-          portfolioTotalsCount: response.data.portfolio_irr_history.length,
-          productRowsSample: response.data.product_irr_history.slice(0, 3),
-          uniqueProductIdsInResponse: [...new Set(response.data.product_irr_history.map(row => row.product_id))],
-          requestedProductIds: uniqueProductIds
-        });
 
         // Sort dates for consistent column ordering (most recent first)
         const sortedDates = [...memoizedSelectedDates].sort((a, b) => b.localeCompare(a));
-        
+
         // Backend now returns flat rows (one per product-date combination)
         const productRows = response.data.product_irr_history || [];
-        
-        // No need for deduplication since backend now returns correct flat structure
-        console.log('✅ [IRR SUMMARY TABLE] Received flat rows from backend:', {
-          totalRows: productRows.length,
-          expectedRows: uniqueProductIds.length * memoizedSelectedDates.length,
-          structure: 'flat'
-        });
 
         const newTableData = {
           productRows: productRows,
           portfolioTotals: response.data.portfolio_irr_history,
           dateHeaders: sortedDates
         };
-        
-        console.log('🔍 [IRR SUMMARY TABLE] Setting table data:', newTableData);
-        
+
         setTableData(newTableData);
       } catch (err: any) {
         console.error('❌ [IRR SUMMARY TABLE] Failed to fetch IRR history summary:', err);
@@ -335,30 +275,11 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
 
   // Get IRR value for a specific product and date from flat rows
   const getIRRValueForProductAndDate = (productId: number, date: string): number | null => {
-    console.log(`🔍 [IRR SUMMARY DEBUG] Looking for productId: ${productId}, date: ${date}`);
-    console.log(`🔍 [IRR SUMMARY DEBUG] Available productRows:`, tableData.productRows.map(row => ({
-      product_id: row.product_id,
-      irr_date: row.irr_date,
-      irr_result: row.irr_result,
-      product_name: row.product_name
-    })));
-    
-    const flatRow = tableData.productRows.find((row: any) => 
+    const flatRow = tableData.productRows.find((row: any) =>
       row.product_id === productId && row.irr_date === date
     ) as any;
-    
-    console.log(`🔍 [IRR SUMMARY DEBUG] Found row for productId ${productId}, date ${date}:`, flatRow ? {
-      product_id: flatRow.product_id,
-      product_name: flatRow.product_name,
-      irr_date: flatRow.irr_date,
-      irr_result: flatRow.irr_result,
-      portfolio_id: flatRow.portfolio_id
-    } : null);
-    
-    const result = flatRow ? flatRow.irr_result : null;
-    console.log(`🔍 [IRR SUMMARY DEBUG] Returning IRR for productId ${productId}, date ${date}: ${result}`);
-    
-    return result;
+
+    return flatRow ? flatRow.irr_result : null;
   };
 
   // Get unique products from flat rows (including Previous Funds entries)
@@ -391,15 +312,7 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
     // Always use backend calculated portfolio IRR for consistency
     // Backend only includes portfolios that have valuations for that specific date
     const portfolioData = tableData.portfolioTotals.find(data => data.date === date);
-    const backendIRR = portfolioData ? portfolioData.portfolio_irr : null;
-    
-    if (backendIRR !== null) {
-      console.log(`📊 [IRR SUMMARY] Using backend IRR for date ${date}: ${backendIRR}% (calculated from portfolios with valuations)`);
-    } else {
-      console.log(`⚠️ [IRR SUMMARY] No portfolio IRR data available for ${date} (no portfolios had valuations)`);
-    }
-    
-    return backendIRR;
+    return portfolioData ? portfolioData.portfolio_irr : null;
   };
 
   // Get risk for a specific product
@@ -435,23 +348,8 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
     });
     
     if (!hasAnyRisk || totalValue === 0) return null;
-    
-    const calculatedRisk = weightedRiskSum / totalValue;
-    
-    console.log(`🎯 [CLIENT GROUP RISK] Calculated client group weight risk:`, {
-      productCount: relevantProducts.length,
-      totalValue,
-      weightedRiskSum,
-      calculatedRisk: calculatedRisk.toFixed(1),
-      productBreakdown: relevantProducts.map(p => ({
-        name: p.product_name,
-        value: p.current_valuation,
-        risk: p.weighted_risk,
-        weight: p.current_valuation / totalValue
-      }))
-    });
-    
-    return calculatedRisk;
+
+    return weightedRiskSum / totalValue;
   };
 
   // Loading state

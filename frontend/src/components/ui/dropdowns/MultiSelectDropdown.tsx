@@ -172,16 +172,14 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
   
   const handleSelect = (optionValue: string | number) => {
     if (!onChange) return;
-    
+
     let newValues: (string | number)[];
     if (values.includes(optionValue)) {
       // Removing existing selection (toggle off)
       newValues = values.filter(v => v !== optionValue);
-      console.log('🔄 MultiSelect: Removing item', optionValue, 'from selection. New values:', newValues);
     } else {
       // Adding new selection (multi-select behavior)
       newValues = [...values, optionValue];
-      console.log('✅ MultiSelect: Adding item', optionValue, 'to selection. New values:', newValues);
     }
     onChange(newValues);
     

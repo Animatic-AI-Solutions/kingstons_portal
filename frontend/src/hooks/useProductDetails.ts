@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getCompleteProductDetails } from '../services/api';
+import { getPortfolioFundsByProduct } from '../services/api';
 
 export interface ProductDetails {
   id: number;
@@ -50,20 +50,20 @@ export const useProductDetails = (productId: string | number | undefined) => {
         throw new Error('Product ID is required');
       }
 
-      const response = await getCompleteProductDetails(productId);
+      const response = await getPortfolioFundsByProduct(Number(productId));
 
       return response.data;
     },
     enabled: !!productId,
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-    cacheTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   // Utility function to invalidate this product's cache
   const invalidateProduct = () => {
-    queryClient.invalidateQueries(['product-details', productId]);
+    queryClient.invalidateQueries({ queryKey: ['product-details', productId] });
   };
 
   // Utility function to update product data in cache
@@ -91,14 +91,14 @@ export const useMultipleProductDetails = (productIds: (string | number)[]) => {
   const queries = useQuery({
     queryKey: ['multiple-products', productIds.sort().join(',')],
     queryFn: async () => {
-      const promises = productIds.map(id => getCompleteProductDetails(id));
+      const promises = productIds.map(id => getPortfolioFundsByProduct(Number(id)));
       const responses = await Promise.all(promises);
 
       return responses.map(response => response.data);
     },
     enabled: productIds.length > 0,
     staleTime: 5 * 60 * 1000,
-    cacheTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   return {

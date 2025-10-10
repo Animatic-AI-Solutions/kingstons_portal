@@ -100,32 +100,10 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
         });
         
         // Apply custom owner order after ISA/JISA sorting
-        console.log(`🔍 [SUMMARY TAB DEBUG] Sorting ${type} (ISA/JISA) products by owner order:`, {
-          productsCount: groupedProducts[type].length,
-          productOwnerOrder: reportData.productOwnerOrder,
-          productOwnerOrderLength: reportData.productOwnerOrder?.length || 0,
-          productNames: groupedProducts[type].map(p => p.product_name),
-          productOwnerNames: groupedProducts[type].map(p => p.product_owner_name)
-        });
         groupedProducts[type] = sortProductsByOwnerOrder(groupedProducts[type], reportData.productOwnerOrder || []);
-        console.log(`🔍 [SUMMARY TAB DEBUG] After sorting ${type} (ISA/JISA) products:`, {
-          sortedProductNames: groupedProducts[type].map(p => p.product_name),
-          sortedProductOwnerNames: groupedProducts[type].map(p => p.product_owner_name)
-        });
       } else {
         // Standard sorting by custom product owner order for other product types
-        console.log(`🔍 [SUMMARY TAB DEBUG] Sorting ${type} products by owner order:`, {
-          productsCount: groupedProducts[type].length,
-          productOwnerOrder: reportData.productOwnerOrder,
-          productOwnerOrderLength: reportData.productOwnerOrder?.length || 0,
-          productNames: groupedProducts[type].map(p => p.product_name),
-          productOwnerNames: groupedProducts[type].map(p => p.product_owner_name)
-        });
         groupedProducts[type] = sortProductsByOwnerOrder(groupedProducts[type], reportData.productOwnerOrder || []);
-        console.log(`🔍 [SUMMARY TAB DEBUG] After sorting ${type} products:`, {
-          sortedProductNames: groupedProducts[type].map(p => p.product_name),
-          sortedProductOwnerNames: groupedProducts[type].map(p => p.product_owner_name)
-        });
       }
     });
 
@@ -543,21 +521,11 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                       let totalRiskWeightedValue = 0;
                       let totalValue = 0;
 
-                      console.log('🔍 Investment Total Risk Calculation Debug:');
-
                       reportData.productSummaries.forEach((product, index) => {
-                        console.log(`Product ${index}:`, {
-                          name: product.product_name,
-                          weighted_risk: product.weighted_risk,
-                          current_valuation: product.current_valuation,
-                          funds_count: product.funds?.length
-                        });
-
                         // Add active funds' weighted risk contribution
                         if (product.weighted_risk !== undefined && product.weighted_risk !== null) {
                           const productValue = product.current_valuation || 0;
                           const contribution = product.weighted_risk * productValue;
-                          console.log(`  - Active funds contribution: ${product.weighted_risk} × ${productValue} = ${contribution}`);
                           totalRiskWeightedValue += contribution;
                           totalValue += productValue;
                         }
@@ -565,25 +533,14 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                         // Add inactive funds' weighted risk contribution from "Previous Funds" virtual entry
                         if (product.funds) {
                           const previousFundsEntry = product.funds.find(fund => fund.isVirtual && fund.fund_name === 'Previous Funds');
-                          console.log(`  - Previous Funds entry found:`, previousFundsEntry ? {
-                            risk_factor: previousFundsEntry.risk_factor,
-                            current_valuation: previousFundsEntry.current_valuation
-                          } : 'None');
 
                           if (previousFundsEntry && previousFundsEntry.risk_factor !== undefined && previousFundsEntry.risk_factor !== null) {
                             const previousFundsValue = previousFundsEntry.current_valuation || 0;
                             const contribution = previousFundsEntry.risk_factor * previousFundsValue;
-                            console.log(`  - Inactive funds contribution: ${previousFundsEntry.risk_factor} × ${previousFundsValue} = ${contribution}`);
                             totalRiskWeightedValue += contribution;
                             totalValue += previousFundsValue;
                           }
                         }
-                      });
-
-                      console.log('Investment Total Risk Result:', {
-                        totalRiskWeightedValue,
-                        totalValue,
-                        finalRisk: totalValue > 0 ? totalRiskWeightedValue / totalValue : 'N/A'
                       });
 
                       if (totalValue > 0) {
@@ -626,18 +583,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
               // Only show inactive products if:
               // 1. showInactiveProducts is true globally, OR
               // 2. this specific product is checked in showInactiveProductDetails
-              const shouldShow = reportData.showInactiveProducts || showInactiveProductDetails.has(product.id);
-              
-              console.log(`🔍 [PRODUCT CARD FILTER DEBUG] Product ${product.id} (${product.product_name}):`, {
-                status: product.status,
-                showInactiveProducts: reportData.showInactiveProducts,
-                hasInShowInactiveProductDetails: showInactiveProductDetails.has(product.id),
-                showInactiveProductDetailsSet: Array.from(showInactiveProductDetails),
-                shouldShow,
-                reportDataShowInactiveProductDetails: reportData.showInactiveProductDetails
-              });
-              
-              return shouldShow;
+              return reportData.showInactiveProducts || showInactiveProductDetails.has(product.id);
             }
             // Always show active products
             return true;

@@ -28,7 +28,6 @@ const PresenceIndicator: React.FC<PresenceIndicatorProps> = ({
   // Component state tracking for presence functionality
 
   if (error) {
-    console.log('🎭 PresenceIndicator: Rendering error state:', error);
     return (
       <div className={`text-red-500 text-sm ${className}`}>
         <span className="flex items-center">
@@ -42,7 +41,6 @@ const PresenceIndicator: React.FC<PresenceIndicatorProps> = ({
   }
 
   if (!isConnected) {
-    console.log('🎭 PresenceIndicator: Rendering connecting state');
     return (
       <div className={`text-gray-500 text-sm ${className}`}>
         <span className="flex items-center">
@@ -67,8 +65,6 @@ const PresenceIndicator: React.FC<PresenceIndicatorProps> = ({
       </div>
     );
   }
-
-  console.log('🎭 PresenceIndicator: Rendering presence for users:', users);
 
   return (
     <div className={`flex items-center space-x-3 ${className}`}>

@@ -19,14 +19,13 @@ const ClientsOptimizationTest: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const runPerformanceTest = async (endpointName: string, endpointFunction: () => Promise<any>) => {
-    console.log(`🧪 Testing ${endpointName} endpoint...`);
     const startTime = performance.now();
-    
+
     try {
       const response = await endpointFunction();
       const endTime = performance.now();
       const duration = Math.round(endTime - startTime);
-      
+
       const result: PerformanceResult = {
         endpoint: endpointName,
         duration,
@@ -34,8 +33,7 @@ const ClientsOptimizationTest: React.FC = () => {
         totalFum: response.data.total_fum || 0,
         dataSource: response.data.metadata?.data_source || 'unknown'
       };
-      
-      console.log(`✅ ${endpointName} completed:`, result);
+
       return result;
       
     } catch (error) {
@@ -54,26 +52,18 @@ const ClientsOptimizationTest: React.FC = () => {
   const runComparisonTest = async () => {
     setIsLoading(true);
     setResults([]);
-    
-    console.log('🚀 Starting performance comparison test...');
-    
+
     // Test original endpoint
     const originalResult = await runPerformanceTest('Original (bulk_client_data)', getBulkClientData);
     setResults(prev => [...prev, originalResult]);
-    
+
     // Small delay to avoid overwhelming the server
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     // Test optimized endpoint
     const optimizedResult = await runPerformanceTest('Optimized (client_groups_summary)', getBulkClientDataOptimized);
     setResults(prev => [...prev, optimizedResult]);
-    
-    // Calculate improvement
-    if (originalResult.duration > 0 && optimizedResult.duration > 0) {
-      const improvement = ((originalResult.duration - optimizedResult.duration) / originalResult.duration * 100).toFixed(1);
-      console.log(`📊 Performance Improvement: ${improvement}% faster (${originalResult.duration}ms → ${optimizedResult.duration}ms)`);
-    }
-    
+
     setIsLoading(false);
   };
 

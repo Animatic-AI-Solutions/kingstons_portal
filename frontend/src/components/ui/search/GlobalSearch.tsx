@@ -217,8 +217,6 @@ const GlobalSearch: React.FC = () => {
   };
 
   const handleResultClick = (result: SearchResult) => {
-    console.log('🔍 GlobalSearch: Result clicked:', result);
-    
     const routes = {
       client_group: `/client_groups/${result.entity_id}`,
       product: `/products/${result.entity_id}`,
@@ -230,7 +228,6 @@ const GlobalSearch: React.FC = () => {
     };
 
     const route = routes[result.entity_type as keyof typeof routes];
-    console.log('🔍 GlobalSearch: Navigating to route:', route);
     
     if (route) {
       // For products (including client_product), pass state information about coming from global search

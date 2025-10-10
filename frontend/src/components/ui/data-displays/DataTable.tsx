@@ -14,12 +14,6 @@ const DataTable: React.FC<DataTableProps> = ({ data, title, totalAmount }) => {
   // Calculate total for percentage calculations (use provided totalAmount or calculate from data)
   const total = totalAmount || data.reduce((sum, item) => sum + item.amount, 0);
   
-  // Calculate displayed items total for debugging
-  const displayedTotal = data.reduce((sum, item) => sum + item.amount, 0);
-  
-  // DEBUGGING: Log table data
-  console.log(`📋 ${title} Table - Full Total: £${total.toLocaleString()}, Displayed (Top 5): £${displayedTotal.toLocaleString()}, Items: ${data.length}`);
-
   // Truncate names to prevent horizontal scrolling
   const truncateName = (name: string, maxLength: number = 12) => {
     if (name.length <= maxLength) return name;

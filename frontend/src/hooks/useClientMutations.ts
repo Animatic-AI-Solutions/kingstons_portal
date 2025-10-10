@@ -38,7 +38,6 @@ export const useClientMutations = () => {
   // Update client mutation
   const updateClient = useMutation({
     mutationFn: async (data: ClientUpdateData) => {
-      console.log(`🔄 Updating client ${data.id}:`, data.updates);
       const response = await api.put(`/client_groups/${data.id}`, data.updates);
       return response.data;
     },
@@ -79,16 +78,12 @@ export const useClientMutations = () => {
       // Always refetch after error or success to ensure server state
       queryClient.invalidateQueries({ queryKey: ['clients', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['clients'] });
-    },
-    onSuccess: (data, variables) => {
-      console.log(`✅ Successfully updated client ${variables.id}`);
     }
   });
 
   // Delete client mutation
   const deleteClient = useMutation({
     mutationFn: async (clientId: string) => {
-      console.log(`🗑️ Deleting client ${clientId}`);
       const response = await api.delete(`/client_groups/${clientId}`);
       return response.data;
     },
@@ -119,7 +114,6 @@ export const useClientMutations = () => {
       }
     },
     onSuccess: (data, clientId) => {
-      console.log(`✅ Successfully deleted client ${clientId}`);
       // Remove the specific client from cache
       queryClient.removeQueries({ queryKey: ['clients', clientId] });
       // Invalidate the clients list to ensure consistency
@@ -130,8 +124,6 @@ export const useClientMutations = () => {
   // Product owner mutations
   const manageProductOwner = useMutation({
     mutationFn: async (data: ProductOwnerUpdateData) => {
-      console.log(`🔄 ${data.action === 'add' ? 'Adding' : 'Removing'} product owner for client ${data.clientId}`);
-      
       if (data.action === 'add') {
         // Add product owner using authenticated API
         const response = await api.post('client_group_product_owners', {
@@ -149,7 +141,6 @@ export const useClientMutations = () => {
       }
     },
     onSuccess: (data, variables) => {
-      console.log(`✅ Successfully ${variables.action === 'add' ? 'added' : 'removed'} product owner`);
       // Invalidate client details to refresh product owners
       queryClient.invalidateQueries({ queryKey: ['clients', variables.clientId] });
     },
@@ -161,12 +152,10 @@ export const useClientMutations = () => {
   // Status change mutations (dormant/active)
   const changeClientStatus = useMutation({
     mutationFn: async (data: { clientId: string; status: string }) => {
-      console.log(`🔄 Changing client ${data.clientId} status to ${data.status}`);
       const response = await api.put(`/client_groups/${data.clientId}`, { status: data.status });
       return response.data;
     },
     onSuccess: (data, variables) => {
-      console.log(`✅ Successfully changed client status to ${variables.status}`);
       // Invalidate both client details and list
       queryClient.invalidateQueries({ queryKey: ['clients', variables.clientId] });
       queryClient.invalidateQueries({ queryKey: ['clients'] });
@@ -178,7 +167,6 @@ export const useClientMutations = () => {
 
   // Global cache invalidation function
   const invalidateAllClientData = () => {
-    console.log('🔄 Invalidating all client data...');
     queryClient.invalidateQueries({ queryKey: ['clients'] });
   };
 
