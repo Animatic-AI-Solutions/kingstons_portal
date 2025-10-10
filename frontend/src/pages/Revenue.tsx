@@ -136,7 +136,7 @@ const Revenue: React.FC = () => {
 
   // Format percentage
   const formatPercentage = (value: number): string => {
-    return `${value.toFixed(1)}%`;
+    return `${value.toFixed(2)}%`;
   };
 
   // Get revenue rate color based on performance thresholds
