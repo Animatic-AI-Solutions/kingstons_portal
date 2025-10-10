@@ -24,6 +24,7 @@ The project has comprehensive documentation in `docs/` organized in 10 logical s
 - `docs/README.md` - Main navigation hub for all documentation
 - `docs/04_development_workflow/01_git_workflow.md` - Git practices and branching strategy
 - `docs/03_architecture/01_system_architecture_overview.md` - Complete system overview
+- `docs/03_architecture/10_client_group_phase2_prototype.md` - Phase 2 client management prototype architecture
 
 ## Common Development Commands
 
@@ -82,7 +83,8 @@ API_PORT=8001
 
 ### Frontend (`frontend/src/`)
 - `App.tsx` - Main application with routing and React Query
-- `pages/` - 38 page components
+- `pages/` - 38+ page components including:
+  - `ClientGroupPhase2.tsx` - Advanced client management prototype with 30+ person fields, comprehensive data structures
 - `components/` - 69+ reusable UI components:
   - `ui/` - Base components (buttons, inputs, tables, search, feedback)
   - `auth/` - Authentication forms and flows
@@ -154,6 +156,7 @@ API_PORT=8001
 - **Concurrent Users**: PresenceIndicator and useConcurrentUserDetection for real-time awareness
 - **Bulk Data**: OptimizedClientData patterns for performance with large datasets
 - **Database Views**: Historical IRR views include lapsed products for compliance - prefer fixing filtering at view level over API workarounds
+- **Client Group Phase 2 Prototype**: Advanced client management with horizontal tab navigation, 30+ person fields, comprehensive health/vulnerability tracking, document management (Wills/LPOAs), risk assessments (1-7 scale), meeting suite, and detailed modal editing. See `docs/03_architecture/10_client_group_phase2_prototype.md` for complete documentation
 
 ## Development Principles
 

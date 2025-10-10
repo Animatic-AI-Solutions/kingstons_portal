@@ -25,6 +25,7 @@ Comprehensive documentation for Kingston's Portal - a wealth management system b
 - [Analytics System](./03_architecture/07_analytics_system.md) - Ultra-fast analytics implementation (67→2 second optimization)
 - [Concurrent Features](./03_architecture/08_concurrent_features.md) - Real-time user presence and conflict detection
 - [Report Generation](./03_architecture/09_report_generation.md) - Modular report architecture
+- [Client Group Phase 2 Prototype](./03_architecture/10_client_group_phase2_prototype.md) - Advanced client management interface
 
 ### 🔄 [04. Development Workflow](./04_development_workflow/)
 - [Git Workflow](./04_development_workflow/01_git_workflow.md) - Version control practices and branching strategy

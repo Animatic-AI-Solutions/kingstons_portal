@@ -11,7 +11,10 @@ import {
   PencilIcon,
   CheckIcon,
   XMarkIcon,
+  CalendarIcon,
+  HomeIcon,
 } from '@heroicons/react/24/outline';
+import DynamicPageContainer from '../components/DynamicPageContainer';
 
 // ============================================================================
 // TYPES
@@ -19,58 +22,115 @@ import {
 
 interface Person {
   id: string;
-  name: string;
-  relationship: string;
+  // Personal Information
+  gender: string;
+  title: string;
+  forename: string;
+  middleNames: string;
+  surname: string;
+  knownAs: string;
+  previousNames: string;
+  relationshipStatus: string;
+  addressLine1: string;
+  addressLine2: string;
+  addressLine3: string;
+  addressLine4: string;
+  addressLine5: string;
+  postcode: string;
+  emails: string[];
+  phoneNumbers: string[];
+  employmentStatus: string;
+  occupation: string;
+  dateMovedIn: string;
   dateOfBirth: string;
+  placeOfBirth: string;
   age: number;
-  email: string;
-  mobile: string;
+  // Regulatory Information
+  niNumber: string;
+  drivingLicenseExpiry: string;
+  passportExpiry: string;
+  otherIds: string;
+  amlCheck: string;
+  safeWords: string[];
+  shareDataWith: string;
+  // For display
+  relationship: string; // Relationship to client group (Husband, Wife, etc.)
 }
 
 interface SpecialRelationship {
   id: string;
   name: string;
-  type: string;
+  dateOfBirth: string;
   relationship: string;
-  contact: string;
-  notes: string;
+  dependency: string[]; // Array of person names in the client group
+  contactDetails: string;
+  firmName?: string; // Only for working relationships (accountants, solicitors, etc.)
 }
 
 interface HealthItem {
   id: string;
   personId: string;
-  condition: string;
+  healthIssues: string;
+  smokerStatus: string;
+  medication: string;
   status: 'Active' | 'Historical';
   dateRecorded: string;
-  notes: string;
 }
 
 interface VulnerabilityItem {
   id: string;
   personId: string;
-  type: string;
+  vulnerabilityDescription: string;
+  adjustments: string;
   status: 'Active' | 'Historical';
   dateRecorded: string;
-  description: string;
 }
 
-interface Document {
+interface WillDocument {
   id: string;
-  type: string;
+  type: 'Will';
   name: string;
-  dateCreated: string;
-  lastReviewed: string;
-  location: string;
+  dateOfWill: string;
+  dateOfAdvDirective: string;
 }
+
+interface LPOADocument {
+  id: string;
+  type: 'LPOA';
+  name: string;
+  dateOfHWLPOA: string;
+  hwLpoaIsActive: boolean;
+  pfLpoaIsActive: boolean;
+  dateOfAdvDirective: string;
+  dateOfEPA: string;
+  epaIsRegistered: boolean;
+  other: string;
+}
+
+type Document = WillDocument | LPOADocument;
 
 interface RiskAssessment {
   id: string;
   personName: string;
-  type: string;
-  score: string;
-  riskProfile: string;
-  dateCompleted: string;
+  assessmentType: 'Finemetrica' | 'Manual';
   status: 'Current' | 'Historical';
+  // Finemetrica fields
+  riskScore?: number; // 1-7
+  riskGroup?: string;
+  // Manual fields
+  date?: string;
+  manualRiskScore?: number; // 1-7
+  gopDescription?: string;
+  reason?: string;
+}
+
+interface CapacityToLoss {
+  id: string;
+  personName: string;
+  score: number;
+  category: string;
+  dateAssessed: string;
+  notes: string;
 }
 
 interface Asset {
@@ -123,11 +183,11 @@ interface Objective {
 }
 
 interface Meeting {
-  month: string;
-  expectedDate: string;
-  actualDate?: string;
-  type: string;
-  status: 'Scheduled' | 'Completed' | 'Missed';
+  id: string;
+  meetingType: string;
+  meetingMonth: string;
+  isBooked: boolean;
+  dateHeld?: string;
 }
 
 // ============================================================================
@@ -135,37 +195,263 @@ interface Meeting {
 // ============================================================================
 
 const samplePeople: Person[] = [
-  { id: '1', name: 'James Mitchell', relationship: 'Husband', dateOfBirth: '15/06/1975', age: 49, email: 'james.m@email.com', mobile: '07700 900 123' },
-  { id: '2', name: 'Sarah Mitchell', relationship: 'Wife', dateOfBirth: '22/09/1977', age: 47, email: 'sarah.m@email.com', mobile: '07700 900 124' },
-  { id: '3', name: 'Emma Mitchell', relationship: 'Daughter', dateOfBirth: '10/03/2005', age: 19, email: 'emma.m@email.com', mobile: '07700 900 125' },
+  {
+    id: '1',
+    relationship: 'Husband',
+    // Personal Information
+    gender: 'Male',
+    title: 'Mr',
+    forename: 'James',
+    middleNames: 'Robert',
+    surname: 'Mitchell',
+    knownAs: 'Jim',
+    previousNames: 'N/A',
+    relationshipStatus: 'Married',
+    addressLine1: '42 Richmond Gardens',
+    addressLine2: 'Richmond',
+    addressLine3: 'Surrey',
+    addressLine4: '',
+    addressLine5: '',
+    postcode: 'TW10 6UX',
+    emails: ['james.m@email.com', 'j.mitchell@work.com'],
+    phoneNumbers: ['07700 900 123', '020 8940 1234'],
+    employmentStatus: 'Employed',
+    occupation: 'Financial Director',
+    dateMovedIn: '15/06/2010',
+    dateOfBirth: '15/06/1975',
+    placeOfBirth: 'London, UK',
+    age: 49,
+    // Regulatory Information
+    niNumber: 'AB 12 34 56 C',
+    drivingLicenseExpiry: '15/06/2030',
+    passportExpiry: '22/08/2028',
+    otherIds: 'UK Voter ID: 123456',
+    amlCheck: 'Passed - 15/03/2024',
+    safeWords: ['Bluebird', 'Richmond'],
+    shareDataWith: 'Sarah Mitchell, Robert Thompson (Accountant)',
+  },
+  {
+    id: '2',
+    relationship: 'Wife',
+    // Personal Information
+    gender: 'Female',
+    title: 'Mrs',
+    forename: 'Sarah',
+    middleNames: 'Jane',
+    surname: 'Mitchell',
+    knownAs: 'Sarah',
+    previousNames: 'Thompson (maiden)',
+    relationshipStatus: 'Married',
+    addressLine1: '42 Richmond Gardens',
+    addressLine2: 'Richmond',
+    addressLine3: 'Surrey',
+    addressLine4: '',
+    addressLine5: '',
+    postcode: 'TW10 6UX',
+    emails: ['sarah.m@email.com', 's.mitchell@design.co.uk'],
+    phoneNumbers: ['07700 900 124', '020 8940 1234'],
+    employmentStatus: 'Self-Employed',
+    occupation: 'Interior Designer',
+    dateMovedIn: '15/06/2010',
+    dateOfBirth: '22/09/1977',
+    placeOfBirth: 'Bristol, UK',
+    age: 47,
+    // Regulatory Information
+    niNumber: 'CD 78 90 12 D',
+    drivingLicenseExpiry: '22/09/2029',
+    passportExpiry: '10/11/2027',
+    otherIds: 'UK Voter ID: 789012',
+    amlCheck: 'Passed - 15/03/2024',
+    safeWords: ['Sunshine', 'Bristol'],
+    shareDataWith: 'James Mitchell',
+  },
+  {
+    id: '3',
+    relationship: 'Daughter',
+    // Personal Information
+    gender: 'Female',
+    title: 'Miss',
+    forename: 'Emma',
+    middleNames: 'Louise',
+    surname: 'Mitchell',
+    knownAs: 'Emma',
+    previousNames: 'N/A',
+    relationshipStatus: 'Single',
+    addressLine1: 'University Halls',
+    addressLine2: 'Queens Road',
+    addressLine3: 'Bristol',
+    addressLine4: '',
+    addressLine5: '',
+    postcode: 'BS8 1TH',
+    emails: ['emma.m@email.com', 'e.mitchell@bristol.ac.uk'],
+    phoneNumbers: ['07700 900 125'],
+    employmentStatus: 'Student',
+    occupation: 'Medical Student',
+    dateMovedIn: '15/09/2023',
+    dateOfBirth: '10/03/2005',
+    placeOfBirth: 'Richmond, UK',
+    age: 19,
+    // Regulatory Information
+    niNumber: 'EF 34 56 78 E',
+    drivingLicenseExpiry: 'Not held',
+    passportExpiry: '05/07/2029',
+    otherIds: 'Student ID: UOB987654',
+    amlCheck: 'Not required',
+    safeWords: ['Rainbow', 'Medicine'],
+    shareDataWith: 'James Mitchell, Sarah Mitchell',
+  },
 ];
 
 const sampleRelationships: SpecialRelationship[] = [
-  { id: '1', name: 'Robert Thompson', type: 'Accountant', relationship: 'Professional', contact: '020 7123 4567', notes: 'Handles tax returns annually' },
-  { id: '2', name: 'Mary Johnson', type: 'Dependent', relationship: 'Mother-in-law', contact: '07700 900 200', notes: 'Requires financial support' },
+  {
+    id: '1',
+    name: 'Robert Thompson',
+    dateOfBirth: '15/08/1965',
+    relationship: 'Accountant',
+    dependency: ['James Mitchell', 'Sarah Mitchell'],
+    contactDetails: '020 7123 4567 | r.thompson@accountingfirm.co.uk',
+    firmName: 'Thompson & Partners Accountancy'
+  },
+  {
+    id: '2',
+    name: 'Mary Johnson',
+    dateOfBirth: '22/03/1950',
+    relationship: 'Mother-in-law',
+    dependency: ['Sarah Mitchell'],
+    contactDetails: '07700 900 200 | mary.johnson@email.com',
+  },
+  {
+    id: '3',
+    name: 'Elizabeth Baker',
+    dateOfBirth: '10/11/1988',
+    relationship: 'Solicitor',
+    dependency: ['James Mitchell', 'Sarah Mitchell'],
+    contactDetails: '020 7456 7890 | e.baker@legalfirm.co.uk',
+    firmName: 'Baker & Associates Legal Services'
+  },
+  {
+    id: '4',
+    name: 'Michael Mitchell',
+    dateOfBirth: '18/07/1945',
+    relationship: 'Father',
+    dependency: ['James Mitchell'],
+    contactDetails: '01932 123 456',
+  },
 ];
 
 const sampleHealthItems: HealthItem[] = [
-  { id: '1', personId: '1', condition: 'Type 2 Diabetes', status: 'Active', dateRecorded: '01/2023', notes: 'Well controlled with medication' },
-  { id: '2', personId: '1', condition: 'High Blood Pressure', status: 'Historical', dateRecorded: '06/2020', notes: 'Resolved through lifestyle changes' },
-  { id: '3', personId: '2', condition: 'Asthma', status: 'Active', dateRecorded: '03/2022', notes: 'Mild, uses inhaler as needed' },
+  {
+    id: '1',
+    personId: '1',
+    healthIssues: 'Type 2 Diabetes, High Cholesterol',
+    smokerStatus: 'Non-smoker (quit 2015)',
+    medication: 'Metformin 500mg twice daily, Atorvastatin 20mg daily',
+    status: 'Active',
+    dateRecorded: '01/2023'
+  },
+  {
+    id: '2',
+    personId: '1',
+    healthIssues: 'High Blood Pressure',
+    smokerStatus: 'Non-smoker',
+    medication: 'Ramipril 5mg daily',
+    status: 'Historical',
+    dateRecorded: '06/2020'
+  },
+  {
+    id: '3',
+    personId: '2',
+    healthIssues: 'Asthma (mild)',
+    smokerStatus: 'Never smoked',
+    medication: 'Salbutamol inhaler as needed',
+    status: 'Active',
+    dateRecorded: '03/2022'
+  },
 ];
 
 const sampleVulnerabilities: VulnerabilityItem[] = [
-  { id: '1', personId: '2', type: 'Health Related', status: 'Active', dateRecorded: '01/2024', description: 'Recent health diagnosis affecting decision-making capacity' },
-  { id: '2', personId: '1', type: 'Bereavement', status: 'Historical', dateRecorded: '08/2020', description: 'Loss of parent - now recovered' },
+  {
+    id: '1',
+    personId: '2',
+    vulnerabilityDescription: 'Recent health diagnosis affecting decision-making capacity - requires support with complex financial decisions',
+    adjustments: 'Ensure all meetings include both clients, provide written summaries of discussions, allow additional time for decision-making',
+    status: 'Active',
+    dateRecorded: '01/2024'
+  },
+  {
+    id: '2',
+    personId: '1',
+    vulnerabilityDescription: 'Bereavement - loss of parent impacted emotional wellbeing and financial decisions',
+    adjustments: 'Provided additional support during review meetings, deferred major decisions for 6 months',
+    status: 'Historical',
+    dateRecorded: '08/2020'
+  },
 ];
 
 const sampleDocuments: Document[] = [
-  { id: '1', type: 'Will', name: 'Last Will & Testament - James Mitchell', dateCreated: '15/01/2023', lastReviewed: '15/01/2024', location: 'Office Safe - Box 42A' },
-  { id: '2', type: 'Will', name: 'Last Will & Testament - Sarah Mitchell', dateCreated: '15/01/2023', lastReviewed: '15/01/2024', location: 'Office Safe - Box 42A' },
-  { id: '3', type: 'LPA', name: 'Lasting Power of Attorney - Health & Welfare', dateCreated: '20/03/2023', lastReviewed: '20/03/2024', location: 'Office Safe - Box 42A' },
+  {
+    id: '1',
+    type: 'Will',
+    name: 'Last Will & Testament - James Mitchell',
+    dateOfWill: '15/01/2023',
+    dateOfAdvDirective: '15/01/2023'
+  },
+  {
+    id: '2',
+    type: 'Will',
+    name: 'Last Will & Testament - Sarah Mitchell',
+    dateOfWill: '15/01/2023',
+    dateOfAdvDirective: '15/01/2023'
+  },
+  {
+    id: '3',
+    type: 'LPOA',
+    name: 'Lasting Power of Attorney - Mitchell Family',
+    dateOfHWLPOA: '20/03/2023',
+    hwLpoaIsActive: true,
+    pfLpoaIsActive: true,
+    dateOfAdvDirective: '20/03/2023',
+    dateOfEPA: '18/02/2023',
+    epaIsRegistered: true,
+    other: 'Both James and Sarah have appointed each other as primary attorney with children as replacement attorneys.'
+  },
 ];
 
 const sampleRiskAssessments: RiskAssessment[] = [
-  { id: '1', personName: 'James Mitchell', type: 'Attitude to Risk', score: '6/10', riskProfile: 'Balanced', dateCompleted: '12/03/2024', status: 'Current' },
-  { id: '2', personName: 'Sarah Mitchell', type: 'Attitude to Risk', score: '5/10', riskProfile: 'Cautious', dateCompleted: '12/03/2024', status: 'Current' },
-  { id: '3', personName: 'James Mitchell', type: 'Attitude to Risk', score: '5/10', riskProfile: 'Cautious', dateCompleted: '15/03/2023', status: 'Historical' },
+  {
+    id: '1',
+    personName: 'James Mitchell',
+    assessmentType: 'Finemetrica',
+    riskScore: 5,
+    riskGroup: 'Balanced',
+    status: 'Current'
+  },
+  {
+    id: '2',
+    personName: 'Sarah Mitchell',
+    assessmentType: 'Manual',
+    date: '12/03/2024',
+    manualRiskScore: 4,
+    gopDescription: 'Cautious investor with preference for lower volatility',
+    reason: 'Client preference for stable returns',
+    status: 'Current'
+  },
+  {
+    id: '3',
+    personName: 'James Mitchell',
+    assessmentType: 'Manual',
+    date: '15/03/2023',
+    manualRiskScore: 3,
+    gopDescription: 'Cautious approach due to market conditions',
+    reason: 'Economic uncertainty at time of assessment',
+    status: 'Historical'
+  },
+];
+
+const sampleCapacityToLoss: CapacityToLoss[] = [
+  { id: '1', personName: 'James Mitchell', score: 7, category: 'High', dateAssessed: '12/03/2024', notes: 'Strong financial position with diversified assets' },
+  { id: '2', personName: 'Sarah Mitchell', score: 6, category: 'Medium-High', dateAssessed: '12/03/2024', notes: 'Stable income from self-employment, moderate reserves' },
+  { id: '3', personName: 'Emma Mitchell', score: 3, category: 'Low', dateAssessed: '12/03/2024', notes: 'Student with limited income and assets' },
 ];
 
 const sampleAssets: Asset[] = [
@@ -202,18 +488,56 @@ const sampleObjectives: Objective[] = [
 ];
 
 const sampleMeetings: Meeting[] = [
-  { month: 'March 2024', expectedDate: '15/03/2024', actualDate: '12/03/2024', type: 'Annual Review', status: 'Completed' },
-  { month: 'September 2024', expectedDate: '15/09/2024', type: 'Mid-Year Check-in', status: 'Scheduled' },
-  { month: 'March 2023', expectedDate: '15/03/2023', actualDate: '15/03/2023', type: 'Annual Review', status: 'Completed' },
+  {
+    id: '1',
+    meetingType: 'Annual Review',
+    meetingMonth: 'March 2024',
+    isBooked: true,
+    dateHeld: '12/03/2024'
+  },
+  {
+    id: '2',
+    meetingType: 'Mid-Year Check-in',
+    meetingMonth: 'September 2024',
+    isBooked: true,
+    dateHeld: undefined
+  },
+  {
+    id: '3',
+    meetingType: 'Quarterly Review',
+    meetingMonth: 'December 2024',
+    isBooked: false,
+    dateHeld: undefined
+  },
+  {
+    id: '4',
+    meetingType: 'Annual Review',
+    meetingMonth: 'March 2023',
+    isBooked: true,
+    dateHeld: '15/03/2023'
+  },
+  {
+    id: '5',
+    meetingType: 'Mid-Year Check-in',
+    meetingMonth: 'September 2023',
+    isBooked: true,
+    dateHeld: '18/09/2023'
+  },
 ];
 
 const clientManagementInfo = {
+  leadAdvisor: 'John Anderson',
+  typeOfClient: 'Ongoing',
+  ongoingClientStartDate: '15/06/2020',
+  dateOfClientDeclaration: '10/06/2020',
+  dateOfPrivacyDeclaration: '10/06/2020',
   lastFeeAgreement: '01/04/2023',
   currentFee: '1.0% AUM',
   feeValue: 15600,
   nextReviewDate: '01/04/2025',
   clientSince: '15/06/2020',
   primaryAdvisor: 'John Anderson',
+  meetingsPerYear: 2,
 };
 
 // ============================================================================
@@ -291,69 +615,185 @@ const ClientGroupPhase2: React.FC = () => {
   // RENDER: Detail Modal
   // ============================================================================
 
+  // Helper to check if item is a Person
+  const isPerson = (item: any): item is Person => {
+    return item && 'forename' in item && 'surname' in item && 'niNumber' in item;
+  };
+
+  // Render Person Detail View
+  const renderPersonDetail = (person: Person) => {
+    const fullName = `${person.title} ${person.forename} ${person.middleNames} ${person.surname}`.trim();
+    const fullAddress = [
+      person.addressLine1,
+      person.addressLine2,
+      person.addressLine3,
+      person.addressLine4,
+      person.addressLine5,
+      person.postcode
+    ].filter(line => line).join(', ');
+
+    const renderField = (label: string, value: string | number | string[], fullWidth = false) => (
+      <div className={fullWidth ? 'col-span-2' : ''}>
+        <label className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
+        {isEditing ? (
+          Array.isArray(value) ? (
+            <input
+              type="text"
+              defaultValue={value.join(', ')}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+            />
+          ) : (
+            <input
+              type="text"
+              defaultValue={String(value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+            />
+          )
+        ) : (
+          <p className="text-gray-900 text-sm">
+            {Array.isArray(value) ? value.join(', ') : String(value)}
+          </p>
+        )}
+      </div>
+    );
+
+    return (
+      <>
+        {/* Header with icon and name */}
+        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
+          <div className="p-3 rounded-full bg-primary-100">
+            <UserIcon className="h-6 w-6 text-primary-700" />
+          </div>
+          <div>
+            <h4 className="text-xl font-semibold text-gray-900">{fullName}</h4>
+            <p className="text-sm text-gray-500">{person.relationship} • Known as: {person.knownAs}</p>
+          </div>
+        </div>
+
+        {/* Personal Information Section */}
+        <div className="mb-6">
+          <h5 className="text-sm font-semibold text-gray-700 uppercase mb-3 flex items-center gap-2">
+            <UserIcon className="w-4 h-4" />
+            Personal Information
+          </h5>
+          <div className="grid grid-cols-2 gap-4">
+            {renderField('Title', person.title)}
+            {renderField('Gender', person.gender)}
+            {renderField('Forename', person.forename)}
+            {renderField('Middle Names', person.middleNames)}
+            {renderField('Surname', person.surname)}
+            {renderField('Known As', person.knownAs)}
+            {renderField('Previous Names', person.previousNames, true)}
+            {renderField('Relationship Status', person.relationshipStatus, true)}
+            {renderField('Date of Birth', person.dateOfBirth)}
+            {renderField('Age', person.age)}
+            {renderField('Place of Birth', person.placeOfBirth, true)}
+            {renderField('Address Line 1', person.addressLine1, true)}
+            {renderField('Address Line 2', person.addressLine2, true)}
+            {renderField('Address Line 3', person.addressLine3, true)}
+            {renderField('Address Line 4', person.addressLine4, true)}
+            {renderField('Address Line 5', person.addressLine5, true)}
+            {renderField('Postcode', person.postcode)}
+            {renderField('Date Moved In', person.dateMovedIn)}
+            {renderField('Email Addresses', person.emails, true)}
+            {renderField('Phone Numbers', person.phoneNumbers, true)}
+            {renderField('Employment Status', person.employmentStatus)}
+            {renderField('Occupation', person.occupation)}
+          </div>
+        </div>
+
+        {/* Regulatory Information Section */}
+        <div className="pt-4 border-t border-gray-200">
+          <h5 className="text-sm font-semibold text-gray-700 uppercase mb-3 flex items-center gap-2">
+            <ShieldCheckIcon className="w-4 h-4" />
+            Regulatory Information
+          </h5>
+          <div className="grid grid-cols-2 gap-4">
+            {renderField('National Insurance Number', person.niNumber, true)}
+            {renderField('AML Check', person.amlCheck, true)}
+            {renderField('Driving License Expiry', person.drivingLicenseExpiry)}
+            {renderField('Passport Expiry', person.passportExpiry)}
+            {renderField('Other IDs', person.otherIds, true)}
+            {renderField('Safe Words', person.safeWords, true)}
+            {renderField('Share Data With', person.shareDataWith, true)}
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  // Render Generic Detail View
+  const renderGenericDetail = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {Object.entries(selectedItem).map(([key, value]) => {
+        if (key === 'id') return null;
+        return (
+          <div key={key} className="col-span-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
+              {key.replace(/([A-Z])/g, ' $1').trim()}
+            </label>
+            {isEditing ? (
+              <input
+                type="text"
+                defaultValue={String(value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+              />
+            ) : (
+              <p className="text-gray-900 text-base">{String(value)}</p>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+
   const renderDetailModal = () => {
     if (!selectedItem) return null;
 
+    const isPersonDetail = isPerson(selectedItem);
+
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-          <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-            <h3 className="text-xl font-semibold text-gray-900">Details</h3>
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-gray-200">
+          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+            <h3 className="text-xl font-semibold text-gray-900">
+              {isPersonDetail ? 'Person Details' : 'Details'}
+            </h3>
             <div className="flex items-center gap-2">
               {!isEditing && (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors shadow-sm"
                 >
                   <PencilIcon className="w-4 h-4" />
-                  Edit
+                  <span className="font-medium">Edit</span>
                 </button>
               )}
               {isEditing && (
                 <>
                   <button
                     onClick={() => setIsEditing(false)}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm"
                   >
                     <CheckIcon className="w-4 h-4" />
-                    Save
+                    <span className="font-medium">Save</span>
                   </button>
                   <button
                     onClick={() => setIsEditing(false)}
-                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
                   >
                     Cancel
                   </button>
                 </>
               )}
-              <button onClick={closeDetail} className="text-gray-500 hover:text-gray-700">
+              <button onClick={closeDetail} className="text-gray-500 hover:text-gray-700 transition-colors p-1">
                 <XMarkIcon className="w-6 h-6" />
               </button>
             </div>
           </div>
 
           <div className="p-6">
-            <div className="grid grid-cols-2 gap-4">
-              {Object.entries(selectedItem).map(([key, value]) => {
-                if (key === 'id') return null;
-                return (
-                  <div key={key} className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
-                      {key.replace(/([A-Z])/g, ' $1').trim()}
-                    </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        defaultValue={String(value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                      />
-                    ) : (
-                      <p className="text-gray-900">{String(value)}</p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            {isPersonDetail ? renderPersonDetail(selectedItem as Person) : renderGenericDetail()}
           </div>
         </div>
       </div>
@@ -365,39 +805,137 @@ const ClientGroupPhase2: React.FC = () => {
   // ============================================================================
 
   const renderSummary = () => (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">Client Group Overview</h3>
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <p className="text-sm text-gray-600">Members</p>
-            <p className="text-2xl font-bold text-gray-900">{samplePeople.length}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Total Assets</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {formatCurrency(sampleAssets.reduce((sum, a) => sum + a.value, 0))}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Client Since</p>
-            <p className="text-2xl font-bold text-gray-900">{clientManagementInfo.clientSince}</p>
-          </div>
-        </div>
-      </div>
+    <div>
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">People in Client Group</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {samplePeople.map((person) => {
+          const fullName = `${person.title} ${person.forename} ${person.middleNames} ${person.surname}`.trim();
+          const fullAddress = [
+            person.addressLine1,
+            person.addressLine2,
+            person.addressLine3,
+            person.addressLine4,
+            person.addressLine5,
+            person.postcode
+          ].filter(line => line).join(', ');
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left">
-            <p className="font-semibold">Schedule Meeting</p>
-            <p className="text-sm text-gray-600">Next review due: {clientManagementInfo.nextReviewDate}</p>
-          </button>
-          <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left">
-            <p className="font-semibold">Generate Report</p>
-            <p className="text-sm text-gray-600">Create client review report</p>
-          </button>
-        </div>
+          return (
+            <div
+              key={person.id}
+              className="bg-white shadow-md rounded-lg p-5 border border-gray-100 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => handleItemClick(person)}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-primary-100">
+                    <UserIcon className="h-5 w-5 text-primary-700" />
+                  </div>
+                  <div>
+                    <h4 className="text-base font-semibold text-gray-900">{fullName}</h4>
+                    <p className="text-xs text-gray-500">{person.relationship} • Known as: {person.knownAs}</p>
+                  </div>
+                </div>
+                <ChevronRightIcon className="w-5 h-5 text-gray-400" />
+              </div>
+
+              {/* Personal Information */}
+              <div className="mb-4">
+                <h5 className="text-xs font-semibold text-gray-700 uppercase mb-2">Personal Information</h5>
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                    <div>
+                      <span className="text-gray-500">Gender: </span>
+                      <span className="font-medium text-gray-900">{person.gender}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Age: </span>
+                      <span className="font-medium text-gray-900">{person.age}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">DOB: </span>
+                      <span className="font-medium text-gray-900">{person.dateOfBirth}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Place of Birth: </span>
+                      <span className="font-medium text-gray-900">{person.placeOfBirth}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-gray-500">Status: </span>
+                      <span className="font-medium text-gray-900">{person.relationshipStatus}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-gray-500">Previous Names: </span>
+                      <span className="font-medium text-gray-900">{person.previousNames}</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-1">
+                    <p className="text-xs text-gray-500 mb-0.5">Address</p>
+                    <p className="text-xs font-medium text-gray-900 leading-relaxed">{fullAddress}</p>
+                    <p className="text-xs text-gray-500 mt-1">Moved in: {person.dateMovedIn}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs pt-1">
+                    <div className="col-span-2">
+                      <span className="text-gray-500">Email: </span>
+                      <span className="font-medium text-gray-900">{person.emails.join(', ')}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-gray-500">Phone: </span>
+                      <span className="font-medium text-gray-900">{person.phoneNumbers.join(', ')}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Employment: </span>
+                      <span className="font-medium text-gray-900">{person.employmentStatus}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Occupation: </span>
+                      <span className="font-medium text-gray-900">{person.occupation}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Regulatory Information */}
+              <div className="pt-3 border-t border-gray-100">
+                <h5 className="text-xs font-semibold text-gray-700 uppercase mb-2">Regulatory Information</h5>
+                <div className="space-y-1.5 text-xs">
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                    <div>
+                      <span className="text-gray-500">NI Number: </span>
+                      <span className="font-medium text-gray-900">{person.niNumber}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">AML Check: </span>
+                      <span className="font-medium text-green-700">{person.amlCheck}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Driving License: </span>
+                      <span className="font-medium text-gray-900">{person.drivingLicenseExpiry}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Passport: </span>
+                      <span className="font-medium text-gray-900">{person.passportExpiry}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-gray-500">Other IDs: </span>
+                      <span className="font-medium text-gray-900">{person.otherIds}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-gray-500">Safe Words: </span>
+                      <span className="font-medium text-primary-700">{person.safeWords.join(', ')}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-gray-500">Share Data With: </span>
+                      <span className="font-medium text-gray-900">{person.shareDataWith}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -407,29 +945,32 @@ const ClientGroupPhase2: React.FC = () => {
   // ============================================================================
 
   const renderPeopleTable = () => (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Relationship</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Age</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Relationship</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
             <th className="px-6 py-3"></th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {samplePeople.map((person) => (
-            <tr key={person.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleItemClick(person)}>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{person.name}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{person.relationship}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{person.age}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{person.email}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                <ChevronRightIcon className="w-5 h-5 text-gray-400" />
-              </td>
-            </tr>
-          ))}
+          {samplePeople.map((person) => {
+            const fullName = `${person.title} ${person.forename} ${person.surname}`;
+            return (
+              <tr key={person.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => handleItemClick(person)}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{fullName}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{person.relationship}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{person.age}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{person.emails[0]}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                  <ChevronRightIcon className="w-5 h-5 text-gray-400" />
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -440,24 +981,48 @@ const ClientGroupPhase2: React.FC = () => {
   // ============================================================================
 
   const renderRelationships = () => (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of Birth</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Relationship</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dependency</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Details</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Firm Name</th>
             <th className="px-6 py-3"></th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {sampleRelationships.map((rel) => (
-            <tr key={rel.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleItemClick(rel)}>
+            <tr key={rel.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => handleItemClick(rel)}>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{rel.name}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{rel.type}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{rel.contact}</td>
-              <td className="px-6 py-4 text-sm text-gray-500">{rel.notes}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{rel.dateOfBirth}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  rel.firmName ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                }`}>
+                  {rel.relationship}
+                </span>
+              </td>
+              <td className="px-6 py-4 text-sm text-gray-600">
+                {rel.dependency.map((person, idx) => (
+                  <span key={idx} className="inline-block mr-1 mb-1">
+                    <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
+                      {person}
+                    </span>
+                  </span>
+                ))}
+              </td>
+              <td className="px-6 py-4 text-sm text-gray-600">{rel.contactDetails}</td>
+              <td className="px-6 py-4 text-sm text-gray-600">
+                {rel.firmName ? (
+                  <span className="font-medium text-gray-900">{rel.firmName}</span>
+                ) : (
+                  <span className="text-gray-400 italic">N/A</span>
+                )}
+              </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                 <ChevronRightIcon className="w-5 h-5 text-gray-400" />
               </td>
@@ -474,30 +1039,32 @@ const ClientGroupPhase2: React.FC = () => {
 
   const renderHealthVulnerability = () => (
     <div className="space-y-4">
-      <div className="flex gap-4 border-b">
-        <button
-          onClick={() => setActiveHealthTab('health')}
-          className={`px-4 py-2 font-medium ${
-            activeHealthTab === 'health'
-              ? 'border-b-2 border-blue-500 text-blue-600'
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          Health
-        </button>
-        <button
-          onClick={() => setActiveHealthTab('vulnerability')}
-          className={`px-4 py-2 font-medium ${
-            activeHealthTab === 'vulnerability'
-              ? 'border-b-2 border-blue-500 text-blue-600'
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          Vulnerability
-        </button>
+      <div className="flex items-center justify-center mb-6">
+        <div className="inline-flex items-center bg-gray-100 rounded-lg p-1">
+          <button
+            onClick={() => setActiveHealthTab('health')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+              activeHealthTab === 'health'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <span className="text-sm font-medium">Health</span>
+          </button>
+          <button
+            onClick={() => setActiveHealthTab('vulnerability')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+              activeHealthTab === 'vulnerability'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <span className="text-sm font-medium">Vulnerability</span>
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-3">
         {samplePeople.map((person) => {
           const counts = activeHealthTab === 'health'
             ? getHealthCounts(person.id)
@@ -508,31 +1075,34 @@ const ClientGroupPhase2: React.FC = () => {
           const isExpanded = expandedCards.has(`${activeHealthTab}-${person.id}`);
 
           return (
-            <div key={person.id} className="bg-white rounded-lg shadow">
+            <div key={person.id} className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
               <div
-                className="p-4 cursor-pointer hover:bg-gray-50"
+                className="px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors flex items-center justify-between"
                 onClick={() => toggleCardExpanded(`${activeHealthTab}-${person.id}`)}
               >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-semibold text-gray-900">{person.name}</h4>
-                    <p className="text-sm text-gray-500">{person.relationship}</p>
+                <div className="flex items-center gap-4 flex-1">
+                  <div className="p-2 rounded-full bg-primary-100">
+                    <UserIcon className="h-5 w-5 text-primary-700" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900">{`${person.title} ${person.forename} ${person.surname}`}</h4>
+                    <p className="text-xs text-gray-500">{person.relationship}</p>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-primary-700">{counts.active}</p>
+                      <p className="text-xs text-gray-600">Active</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-gray-400">{counts.historical}</p>
+                      <p className="text-xs text-gray-600">Historical</p>
+                    </div>
                   </div>
                   {isExpanded ? (
                     <ChevronDownIcon className="w-5 h-5 text-gray-400" />
                   ) : (
                     <ChevronRightIcon className="w-5 h-5 text-gray-400" />
                   )}
-                </div>
-                <div className="mt-3 flex gap-4">
-                  <div>
-                    <span className="text-2xl font-bold text-blue-600">{counts.active}</span>
-                    <span className="text-sm text-gray-600 ml-1">Active</span>
-                  </div>
-                  <div>
-                    <span className="text-2xl font-bold text-gray-400">{counts.historical}</span>
-                    <span className="text-sm text-gray-600 ml-1">Historical</span>
-                  </div>
                 </div>
               </div>
 
@@ -548,10 +1118,29 @@ const ClientGroupPhase2: React.FC = () => {
                           handleItemClick(item);
                         }}
                       >
-                        <p className="font-medium text-sm text-gray-900">
-                          {activeHealthTab === 'health' ? (item as HealthItem).condition : (item as VulnerabilityItem).type}
-                        </p>
-                        <p className="text-xs text-gray-500">{item.dateRecorded}</p>
+                        {activeHealthTab === 'health' ? (
+                          <>
+                            <p className="font-medium text-sm text-gray-900 mb-1">
+                              {(item as HealthItem).healthIssues}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              <span className="font-medium">Smoker:</span> {(item as HealthItem).smokerStatus}
+                            </p>
+                            <p className="text-xs text-gray-600 mt-1">
+                              <span className="font-medium">Medication:</span> {(item as HealthItem).medication}
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="font-medium text-sm text-gray-900 mb-1">
+                              {(item as VulnerabilityItem).vulnerabilityDescription}
+                            </p>
+                            <p className="text-xs text-gray-600 mt-1">
+                              <span className="font-medium">Adjustments:</span> {(item as VulnerabilityItem).adjustments}
+                            </p>
+                          </>
+                        )}
+                        <p className="text-xs text-gray-500 mt-2">{item.dateRecorded}</p>
                         <span className="inline-block mt-1 px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">
                           Active
                         </span>
@@ -569,10 +1158,29 @@ const ClientGroupPhase2: React.FC = () => {
                           handleItemClick(item);
                         }}
                       >
-                        <p className="font-medium text-sm text-gray-700">
-                          {activeHealthTab === 'health' ? (item as HealthItem).condition : (item as VulnerabilityItem).type}
-                        </p>
-                        <p className="text-xs text-gray-500">{item.dateRecorded}</p>
+                        {activeHealthTab === 'health' ? (
+                          <>
+                            <p className="font-medium text-sm text-gray-700 mb-1">
+                              {(item as HealthItem).healthIssues}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              <span className="font-medium">Smoker:</span> {(item as HealthItem).smokerStatus}
+                            </p>
+                            <p className="text-xs text-gray-600 mt-1">
+                              <span className="font-medium">Medication:</span> {(item as HealthItem).medication}
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="font-medium text-sm text-gray-700 mb-1">
+                              {(item as VulnerabilityItem).vulnerabilityDescription}
+                            </p>
+                            <p className="text-xs text-gray-600 mt-1">
+                              <span className="font-medium">Adjustments:</span> {(item as VulnerabilityItem).adjustments}
+                            </p>
+                          </>
+                        )}
+                        <p className="text-xs text-gray-500 mt-2">{item.dateRecorded}</p>
                         <span className="inline-block mt-1 px-2 py-1 bg-gray-200 text-gray-700 text-xs font-medium rounded">
                           Historical
                         </span>
@@ -593,31 +1201,89 @@ const ClientGroupPhase2: React.FC = () => {
   // ============================================================================
 
   const renderDocuments = () => (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date Created</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Reviewed</th>
-            <th className="px-6 py-3"></th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {sampleDocuments.map((doc) => (
-            <tr key={doc.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleItemClick(doc)}>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{doc.type}</td>
-              <td className="px-6 py-4 text-sm text-gray-500">{doc.name}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{doc.dateCreated}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{doc.lastReviewed}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                <ChevronRightIcon className="w-5 h-5 text-gray-400" />
-              </td>
+    <div className="space-y-6">
+      {/* Wills Section */}
+      <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
+        <div className="px-6 py-4 bg-gray-50 border-b">
+          <h3 className="text-lg font-semibold">Wills</h3>
+        </div>
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of Will</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of Adv Directive</th>
+              <th className="px-6 py-3"></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {sampleDocuments.filter(doc => doc.type === 'Will').map((doc) => (
+              <tr key={doc.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => handleItemClick(doc)}>
+                <td className="px-6 py-4 text-sm font-medium text-gray-900">{doc.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{(doc as WillDocument).dateOfWill}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{(doc as WillDocument).dateOfAdvDirective}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                  <ChevronRightIcon className="w-5 h-5 text-gray-400" />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* LPOAs Section */}
+      <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
+        <div className="px-6 py-4 bg-gray-50 border-b">
+          <h3 className="text-lg font-semibold">Lasting Powers of Attorney</h3>
+        </div>
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of H&W LPOA</th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">H&W Active</th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">P&F Active</th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">EPA Registered</th>
+              <th className="px-6 py-3"></th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {sampleDocuments.filter(doc => doc.type === 'LPOA').map((doc) => {
+              const lpoa = doc as LPOADocument;
+              return (
+                <tr key={doc.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => handleItemClick(doc)}>
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{lpoa.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{lpoa.dateOfHWLPOA}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      lpoa.hwLpoaIsActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {lpoa.hwLpoaIsActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      lpoa.pfLpoaIsActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {lpoa.pfLpoaIsActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      lpoa.epaIsRegistered ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {lpoa.epaIsRegistered ? 'Yes' : 'No'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                    <ChevronRightIcon className="w-5 h-5 text-gray-400" />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 
@@ -631,9 +1297,10 @@ const ClientGroupPhase2: React.FC = () => {
 
     return (
       <div className="space-y-6">
+        {/* Current Risk Assessments */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="px-6 py-4 bg-gray-50 border-b">
-            <h3 className="text-lg font-semibold">Current Assessments</h3>
+            <h3 className="text-lg font-semibold">Current Risk Assessments</h3>
           </div>
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -641,8 +1308,7 @@ const ClientGroupPhase2: React.FC = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Person</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk Profile</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk Group</th>
                 <th className="px-6 py-3"></th>
               </tr>
             </thead>
@@ -650,18 +1316,33 @@ const ClientGroupPhase2: React.FC = () => {
               {currentAssessments.map((assessment) => (
                 <tr key={assessment.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleItemClick(assessment)}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{assessment.personName}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assessment.type}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assessment.score}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      assessment.assessmentType === 'Finemetrica'
+                        ? 'bg-purple-100 text-purple-800'
+                        : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {assessment.assessmentType}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {assessment.assessmentType === 'Finemetrica'
+                      ? `${assessment.riskScore}/7`
+                      : `${assessment.manualRiskScore}/7`
+                    }
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      assessment.riskProfile === 'Balanced'
+                      assessment.riskGroup === 'Balanced' || assessment.gopDescription?.includes('Balanced')
                         ? 'bg-blue-100 text-blue-800'
                         : 'bg-green-100 text-green-800'
                     }`}>
-                      {assessment.riskProfile}
+                      {assessment.assessmentType === 'Finemetrica'
+                        ? assessment.riskGroup
+                        : assessment.gopDescription?.split(' ')[0]
+                      }
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assessment.dateCompleted}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                     <ChevronRightIcon className="w-5 h-5 text-gray-400" />
                   </td>
@@ -671,10 +1352,11 @@ const ClientGroupPhase2: React.FC = () => {
           </table>
         </div>
 
+        {/* Historical Risk Assessments */}
         {historicalAssessments.length > 0 && (
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <div className="px-6 py-4 bg-gray-50 border-b">
-              <h3 className="text-lg font-semibold text-gray-600">Historical Assessments</h3>
+              <h3 className="text-lg font-semibold text-gray-600">Historical Risk Assessments</h3>
             </div>
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -682,7 +1364,7 @@ const ClientGroupPhase2: React.FC = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Person</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk Profile</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk Group</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                   <th className="px-6 py-3"></th>
                 </tr>
@@ -691,14 +1373,26 @@ const ClientGroupPhase2: React.FC = () => {
                 {historicalAssessments.map((assessment) => (
                   <tr key={assessment.id} className="hover:bg-gray-50 cursor-pointer opacity-60" onClick={() => handleItemClick(assessment)}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{assessment.personName}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assessment.type}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assessment.score}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                        {assessment.riskProfile}
+                        {assessment.assessmentType}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assessment.dateCompleted}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {assessment.assessmentType === 'Finemetrica'
+                        ? `${assessment.riskScore}/7`
+                        : `${assessment.manualRiskScore}/7`
+                      }
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                        {assessment.assessmentType === 'Finemetrica'
+                          ? assessment.riskGroup
+                          : assessment.gopDescription?.split(' ')[0]
+                        }
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assessment.date || '-'}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                       <ChevronRightIcon className="w-5 h-5 text-gray-400" />
                     </td>
@@ -708,6 +1402,47 @@ const ClientGroupPhase2: React.FC = () => {
             </table>
           </div>
         )}
+
+        {/* Capacity to Loss */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 bg-gray-50 border-b">
+            <h3 className="text-lg font-semibold">Capacity to Loss</h3>
+          </div>
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Person</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date Assessed</th>
+                <th className="px-6 py-3"></th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {sampleCapacityToLoss.map((capacity) => (
+                <tr key={capacity.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleItemClick(capacity)}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{capacity.personName}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">{capacity.score}/10</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      capacity.category.includes('High')
+                        ? 'bg-green-100 text-green-800'
+                        : capacity.category.includes('Medium')
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {capacity.category}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{capacity.dateAssessed}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                    <ChevronRightIcon className="w-5 h-5 text-gray-400" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   };
@@ -718,6 +1453,38 @@ const ClientGroupPhase2: React.FC = () => {
 
   const renderClientManagement = () => (
     <div className="space-y-6">
+      {/* Client Information */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold mb-4">Client Information</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm text-gray-600">Lead Advisor</p>
+            <p className="text-lg font-semibold text-gray-900">{clientManagementInfo.leadAdvisor}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-600">Type of Client</p>
+            <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+              {clientManagementInfo.typeOfClient}
+            </span>
+          </div>
+          {clientManagementInfo.typeOfClient === 'Ongoing' && (
+            <div>
+              <p className="text-sm text-gray-600">Ongoing Client Start Date</p>
+              <p className="text-lg font-semibold text-gray-900">{clientManagementInfo.ongoingClientStartDate}</p>
+            </div>
+          )}
+          <div>
+            <p className="text-sm text-gray-600">Date of Client Declaration</p>
+            <p className="text-lg font-semibold text-gray-900">{clientManagementInfo.dateOfClientDeclaration}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-600">Date of Privacy Declaration</p>
+            <p className="text-lg font-semibold text-gray-900">{clientManagementInfo.dateOfPrivacyDeclaration}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Fee Information */}
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold mb-4">Fee Information</h3>
         <div className="grid grid-cols-2 gap-4">
@@ -742,35 +1509,45 @@ const ClientGroupPhase2: React.FC = () => {
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="px-6 py-4 bg-gray-50 border-b">
-          <h3 className="text-lg font-semibold">Meeting Schedule</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Meeting Suite</h3>
+            <div className="text-right">
+              <p className="text-2xl font-bold text-primary-700">{clientManagementInfo.meetingsPerYear}</p>
+              <p className="text-xs text-gray-600">Meetings per Year</p>
+            </div>
+          </div>
         </div>
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Period</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expected Date</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actual Date</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Meeting Type</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Meeting Month</th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Booked</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date Held</th>
+              <th className="px-6 py-3"></th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {sampleMeetings.map((meeting, idx) => (
-              <tr key={idx} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{meeting.month}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{meeting.expectedDate}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{meeting.actualDate || '-'}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{meeting.type}</td>
-                <td className="px-6 py-4 whitespace-nowrap">
+            {sampleMeetings.map((meeting) => (
+              <tr key={meeting.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleItemClick(meeting)}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{meeting.meetingType}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{meeting.meetingMonth}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-center">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    meeting.status === 'Completed'
-                      ? 'bg-green-100 text-green-800'
-                      : meeting.status === 'Scheduled'
-                      ? 'bg-blue-100 text-blue-800'
-                      : 'bg-red-100 text-red-800'
+                    meeting.isBooked ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                   }`}>
-                    {meeting.status}
+                    {meeting.isBooked ? 'Booked' : 'Not Booked'}
                   </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  {meeting.dateHeld ? (
+                    <span className="font-medium">{meeting.dateHeld}</span>
+                  ) : (
+                    <span className="text-gray-400 italic">Not held yet</span>
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                  <ChevronRightIcon className="w-5 h-5 text-gray-400" />
                 </td>
               </tr>
             ))}
@@ -966,23 +1743,23 @@ const ClientGroupPhase2: React.FC = () => {
   // ============================================================================
 
   const renderProducts = () => (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Provider</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Cover Amount</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Provider</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
+            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Cover Amount</th>
             <th className="px-6 py-3"></th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {sampleProducts.map((product) => (
-            <tr key={product.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleItemClick(product)}>
+            <tr key={product.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => handleItemClick(product)}>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{product.type}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.provider}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.owner}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{product.provider}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{product.owner}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
                 {formatCurrency(product.value)}
               </td>
@@ -1068,21 +1845,23 @@ const ClientGroupPhase2: React.FC = () => {
   const renderMainContent = () => {
     if (activeTab === 'summary') return renderSummary();
     if (activeTab === 'basic') return (
-      <div className="space-y-4">
-        <div className="flex gap-2 border-b overflow-x-auto">
-          {basicDetailsTabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveSubTab(tab.id)}
-              className={`px-4 py-3 font-medium whitespace-nowrap ${
-                activeSubTab === tab.id
-                  ? 'border-b-2 border-blue-500 text-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+      <div className="space-y-6">
+        <div className="flex items-center justify-center">
+          <div className="inline-flex items-center bg-gray-100 rounded-lg p-1 overflow-x-auto">
+            {basicDetailsTabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveSubTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                  activeSubTab === tab.id
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <span className="text-sm font-medium whitespace-nowrap">{tab.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
         {renderBasicDetailsContent()}
       </div>
@@ -1099,53 +1878,49 @@ const ClientGroupPhase2: React.FC = () => {
   // ============================================================================
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Mitchell Family</h1>
-          <p className="text-gray-600 mt-1">Client Group Management - Phase 2 Prototype</p>
-        </div>
+    <DynamicPageContainer maxWidth="2000px" className="py-3">
+      {/* Header */}
+      <div className="mb-4">
+        <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">Mitchell Family</h1>
+        <p className="text-gray-600 mt-1 text-sm">Client Group Management - Phase 2 Prototype</p>
+      </div>
 
-        {/* Horizontal Main Tabs */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="border-b border-gray-200">
-            <nav className="flex -mb-px overflow-x-auto">
-              {mainTabs.map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => {
-                      setActiveTab(tab.id);
-                      if (tab.id === 'basic') setActiveSubTab('people');
-                    }}
-                    className={`group inline-flex items-center px-6 py-4 border-b-2 font-medium text-sm whitespace-nowrap ${
-                      activeTab === tab.id
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    <Icon className={`w-5 h-5 mr-2 ${
-                      activeTab === tab.id ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'
-                    }`} />
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
+      {/* Horizontal Main Tabs */}
+      <div className="mb-6">
+        <div className="flex items-center justify-center">
+          <div className="inline-flex items-center bg-gray-100 rounded-lg p-1">
+            {mainTabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    if (tab.id === 'basic') setActiveSubTab('people');
+                  }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                    activeTab === tab.id
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="text-sm font-medium whitespace-nowrap">{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
+      </div>
 
-        {/* Main Content */}
-        <div className="pb-8">
-          {renderMainContent()}
-        </div>
+      {/* Main Content */}
+      <div className="pb-8">
+        {renderMainContent()}
       </div>
 
       {/* Detail Modal */}
       {renderDetailModal()}
-    </div>
+    </DynamicPageContainer>
   );
 };
 
