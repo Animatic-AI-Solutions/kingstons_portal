@@ -24,6 +24,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Clients from './pages/Clients';
 import AddClient from './pages/AddClient';
 import ClientDetails from './pages/ClientDetails';
+import ClientGroupPhase2 from './pages/ClientGroupPhase2';
 
 // Product Management Pages - For handling financial products
 import Products from './pages/Products';
@@ -102,6 +103,7 @@ const AppContent: React.FC = () => {
           <Route path="/client_groups" element={<AppLayout><Clients /></AppLayout>} />
           <Route path="/client_groups/add" element={<AppLayout><AddClient /></AppLayout>} />
           <Route path="/client_groups/:clientId" element={<AppLayout><ClientDetails /></AppLayout>} />
+          <Route path="/client_groups_phase2" element={<AppLayout><ClientGroupPhase2 /></AppLayout>} />
           
           {/* Product Management Section - Managing client products */}
           <Route path="/products" element={<AppLayout><Products /></AppLayout>} />
