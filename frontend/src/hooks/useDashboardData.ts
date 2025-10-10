@@ -52,7 +52,6 @@ export const useDashboardData = () => {
 
   // Define the async fetch function
   const fetchDashboardData = async (): Promise<DashboardAllResponse> => {
-    console.log('Fetching dashboard data with React Query...');
     const { data } = await api.get<DashboardAllResponse>('/analytics/dashboard_all', {
       params: {
         fund_limit: 100000,  // GROWTH-READY: Support up to 100,000 funds
@@ -60,11 +59,6 @@ export const useDashboardData = () => {
         template_limit: 100000,  // GROWTH-READY: Support up to 100,000 templates
       },
     });
-
-    if (data.performance?.optimization_stats) {
-      const stats = data.performance.optimization_stats;
-      console.log(`🚀 Dashboard optimized! ${stats.total_db_queries} queries (was 50+), processed ${stats.total_portfolio_funds} funds with ${stats.valuations_used} valuations`);
-    }
 
     return data;
   };

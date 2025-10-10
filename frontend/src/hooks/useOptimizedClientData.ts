@@ -74,88 +74,36 @@ export const useOptimizedClientData = () => {
   
   // Determine which endpoint to use based on configuration
   const getEndpointFunction = () => {
-    console.log('🔧 Endpoint selection:', {
-      ENABLE_AB_TESTING: OPTIMIZATION_CONFIG.ENABLE_AB_TESTING,
-      USE_OPTIMIZED_ENDPOINT: OPTIMIZATION_CONFIG.USE_OPTIMIZED_ENDPOINT
-    });
-    
     if (OPTIMIZATION_CONFIG.ENABLE_AB_TESTING) {
       // A/B testing: random 50/50 split
       const useOptimized = Math.random() < 0.5;
-      console.log(`🔬 A/B Testing: Using ${useOptimized ? 'OPTIMIZED' : 'ORIGINAL'} endpoint`);
       return () => getBulkClientDataWithOption(useOptimized);
     }
-    
+
     if (OPTIMIZATION_CONFIG.USE_OPTIMIZED_ENDPOINT) {
-      console.log('🚀 CONFIRMED: Using OPTIMIZED client groups summary endpoint (getBulkClientDataOptimized)');
       return getBulkClientDataOptimized;
     }
-    
-    console.log('📊 FALLBACK: Using ORIGINAL bulk client data endpoint (getBulkClientData)');
+
     return getBulkClientData;
   };
   
   const query = useQuery({
     queryKey: ['clients-optimized'],
     queryFn: async () => {
-      const startTime = performance.now();
-      console.log('🚀 Fetching optimized client data...');
-      
       try {
         const endpointFunction = getEndpointFunction();
-        console.log('📡 About to call endpoint function:', endpointFunction.name);
-        
-        // Call the endpoint and time it
-        const apiStartTime = performance.now();
         const response = await endpointFunction();
-        const apiEndTime = performance.now();
-        const apiDuration = Math.round(apiEndTime - apiStartTime);
-        
-        const endTime = performance.now();
-        const totalDuration = Math.round(endTime - startTime);
-        
-        if (OPTIMIZATION_CONFIG.ENABLE_PERFORMANCE_LOGGING) {
-          console.log(`✅ Client data loaded in ${totalDuration}ms (API call: ${apiDuration}ms)`);
-          console.log(`📊 Loaded ${response.data.client_groups?.length || 0} clients`);
-          console.log(`🎯 Data source: ${response.data.metadata?.data_source || 'unknown'}`);
-          console.log('📋 API Response structure:', {
-            hasClientGroups: !!response.data.client_groups,
-            clientGroupsLength: response.data.client_groups?.length || 0,
-            hasMetadata: !!response.data.metadata,
-            totalFum: response.data.total_fum
-          });
-          
-          if (response.data.metadata?.performance_improvement) {
-            console.log(`⚡ Performance: ${response.data.metadata.performance_improvement}`);
-          }
-          
-          // Log performance metrics for monitoring
-          console.log(`📈 Performance Metrics:`, {
-            duration_ms: totalDuration,
-            client_count: response.data.client_groups?.length || 0,
-            total_fum: response.data.total_fum,
-            data_source: response.data.metadata?.data_source,
-            endpoint_used: OPTIMIZATION_CONFIG.USE_OPTIMIZED_ENDPOINT ? 'optimized' : 'original'
-          });
-          
-          // Log successful data fetch for monitoring
-          console.log('✅ Client data fetch successful:', {
-            client_count: response.data.client_groups?.length || 0,
-            data_source: response.data.metadata?.data_source,
-            cache_eligible: response.data.metadata?.cache_eligible
-          });
-        }
-        
+
         return response.data as BulkClientDataResponse;
-        
+
       } catch (error) {
         console.error('❌ Error fetching client data:', error);
-        
+
         // If optimized endpoint fails, we could implement automatic fallback here
         if (OPTIMIZATION_CONFIG.USE_OPTIMIZED_ENDPOINT) {
           console.warn('⚠️ Optimized endpoint failed - consider implementing fallback mechanism');
         }
-        
+
         // Re-throw the error so React Query can handle it
         throw error;
       }
@@ -170,13 +118,11 @@ export const useOptimizedClientData = () => {
 
   // Manual cache invalidation for post-action updates
   const invalidateClients = () => {
-    console.log('🔄 Invalidating clients cache...');
     return queryClient.invalidateQueries({ queryKey: ['clients-optimized'] });
   };
 
   // Background refresh without affecting loading states
   const refreshInBackground = () => {
-    console.log('🔄 Refreshing clients in background...');
     return queryClient.refetchQueries({ queryKey: ['clients-optimized'] });
   };
 
@@ -191,14 +137,12 @@ export const useOptimizedClientData = () => {
 
   // Switch to original endpoint for performance testing
   const switchToOriginalEndpoint = () => {
-    console.log('🔄 Switching to original endpoint for debugging...');
     OPTIMIZATION_CONFIG.USE_OPTIMIZED_ENDPOINT = false;
     return invalidateClients();
   };
 
   // Force switch to optimized endpoint
   const switchToOptimizedEndpoint = () => {
-    console.log('🚀 Switching to optimized endpoint...');
     OPTIMIZATION_CONFIG.USE_OPTIMIZED_ENDPOINT = true;
     return invalidateClients();
   };

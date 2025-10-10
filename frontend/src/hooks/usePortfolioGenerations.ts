@@ -26,13 +26,10 @@ export const usePortfolioGenerations = (): UsePortfolioGenerationsResult => {
   const queryClient = useQueryClient();
 
   const fetchGenerations = useCallback(async ({ signal }: { signal?: AbortSignal } = {}) => {
-    console.log("Fetching portfolio generations with product counts from backend...");
-    
     try {
       // Use the existing endpoint for template portfolio generations (now with product counts)
       const response = await api.get('/available_portfolios/template-portfolio-generations/active', { signal });
-      console.log(`Successfully received ${response.data.length} template portfolio generations with product counts`);
-      
+
       // Transform the data to match our expected interface
       const transformedData: PortfolioGeneration[] = await Promise.all(
         response.data.map(async (gen: any) => {
@@ -44,7 +41,7 @@ export const usePortfolioGenerations = (): UsePortfolioGenerationsResult => {
           } catch (error) {
             console.warn(`Could not fetch template name for portfolio ${gen.available_portfolio_id}`);
           }
-          
+
           return {
             id: gen.id,
             name: gen.generation_name || `Generation ${gen.id}`,
@@ -58,10 +55,9 @@ export const usePortfolioGenerations = (): UsePortfolioGenerationsResult => {
           };
         })
       );
-      
-      console.log(`Successfully transformed ${transformedData.length} portfolio generations`);
+
       return transformedData;
-      
+
     } catch (err) {
       console.error('Error in fetchGenerations:', err);
       throw err;
@@ -104,15 +100,13 @@ export const usePortfolioGenerationDetails = (generationId: string | undefined) 
       throw new Error('Generation ID is required');
     }
 
-    console.log(`Fetching portfolio generation details for ID: ${generationId}`);
-    
     try {
       // Use the existing endpoint for getting a single generation by ID
       const generationResponse = await api.get(`/available_portfolios/generations/${generationId}`, { signal });
-      
+
       // Get linked products for this generation using products_list_view
       const productsResponse = await api.get('/client_products', { signal });
-      const linkedProducts = productsResponse.data.filter((product: any) => 
+      const linkedProducts = productsResponse.data.filter((product: any) =>
         product.effective_template_generation_id === parseInt(generationId)
       );
 

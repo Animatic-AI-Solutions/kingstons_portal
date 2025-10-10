@@ -49,16 +49,9 @@ export const useProductDetails = (productId: string | number | undefined) => {
       if (!productId) {
         throw new Error('Product ID is required');
       }
-      
-      console.log(`🔍 [useProductDetails] Fetching product details for ID: ${productId}`);
-      const startTime = performance.now();
-      
+
       const response = await getCompleteProductDetails(productId);
-      
-      const endTime = performance.now();
-      const duration = Math.round(endTime - startTime);
-      console.log(`✅ [useProductDetails] Product ${productId} loaded in ${duration}ms`);
-      
+
       return response.data;
     },
     enabled: !!productId,
@@ -98,11 +91,9 @@ export const useMultipleProductDetails = (productIds: (string | number)[]) => {
   const queries = useQuery({
     queryKey: ['multiple-products', productIds.sort().join(',')],
     queryFn: async () => {
-      console.log(`🔍 [useMultipleProductDetails] Fetching ${productIds.length} products`);
-      
       const promises = productIds.map(id => getCompleteProductDetails(id));
       const responses = await Promise.all(promises);
-      
+
       return responses.map(response => response.data);
     },
     enabled: productIds.length > 0,

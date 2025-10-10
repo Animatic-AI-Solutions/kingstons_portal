@@ -88,11 +88,9 @@ export const useClientDetails = (clientId: string | undefined) => {
     queryKey: ['clients', clientId],
     queryFn: async () => {
       if (!clientId) throw new Error('Client ID is required');
-      
-      console.log(`🚀 Fetching client details for ID: ${clientId}`);
+
       try {
         const response = await api.get(`/client_groups/${clientId}/complete`);
-        console.log(`✅ Loaded client details for: ${response.data.name || 'Unknown'}`);
         return response.data as ClientDetailsData;
       } catch (error: any) {
         // Handle 404 errors specifically - client was likely deleted
@@ -122,7 +120,6 @@ export const useClientDetails = (clientId: string | undefined) => {
   // Manual cache invalidation for this specific client
   const invalidateClient = () => {
     if (clientId) {
-      console.log(`🔄 Invalidating cache for client: ${clientId}`);
       return queryClient.invalidateQueries({ queryKey: ['clients', clientId] });
     }
   };
@@ -130,7 +127,6 @@ export const useClientDetails = (clientId: string | undefined) => {
   // Background refresh without affecting loading states
   const refreshInBackground = () => {
     if (clientId) {
-      console.log(`🔄 Background refreshing client: ${clientId}`);
       return queryClient.refetchQueries({ queryKey: ['clients', clientId] });
     }
   };
@@ -138,7 +134,6 @@ export const useClientDetails = (clientId: string | undefined) => {
   // Update client data optimistically
   const updateClientInCache = (updatedData: Partial<ClientDetailsData>) => {
     if (clientId) {
-      console.log(`🔄 Optimistically updating client cache: ${clientId}`);
       queryClient.setQueryData(['clients', clientId], (oldData: ClientDetailsData | undefined) => {
         if (!oldData) return oldData;
         return { ...oldData, ...updatedData };

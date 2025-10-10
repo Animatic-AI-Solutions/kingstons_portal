@@ -25,16 +25,9 @@ export const usePortfolioTemplates = (): UsePortfolioTemplatesResult => {
   const queryClient = useQueryClient();
 
   const fetchPortfolios = useCallback(async ({ signal }: { signal?: AbortSignal } = {}) => {
-    console.log("Fetching portfolio templates from optimized bulk endpoint...");
-    
     try {
       const response = await api.get('/available_portfolios/bulk-with-counts', { signal });
-      
-      // Only log in development mode to reduce console noise
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`Successfully received ${response.data.length} portfolio templates with counts`);
-      }
-      
+
       return response.data as PortfolioTemplate[];
     } catch (err: any) {
       // Don't log canceled errors as they're normal behavior
@@ -81,8 +74,6 @@ export const usePortfolioTemplateDetails = (portfolioId: string | undefined) => 
       throw new Error('Portfolio ID is required');
     }
 
-    console.log(`Fetching portfolio template details for ID: ${portfolioId}`);
-    
     try {
       // Fetch all required data in parallel
       const [templateResponse, generationsResponse, linkedProductsResponse] = await Promise.all([
