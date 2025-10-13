@@ -1,45 +1,965 @@
-chunk-QYFCA5BS.js?v=cc98fab4:21609 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
-providerColors.ts:75 Provider color service initialized {providersLoaded: 19, colorsInCache: 19}
-ClientDetails.tsx:1207 DEBUG: Client data: {client: null, client_product_owners: undefined, clientAccounts: Array(0), first_account_owners: undefined, apiResponse: undefined}
-ClientDetails.tsx:1207 DEBUG: Client data: {client: null, client_product_owners: undefined, clientAccounts: Array(0), first_account_owners: undefined, apiResponse: undefined}
-useClientDetails.ts:92 🚀 Fetching client details for ID: 76
-ClientDetails.tsx:1207 DEBUG: Client data: {client: null, client_product_owners: undefined, clientAccounts: Array(0), first_account_owners: undefined, apiResponse: undefined}
-ClientDetails.tsx:1207 DEBUG: Client data: {client: null, client_product_owners: undefined, clientAccounts: Array(0), first_account_owners: undefined, apiResponse: undefined}
-ClientDetails.tsx:1207 DEBUG: Client data: {client: null, client_product_owners: undefined, clientAccounts: Array(0), first_account_owners: undefined, apiResponse: undefined}
-ClientDetails.tsx:1207 DEBUG: Client data: {client: null, client_product_owners: undefined, clientAccounts: Array(0), first_account_owners: undefined, apiResponse: undefined}
-ClientDetails.tsx:1207 DEBUG: Client data: {client: null, client_product_owners: undefined, clientAccounts: Array(0), first_account_owners: undefined, apiResponse: undefined}
-ClientDetails.tsx:1207 DEBUG: Client data: {client: null, client_product_owners: undefined, clientAccounts: Array(0), first_account_owners: undefined, apiResponse: undefined}
-useClientDetails.ts:95 ✅ Loaded client details for: Unknown
-ClientDetails.tsx:1207 DEBUG: Client data: {client: {…}, client_product_owners: Array(1), clientAccounts: Array(2), first_account_owners: Array(1), apiResponse: {…}}
-ClientDetails.tsx:1207 DEBUG: Client data: {client: {…}, client_product_owners: Array(1), clientAccounts: Array(2), first_account_owners: Array(1), apiResponse: {…}}
-ClientDetails.tsx:300 DEBUG: ClientHeader formatDate - input: 2019-09-13T23:00:00Z output: 14 Sept 2019
-ClientDetails.tsx:300 DEBUG: ClientHeader formatDate - input: 2019-09-13T23:00:00Z output: 14 Sept 2019
-ClientDetails.tsx:678 Product card for Stocks & Shares ISA: {provider: 'AJ Bell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
-ClientDetails.tsx:678 Product card for Stocks & Shares ISA: {provider: 'AJ Bell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
-ClientDetails.tsx:678 Product card for Retirement Account: {provider: 'Prudential', provider_id: 17, provider_theme_color: null, using_color: '#F97316', template_generation_id: null, …}
-ClientDetails.tsx:678 Product card for Retirement Account: {provider: 'Prudential', provider_id: 17, provider_theme_color: null, using_color: '#F97316', template_generation_id: null, …}
-ClientDetails.tsx:1207 DEBUG: Client data: {client: {…}, client_product_owners: Array(1), clientAccounts: Array(2), first_account_owners: Array(1), apiResponse: {…}}
-ClientDetails.tsx:1207 DEBUG: Client data: {client: {…}, client_product_owners: Array(1), clientAccounts: Array(2), first_account_owners: Array(1), apiResponse: {…}}
-ClientDetails.tsx:300 DEBUG: ClientHeader formatDate - input: 2019-09-13T23:00:00Z output: 14 Sept 2019
-ClientDetails.tsx:300 DEBUG: ClientHeader formatDate - input: 2019-09-13T23:00:00Z output: 14 Sept 2019
-ClientDetails.tsx:678 Product card for Stocks & Shares ISA: {provider: 'AJ Bell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
-ClientDetails.tsx:678 Product card for Stocks & Shares ISA: {provider: 'AJ Bell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
-ClientDetails.tsx:678 Product card for Retirement Account: {provider: 'Prudential', provider_id: 17, provider_theme_color: null, using_color: '#F97316', template_generation_id: null, …}
-ClientDetails.tsx:678 Product card for Retirement Account: {provider: 'Prudential', provider_id: 17, provider_theme_color: null, using_color: '#F97316', template_generation_id: null, …}
-ClientDetails.tsx:157 PreviousFundsIRRDisplay received inactiveFundIds: (2) [1236, 1238]
-ClientDetails.tsx:179 Calculating live Previous Funds IRR for 2 inactive funds
-ClientDetails.tsx:180 Inactive fund IDs for live calculation: (2) [1236, 1238]
-ClientDetails.tsx:181 🔍 DEBUG: ClientDetails.tsx calling IRR with cache key: 1236,1238
-api.ts:607 🔍 DEBUG: api.ts calculateStandardizedMultipleFundsIRR called with: {portfolioFundIds: Array(2)}
-api.ts:608 🔍 DEBUG: portfolioFundIds being sent to backend: (2) [1236, 1238]
-ClientDetails.tsx:157 PreviousFundsIRRDisplay received inactiveFundIds: (2) [1236, 1238]
-ClientDetails.tsx:170 Same IRR calculation already in progress, skipping duplicate request for: 1236,1238
-ClientDetails.tsx:1207 DEBUG: Client data: {client: {…}, client_product_owners: Array(1), clientAccounts: Array(2), first_account_owners: Array(1), apiResponse: {…}}
-ClientDetails.tsx:1207 DEBUG: Client data: {client: {…}, client_product_owners: Array(1), clientAccounts: Array(2), first_account_owners: Array(1), apiResponse: {…}}
-ClientDetails.tsx:300 DEBUG: ClientHeader formatDate - input: 2019-09-13T23:00:00Z output: 14 Sept 2019
-ClientDetails.tsx:300 DEBUG: ClientHeader formatDate - input: 2019-09-13T23:00:00Z output: 14 Sept 2019
-ClientDetails.tsx:678 Product card for Stocks & Shares ISA: {provider: 'AJ Bell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
-ClientDetails.tsx:678 Product card for Stocks & Shares ISA: {provider: 'AJ Bell', provider_id: 1, provider_theme_color: null, using_color: '#DC2626', template_generation_id: null, …}
-ClientDetails.tsx:678 Product card for Retirement Account: {provider: 'Prudential', provider_id: 17, provider_theme_color: null, using_color: '#F97316', template_generation_id: null, …}
-ClientDetails.tsx:678 Product card for Retirement Account: {provider: 'Prudential', provider_id: 17, provider_theme_color: null, using_color: '#F97316', template_generation_id: null, …}
-ClientDetails.tsx:188 Live Previous Funds IRR response: {success: true, irr_percentage: 7.4, irr_decimal: 0.07427757376470101, calculation_date: '2024-12-01', portfolio_fund_ids: Array(2), …}
+ReportGenerator.tsx:1337 Report generation validation:
+ReportGenerator.tsx:1338 Selected client groups: 1
+ReportGenerator.tsx:1339 Selected products: 0
+ Using fallback valuation date: 2025-09-01 (from IRR dates)
+ Final valuation date for report: 2025-09-01
+ IRR dates selected: Yes (8 dates)
+ Available valuation dates: 0
+ Unique Product IDs for report: (7) [266, 267, 268, 269, 271, 272, 273]
+ Fetching historical IRR data for products: (7) [266, 267, 268, 269, 271, 272, 273]
+ Global selected months: (8) ['2025-09', '2025-03', '2024-10', '2024-04', '2023-04', '2022-05', '2021-05', '2020-04']
+ Total historical IRR map entries: 23
+ 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 7 products
+ 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 266, name: 'Stocks & Shares ISA', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 266
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 267, name: 'Stocks & Shares ISA', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 267
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 268, name: 'Investment Plan', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 268
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 269, name: 'Flexible Investment Plan', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 269
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ 🔍 [EXTRACT OWNERS DEBUG] Product 5: {id: 271, name: 'Investment Plan', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 271
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ 🔍 [EXTRACT OWNERS DEBUG] Product 6: {id: 272, name: 'With Profits Bond', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 272
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ 🔍 [EXTRACT OWNERS DEBUG] Product 7: {id: 273, name: 'Flexible Transitions Account', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 273
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:495 🔍 [EXTRACT OWNERS DEBUG] Final result: ['Mary Morrison']
+ReportGenerator.tsx:446 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 7 products
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 266, name: 'Stocks & Shares ISA', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 266
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 267, name: 'Stocks & Shares ISA', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 267
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 268, name: 'Investment Plan', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 268
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 269, name: 'Flexible Investment Plan', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 269
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 5: {id: 271, name: 'Investment Plan', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 271
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 6: {id: 272, name: 'With Profits Bond', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 272
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 7: {id: 273, name: 'Flexible Transitions Account', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 273
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:495 🔍 [EXTRACT OWNERS DEBUG] Final result: ['Mary Morrison']
+ReportGenerator.tsx:3099 📅 End valuation date changed, filtering IRR dates: 2025-09-01
+ReportGenerator.tsx:1475 Historical IRR data fetched: 23 funds with historical data
+ReportGenerator.tsx:446 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 7 products
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 266, name: 'Stocks & Shares ISA', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 266
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 267, name: 'Stocks & Shares ISA', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 267
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 268, name: 'Investment Plan', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 268
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 269, name: 'Flexible Investment Plan', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 269
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 5: {id: 271, name: 'Investment Plan', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 271
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 6: {id: 272, name: 'With Profits Bond', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 272
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 7: {id: 273, name: 'Flexible Transitions Account', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 273
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:495 🔍 [EXTRACT OWNERS DEBUG] Final result: ['Mary Morrison']
+ReportGenerator.tsx:446 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 7 products
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 266, name: 'Stocks & Shares ISA', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 266
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 267, name: 'Stocks & Shares ISA', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 267
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 268, name: 'Investment Plan', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 268
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 269, name: 'Flexible Investment Plan', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 269
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 5: {id: 271, name: 'Investment Plan', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 271
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 6: {id: 272, name: 'With Profits Bond', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 272
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 7: {id: 273, name: 'Flexible Transitions Account', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 273
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:495 🔍 [EXTRACT OWNERS DEBUG] Final result: ['Mary Morrison']
+ReportGenerator.tsx:1503 Product Stocks & Shares ISA has 11 portfolio funds: (11) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+ReportGenerator.tsx:1539 Fetching activity logs for 11 portfolio funds: (11) [1323, 1324, 1325, 1326, 1327, 1328, 1329, 1330, 1331, 1332, 1333]
+ Retrieved 66 total activity logs for product Stocks & Shares ISA
+ Sample activities: (3) [{…}, {…}, {…}]
+ Processing 66 activity logs for product Stocks & Shares ISA
+ Product Stocks & Shares ISA activity totals: {totalInvestment: 80854.09000000001, totalWithdrawal: 0, totalSwitchIn: 177652.42, totalSwitchOut: 177652.42, productStartDate: '2012-03-01', …}
+ Fund Cash (ID: 1323) has 14 activity logs
+ Activities for Cash: (14) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+ Processing activity for Cash: {activity_type: 'FundSwitchIn', raw_amount: 315.45, parsed_amount: 315.45, amount_check: false, amount_absolute: 315.45, …}
+ Processing activity for Cash: {activity_type: 'FundSwitchIn', raw_amount: 167.28, parsed_amount: 167.28, amount_check: false, amount_absolute: 167.28, …}
+ Processing activity for Cash: {activity_type: 'FundSwitchOut', raw_amount: 230.11, parsed_amount: 230.11, amount_check: false, amount_absolute: 230.11, …}
+ Processing activity for Cash: {activity_type: 'FundSwitchIn', raw_amount: 311.11, parsed_amount: 311.11, amount_check: false, amount_absolute: 311.11, …}
+ Processing activity for Cash: {activity_type: 'FundSwitchOut', raw_amount: 243.2, parsed_amount: 243.2, amount_check: false, amount_absolute: 243.2, …}
+ Processing activity for Cash: {activity_type: 'FundSwitchIn', raw_amount: 243.2, parsed_amount: 243.2, amount_check: false, amount_absolute: 243.2, …}
+ Processing activity for Cash: {activity_type: 'FundSwitchOut', raw_amount: 3545.47, parsed_amount: 3545.47, amount_check: false, amount_absolute: 3545.47, …}
+ Processing activity for Cash: {activity_type: 'FundSwitchIn', raw_amount: 3607.98, parsed_amount: 3607.98, amount_check: false, amount_absolute: 3607.98, …}
+ Processing activity for Cash: {activity_type: 'FundSwitchOut', raw_amount: 37655.35, parsed_amount: 37655.35, amount_check: false, amount_absolute: 37655.35, …}
+ Processing activity for Cash: {activity_type: 'Investment', raw_amount: 9661.84, parsed_amount: 9661.84, amount_check: false, amount_absolute: 9661.84, …}
+ Processing activity for Cash: {activity_type: 'Investment', raw_amount: 28090.7, parsed_amount: 28090.7, amount_check: false, amount_absolute: 28090.7, …}
+ Processing activity for Cash: {activity_type: 'FundSwitchOut', raw_amount: 13151.67, parsed_amount: 13151.67, amount_check: false, amount_absolute: 13151.67, …}
+ Processing activity for Cash: {activity_type: 'Investment', raw_amount: 5108.04, parsed_amount: 5108.04, amount_check: false, amount_absolute: 5108.04, …}
+ Processing activity for Cash: {activity_type: 'Investment', raw_amount: 8007.73, parsed_amount: 8007.73, amount_check: false, amount_absolute: 8007.73, …}
+ Fund Cash activity totals: {fundInvestment: 50868.31, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ Fund BNY Mellon Global Income (ID: 1324) has 1 activity logs
+ Activities for BNY Mellon Global Income: [{…}]
+ Processing activity for BNY Mellon Global Income: {activity_type: 'FundSwitchIn', raw_amount: 5320.14, parsed_amount: 5320.14, amount_check: false, amount_absolute: 5320.14, …}
+ Fund BNY Mellon Global Income activity totals: {fundInvestment: 0, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ Fund BNY Mellon Multi-Asset Balanced (ID: 1325) has 2 activity logs
+ Activities for BNY Mellon Multi-Asset Balanced: (2) [{…}, {…}]
+ Processing activity for BNY Mellon Multi-Asset Balanced: {activity_type: 'FundSwitchIn', raw_amount: 6543.06, parsed_amount: 6543.06, amount_check: false, amount_absolute: 6543.06, …}
+ Processing activity for BNY Mellon Multi-Asset Balanced: {activity_type: 'FundSwitchIn', raw_amount: 9603, parsed_amount: 9603, amount_check: false, amount_absolute: 9603, …}
+ Fund BNY Mellon Multi-Asset Balanced activity totals: {fundInvestment: 0, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ Fund Fidelity UK Smaller Companies (ID: 1326) has 1 activity logs
+ Activities for Fidelity UK Smaller Companies: [{…}]
+ Processing activity for Fidelity UK Smaller Companies: {activity_type: 'FundSwitchIn', raw_amount: 4351.66, parsed_amount: 4351.66, amount_check: false, amount_absolute: 4351.66, …}
+ Fund Fidelity UK Smaller Companies activity totals: {fundInvestment: 0, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ Fund FTF Martin Currie UK Rising Dividends (ID: 1327) has 2 activity logs
+ Activities for FTF Martin Currie UK Rising Dividends: (2) [{…}, {…}]
+ Processing activity for FTF Martin Currie UK Rising Dividends: {activity_type: 'FundSwitchIn', raw_amount: 1927.64, parsed_amount: 1927.64, amount_check: false, amount_absolute: 1927.64, …}
+ Processing activity for FTF Martin Currie UK Rising Dividends: {activity_type: 'FundSwitchIn', raw_amount: 13832.34, parsed_amount: 13832.34, amount_check: false, amount_absolute: 13832.34, …}
+ Fund FTF Martin Currie UK Rising Dividends activity totals: {fundInvestment: 0, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ Fund RL Sustainable World Trust (ID: 1328) has 4 activity logs
+ Activities for RL Sustainable World Trust: (4) [{…}, {…}, {…}, {…}]
+ Processing activity for RL Sustainable World Trust: {activity_type: 'FundSwitchIn', raw_amount: 6866.24, parsed_amount: 6866.24, amount_check: false, amount_absolute: 6866.24, …}
+ Processing activity for RL Sustainable World Trust: {activity_type: 'FundSwitchIn', raw_amount: 7531.07, parsed_amount: 7531.07, amount_check: false, amount_absolute: 7531.07, …}
+ Processing activity for RL Sustainable World Trust: {activity_type: 'Investment', raw_amount: 1044.81, parsed_amount: 1044.81, amount_check: false, amount_absolute: 1044.81, …}
+ Processing activity for RL Sustainable World Trust: {activity_type: 'Investment', raw_amount: 1195.87, parsed_amount: 1195.87, amount_check: false, amount_absolute: 1195.87, …}
+ Fund RL Sustainable World Trust activity totals: {fundInvestment: 2240.68, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ Fund Stewart Investors Worldwide Leaders  (ID: 1329) has 4 activity logs
+ Activities for Stewart Investors Worldwide Leaders : (4) [{…}, {…}, {…}, {…}]
+ Processing activity for Stewart Investors Worldwide Leaders : {activity_type: 'FundSwitchIn', raw_amount: 7015.85, parsed_amount: 7015.85, amount_check: false, amount_absolute: 7015.85, …}
+ Processing activity for Stewart Investors Worldwide Leaders : {activity_type: 'FundSwitchIn', raw_amount: 7531.07, parsed_amount: 7531.07, amount_check: false, amount_absolute: 7531.07, …}
+ReportGenerator.tsx:1905 Processing activity for Stewart Investors Worldwide Leaders : {activity_type: 'Investment', raw_amount: 1044.81, parsed_amount: 1044.81, amount_check: false, amount_absolute: 1044.81, …}
+ReportGenerator.tsx:1905 Processing activity for Stewart Investors Worldwide Leaders : {activity_type: 'Investment', raw_amount: 1195.87, parsed_amount: 1195.87, amount_check: false, amount_absolute: 1195.87, …}
+ReportGenerator.tsx:1954 Fund Stewart Investors Worldwide Leaders  activity totals: {fundInvestment: 2240.68, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ReportGenerator.tsx:1880 Fund Historical Funds (ID: 1330) has 26 activity logs
+ReportGenerator.tsx:1896 Activities for Historical Funds: (26) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'FundSwitchOut', raw_amount: 6543.06, parsed_amount: 6543.06, amount_check: false, amount_absolute: 6543.06, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'FundSwitchOut', raw_amount: 20682.76, parsed_amount: 20682.76, amount_check: false, amount_absolute: 20682.76, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'FundSwitchOut', raw_amount: 52868.85, parsed_amount: 52868.85, amount_check: false, amount_absolute: 52868.85, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'FundSwitchIn', raw_amount: 14244.35, parsed_amount: 14244.35, amount_check: false, amount_absolute: 14244.35, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'FundSwitchOut', raw_amount: 13522.9, parsed_amount: 13522.9, amount_check: false, amount_absolute: 13522.9, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'FundSwitchIn', raw_amount: 3380.71, parsed_amount: 3380.71, amount_check: false, amount_absolute: 3380.71, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'FundSwitchIn', raw_amount: 230.11, parsed_amount: 230.11, amount_check: false, amount_absolute: 230.11, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'FundSwitchIn', raw_amount: 243.2, parsed_amount: 243.2, amount_check: false, amount_absolute: 243.2, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'FundSwitchIn', raw_amount: 3545.47, parsed_amount: 3545.47, amount_check: false, amount_absolute: 3545.47, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'FundSwitchIn', raw_amount: 8417.12, parsed_amount: 8417.12, amount_check: false, amount_absolute: 8417.12, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'FundSwitchOut', raw_amount: 8417.12, parsed_amount: 8417.12, amount_check: false, amount_absolute: 8417.12, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'FundSwitchOut', raw_amount: 14678.92, parsed_amount: 14678.92, amount_check: false, amount_absolute: 14678.92, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'FundSwitchIn', raw_amount: 14678.92, parsed_amount: 14678.92, amount_check: false, amount_absolute: 14678.92, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'FundSwitchIn', raw_amount: 17698.01, parsed_amount: 17698.01, amount_check: false, amount_absolute: 17698.01, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'Investment', raw_amount: 2455.29, parsed_amount: 2455.29, amount_check: false, amount_absolute: 2455.29, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'Investment', raw_amount: 2810.3, parsed_amount: 2810.3, amount_check: false, amount_absolute: 2810.3, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'Investment', raw_amount: 11887.2, parsed_amount: 11887.2, amount_check: false, amount_absolute: 11887.2, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'FundSwitchIn', raw_amount: 1467.99, parsed_amount: 1467.99, amount_check: false, amount_absolute: 1467.99, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'FundSwitchOut', raw_amount: 1467.99, parsed_amount: 1467.99, amount_check: false, amount_absolute: 1467.99, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'FundSwitchIn', raw_amount: 13151.67, parsed_amount: 13151.67, amount_check: false, amount_absolute: 13151.67, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'Investment', raw_amount: 890, parsed_amount: 890, amount_check: false, amount_absolute: 890, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'Investment', raw_amount: 890, parsed_amount: 890, amount_check: false, amount_absolute: 890, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'Investment', raw_amount: 890, parsed_amount: 890, amount_check: false, amount_absolute: 890, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'Investment', raw_amount: 890, parsed_amount: 890, amount_check: false, amount_absolute: 890, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'Investment', raw_amount: 890, parsed_amount: 890, amount_check: false, amount_absolute: 890, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'Investment', raw_amount: 890, parsed_amount: 890, amount_check: false, amount_absolute: 890, …}
+ReportGenerator.tsx:1954 Fund Historical Funds activity totals: {fundInvestment: 22492.79, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ReportGenerator.tsx:1880 Fund Vanguard LifeStrategy 80% Equity A Acc (ID: 1331) has 1 activity logs
+ReportGenerator.tsx:1896 Activities for Vanguard LifeStrategy 80% Equity A Acc: [{…}]
+ReportGenerator.tsx:1905 Processing activity for Vanguard LifeStrategy 80% Equity A Acc: {activity_type: 'FundSwitchIn', raw_amount: 4800.46, parsed_amount: 4800.46, amount_check: false, amount_absolute: 4800.46, …}
+ReportGenerator.tsx:1954 Fund Vanguard LifeStrategy 80% Equity A Acc activity totals: {fundInvestment: 0, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ReportGenerator.tsx:1880 Fund Vanguard LifeStrategy 40% Equity A Acc (ID: 1332) has 2 activity logs
+ReportGenerator.tsx:1896 Activities for Vanguard LifeStrategy 40% Equity A Acc: (2) [{…}, {…}]
+ReportGenerator.tsx:1905 Processing activity for Vanguard LifeStrategy 40% Equity A Acc: {activity_type: 'FundSwitchIn', raw_amount: 5589.93, parsed_amount: 5589.93, amount_check: false, amount_absolute: 5589.93, …}
+ReportGenerator.tsx:1905 Processing activity for Vanguard LifeStrategy 40% Equity A Acc: {activity_type: 'FundSwitchIn', raw_amount: 10142.19, parsed_amount: 10142.19, amount_check: false, amount_absolute: 10142.19, …}
+ReportGenerator.tsx:1954 Fund Vanguard LifeStrategy 40% Equity A Acc activity totals: {fundInvestment: 0, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ReportGenerator.tsx:1880 Fund LF Equity Income  (ID: 1333) has 9 activity logs
+ReportGenerator.tsx:1896 Activities for LF Equity Income : (9) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+ReportGenerator.tsx:1905 Processing activity for LF Equity Income : {activity_type: 'FundSwitchOut', raw_amount: 315.45, parsed_amount: 315.45, amount_check: false, amount_absolute: 315.45, …}
+ReportGenerator.tsx:1905 Processing activity for LF Equity Income : {activity_type: 'FundSwitchOut', raw_amount: 167.28, parsed_amount: 167.28, amount_check: false, amount_absolute: 167.28, …}
+ReportGenerator.tsx:1905 Processing activity for LF Equity Income : {activity_type: 'FundSwitchOut', raw_amount: 311.11, parsed_amount: 311.11, amount_check: false, amount_absolute: 311.11, …}
+ReportGenerator.tsx:1905 Processing activity for LF Equity Income : {activity_type: 'FundSwitchOut', raw_amount: 243.2, parsed_amount: 243.2, amount_check: false, amount_absolute: 243.2, …}
+ReportGenerator.tsx:1905 Processing activity for LF Equity Income : {activity_type: 'FundSwitchOut', raw_amount: 3607.98, parsed_amount: 3607.98, amount_check: false, amount_absolute: 3607.98, …}
+ReportGenerator.tsx:1905 Processing activity for LF Equity Income : {activity_type: 'FundSwitchIn', raw_amount: 4895.2, parsed_amount: 4895.2, amount_check: false, amount_absolute: 4895.2, …}
+ReportGenerator.tsx:1905 Processing activity for LF Equity Income : {activity_type: 'Investment', raw_amount: 679.13, parsed_amount: 679.13, amount_check: false, amount_absolute: 679.13, …}
+ReportGenerator.tsx:1905 Processing activity for LF Equity Income : {activity_type: 'Investment', raw_amount: 777.32, parsed_amount: 777.32, amount_check: false, amount_absolute: 777.32, …}
+ReportGenerator.tsx:1905 Processing activity for LF Equity Income : {activity_type: 'Investment', raw_amount: 1555.18, parsed_amount: 1555.18, amount_check: false, amount_absolute: 1555.18, …}
+ReportGenerator.tsx:1954 Fund LF Equity Income  activity totals: {fundInvestment: 3011.63, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ReportGenerator.tsx:2032 Calculating standardized IRR for product 266 with fund IDs: (11) [1323, 1324, 1325, 1326, 1327, 1328, 1329, 1330, 1331, 1332, 1333]
+ReportGenerator.tsx:2053 IRR for product 266 (active): 4.4%
+ReportGenerator.tsx:2316 - Total fund summaries: 11
+ReportGenerator.tsx:2317 - Active funds: 10
+ReportGenerator.tsx:2318 - Inactive funds: 1
+ReportGenerator.tsx:2319 - All fund statuses: (11) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+ReportGenerator.tsx:2085 🔍 Previous Funds IRR Calculation Debug:
+ReportGenerator.tsx:2086 - Inactive funds count: 1
+ReportGenerator.tsx:2087 - Inactive funds details: [{…}]
+ReportGenerator.tsx:2095 - Extracted inactive fund IDs: [1330]
+ReportGenerator.tsx:2107 🚀 Calculating Previous Funds IRR for fund IDs: [1330] with date: undefined
+ReportGenerator.tsx:2115 📊 Previous Funds IRR API Response: {data: {…}, status: 200, statusText: 'OK', headers: AxiosHeaders, config: {…}, …}
+ReportGenerator.tsx:2116 📊 Response data: {success: true, irr_percentage: 4.4, irr_decimal: 0.04364601708137794, calculation_date: '2025-03-01', portfolio_fund_ids: Array(1), …}
+ReportGenerator.tsx:2120 ✅ Previous Funds IRR calculated successfully: 4.4
+ReportGenerator.tsx:2136 🎯 Final Previous Funds IRR result: 4.4
+ReportGenerator.tsx:2142 🔍 Fetching latest IRRs for individual inactive funds...
+ReportGenerator.tsx:2146 ✅ Latest IRRs fetched successfully: [{…}]
+ReportGenerator.tsx:2212 🎯 Using net flow weighting for Previous Funds risk
+ReportGenerator.tsx:2251 🎯 Previous Funds weighted risk calculation: {totalInactiveFunds: 1, fundsWithRisk: 1, totalInvestment: 22492.79, weightedRisk: '5.0', inactiveFundsData: Array(1)}
+ReportGenerator.tsx:2292 🎯 Previous Funds aggregation details: {inactiveFundsCount: 1, totalInvestment: 22492.79, totalRegularInvestment: 0, totalTaxUplift: 0, totalProductSwitchIn: 0, …}
+ReportGenerator.tsx:2305 🎯 Created Previous Funds entry with IRR: 4.4
+ReportGenerator.tsx:2306 🎯 Created Previous Funds entry with Risk: 5
+ReportGenerator.tsx:2307 🎯 Full Previous Funds entry: {id: -1, available_funds_id: -1, fund_name: 'Previous Funds', total_investment: 22492.79, total_regular_investment: 0, …}
+ReportGenerator.tsx:1503 Product Stocks & Shares ISA has 2 portfolio funds: (2) [{…}, {…}]
+ReportGenerator.tsx:1539 Fetching activity logs for 2 portfolio funds: (2) [1334, 1335]
+ReportGenerator.tsx:1546 Retrieved 3 total activity logs for product Stocks & Shares ISA
+ReportGenerator.tsx:1547 Sample activities: (3) [{…}, {…}, {…}]
+ReportGenerator.tsx:1694 Processing 3 activity logs for product Stocks & Shares ISA
+ReportGenerator.tsx:1743 Product Stocks & Shares ISA activity totals: {totalInvestment: 20000, totalWithdrawal: 25922.68, totalSwitchIn: 0, totalSwitchOut: 0, productStartDate: '2019-05-01', …}
+ReportGenerator.tsx:1779 Allowing inactive product Stocks & Shares ISA to proceed with valuation: 0
+ReportGenerator.tsx:1880 Fund Cash (ID: 1334) has 1 activity logs
+ReportGenerator.tsx:1896 Activities for Cash: [{…}]
+ReportGenerator.tsx:1905 Processing activity for Cash: {activity_type: 'Withdrawal', raw_amount: 0, parsed_amount: 0, amount_check: true, amount_absolute: 0, …}
+ReportGenerator.tsx:1954 Fund Cash activity totals: {fundInvestment: 0, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ReportGenerator.tsx:1880 Fund PruFund Growth ISA (ID: 1335) has 2 activity logs
+ReportGenerator.tsx:1896 Activities for PruFund Growth ISA: (2) [{…}, {…}]
+ReportGenerator.tsx:1905 Processing activity for PruFund Growth ISA: {activity_type: 'Withdrawal', raw_amount: 25922.68, parsed_amount: 25922.68, amount_check: false, amount_absolute: 25922.68, …}
+ReportGenerator.tsx:1905 Processing activity for PruFund Growth ISA: {activity_type: 'Investment', raw_amount: 20000, parsed_amount: 20000, amount_check: false, amount_absolute: 20000, …}
+ReportGenerator.tsx:1954 Fund PruFund Growth ISA activity totals: {fundInvestment: 20000, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ReportGenerator.tsx:2032 Calculating standardized IRR for product 267 with fund IDs: (2) [1334, 1335]
+ReportGenerator.tsx:2053 IRR for product 267 (inactive): 4.2%
+ReportGenerator.tsx:2316 - Total fund summaries: 2
+ReportGenerator.tsx:2317 - Active funds: 2
+ReportGenerator.tsx:2318 - Inactive funds: 0
+ReportGenerator.tsx:2319 - All fund statuses: (2) [{…}, {…}]
+ReportGenerator.tsx:1503 Product Investment Plan has 2 portfolio funds: (2) [{…}, {…}]
+ReportGenerator.tsx:1539 Fetching activity logs for 2 portfolio funds: (2) [1336, 1337]
+ReportGenerator.tsx:1546 Retrieved 9 total activity logs for product Investment Plan
+ReportGenerator.tsx:1547 Sample activities: (3) [{…}, {…}, {…}]
+ReportGenerator.tsx:1694 Processing 9 activity logs for product Investment Plan
+ReportGenerator.tsx:1743 Product Investment Plan activity totals: {totalInvestment: 49284.55, totalWithdrawal: 162950.68, totalSwitchIn: 100715.45, totalSwitchOut: 0, productStartDate: '2022-07-01', …}
+ReportGenerator.tsx:1779 Allowing inactive product Investment Plan to proceed with valuation: 0
+ReportGenerator.tsx:1880 Fund Cash (ID: 1336) has 4 activity logs
+ReportGenerator.tsx:1896 Activities for Cash: (4) [{…}, {…}, {…}, {…}]
+ReportGenerator.tsx:1905 Processing activity for Cash: {activity_type: 'Withdrawal', raw_amount: 0, parsed_amount: 0, amount_check: true, amount_absolute: 0, …}
+ReportGenerator.tsx:1905 Processing activity for Cash: {activity_type: 'ProductSwitchIn', raw_amount: 0, parsed_amount: 0, amount_check: true, amount_absolute: 0, …}
+ReportGenerator.tsx:1905 Processing activity for Cash: {activity_type: 'ProductSwitchIn', raw_amount: 0, parsed_amount: 0, amount_check: true, amount_absolute: 0, …}
+ReportGenerator.tsx:1905 Processing activity for Cash: {activity_type: 'Investment', raw_amount: 0, parsed_amount: 0, amount_check: true, amount_absolute: 0, …}
+ReportGenerator.tsx:1954 Fund Cash activity totals: {fundInvestment: 0, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ReportGenerator.tsx:1880 Fund PruFund Growth S2 (ID: 1337) has 5 activity logs
+ReportGenerator.tsx:1896 Activities for PruFund Growth S2: (5) [{…}, {…}, {…}, {…}, {…}]
+ReportGenerator.tsx:1905 Processing activity for PruFund Growth S2: {activity_type: 'Withdrawal', raw_amount: 162950.68, parsed_amount: 162950.68, amount_check: false, amount_absolute: 162950.68, …}
+ReportGenerator.tsx:1905 Processing activity for PruFund Growth S2: {activity_type: 'Investment', raw_amount: 17161.03, parsed_amount: 17161.03, amount_check: false, amount_absolute: 17161.03, …}
+ReportGenerator.tsx:1905 Processing activity for PruFund Growth S2: {activity_type: 'ProductSwitchIn', raw_amount: 32838.97, parsed_amount: 32838.97, amount_check: false, amount_absolute: 32838.97, …}
+ReportGenerator.tsx:1905 Processing activity for PruFund Growth S2: {activity_type: 'ProductSwitchIn', raw_amount: 67876.48, parsed_amount: 67876.48, amount_check: false, amount_absolute: 67876.48, …}
+ReportGenerator.tsx:1905 Processing activity for PruFund Growth S2: {activity_type: 'Investment', raw_amount: 32123.52, parsed_amount: 32123.52, amount_check: false, amount_absolute: 32123.52, …}
+ReportGenerator.tsx:1954 Fund PruFund Growth S2 activity totals: {fundInvestment: 49284.55, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 100715.45, fundProductSwitchOut: 0, …}
+ReportGenerator.tsx:2032 Calculating standardized IRR for product 268 with fund IDs: (2) [1336, 1337]
+ReportGenerator.tsx:2053 IRR for product 268 (inactive): 3%
+ReportGenerator.tsx:2316 - Total fund summaries: 2
+ReportGenerator.tsx:2317 - Active funds: 2
+ReportGenerator.tsx:2318 - Inactive funds: 0
+ReportGenerator.tsx:2319 - All fund statuses: (2) [{…}, {…}]
+ReportGenerator.tsx:1503 Product Flexible Investment Plan has 3 portfolio funds: (3) [{…}, {…}, {…}]
+ReportGenerator.tsx:1539 Fetching activity logs for 3 portfolio funds: (3) [1338, 1339, 1340]
+ReportGenerator.tsx:1546 Retrieved 4 total activity logs for product Flexible Investment Plan
+ReportGenerator.tsx:1547 Sample activities: (3) [{…}, {…}, {…}]
+ReportGenerator.tsx:1694 Processing 4 activity logs for product Flexible Investment Plan
+ReportGenerator.tsx:1743 Product Flexible Investment Plan activity totals: {totalInvestment: 30000, totalWithdrawal: 0, totalSwitchIn: 0, totalSwitchOut: 51221.35, productStartDate: '2012-03-01', …}
+ReportGenerator.tsx:1779 Allowing inactive product Flexible Investment Plan to proceed with valuation: 0
+ReportGenerator.tsx:1880 Fund Cash (ID: 1338) has 0 activity logs
+ReportGenerator.tsx:1954 Fund Cash activity totals: {fundInvestment: 0, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ReportGenerator.tsx:1880 Fund Optimum Bonus  (ID: 1339) has 2 activity logs
+ReportGenerator.tsx:1896 Activities for Optimum Bonus : (2) [{…}, {…}]
+ReportGenerator.tsx:1905 Processing activity for Optimum Bonus : {activity_type: 'ProductSwitchOut', raw_amount: 24793.39, parsed_amount: 24793.39, amount_check: false, amount_absolute: 24793.39, …}
+ReportGenerator.tsx:1905 Processing activity for Optimum Bonus : {activity_type: 'Investment', raw_amount: 15000, parsed_amount: 15000, amount_check: false, amount_absolute: 15000, …}
+ReportGenerator.tsx:1954 Fund Optimum Bonus  activity totals: {fundInvestment: 15000, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 24793.39, …}
+ReportGenerator.tsx:1880 Fund Optimum Return  (ID: 1340) has 2 activity logs
+ReportGenerator.tsx:1896 Activities for Optimum Return : (2) [{…}, {…}]
+ReportGenerator.tsx:1905 Processing activity for Optimum Return : {activity_type: 'ProductSwitchOut', raw_amount: 26427.96, parsed_amount: 26427.96, amount_check: false, amount_absolute: 26427.96, …}
+ReportGenerator.tsx:1905 Processing activity for Optimum Return : {activity_type: 'Investment', raw_amount: 15000, parsed_amount: 15000, amount_check: false, amount_absolute: 15000, …}
+ReportGenerator.tsx:1954 Fund Optimum Return  activity totals: {fundInvestment: 15000, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 26427.96, …}
+ReportGenerator.tsx:2032 Calculating standardized IRR for product 269 with fund IDs: (3) [1338, 1339, 1340]
+ReportGenerator.tsx:2053 IRR for product 269 (inactive): 5.2%
+ReportGenerator.tsx:2316 - Total fund summaries: 3
+ReportGenerator.tsx:2317 - Active funds: 3
+ReportGenerator.tsx:2318 - Inactive funds: 0
+ReportGenerator.tsx:2319 - All fund statuses: (3) [{…}, {…}, {…}]
+ReportGenerator.tsx:1503 Product Investment Plan has 2 portfolio funds: (2) [{…}, {…}]
+ReportGenerator.tsx:1539 Fetching activity logs for 2 portfolio funds: (2) [1352, 1353]
+ReportGenerator.tsx:1546 Retrieved 3 total activity logs for product Investment Plan
+ReportGenerator.tsx:1547 Sample activities: (3) [{…}, {…}, {…}]
+ReportGenerator.tsx:1694 Processing 3 activity logs for product Investment Plan
+ReportGenerator.tsx:1743 Product Investment Plan activity totals: {totalInvestment: 12000, totalWithdrawal: 0, totalSwitchIn: 0, totalSwitchOut: 16655.13, productStartDate: '2016-04-01', …}
+ReportGenerator.tsx:1779 Allowing inactive product Investment Plan to proceed with valuation: 0
+ReportGenerator.tsx:1880 Fund Cash (ID: 1352) has 1 activity logs
+ReportGenerator.tsx:1896 Activities for Cash: [{…}]
+ReportGenerator.tsx:1905 Processing activity for Cash: {activity_type: 'ProductSwitchOut', raw_amount: 0, parsed_amount: 0, amount_check: true, amount_absolute: 0, …}
+ReportGenerator.tsx:1954 Fund Cash activity totals: {fundInvestment: 0, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ReportGenerator.tsx:1880 Fund PruFund Growth S2 (ID: 1353) has 2 activity logs
+ReportGenerator.tsx:1896 Activities for PruFund Growth S2: (2) [{…}, {…}]
+ReportGenerator.tsx:1905 Processing activity for PruFund Growth S2: {activity_type: 'ProductSwitchOut', raw_amount: 16655.13, parsed_amount: 16655.13, amount_check: false, amount_absolute: 16655.13, …}
+ReportGenerator.tsx:1905 Processing activity for PruFund Growth S2: {activity_type: 'Investment', raw_amount: 12000, parsed_amount: 12000, amount_check: false, amount_absolute: 12000, …}
+ReportGenerator.tsx:1954 Fund PruFund Growth S2 activity totals: {fundInvestment: 12000, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 16655.13, …}
+ReportGenerator.tsx:2032 Calculating standardized IRR for product 271 with fund IDs: (2) [1352, 1353]
+ReportGenerator.tsx:2053 IRR for product 271 (inactive): 5.3%
+ReportGenerator.tsx:2316 - Total fund summaries: 2
+ReportGenerator.tsx:2317 - Active funds: 2
+ReportGenerator.tsx:2318 - Inactive funds: 0
+ReportGenerator.tsx:2319 - All fund statuses: (2) [{…}, {…}]
+ReportGenerator.tsx:1503 Product With Profits Bond has 2 portfolio funds: (2) [{…}, {…}]
+ReportGenerator.tsx:1539 Fetching activity logs for 2 portfolio funds: (2) [1354, 1355]
+ReportGenerator.tsx:1546 Retrieved 3 total activity logs for product With Profits Bond
+ReportGenerator.tsx:1547 Sample activities: (3) [{…}, {…}, {…}]
+ReportGenerator.tsx:1694 Processing 3 activity logs for product With Profits Bond
+ReportGenerator.tsx:1743 Product With Profits Bond activity totals: {totalInvestment: 20000, totalWithdrawal: 0, totalSwitchIn: 0, totalSwitchOut: 32838.97, productStartDate: '2012-03-01', …}
+ReportGenerator.tsx:1779 Allowing inactive product With Profits Bond to proceed with valuation: 0
+ReportGenerator.tsx:1880 Fund Cash (ID: 1354) has 1 activity logs
+ReportGenerator.tsx:1896 Activities for Cash: [{…}]
+ReportGenerator.tsx:1905 Processing activity for Cash: {activity_type: 'ProductSwitchOut', raw_amount: 0, parsed_amount: 0, amount_check: true, amount_absolute: 0, …}
+ReportGenerator.tsx:1954 Fund Cash activity totals: {fundInvestment: 0, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ReportGenerator.tsx:1880 Fund Historical Funds (ID: 1355) has 2 activity logs
+ReportGenerator.tsx:1896 Activities for Historical Funds: (2) [{…}, {…}]
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'ProductSwitchOut', raw_amount: 32838.97, parsed_amount: 32838.97, amount_check: false, amount_absolute: 32838.97, …}
+ReportGenerator.tsx:1905 Processing activity for Historical Funds: {activity_type: 'Investment', raw_amount: 20000, parsed_amount: 20000, amount_check: false, amount_absolute: 20000, …}
+ReportGenerator.tsx:1954 Fund Historical Funds activity totals: {fundInvestment: 20000, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 32838.97, …}
+ReportGenerator.tsx:2032 Calculating standardized IRR for product 272 with fund IDs: (2) [1354, 1355]
+ReportGenerator.tsx:2053 IRR for product 272 (inactive): 4.5%
+ReportGenerator.tsx:2316 - Total fund summaries: 2
+ReportGenerator.tsx:2317 - Active funds: 2
+ReportGenerator.tsx:2318 - Inactive funds: 0
+ReportGenerator.tsx:2319 - All fund statuses: (2) [{…}, {…}]
+ReportGenerator.tsx:1503 Product Flexible Transitions Account has 2 portfolio funds: (2) [{…}, {…}]
+ReportGenerator.tsx:1539 Fetching activity logs for 2 portfolio funds: (2) [1356, 1357]
+ReportGenerator.tsx:1546 Retrieved 3 total activity logs for product Flexible Transitions Account
+ReportGenerator.tsx:1547 Sample activities: (3) [{…}, {…}, {…}]
+ReportGenerator.tsx:1694 Processing 3 activity logs for product Flexible Transitions Account
+ReportGenerator.tsx:1743 Product Flexible Transitions Account activity totals: {totalInvestment: 151494.93, totalWithdrawal: 38003.42, totalSwitchIn: 0, totalSwitchOut: 0, productStartDate: '2021-06-01', …}
+ Fund Cash (ID: 1356) has 1 activity logs
+ Activities for Cash: [{…}]
+ Processing activity for Cash: {activity_type: 'Withdrawal', raw_amount: 0, parsed_amount: 0, amount_check: true, amount_absolute: 0, …}
+ Fund Cash activity totals: {fundInvestment: 0, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ Fund LV= Smoothed Managed Balanced (ID: 1357) has 2 activity logs
+ Activities for LV= Smoothed Managed Balanced: (2) [{…}, {…}]
+ Processing activity for LV= Smoothed Managed Balanced: {activity_type: 'Withdrawal', raw_amount: 38003.42, parsed_amount: 38003.42, amount_check: false, amount_absolute: 38003.42, …}
+ Processing activity for LV= Smoothed Managed Balanced: {activity_type: 'Investment', raw_amount: 151494.93, parsed_amount: 151494.93, amount_check: false, amount_absolute: 151494.93, …}
+ Fund LV= Smoothed Managed Balanced activity totals: {fundInvestment: 151494.93, fundRegularInvestment: 0, fundTaxUplift: 0, fundProductSwitchIn: 0, fundProductSwitchOut: 0, …}
+ Calculating standardized IRR for product 273 with fund IDs: (2) [1356, 1357]
+ IRR for product 273 (active): 0%
+ - Total fund summaries: 2
+ - Active funds: 2
+ - Inactive funds: 0
+ - All fund statuses: (2) [{…}, {…}]
+ Total portfolio fund IDs collected for IRR calculation: {total: 24, unique: 24, duplicatesRemoved: 0}
+ Calculating standardized IRR for portfolio fund IDs: (24) [1323, 1324, 1325, 1326, 1327, 1328, 1329, 1330, 1331, 1332, 1333, 1334, 1335, 1336, 1337, 1338, 1339, 1340, 1352, 1353, 1354, 1355, 1356, 1357]
+ Using optimized batch IRR service for total IRR: {portfolioFundIds: Array(24), irrDate: undefined}
+ 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 7 products
+ 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 266, name: 'Stocks & Shares ISA', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 266
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 267, name: 'Stocks & Shares ISA', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 267
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 268, name: 'Investment Plan', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 268
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 269, name: 'Flexible Investment Plan', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 269
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 5: {id: 271, name: 'Investment Plan', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 271
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 6: {id: 272, name: 'With Profits Bond', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 272
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 7: {id: 273, name: 'Flexible Transitions Account', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 273
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:495 🔍 [EXTRACT OWNERS DEBUG] Final result: ['Mary Morrison']
+ReportGenerator.tsx:446 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 7 products
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 266, name: 'Stocks & Shares ISA', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 266
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 267, name: 'Stocks & Shares ISA', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 267
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 268, name: 'Investment Plan', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 268
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 269, name: 'Flexible Investment Plan', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 269
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 5: {id: 271, name: 'Investment Plan', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 271
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 6: {id: 272, name: 'With Profits Bond', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 272
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 7: {id: 273, name: 'Flexible Transitions Account', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 273
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:495 🔍 [EXTRACT OWNERS DEBUG] Final result: ['Mary Morrison']
+ReportGenerator.tsx:2490 🎯 [TOTAL IRR DEBUG] Optimized total IRR response: {portfolioIRR: 3.5, fundIRRs: {…}, historicalIRR: null, irrDate: 'calculated'}
+ReportGenerator.tsx:2491 🎯 [TOTAL IRR DEBUG] portfolioIRR field: 3.5
+ReportGenerator.tsx:2492 🎯 [TOTAL IRR DEBUG] portfolioIRR type: number
+ReportGenerator.tsx:2496 ✅ [TOTAL IRR DEBUG] Optimized total IRR calculation complete: 3.5
+ReportGenerator.tsx:2568 🔍 [PRODUCT OWNER ORDER DEBUG] Current productOwnerOrder state: ['Mary Morrison']
+ReportGenerator.tsx:2569 🔍 [PRODUCT OWNER ORDER DEBUG] productOwnerOrder length: 1
+ReportGenerator.tsx:446 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 7 products
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 266, name: 'Stocks & Shares ISA', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 266
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 267, name: 'Stocks & Shares ISA', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 267
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 268, name: 'Investment Plan', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 268
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 269, name: 'Flexible Investment Plan', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 269
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 5: {id: 271, name: 'Investment Plan', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 271
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 6: {id: 272, name: 'With Profits Bond', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 272
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 7: {id: 273, name: 'Flexible Transitions Account', product_owner_name: 'Mary Morrison', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 273
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 90, firstname: 'Mary', surname: 'Morrison', known_as: 'Mary'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Mary Morrison
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Mary Morrison
+ReportGenerator.tsx:495 🔍 [EXTRACT OWNERS DEBUG] Final result: ['Mary Morrison']
+ReportGenerator.tsx:2580 🔍 [PRODUCT OWNER DEBUG - FINAL] All extracted owner names: ['Mary Morrison']
+ReportGenerator.tsx:2581 🔍 [PRODUCT OWNER DEBUG - FINAL] Selected owners: ['Mary Morrison']
+ReportGenerator.tsx:2582 🔍 [PRODUCT OWNER DEBUG - FINAL] Filtered owner names for report title: ['Mary Morrison']
+ReportDisplayPage.tsx:54 🔍 [REPORT DISPLAY DEBUG] Initializing report data...
+ReportDisplayPage.tsx:64 🔍 [REPORT DISPLAY DEBUG] Received report data with 7 products
+ReportDisplayPage.tsx:81 🎯 [OPTIMIZATION] Using pre-fetched portfolio IRR values from reportData: {266: 4.4, 267: 4.2, 268: 3, 269: 5.2, 271: 5.3, 272: 4.5, 273: 0}
+ ⚠️ [DATE MISMATCH WARNING] Product 273 selected dates not found in database: {missingSelectedDates: Array(3), availableDatesInDatabase: Array(5), selectedDatesFromReport: Array(7), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2025-09-01'}
+(anonymous) @ IRRHistoryTab.tsx:1938
+(anonymous) @ IRRHistoryTab.tsx:1996
+(anonymous) @ IRRHistoryTab.tsx:1340
+IRRHistoryTab @ IRRHistoryTab.tsx:2034
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+mountIndeterminateComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14974
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15962
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+ ⚠️ [DATE MISMATCH WARNING] Product 273 selected dates not found in database: {missingSelectedDates: Array(3), availableDatesInDatabase: Array(5), selectedDatesFromReport: Array(7), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2025-09-01'}
+(anonymous) @ IRRHistoryTab.tsx:1938
+(anonymous) @ IRRHistoryTab.tsx:1996
+(anonymous) @ IRRHistoryTab.tsx:1340
+IRRHistoryTab @ IRRHistoryTab.tsx:2034
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+mountIndeterminateComponent @ chunk-QYFCA5BS.js?v=68f90eaa:15024
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15962
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+ ⚠️ [DATE MISMATCH WARNING] Product 273 selected dates not found in database: {missingSelectedDates: Array(3), availableDatesInDatabase: Array(5), selectedDatesFromReport: Array(7), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2025-09-01'}
+(anonymous) @ IRRHistoryTab.tsx:1938
+(anonymous) @ IRRHistoryTab.tsx:1996
+(anonymous) @ IRRHistoryTab.tsx:1340
+IRRHistoryTab @ IRRHistoryTab.tsx:2034
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14630
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+ ⚠️ [DATE MISMATCH WARNING] Product 273 selected dates not found in database: {missingSelectedDates: Array(3), availableDatesInDatabase: Array(5), selectedDatesFromReport: Array(7), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2025-09-01'}
+(anonymous) @ IRRHistoryTab.tsx:1938
+(anonymous) @ IRRHistoryTab.tsx:1996
+(anonymous) @ IRRHistoryTab.tsx:1340
+IRRHistoryTab @ IRRHistoryTab.tsx:2034
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14635
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+ 🔍 [IRR HISTORY DEBUG] Processed historical IRR data: {length: 7, sample: {…}}
+ 🔍 ========== TOTAL IRR CALCULATION DEBUG START ==========
+ 🔍 [TOTAL IRR] Total products in productSummaries: 7
+ 🔍 [PRODUCT 1] Product ID: 266, Name: Stocks & Shares ISA, Status: active
+    └─ IRR: 4.4%
+    └─ Has funds: true, Funds count: 11
+    └─ [FUND 1] ID: 1324, Name: BNY Mellon Global Income
+    └─ [FUND 2] ID: 1325, Name: BNY Mellon Multi-Asset Balanced
+    └─ [FUND 3] ID: 1326, Name: Fidelity UK Smaller Companies
+    └─ [FUND 4] ID: 1327, Name: FTF Martin Currie UK Rising Dividends
+    └─ [FUND 5] ID: 1333, Name: LF Equity Income 
+    └─ [FUND 6] ID: 1328, Name: RL Sustainable World Trust
+    └─ [FUND 7] ID: 1329, Name: Stewart Investors Worldwide Leaders 
+    └─ [FUND 8] ID: 1332, Name: Vanguard LifeStrategy 40% Equity A Acc
+    └─ [FUND 9] ID: 1331, Name: Vanguard LifeStrategy 80% Equity A Acc
+ReportDisplayPage.tsx:113    └─ [FUND 10] ID: 1323, Name: Cash
+ReportDisplayPage.tsx:106    └─ [FUND 11] Previous Funds (VIRTUAL) - Inactive funds: 1
+ReportDisplayPage.tsx:109       └─ [INACTIVE 1] ID: 1330, Name: Historical Funds
+ReportDisplayPage.tsx:99 🔍 [PRODUCT 2] Product ID: 267, Name: Stocks & Shares ISA, Status: inactive
+ReportDisplayPage.tsx:100    └─ IRR: 4.2%
+ReportDisplayPage.tsx:101    └─ Has funds: true, Funds count: 2
+ReportDisplayPage.tsx:113    └─ [FUND 1] ID: 1334, Name: Cash
+ReportDisplayPage.tsx:113    └─ [FUND 2] ID: 1335, Name: PruFund Growth ISA
+ReportDisplayPage.tsx:99 🔍 [PRODUCT 3] Product ID: 268, Name: Investment Plan, Status: inactive
+ReportDisplayPage.tsx:100    └─ IRR: 3%
+ReportDisplayPage.tsx:101    └─ Has funds: true, Funds count: 2
+ReportDisplayPage.tsx:113    └─ [FUND 1] ID: 1336, Name: Cash
+ReportDisplayPage.tsx:113    └─ [FUND 2] ID: 1337, Name: PruFund Growth S2
+ReportDisplayPage.tsx:99 🔍 [PRODUCT 4] Product ID: 269, Name: Flexible Investment Plan, Status: inactive
+ReportDisplayPage.tsx:100    └─ IRR: 5.2%
+ReportDisplayPage.tsx:101    └─ Has funds: true, Funds count: 3
+ReportDisplayPage.tsx:113    └─ [FUND 1] ID: 1338, Name: Cash
+ReportDisplayPage.tsx:113    └─ [FUND 2] ID: 1339, Name: Optimum Bonus 
+ReportDisplayPage.tsx:113    └─ [FUND 3] ID: 1340, Name: Optimum Return 
+ReportDisplayPage.tsx:99 🔍 [PRODUCT 5] Product ID: 271, Name: Investment Plan, Status: inactive
+ReportDisplayPage.tsx:100    └─ IRR: 5.3%
+ReportDisplayPage.tsx:101    └─ Has funds: true, Funds count: 2
+ReportDisplayPage.tsx:113    └─ [FUND 1] ID: 1352, Name: Cash
+ReportDisplayPage.tsx:113    └─ [FUND 2] ID: 1353, Name: PruFund Growth S2
+ReportDisplayPage.tsx:99 🔍 [PRODUCT 6] Product ID: 272, Name: With Profits Bond, Status: inactive
+ReportDisplayPage.tsx:100    └─ IRR: 4.5%
+ReportDisplayPage.tsx:101    └─ Has funds: true, Funds count: 2
+ReportDisplayPage.tsx:113    └─ [FUND 1] ID: 1354, Name: Cash
+ReportDisplayPage.tsx:113    └─ [FUND 2] ID: 1355, Name: Historical Funds
+ReportDisplayPage.tsx:99 🔍 [PRODUCT 7] Product ID: 273, Name: Flexible Transitions Account, Status: active
+ReportDisplayPage.tsx:100    └─ IRR: 0%
+ReportDisplayPage.tsx:101    └─ Has funds: true, Funds count: 2
+ReportDisplayPage.tsx:113    └─ [FUND 1] ID: 1357, Name: LV= Smoothed Managed Balanced
+ReportDisplayPage.tsx:113    └─ [FUND 2] ID: 1356, Name: Cash
+ReportDisplayPage.tsx:124 🔍 [TOTAL IRR] Starting fund ID collection...
+ReportDisplayPage.tsx:141    ✅ Added active fund ID: 1324 (BNY Mellon Global Income) from product 266
+ReportDisplayPage.tsx:141    ✅ Added active fund ID: 1325 (BNY Mellon Multi-Asset Balanced) from product 266
+ReportDisplayPage.tsx:141    ✅ Added active fund ID: 1326 (Fidelity UK Smaller Companies) from product 266
+ReportDisplayPage.tsx:141    ✅ Added active fund ID: 1327 (FTF Martin Currie UK Rising Dividends) from product 266
+ReportDisplayPage.tsx:141    ✅ Added active fund ID: 1333 (LF Equity Income ) from product 266
+ReportDisplayPage.tsx:141    ✅ Added active fund ID: 1328 (RL Sustainable World Trust) from product 266
+ReportDisplayPage.tsx:141    ✅ Added active fund ID: 1329 (Stewart Investors Worldwide Leaders ) from product 266
+ReportDisplayPage.tsx:141    ✅ Added active fund ID: 1332 (Vanguard LifeStrategy 40% Equity A Acc) from product 266
+ReportDisplayPage.tsx:141    ✅ Added active fund ID: 1331 (Vanguard LifeStrategy 80% Equity A Acc) from product 266
+ReportDisplayPage.tsx:141    ✅ Added active fund ID: 1323 (Cash) from product 266
+ReportDisplayPage.tsx:131 ✅ [TOTAL IRR] Collecting inactive funds from Previous Funds virtual entry in product 266
+ReportDisplayPage.tsx:135    ✅ Added inactive fund ID: 1330 (Historical Funds)
+ReportDisplayPage.tsx:141    ✅ Added active fund ID: 1334 (Cash) from product 267
+ReportDisplayPage.tsx:141    ✅ Added active fund ID: 1335 (PruFund Growth ISA) from product 267
+ReportDisplayPage.tsx:141    ✅ Added active fund ID: 1336 (Cash) from product 268
+ReportDisplayPage.tsx:141    ✅ Added active fund ID: 1337 (PruFund Growth S2) from product 268
+ReportDisplayPage.tsx:141    ✅ Added active fund ID: 1338 (Cash) from product 269
+ReportDisplayPage.tsx:141    ✅ Added active fund ID: 1339 (Optimum Bonus ) from product 269
+ReportDisplayPage.tsx:141    ✅ Added active fund ID: 1340 (Optimum Return ) from product 269
+ReportDisplayPage.tsx:141    ✅ Added active fund ID: 1352 (Cash) from product 271
+ReportDisplayPage.tsx:141    ✅ Added active fund ID: 1353 (PruFund Growth S2) from product 271
+ReportDisplayPage.tsx:141    ✅ Added active fund ID: 1354 (Cash) from product 272
+ReportDisplayPage.tsx:141    ✅ Added active fund ID: 1355 (Historical Funds) from product 272
+ReportDisplayPage.tsx:141    ✅ Added active fund ID: 1357 (LV= Smoothed Managed Balanced) from product 273
+ReportDisplayPage.tsx:141    ✅ Added active fund ID: 1356 (Cash) from product 273
+ReportDisplayPage.tsx:147 🎯 [TOTAL IRR] Collected 24 total fund IDs for IRR calculation
+ReportDisplayPage.tsx:148 🎯 [TOTAL IRR] Fund IDs: (24) [1324, 1325, 1326, 1327, 1333, 1328, 1329, 1332, 1331, 1323, 1330, 1334, 1335, 1336, 1337, 1338, 1339, 1340, 1352, 1353, 1354, 1355, 1357, 1356]
+ReportDisplayPage.tsx:160 🎯 [TOTAL IRR] Using end date for real-time IRR: 2025-09-30
+ReportDisplayPage.tsx:161 🎯 [TOTAL IRR] Calling IRR API with 24 fund IDs...
+IRRHistoryTab.tsx:1770 ⚠️ [DATE MISMATCH WARNING] Product 273 selected dates not found in database: {missingSelectedDates: Array(3), availableDatesInDatabase: Array(5), selectedDatesFromReport: Array(7), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2025-09-01'}
+(anonymous) @ IRRHistoryTab.tsx:1770
+(anonymous) @ IRRHistoryTab.tsx:1825
+(anonymous) @ IRRHistoryTab.tsx:1143
+IRRHistoryTab @ IRRHistoryTab.tsx:1840
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14630
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+IRRHistoryTab.tsx:1770 ⚠️ [DATE MISMATCH WARNING] Product 273 selected dates not found in database: {missingSelectedDates: Array(3), availableDatesInDatabase: Array(5), selectedDatesFromReport: Array(7), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2025-09-01'}
+(anonymous) @ IRRHistoryTab.tsx:1770
+(anonymous) @ IRRHistoryTab.tsx:1825
+(anonymous) @ IRRHistoryTab.tsx:1143
+IRRHistoryTab @ IRRHistoryTab.tsx:1840
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14635
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+IRRHistoryTab.tsx:1770 ⚠️ [DATE MISMATCH WARNING] Product 273 selected dates not found in database: {missingSelectedDates: Array(3), availableDatesInDatabase: Array(5), selectedDatesFromReport: Array(7), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2025-09-01'}
+(anonymous) @ IRRHistoryTab.tsx:1770
+(anonymous) @ IRRHistoryTab.tsx:1825
+(anonymous) @ IRRHistoryTab.tsx:1143
+IRRHistoryTab @ IRRHistoryTab.tsx:1840
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14630
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+IRRHistoryTab.tsx:1770 ⚠️ [DATE MISMATCH WARNING] Product 273 selected dates not found in database: {missingSelectedDates: Array(3), availableDatesInDatabase: Array(5), selectedDatesFromReport: Array(7), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2025-09-01'}
+(anonymous) @ IRRHistoryTab.tsx:1770
+(anonymous) @ IRRHistoryTab.tsx:1825
+(anonymous) @ IRRHistoryTab.tsx:1143
+IRRHistoryTab @ IRRHistoryTab.tsx:1840
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14635
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+ReportDisplayPage.tsx:170 ✅ [TOTAL IRR] API Response: {portfolioIRR: 3.5, fundIRRs: {…}, historicalIRR: null, irrDate: '2025-09-30'}
+ReportDisplayPage.tsx:171 ✅ [TOTAL IRR] Calculated Total IRR: 3.5%
+ReportDisplayPage.tsx:174 🔍 [TOTAL IRR] Individual Product IRRs for comparison:
+ReportDisplayPage.tsx:177    Product 1 (Stocks & Shares ISA, Status: active): 4.4%
+ReportDisplayPage.tsx:177    Product 2 (Stocks & Shares ISA, Status: inactive): 4.2%
+ReportDisplayPage.tsx:177    Product 3 (Investment Plan, Status: inactive): 3%
+ReportDisplayPage.tsx:177    Product 4 (Flexible Investment Plan, Status: inactive): 5.2%
+ReportDisplayPage.tsx:177    Product 5 (Investment Plan, Status: inactive): 5.3%
+ReportDisplayPage.tsx:177    Product 6 (With Profits Bond, Status: inactive): 4.5%
+ReportDisplayPage.tsx:177    Product 7 (Flexible Transitions Account, Status: active): 0%
+ReportDisplayPage.tsx:181 🔍 ========== TOTAL IRR CALCULATION DEBUG END ==========
+IRRHistoryTab.tsx:1770 ⚠️ [DATE MISMATCH WARNING] Product 273 selected dates not found in database: {missingSelectedDates: Array(3), availableDatesInDatabase: Array(5), selectedDatesFromReport: Array(7), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2025-09-01'}
+(anonymous) @ IRRHistoryTab.tsx:1770
+(anonymous) @ IRRHistoryTab.tsx:1825
+(anonymous) @ IRRHistoryTab.tsx:1143
+IRRHistoryTab @ IRRHistoryTab.tsx:1840
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14630
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+IRRHistoryTab.tsx:1770 ⚠️ [DATE MISMATCH WARNING] Product 273 selected dates not found in database: {missingSelectedDates: Array(3), availableDatesInDatabase: Array(5), selectedDatesFromReport: Array(7), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2025-09-01'}
+(anonymous) @ IRRHistoryTab.tsx:1770
+(anonymous) @ IRRHistoryTab.tsx:1825
+(anonymous) @ IRRHistoryTab.tsx:1143
+IRRHistoryTab @ IRRHistoryTab.tsx:1840
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14635
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+IRRHistoryTab.tsx:1770 ⚠️ [DATE MISMATCH WARNING] Product 273 selected dates not found in database: {missingSelectedDates: Array(3), availableDatesInDatabase: Array(5), selectedDatesFromReport: Array(7), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2025-09-01'}
+(anonymous) @ IRRHistoryTab.tsx:1770
+(anonymous) @ IRRHistoryTab.tsx:1825
+(anonymous) @ IRRHistoryTab.tsx:1143
+IRRHistoryTab @ IRRHistoryTab.tsx:1840
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14630
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+IRRHistoryTab.tsx:1770 ⚠️ [DATE MISMATCH WARNING] Product 273 selected dates not found in database: {missingSelectedDates: Array(3), availableDatesInDatabase: Array(5), selectedDatesFromReport: Array(7), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2025-09-01'}
+(anonymous) @ IRRHistoryTab.tsx:1770
+(anonymous) @ IRRHistoryTab.tsx:1825
+(anonymous) @ IRRHistoryTab.tsx:1143
+IRRHistoryTab @ IRRHistoryTab.tsx:1840
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14635
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+IRRHistoryTab.tsx:1770 ⚠️ [DATE MISMATCH WARNING] Product 273 selected dates not found in database: {missingSelectedDates: Array(3), availableDatesInDatabase: Array(5), selectedDatesFromReport: Array(7), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2025-09-01'}
+(anonymous) @ IRRHistoryTab.tsx:1770
+(anonymous) @ IRRHistoryTab.tsx:1825
+(anonymous) @ IRRHistoryTab.tsx:1143
+IRRHistoryTab @ IRRHistoryTab.tsx:1840
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14630
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+IRRHistoryTab.tsx:1770 ⚠️ [DATE MISMATCH WARNING] Product 273 selected dates not found in database: {missingSelectedDates: Array(3), availableDatesInDatabase: Array(5), selectedDatesFromReport: Array(7), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2025-09-01'}
+(anonymous) @ IRRHistoryTab.tsx:1770
+(anonymous) @ IRRHistoryTab.tsx:1825
+(anonymous) @ IRRHistoryTab.tsx:1143
+IRRHistoryTab @ IRRHistoryTab.tsx:1840
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14635
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+IRRHistoryTab.tsx:1770 ⚠️ [DATE MISMATCH WARNING] Product 273 selected dates not found in database: {missingSelectedDates: Array(3), availableDatesInDatabase: Array(5), selectedDatesFromReport: Array(7), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2025-09-01'}
+(anonymous) @ IRRHistoryTab.tsx:1770
+(anonymous) @ IRRHistoryTab.tsx:1825
+(anonymous) @ IRRHistoryTab.tsx:1143
+IRRHistoryTab @ IRRHistoryTab.tsx:1840
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14630
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+IRRHistoryTab.tsx:1770 ⚠️ [DATE MISMATCH WARNING] Product 273 selected dates not found in database: {missingSelectedDates: Array(3), availableDatesInDatabase: Array(5), selectedDatesFromReport: Array(7), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2025-09-01'}
+(anonymous) @ IRRHistoryTab.tsx:1770
+(anonymous) @ IRRHistoryTab.tsx:1825
+(anonymous) @ IRRHistoryTab.tsx:1143
+IRRHistoryTab @ IRRHistoryTab.tsx:1840
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14635
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+IRRHistoryTab.tsx:1770 ⚠️ [DATE MISMATCH WARNING] Product 273 selected dates not found in database: {missingSelectedDates: Array(3), availableDatesInDatabase: Array(5), selectedDatesFromReport: Array(7), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2025-09-01'}
+(anonymous) @ IRRHistoryTab.tsx:1770
+(anonymous) @ IRRHistoryTab.tsx:1825
+(anonymous) @ IRRHistoryTab.tsx:1143
+IRRHistoryTab @ IRRHistoryTab.tsx:1840
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14630
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+IRRHistoryTab.tsx:1770 ⚠️ [DATE MISMATCH WARNING] Product 273 selected dates not found in database: {missingSelectedDates: Array(3), availableDatesInDatabase: Array(5), selectedDatesFromReport: Array(7), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2025-09-01'}
+(anonymous) @ IRRHistoryTab.tsx:1770
+(anonymous) @ IRRHistoryTab.tsx:1825
+(anonymous) @ IRRHistoryTab.tsx:1143
+IRRHistoryTab @ IRRHistoryTab.tsx:1840
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14635
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+IRRHistoryTab.tsx:1770 ⚠️ [DATE MISMATCH WARNING] Product 273 selected dates not found in database: {missingSelectedDates: Array(3), availableDatesInDatabase: Array(5), selectedDatesFromReport: Array(7), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2025-09-01'}
+(anonymous) @ IRRHistoryTab.tsx:1770
+(anonymous) @ IRRHistoryTab.tsx:1825
+(anonymous) @ IRRHistoryTab.tsx:1143
+IRRHistoryTab @ IRRHistoryTab.tsx:1840
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14630
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+IRRHistoryTab.tsx:1770 ⚠️ [DATE MISMATCH WARNING] Product 273 selected dates not found in database: {missingSelectedDates: Array(3), availableDatesInDatabase: Array(5), selectedDatesFromReport: Array(7), availableButNotSelected: Array(1), suggestion: 'Consider using these available dates: 2025-09-01'}
+(anonymous) @ IRRHistoryTab.tsx:1770
+(anonymous) @ IRRHistoryTab.tsx:1825
+(anonymous) @ IRRHistoryTab.tsx:1143
+IRRHistoryTab @ IRRHistoryTab.tsx:1840
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14635
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384

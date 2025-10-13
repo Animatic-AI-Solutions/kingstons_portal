@@ -91,28 +91,61 @@ const ReportDisplayPage: React.FC = () => {
           
           // Calculate real-time total IRR using all activities from all products selected
           try {
+            console.log('🔍 ========== TOTAL IRR CALCULATION DEBUG START ==========');
+            console.log(`🔍 [TOTAL IRR] Total products in productSummaries: ${data.productSummaries.length}`);
+
+            // Log all products and their details
+            data.productSummaries.forEach((product, index) => {
+              console.log(`🔍 [PRODUCT ${index + 1}] Product ID: ${product.id}, Name: ${product.product_name}, Status: ${product.status}`);
+              console.log(`   └─ IRR: ${product.irr !== null && product.irr !== undefined ? product.irr + '%' : 'N/A'}`);
+              console.log(`   └─ Has funds: ${!!product.funds}, Funds count: ${product.funds?.length || 0}`);
+
+              if (product.funds && product.funds.length > 0) {
+                product.funds.forEach((fund, fIndex) => {
+                  if (fund.isVirtual) {
+                    console.log(`   └─ [FUND ${fIndex + 1}] ${fund.fund_name} (VIRTUAL) - Inactive funds: ${fund.inactiveFunds?.length || 0}`);
+                    if (fund.inactiveFunds && fund.inactiveFunds.length > 0) {
+                      fund.inactiveFunds.forEach((inactiveFund, ifIndex) => {
+                        console.log(`      └─ [INACTIVE ${ifIndex + 1}] ID: ${inactiveFund.id}, Name: ${inactiveFund.fund_name}`);
+                      });
+                    }
+                  } else {
+                    console.log(`   └─ [FUND ${fIndex + 1}] ID: ${fund.id}, Name: ${fund.fund_name}`);
+                  }
+                });
+              }
+            });
+
             // Extract all portfolio fund IDs from all selected products
+            // IMPORTANT: Include funds from ALL products (active, inactive, and lapsed)
             // IMPORTANT: Include both active funds AND inactive funds (from Previous Funds virtual entry)
             const allPortfolioFundIds: number[] = [];
+
+            console.log('🔍 [TOTAL IRR] Starting fund ID collection...');
+
             data.productSummaries.forEach(product => {
               if (product.funds) {
                 product.funds.forEach(fund => {
                   if (fund.isVirtual && fund.inactiveFunds) {
                     // Extract inactive fund IDs from "Previous Funds" virtual entry
+                    console.log(`✅ [TOTAL IRR] Collecting inactive funds from Previous Funds virtual entry in product ${product.id}`);
                     fund.inactiveFunds.forEach(inactiveFund => {
                       if (inactiveFund.id > 0) {
                         allPortfolioFundIds.push(inactiveFund.id);
+                        console.log(`   ✅ Added inactive fund ID: ${inactiveFund.id} (${inactiveFund.fund_name})`);
                       }
                     });
                   } else if (!fund.isVirtual && fund.id > 0) {
                     // Add active fund IDs
                     allPortfolioFundIds.push(fund.id);
+                    console.log(`   ✅ Added active fund ID: ${fund.id} (${fund.fund_name}) from product ${product.id}`);
                   }
                 });
               }
             });
-            
-            console.log(`🎯 [REPORT DISPLAY] Calculating real-time total IRR for ${allPortfolioFundIds.length} portfolio funds:`, allPortfolioFundIds);
+
+            console.log(`🎯 [TOTAL IRR] Collected ${allPortfolioFundIds.length} total fund IDs for IRR calculation`);
+            console.log(`🎯 [TOTAL IRR] Fund IDs:`, allPortfolioFundIds);
             
             if (allPortfolioFundIds.length > 0) {
               // Get the end date from report data (use latest valuation date)
@@ -124,18 +157,28 @@ const ReportDisplayPage: React.FC = () => {
                 endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
               }
               
-              console.log(`🎯 [REPORT DISPLAY] Using end date for real-time IRR: ${endDate}`);
-              
+              console.log(`🎯 [TOTAL IRR] Using end date for real-time IRR: ${endDate}`);
+              console.log(`🎯 [TOTAL IRR] Calling IRR API with ${allPortfolioFundIds.length} fund IDs...`);
+
               // Calculate real-time total IRR using all portfolio fund IDs
               const totalIRRData = await irrDataService.getOptimizedIRRData({
                 portfolioFundIds: allPortfolioFundIds,
                 endDate: endDate,
                 includeHistorical: false
               });
-              
-              console.log('🎯 [REPORT DISPLAY] Real-time total IRR response:', totalIRRData);
+
+              console.log('✅ [TOTAL IRR] API Response:', totalIRRData);
+              console.log(`✅ [TOTAL IRR] Calculated Total IRR: ${totalIRRData.portfolioIRR}%`);
+
+              // Compare with individual product IRRs
+              console.log('🔍 [TOTAL IRR] Individual Product IRRs for comparison:');
+              data.productSummaries.forEach((product, index) => {
+                const productIRR = product.irr !== null && product.irr !== undefined ? product.irr : 'N/A';
+                console.log(`   Product ${index + 1} (${product.product_name}, Status: ${product.status}): ${productIRR}%`);
+              });
+
               setRealTimeTotalIRR(totalIRRData.portfolioIRR);
-              console.log(`🎯 [REPORT DISPLAY] Set real-time total IRR: ${totalIRRData.portfolioIRR}%`);
+              console.log('🔍 ========== TOTAL IRR CALCULATION DEBUG END ==========');
             } else {
               console.warn('❌ No portfolio fund IDs found for total IRR calculation');
               setRealTimeTotalIRR(null);

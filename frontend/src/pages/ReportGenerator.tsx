@@ -2033,58 +2033,24 @@ const ReportGenerator: React.FC = () => {
               
               // Format the selected valuation date for the API call
               let formattedDate: string | undefined = undefined;
-          if (selectedValuationDate) {
+              if (selectedValuationDate) {
                 // Convert YYYY-MM format to YYYY-MM-DD (last day of month)
-            const [year, month] = selectedValuationDate.split('-').map(part => parseInt(part));
+                const [year, month] = selectedValuationDate.split('-').map(part => parseInt(part));
                 const lastDayOfMonth = new Date(year, month, 0).getDate();
                 formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
               }
-              
-              // Use optimized IRR service for active products, latest portfolio IRR for inactive products
 
-              if (isInactiveProduct) {
-                // For inactive products, get the latest portfolio-level IRR
+              // Use optimized IRR service for all products (active and inactive)
+              const optimizedIRRData = await irrDataService.getOptimizedIRRData({
+                portfolioId: productDetails.portfolio_id,
+                portfolioFundIds: productPortfolioFundIds,
+                endDate: formattedDate,
+                includeHistorical: false
+              });
 
-                try {
-                  const portfolioIRRResponse = await api.get(`/api/portfolios/${productDetails.portfolio_id}/latest_irr`);
-                  if (portfolioIRRResponse.data && portfolioIRRResponse.data.irr_result !== null && portfolioIRRResponse.data.irr_result !== undefined) {
-                    // Handle both string and number IRR results from the API
-                    const irrValue = portfolioIRRResponse.data.irr_result;
-                    const numericIRR = typeof irrValue === 'number' ? irrValue : parseFloat(irrValue);
-                    if (!isNaN(numericIRR)) {
-                      productIRR = numericIRR;
-                      console.log(`Latest portfolio IRR for inactive product ${productId}: ${productIRR}% (date: ${portfolioIRRResponse.data.irr_date})`);
-                    } else {
-                      console.warn(`Invalid portfolio IRR value for inactive product ${productId}: ${irrValue}`);
-                    }
-                  } else {
-                    console.warn(`No portfolio IRR found for inactive product ${productId}`);
-                  }
-                } catch (portfolioIRRErr) {
-                  console.error(`Error fetching portfolio IRR for inactive product ${productId}:`, portfolioIRRErr);
-                  // Fall back to fund-level calculation
-                  const optimizedIRRData = await irrDataService.getOptimizedIRRData({
-                    portfolioId: productDetails.portfolio_id,
-                    portfolioFundIds: productPortfolioFundIds,
-                    endDate: formattedDate,
-                    includeHistorical: false
-                  });
-                  productIRR = optimizedIRRData.portfolioIRR;
-                }
-              } else {
-                // For active products, use optimized IRR service
+              productIRR = optimizedIRRData.portfolioIRR;
 
-                const optimizedIRRData = await irrDataService.getOptimizedIRRData({
-                  portfolioId: productDetails.portfolio_id,
-                  portfolioFundIds: productPortfolioFundIds,
-                  endDate: formattedDate,
-                  includeHistorical: false
-                });
-
-                productIRR = optimizedIRRData.portfolioIRR;
-
-                console.log(`Optimized IRR for active product ${productId}: ${productIRR}% (source: ${optimizedIRRData.irrDate})`);
-              }
+              console.log(`IRR for product ${productId} (${isInactiveProduct ? 'inactive' : 'active'}): ${productIRR}%`);
           } else {
               console.warn(`No valid portfolio fund IDs found for product ${productId} IRR calculation`);
             }
