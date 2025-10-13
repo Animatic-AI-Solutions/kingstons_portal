@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   UserIcon,
   DocumentTextIcon,
@@ -139,6 +140,8 @@ interface Asset {
   description: string;
   value: number;
   owner: string;
+  isProduct?: boolean;
+  productId?: string;
 }
 
 interface Liability {
@@ -456,9 +459,9 @@ const sampleCapacityToLoss: CapacityToLoss[] = [
 ];
 
 const sampleAssets: Asset[] = [
-  { id: '1', type: 'Property', description: 'Primary Residence - Richmond', value: 875000, owner: 'Joint' },
-  { id: '2', type: 'ISA', description: 'Stocks & Shares ISA', value: 156000, owner: 'James Mitchell' },
-  { id: '3', type: 'Pension', description: 'Defined Contribution Pension', value: 425000, owner: 'James Mitchell' },
+  { id: '1', type: 'Property', description: 'Primary Residence - Richmond', value: 875000, owner: 'Joint', isProduct: false },
+  { id: '2', type: 'ISA', description: 'Stocks & Shares ISA', value: 156000, owner: 'James Mitchell', isProduct: true, productId: 'prod-123' },
+  { id: '3', type: 'Pension', description: 'Defined Contribution Pension', value: 425000, owner: 'James Mitchell', isProduct: true, productId: 'prod-456' },
 ];
 
 const sampleLiabilities: Liability[] = [
@@ -546,12 +549,15 @@ const clientManagementInfo = {
 // ============================================================================
 
 const ClientGroupPhase2: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('summary');
   const [activeSubTab, setActiveSubTab] = useState('people');
   const [activeHealthTab, setActiveHealthTab] = useState('health');
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [showProductInfoPopup, setShowProductInfoPopup] = useState(false);
+  const [selectedProductAsset, setSelectedProductAsset] = useState<Asset | null>(null);
 
   const toggleCardExpanded = (cardId: string) => {
     const newExpanded = new Set(expandedCards);
@@ -564,8 +570,16 @@ const ClientGroupPhase2: React.FC = () => {
   };
 
   const handleItemClick = (item: any) => {
-    setSelectedItem(item);
-    setIsEditing(false);
+    // Check if the item is an Asset and if it's a product
+    if ('value' in item && item.isProduct) {
+      // Show product info popup for assets that are products
+      setSelectedProductAsset(item);
+      setShowProductInfoPopup(true);
+    } else {
+      // Show edit popup for regular assets or liabilities
+      setSelectedItem(item);
+      setIsEditing(false);
+    }
   };
 
   const closeDetail = () => {
@@ -747,6 +761,112 @@ const ClientGroupPhase2: React.FC = () => {
       })}
     </div>
   );
+
+  // ============================================================================
+  // RENDER: Product Info Popup
+  // ============================================================================
+
+  const renderProductInfoPopup = () => {
+    if (!showProductInfoPopup || !selectedProductAsset) return null;
+
+    const handleNavigateToProduct = () => {
+      // Navigate to product details page
+      navigate(`/products/${selectedProductAsset.productId}`);
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl border border-gray-200">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-4 rounded-t-lg">
+            <h3 className="text-xl font-semibold text-white">
+              {selectedProductAsset.description}
+            </h3>
+            <p className="text-primary-100 text-sm mt-1">Product Asset - IRR System Integration</p>
+          </div>
+
+          {/* Body */}
+          <div className="p-6">
+            <div className="mb-6">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="p-3 rounded-full bg-blue-100">
+                  <ShieldCheckIcon className="h-6 w-6 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                    IRR System Integration
+                  </h4>
+                  <p className="text-gray-700 leading-relaxed">
+                    This asset is linked to a product in the IRR (Internal Rate of Return) system.
+                    You can manage valuations and track performance over time through the product details page.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <h5 className="font-semibold text-blue-900 mb-2">What you can do:</h5>
+                <ul className="space-y-2 text-sm text-blue-800">
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600 mt-0.5">•</span>
+                    <span><strong>Manually record valuations</strong> - Add new valuation entries to track asset value changes</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600 mt-0.5">•</span>
+                    <span><strong>Manage IRR calculations</strong> - View historical performance and IRR metrics</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600 mt-0.5">•</span>
+                    <span><strong>View product details</strong> - Access full product information and history</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h5 className="font-semibold text-gray-900 mb-3">Asset Summary</h5>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-500">Type</p>
+                    <p className="font-medium text-gray-900">{selectedProductAsset.type}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Current Value</p>
+                    <p className="font-medium text-gray-900">{formatCurrency(selectedProductAsset.value)}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Owner</p>
+                    <p className="font-medium text-gray-900">{selectedProductAsset.owner}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Product ID</p>
+                    <p className="font-medium text-gray-900 font-mono text-xs">{selectedProductAsset.productId}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="bg-gray-50 px-6 py-4 rounded-b-lg flex items-center justify-end gap-3">
+            <button
+              onClick={() => {
+                setShowProductInfoPopup(false);
+                setSelectedProductAsset(null);
+              }}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+            >
+              Close
+            </button>
+            <button
+              onClick={handleNavigateToProduct}
+              className="px-6 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors font-medium shadow-sm"
+            >
+              Go to Product Details →
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderDetailModal = () => {
     if (!selectedItem) return null;
@@ -1994,6 +2114,9 @@ const ClientGroupPhase2: React.FC = () => {
       <div className="pb-8">
         {renderMainContent()}
       </div>
+
+      {/* Product Info Popup */}
+      {renderProductInfoPopup()}
 
       {/* Detail Modal */}
       {renderDetailModal()}
