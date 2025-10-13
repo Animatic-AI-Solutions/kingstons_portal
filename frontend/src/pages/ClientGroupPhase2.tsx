@@ -186,6 +186,16 @@ interface Objective {
   status: 'In Progress' | 'Completed' | 'Not Started';
 }
 
+interface Action {
+  id: string;
+  title: string;
+  description: string;
+  assignedTo: 'Client' | 'Advisor';
+  dueDate: string;
+  status: 'Pending' | 'In Progress' | 'Completed';
+  priority: 'High' | 'Medium' | 'Low';
+}
+
 interface Meeting {
   id: string;
   meetingType: string;
@@ -489,6 +499,16 @@ const sampleObjectives: Objective[] = [
   { id: '1', title: 'Retirement Planning', description: 'Build sufficient pension pot for retirement at age 65', targetDate: '2040', priority: 'High', status: 'In Progress' },
   { id: '2', title: 'University Funding', description: 'Fund Emma\'s university education', targetDate: '2026', priority: 'High', status: 'In Progress' },
   { id: '3', title: 'Mortgage Free', description: 'Pay off primary residence mortgage', targetDate: '2035', priority: 'Medium', status: 'In Progress' },
+];
+
+const sampleActions: Action[] = [
+  { id: '1', title: 'Review pension contributions', description: 'Increase monthly pension contributions by £200', assignedTo: 'Client', dueDate: '2024-11-15', status: 'Pending', priority: 'High' },
+  { id: '2', title: 'Complete risk assessment questionnaire', description: 'Fill out the updated Finemetrica risk assessment', assignedTo: 'Client', dueDate: '2024-11-01', status: 'In Progress', priority: 'High' },
+  { id: '3', title: 'Send portfolio rebalancing proposal', description: 'Prepare and send proposal for portfolio rebalancing based on Q3 performance', assignedTo: 'Advisor', dueDate: '2024-10-20', status: 'In Progress', priority: 'Medium' },
+  { id: '4', title: 'Update will documentation', description: 'Schedule meeting with solicitor to update will following property purchase', assignedTo: 'Client', dueDate: '2024-12-01', status: 'Pending', priority: 'Medium' },
+  { id: '5', title: 'Prepare annual review pack', description: 'Compile performance reports and valuation summaries for March review', assignedTo: 'Advisor', dueDate: '2024-10-25', status: 'Pending', priority: 'High' },
+  { id: '6', title: 'Research ISA transfer options', description: 'Compare ISA providers for potential transfer to reduce fees', assignedTo: 'Advisor', dueDate: '2024-11-10', status: 'Pending', priority: 'Low' },
+  { id: '7', title: 'Provide P60 documentation', description: 'Send latest P60 for tax planning purposes', assignedTo: 'Client', dueDate: '2024-10-30', status: 'Completed', priority: 'Medium' },
 ];
 
 const sampleMeetings: Meeting[] = [
@@ -1974,41 +1994,167 @@ const ClientGroupPhase2: React.FC = () => {
   // RENDER: Aims & Objectives
   // ============================================================================
 
-  const renderObjectives = () => (
-    <div className="grid grid-cols-1 gap-4">
-      {sampleObjectives.map((obj) => (
-        <div
-          key={obj.id}
-          className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer"
-          onClick={() => handleItemClick(obj)}
-        >
-          <div className="flex justify-between items-start mb-3">
-            <h3 className="text-lg font-semibold text-gray-900">{obj.title}</h3>
-            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-              obj.priority === 'High'
-                ? 'bg-red-100 text-red-800'
-                : obj.priority === 'Medium'
-                ? 'bg-yellow-100 text-yellow-800'
-                : 'bg-green-100 text-green-800'
-            }`}>
-              {obj.priority} Priority
-            </span>
-          </div>
-          <p className="text-gray-600 mb-3">{obj.description}</p>
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-500">Target: {obj.targetDate}</span>
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-              obj.status === 'Completed'
-                ? 'bg-green-100 text-green-800'
-                : obj.status === 'In Progress'
-                ? 'bg-blue-100 text-blue-800'
-                : 'bg-gray-100 text-gray-700'
-            }`}>
-              {obj.status}
-            </span>
-          </div>
+  // ============================================================================
+  // RENDER: Actions (Short-term To-Do List)
+  // ============================================================================
+
+  const renderActions = () => (
+    <div className="space-y-3">
+      {/* Client Actions */}
+      <div>
+        <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <UserIcon className="w-5 h-5 text-blue-600" />
+          Client Actions
+        </h4>
+        <div className="space-y-2">
+          {sampleActions.filter(action => action.assignedTo === 'Client').map((action) => (
+            <div
+              key={action.id}
+              className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow cursor-pointer border-l-4 border-blue-500"
+              onClick={() => handleItemClick(action)}
+            >
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex-1">
+                  <h5 className="text-sm font-semibold text-gray-900">{action.title}</h5>
+                  <p className="text-xs text-gray-600 mt-1">{action.description}</p>
+                </div>
+                <div className="flex items-center gap-2 ml-3">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    action.priority === 'High'
+                      ? 'bg-red-100 text-red-800'
+                      : action.priority === 'Medium'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : 'bg-green-100 text-green-800'
+                  }`}>
+                    {action.priority}
+                  </span>
+                </div>
+              </div>
+              <div className="flex justify-between items-center text-xs mt-2">
+                <span className="text-gray-500">Due: {new Date(action.dueDate).toLocaleDateString('en-GB')}</span>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  action.status === 'Completed'
+                    ? 'bg-green-100 text-green-800'
+                    : action.status === 'In Progress'
+                    ? 'bg-blue-100 text-blue-800'
+                    : 'bg-gray-100 text-gray-700'
+                }`}>
+                  {action.status}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
+      </div>
+
+      {/* Advisor Actions */}
+      <div>
+        <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center gap-2 mt-6">
+          <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          Advisor Actions
+        </h4>
+        <div className="space-y-2">
+          {sampleActions.filter(action => action.assignedTo === 'Advisor').map((action) => (
+            <div
+              key={action.id}
+              className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow cursor-pointer border-l-4 border-primary-600"
+              onClick={() => handleItemClick(action)}
+            >
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex-1">
+                  <h5 className="text-sm font-semibold text-gray-900">{action.title}</h5>
+                  <p className="text-xs text-gray-600 mt-1">{action.description}</p>
+                </div>
+                <div className="flex items-center gap-2 ml-3">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    action.priority === 'High'
+                      ? 'bg-red-100 text-red-800'
+                      : action.priority === 'Medium'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : 'bg-green-100 text-green-800'
+                  }`}>
+                    {action.priority}
+                  </span>
+                </div>
+              </div>
+              <div className="flex justify-between items-center text-xs mt-2">
+                <span className="text-gray-500">Due: {new Date(action.dueDate).toLocaleDateString('en-GB')}</span>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  action.status === 'Completed'
+                    ? 'bg-green-100 text-green-800'
+                    : action.status === 'In Progress'
+                    ? 'bg-blue-100 text-blue-800'
+                    : 'bg-gray-100 text-gray-700'
+                }`}>
+                  {action.status}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  // ============================================================================
+  // RENDER: Objectives (Long-term Goals)
+  // ============================================================================
+
+  const renderObjectives = () => (
+    <div className="space-y-6">
+      {/* Aims & Objectives Section */}
+      <div>
+        <div className="mb-4">
+          <h3 className="text-xl font-semibold text-gray-900">Aims & Objectives</h3>
+          <p className="text-sm text-gray-600">Long-term financial goals and targets</p>
+        </div>
+        <div className="grid grid-cols-1 gap-4">
+          {sampleObjectives.map((obj) => (
+            <div
+              key={obj.id}
+              className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={() => handleItemClick(obj)}
+            >
+              <div className="flex justify-between items-start mb-3">
+                <h3 className="text-lg font-semibold text-gray-900">{obj.title}</h3>
+                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  obj.priority === 'High'
+                    ? 'bg-red-100 text-red-800'
+                    : obj.priority === 'Medium'
+                    ? 'bg-yellow-100 text-yellow-800'
+                    : 'bg-green-100 text-green-800'
+                }`}>
+                  {obj.priority} Priority
+                </span>
+              </div>
+              <p className="text-gray-600 mb-3">{obj.description}</p>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-500">Target: {obj.targetDate}</span>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  obj.status === 'Completed'
+                    ? 'bg-green-100 text-green-800'
+                    : obj.status === 'In Progress'
+                    ? 'bg-blue-100 text-blue-800'
+                    : 'bg-gray-100 text-gray-700'
+                }`}>
+                  {obj.status}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Actions Section */}
+      <div>
+        <div className="mb-4">
+          <h3 className="text-xl font-semibold text-gray-900">Actions</h3>
+          <p className="text-sm text-gray-600">Short-term to-do items for client and advisor</p>
+        </div>
+        {renderActions()}
+      </div>
     </div>
   );
 
