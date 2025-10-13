@@ -147,6 +147,7 @@ interface Liability {
   description: string;
   amount: number;
   monthlyPayment: number;
+  owner: string;
 }
 
 interface Income {
@@ -461,8 +462,8 @@ const sampleAssets: Asset[] = [
 ];
 
 const sampleLiabilities: Liability[] = [
-  { id: '1', type: 'Mortgage', description: 'Primary Residence Mortgage', amount: 185000, monthlyPayment: 1250 },
-  { id: '2', type: 'Loan', description: 'Car Finance', amount: 15000, monthlyPayment: 350 },
+  { id: '1', type: 'Mortgage', description: 'Primary Residence Mortgage', amount: 185000, monthlyPayment: 1250, owner: 'Joint' },
+  { id: '2', type: 'Loan', description: 'Car Finance', amount: 15000, monthlyPayment: 350, owner: 'James Mitchell' },
 ];
 
 const sampleIncome: Income[] = [
@@ -532,8 +533,8 @@ const clientManagementInfo = {
   dateOfClientDeclaration: '10/06/2020',
   dateOfPrivacyDeclaration: '10/06/2020',
   lastFeeAgreement: '01/04/2023',
-  currentFee: '1.0% AUM',
-  feeValue: 15600,
+  feeAchieved: 0.95,
+  fixedFee: 15600,
   nextReviewDate: '01/04/2025',
   clientSince: '15/06/2020',
   primaryAdvisor: 'John Anderson',
@@ -1493,12 +1494,12 @@ const ClientGroupPhase2: React.FC = () => {
             <p className="text-lg font-semibold text-gray-900">{clientManagementInfo.lastFeeAgreement}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-600">Current Fee</p>
-            <p className="text-lg font-semibold text-gray-900">{clientManagementInfo.currentFee}</p>
+            <p className="text-sm text-gray-600">Fee Achieved</p>
+            <p className="text-lg font-semibold text-gray-900">{clientManagementInfo.feeAchieved}%</p>
           </div>
           <div>
-            <p className="text-sm text-gray-600">Annual Fee Value</p>
-            <p className="text-lg font-semibold text-gray-900">{formatCurrency(clientManagementInfo.feeValue)}</p>
+            <p className="text-sm text-gray-600">Fixed Fee</p>
+            <p className="text-lg font-semibold text-gray-900">{formatCurrency(clientManagementInfo.fixedFee)}</p>
           </div>
           <div>
             <p className="text-sm text-gray-600">Next Review Date</p>
@@ -1561,102 +1562,178 @@ const ClientGroupPhase2: React.FC = () => {
   // RENDER: Assets & Liabilities
   // ============================================================================
 
-  const renderAssetsLiabilities = () => (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 bg-gray-50 border-b">
-          <h3 className="text-lg font-semibold">Assets</h3>
-        </div>
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Value</th>
-              <th className="px-6 py-3"></th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {sampleAssets.map((asset) => (
-              <tr key={asset.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleItemClick(asset)}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{asset.type}</td>
-                <td className="px-6 py-4 text-sm text-gray-500">{asset.description}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{asset.owner}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
-                  {formatCurrency(asset.value)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                  <ChevronRightIcon className="w-5 h-5 text-gray-400" />
-                </td>
-              </tr>
-            ))}
-            <tr className="bg-gray-50 font-bold">
-              <td colSpan={3} className="px-6 py-4 text-sm text-gray-900">Total Assets</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                {formatCurrency(sampleAssets.reduce((sum, a) => sum + a.value, 0))}
-              </td>
-              <td></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+  const renderAssetsLiabilities = () => {
+    // Helper to calculate ownership amounts per person
+    const getPersonOwnership = (item: Asset | Liability, personName: string): number => {
+      const owner = item.owner || '';
+      const value = 'value' in item ? item.value : item.amount;
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 bg-gray-50 border-b">
-          <h3 className="text-lg font-semibold">Liabilities</h3>
-        </div>
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Monthly Payment</th>
-              <th className="px-6 py-3"></th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {sampleLiabilities.map((liability) => (
-              <tr key={liability.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleItemClick(liability)}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{liability.type}</td>
-                <td className="px-6 py-4 text-sm text-gray-500">{liability.description}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
-                  {formatCurrency(liability.amount)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                  {formatCurrency(liability.monthlyPayment)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                  <ChevronRightIcon className="w-5 h-5 text-gray-400" />
-                </td>
-              </tr>
-            ))}
-            <tr className="bg-gray-50 font-bold">
-              <td colSpan={2} className="px-6 py-4 text-sm text-gray-900">Total Liabilities</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                {formatCurrency(sampleLiabilities.reduce((sum, l) => sum + l.amount, 0))}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                {formatCurrency(sampleLiabilities.reduce((sum, l) => sum + l.monthlyPayment, 0))}
-              </td>
-              <td></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      if (owner === 'Joint') {
+        // Split equally among all adult persons (excluding children/students)
+        const adults = samplePeople.filter(p => p.employmentStatus !== 'Student');
+        return value / adults.length;
+      } else if (owner.includes(personName)) {
+        return value;
+      }
+      return 0;
+    };
 
-      <div className="bg-blue-50 rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-2">Net Worth</h3>
-        <p className="text-3xl font-bold text-blue-900">
-          {formatCurrency(
-            sampleAssets.reduce((sum, a) => sum + a.value, 0) -
-            sampleLiabilities.reduce((sum, l) => sum + l.amount, 0)
-          )}
-        </p>
+    // Combine assets and liabilities into rows
+    const rows = [
+      // Assets first
+      ...sampleAssets.map(asset => ({
+        id: asset.id,
+        type: 'asset' as const,
+        name: asset.description,
+        item: asset,
+        isTotal: false
+      })),
+      // Liabilities second
+      ...sampleLiabilities.map(liability => ({
+        id: liability.id,
+        type: 'liability' as const,
+        name: liability.description,
+        item: liability,
+        isTotal: false
+      }))
+    ];
+
+    // Calculate totals per person
+    const personTotals = samplePeople.map(person => {
+      const personName = `${person.forename} ${person.surname}`;
+      const assetTotal = sampleAssets.reduce((sum, asset) => sum + getPersonOwnership(asset, personName), 0);
+      const liabilityTotal = sampleLiabilities.reduce((sum, liability) => sum + getPersonOwnership(liability, personName), 0);
+      return {
+        name: personName,
+        netWorth: assetTotal - liabilityTotal
+      };
+    });
+
+    const totalAssets = sampleAssets.reduce((sum, a) => sum + a.value, 0);
+    const totalLiabilities = sampleLiabilities.reduce((sum, l) => sum + l.amount, 0);
+    const netWorth = totalAssets - totalLiabilities;
+
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 bg-gray-50 border-b">
+            <h3 className="text-lg font-semibold">Assets & Liabilities</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asset / Liability</th>
+                  {samplePeople.map((person) => (
+                    <th key={person.id} className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                      {person.forename} {person.surname}
+                    </th>
+                  ))}
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {/* Asset Rows */}
+                {sampleAssets.map((asset, index) => (
+                  <tr key={asset.id} className={`hover:bg-gray-50 cursor-pointer ${index === 0 ? 'border-t-2 border-gray-300' : ''}`} onClick={() => handleItemClick(asset)}>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+                        {asset.description}
+                      </div>
+                    </td>
+                    {samplePeople.map((person) => {
+                      const personName = `${person.forename} ${person.surname}`;
+                      const amount = getPersonOwnership(asset, personName);
+                      return (
+                        <td key={person.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                          {amount > 0 ? formatCurrency(amount) : '-'}
+                        </td>
+                      );
+                    })}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
+                      {formatCurrency(asset.value)}
+                    </td>
+                  </tr>
+                ))}
+
+                {/* Assets Total Row */}
+                <tr className="bg-green-50 font-bold">
+                  <td className="px-6 py-4 text-sm text-gray-900">Total Assets</td>
+                  {samplePeople.map((person) => {
+                    const personName = `${person.forename} ${person.surname}`;
+                    const total = sampleAssets.reduce((sum, asset) => sum + getPersonOwnership(asset, personName), 0);
+                    return (
+                      <td key={person.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                        {formatCurrency(total)}
+                      </td>
+                    );
+                  })}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                    {formatCurrency(totalAssets)}
+                  </td>
+                </tr>
+
+                {/* Liability Rows */}
+                {sampleLiabilities.map((liability, index) => (
+                  <tr key={liability.id} className={`hover:bg-gray-50 cursor-pointer ${index === 0 ? 'border-t-2 border-gray-300' : ''}`} onClick={() => handleItemClick(liability)}>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-block w-2 h-2 rounded-full bg-red-500"></span>
+                        {liability.description}
+                      </div>
+                    </td>
+                    {samplePeople.map((person) => {
+                      const personName = `${person.forename} ${person.surname}`;
+                      const amount = getPersonOwnership(liability, personName);
+                      return (
+                        <td key={person.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                          {amount > 0 ? formatCurrency(amount) : '-'}
+                        </td>
+                      );
+                    })}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
+                      {formatCurrency(liability.amount)}
+                    </td>
+                  </tr>
+                ))}
+
+                {/* Liabilities Total Row */}
+                <tr className="bg-red-50 font-bold">
+                  <td className="px-6 py-4 text-sm text-gray-900">Total Liabilities</td>
+                  {samplePeople.map((person) => {
+                    const personName = `${person.forename} ${person.surname}`;
+                    const total = sampleLiabilities.reduce((sum, liability) => sum + getPersonOwnership(liability, personName), 0);
+                    return (
+                      <td key={person.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                        {formatCurrency(total)}
+                      </td>
+                    );
+                  })}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                    {formatCurrency(totalLiabilities)}
+                  </td>
+                </tr>
+
+                {/* Net Worth Row */}
+                <tr className="bg-blue-100 font-bold border-t-2 border-gray-400">
+                  <td className="px-6 py-4 text-sm text-gray-900">Net Worth</td>
+                  {personTotals.map((person, index) => (
+                    <td key={index} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                      {formatCurrency(person.netWorth)}
+                    </td>
+                  ))}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                    {formatCurrency(netWorth)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // ============================================================================
   // RENDER: Income & Expenditure
