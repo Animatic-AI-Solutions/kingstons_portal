@@ -798,7 +798,7 @@ const ClientGroupPhase2: React.FC = () => {
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
         <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl border border-gray-200">
           {/* Header */}
-          <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-4 rounded-t-lg">
+          <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-3 py-2 rounded-t-lg">
             <h3 className="text-xl font-semibold text-white">
               {selectedProductAsset.description}
             </h3>
@@ -866,7 +866,7 @@ const ClientGroupPhase2: React.FC = () => {
           </div>
 
           {/* Footer */}
-          <div className="bg-gray-50 px-6 py-4 rounded-b-lg flex items-center justify-end gap-3">
+          <div className="bg-gray-50 px-3 py-2 rounded-b-lg flex items-center justify-end gap-3">
             <button
               onClick={() => {
                 setShowProductInfoPopup(false);
@@ -896,7 +896,7 @@ const ClientGroupPhase2: React.FC = () => {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
         <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-gray-200">
-          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+          <div className="sticky top-0 bg-white border-b border-gray-200 px-3 py-2 flex justify-between items-center">
             <h3 className="text-xl font-semibold text-gray-900">
               {isPersonDetail ? 'Person Details' : 'Details'}
             </h3>
@@ -1090,11 +1090,11 @@ const ClientGroupPhase2: React.FC = () => {
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Relationship</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-            <th className="px-6 py-3"></th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Relationship</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+            <th className="px-3 py-2"></th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
@@ -1102,11 +1102,11 @@ const ClientGroupPhase2: React.FC = () => {
             const fullName = `${person.title} ${person.forename} ${person.surname}`;
             return (
               <tr key={person.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => handleItemClick(person)}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{fullName}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{person.relationship}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{person.age}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{person.emails[0]}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{fullName}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{person.relationship}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{person.age}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{person.emails[0]}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-right text-sm">
                   <ChevronRightIcon className="w-5 h-5 text-gray-400" />
                 </td>
               </tr>
@@ -1126,28 +1126,28 @@ const ClientGroupPhase2: React.FC = () => {
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of Birth</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Relationship</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dependency</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Details</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Firm Name</th>
-            <th className="px-6 py-3"></th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of Birth</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Relationship</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dependency</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Details</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Firm Name</th>
+            <th className="px-3 py-2"></th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {sampleRelationships.map((rel) => (
             <tr key={rel.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => handleItemClick(rel)}>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{rel.name}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{rel.dateOfBirth}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+              <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{rel.name}</td>
+              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{rel.dateOfBirth}</td>
+              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                   rel.firmName ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
                 }`}>
                   {rel.relationship}
                 </span>
               </td>
-              <td className="px-6 py-4 text-sm text-gray-600">
+              <td className="px-3 py-2 text-sm text-gray-600">
                 {rel.dependency.map((person, idx) => (
                   <span key={idx} className="inline-block mr-1 mb-1">
                     <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
@@ -1156,15 +1156,15 @@ const ClientGroupPhase2: React.FC = () => {
                   </span>
                 ))}
               </td>
-              <td className="px-6 py-4 text-sm text-gray-600">{rel.contactDetails}</td>
-              <td className="px-6 py-4 text-sm text-gray-600">
+              <td className="px-3 py-2 text-sm text-gray-600">{rel.contactDetails}</td>
+              <td className="px-3 py-2 text-sm text-gray-600">
                 {rel.firmName ? (
                   <span className="font-medium text-gray-900">{rel.firmName}</span>
                 ) : (
                   <span className="text-gray-400 italic">N/A</span>
                 )}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+              <td className="px-3 py-2 whitespace-nowrap text-right text-sm">
                 <ChevronRightIcon className="w-5 h-5 text-gray-400" />
               </td>
             </tr>
@@ -1345,25 +1345,25 @@ const ClientGroupPhase2: React.FC = () => {
     <div className="space-y-6">
       {/* Wills Section */}
       <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 bg-gray-50 border-b">
+        <div className="px-3 py-2 bg-gray-50 border-b">
           <h3 className="text-lg font-semibold">Wills</h3>
         </div>
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of Will</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of Adv Directive</th>
-              <th className="px-6 py-3"></th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of Will</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of Adv Directive</th>
+              <th className="px-3 py-2"></th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {sampleDocuments.filter(doc => doc.type === 'Will').map((doc) => (
               <tr key={doc.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => handleItemClick(doc)}>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">{doc.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{(doc as WillDocument).dateOfWill}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{(doc as WillDocument).dateOfAdvDirective}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                <td className="px-3 py-2 text-sm font-medium text-gray-900">{doc.name}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{(doc as WillDocument).dateOfWill}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{(doc as WillDocument).dateOfAdvDirective}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-right text-sm">
                   <ChevronRightIcon className="w-5 h-5 text-gray-400" />
                 </td>
               </tr>
@@ -1374,18 +1374,18 @@ const ClientGroupPhase2: React.FC = () => {
 
       {/* LPOAs Section */}
       <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 bg-gray-50 border-b">
+        <div className="px-3 py-2 bg-gray-50 border-b">
           <h3 className="text-lg font-semibold">Lasting Powers of Attorney</h3>
         </div>
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of H&W LPOA</th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">H&W Active</th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">P&F Active</th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">EPA Registered</th>
-              <th className="px-6 py-3"></th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of H&W LPOA</th>
+              <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">H&W Active</th>
+              <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">P&F Active</th>
+              <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">EPA Registered</th>
+              <th className="px-3 py-2"></th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -1393,30 +1393,30 @@ const ClientGroupPhase2: React.FC = () => {
               const lpoa = doc as LPOADocument;
               return (
                 <tr key={doc.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => handleItemClick(doc)}>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{lpoa.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{lpoa.dateOfHWLPOA}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <td className="px-3 py-2 text-sm font-medium text-gray-900">{lpoa.name}</td>
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{lpoa.dateOfHWLPOA}</td>
+                  <td className="px-3 py-2 whitespace-nowrap text-center">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       lpoa.hwLpoaIsActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'
                     }`}>
                       {lpoa.hwLpoaIsActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <td className="px-3 py-2 whitespace-nowrap text-center">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       lpoa.pfLpoaIsActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'
                     }`}>
                       {lpoa.pfLpoaIsActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <td className="px-3 py-2 whitespace-nowrap text-center">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       lpoa.epaIsRegistered ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'
                     }`}>
                       {lpoa.epaIsRegistered ? 'Yes' : 'No'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                  <td className="px-3 py-2 whitespace-nowrap text-right text-sm">
                     <ChevronRightIcon className="w-5 h-5 text-gray-400" />
                   </td>
                 </tr>
@@ -1440,24 +1440,24 @@ const ClientGroupPhase2: React.FC = () => {
       <div className="space-y-6">
         {/* Current Risk Assessments */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 bg-gray-50 border-b">
+          <div className="px-3 py-2 bg-gray-50 border-b">
             <h3 className="text-lg font-semibold">Current Risk Assessments</h3>
           </div>
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Person</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk Group</th>
-                <th className="px-6 py-3"></th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Person</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Risk Group</th>
+                <th className="px-3 py-2"></th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {currentAssessments.map((assessment) => (
                 <tr key={assessment.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleItemClick(assessment)}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{assessment.personName}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{assessment.personName}</td>
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       assessment.assessmentType === 'Finemetrica'
                         ? 'bg-purple-100 text-purple-800'
@@ -1466,13 +1466,13 @@ const ClientGroupPhase2: React.FC = () => {
                       {assessment.assessmentType}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                     {assessment.assessmentType === 'Finemetrica'
                       ? `${assessment.riskScore}/7`
                       : `${assessment.manualRiskScore}/7`
                     }
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-2 whitespace-nowrap">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       assessment.riskGroup === 'Balanced' || assessment.gopDescription?.includes('Balanced')
                         ? 'bg-blue-100 text-blue-800'
@@ -1484,7 +1484,7 @@ const ClientGroupPhase2: React.FC = () => {
                       }
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                  <td className="px-3 py-2 whitespace-nowrap text-right text-sm">
                     <ChevronRightIcon className="w-5 h-5 text-gray-400" />
                   </td>
                 </tr>
@@ -1496,36 +1496,36 @@ const ClientGroupPhase2: React.FC = () => {
         {/* Historical Risk Assessments */}
         {historicalAssessments.length > 0 && (
           <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="px-6 py-4 bg-gray-50 border-b">
+            <div className="px-3 py-2 bg-gray-50 border-b">
               <h3 className="text-lg font-semibold text-gray-600">Historical Risk Assessments</h3>
             </div>
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Person</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk Group</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                  <th className="px-6 py-3"></th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Person</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Risk Group</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                  <th className="px-3 py-2"></th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {historicalAssessments.map((assessment) => (
                   <tr key={assessment.id} className="hover:bg-gray-50 cursor-pointer opacity-60" onClick={() => handleItemClick(assessment)}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{assessment.personName}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{assessment.personName}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
                         {assessment.assessmentType}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                       {assessment.assessmentType === 'Finemetrica'
                         ? `${assessment.riskScore}/7`
                         : `${assessment.manualRiskScore}/7`
                       }
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
                         {assessment.assessmentType === 'Finemetrica'
                           ? assessment.riskGroup
@@ -1533,8 +1533,8 @@ const ClientGroupPhase2: React.FC = () => {
                         }
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assessment.date || '-'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{assessment.date || '-'}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-right text-sm">
                       <ChevronRightIcon className="w-5 h-5 text-gray-400" />
                     </td>
                   </tr>
@@ -1546,25 +1546,25 @@ const ClientGroupPhase2: React.FC = () => {
 
         {/* Capacity to Loss */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 bg-gray-50 border-b">
+          <div className="px-3 py-2 bg-gray-50 border-b">
             <h3 className="text-lg font-semibold">Capacity to Loss</h3>
           </div>
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Person</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date Assessed</th>
-                <th className="px-6 py-3"></th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Person</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date Assessed</th>
+                <th className="px-3 py-2"></th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {sampleCapacityToLoss.map((capacity) => (
                 <tr key={capacity.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleItemClick(capacity)}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{capacity.personName}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">{capacity.score}/10</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{capacity.personName}</td>
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 font-semibold">{capacity.score}/10</td>
+                  <td className="px-3 py-2 whitespace-nowrap">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       capacity.category.includes('High')
                         ? 'bg-green-100 text-green-800'
@@ -1575,8 +1575,8 @@ const ClientGroupPhase2: React.FC = () => {
                       {capacity.category}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{capacity.dateAssessed}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{capacity.dateAssessed}</td>
+                  <td className="px-3 py-2 whitespace-nowrap text-right text-sm">
                     <ChevronRightIcon className="w-5 h-5 text-gray-400" />
                   </td>
                 </tr>
@@ -1649,7 +1649,7 @@ const ClientGroupPhase2: React.FC = () => {
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 bg-gray-50 border-b">
+        <div className="px-3 py-2 bg-gray-50 border-b">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">Meeting Suite</h3>
             <div className="text-right">
@@ -1661,33 +1661,33 @@ const ClientGroupPhase2: React.FC = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Meeting Type</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Meeting Month</th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Booked</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date Held</th>
-              <th className="px-6 py-3"></th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Meeting Type</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Meeting Month</th>
+              <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Booked</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date Held</th>
+              <th className="px-3 py-2"></th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {sampleMeetings.map((meeting) => (
               <tr key={meeting.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleItemClick(meeting)}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{meeting.meetingType}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{meeting.meetingMonth}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-center">
+                <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{meeting.meetingType}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{meeting.meetingMonth}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-center">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                     meeting.isBooked ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                   }`}>
                     {meeting.isBooked ? 'Booked' : 'Not Booked'}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">
                   {meeting.dateHeld ? (
                     <span className="font-medium">{meeting.dateHeld}</span>
                   ) : (
                     <span className="text-gray-400 italic">Not held yet</span>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                <td className="px-3 py-2 whitespace-nowrap text-right text-sm">
                   <ChevronRightIcon className="w-5 h-5 text-gray-400" />
                 </td>
               </tr>
@@ -1756,27 +1756,27 @@ const ClientGroupPhase2: React.FC = () => {
     return (
       <div className="space-y-6">
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 bg-gray-50 border-b">
+          <div className="px-3 py-2 bg-gray-50 border-b">
             <h3 className="text-lg font-semibold">Assets & Liabilities</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asset / Liability</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Asset / Liability</th>
                   {samplePeople.map((person) => (
-                    <th key={person.id} className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    <th key={person.id} className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">
                       {person.forename} {person.surname}
                     </th>
                   ))}
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
+                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {/* Asset Rows */}
                 {sampleAssets.map((asset, index) => (
                   <tr key={asset.id} className={`hover:bg-gray-50 cursor-pointer ${index === 0 ? 'border-t-2 border-gray-300' : ''}`} onClick={() => handleItemClick(asset)}>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                    <td className="px-3 py-2 text-sm font-medium text-gray-900">
                       <div className="flex items-center gap-2">
                         <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
                         {asset.description}
@@ -1786,12 +1786,12 @@ const ClientGroupPhase2: React.FC = () => {
                       const personName = `${person.forename} ${person.surname}`;
                       const amount = getPersonOwnership(asset, personName);
                       return (
-                        <td key={person.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                        <td key={person.id} className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
                           {amount > 0 ? formatCurrency(amount) : '-'}
                         </td>
                       );
                     })}
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
                       {formatCurrency(asset.value)}
                     </td>
                   </tr>
@@ -1799,17 +1799,17 @@ const ClientGroupPhase2: React.FC = () => {
 
                 {/* Assets Total Row */}
                 <tr className="bg-green-50 font-bold">
-                  <td className="px-6 py-4 text-sm text-gray-900">Total Assets</td>
+                  <td className="px-3 py-2 text-sm text-gray-900">Total Assets</td>
                   {samplePeople.map((person) => {
                     const personName = `${person.forename} ${person.surname}`;
                     const total = sampleAssets.reduce((sum, asset) => sum + getPersonOwnership(asset, personName), 0);
                     return (
-                      <td key={person.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                      <td key={person.id} className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
                         {formatCurrency(total)}
                       </td>
                     );
                   })}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
                     {formatCurrency(totalAssets)}
                   </td>
                 </tr>
@@ -1817,7 +1817,7 @@ const ClientGroupPhase2: React.FC = () => {
                 {/* Liability Rows */}
                 {sampleLiabilities.map((liability, index) => (
                   <tr key={liability.id} className={`hover:bg-gray-50 cursor-pointer ${index === 0 ? 'border-t-2 border-gray-300' : ''}`} onClick={() => handleItemClick(liability)}>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                    <td className="px-3 py-2 text-sm font-medium text-gray-900">
                       <div className="flex items-center gap-2">
                         <span className="inline-block w-2 h-2 rounded-full bg-red-500"></span>
                         {liability.description}
@@ -1827,12 +1827,12 @@ const ClientGroupPhase2: React.FC = () => {
                       const personName = `${person.forename} ${person.surname}`;
                       const amount = getPersonOwnership(liability, personName);
                       return (
-                        <td key={person.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                        <td key={person.id} className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
                           {amount > 0 ? formatCurrency(amount) : '-'}
                         </td>
                       );
                     })}
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
                       {formatCurrency(liability.amount)}
                     </td>
                   </tr>
@@ -1840,30 +1840,30 @@ const ClientGroupPhase2: React.FC = () => {
 
                 {/* Liabilities Total Row */}
                 <tr className="bg-red-50 font-bold">
-                  <td className="px-6 py-4 text-sm text-gray-900">Total Liabilities</td>
+                  <td className="px-3 py-2 text-sm text-gray-900">Total Liabilities</td>
                   {samplePeople.map((person) => {
                     const personName = `${person.forename} ${person.surname}`;
                     const total = sampleLiabilities.reduce((sum, liability) => sum + getPersonOwnership(liability, personName), 0);
                     return (
-                      <td key={person.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                      <td key={person.id} className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
                         {formatCurrency(total)}
                       </td>
                     );
                   })}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
                     {formatCurrency(totalLiabilities)}
                   </td>
                 </tr>
 
                 {/* Net Worth Row */}
                 <tr className="bg-blue-100 font-bold border-t-2 border-gray-400">
-                  <td className="px-6 py-4 text-sm text-gray-900">Net Worth</td>
+                  <td className="px-3 py-2 text-sm text-gray-900">Net Worth</td>
                   {personTotals.map((person, index) => (
-                    <td key={index} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                    <td key={index} className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
                       {formatCurrency(person.netWorth)}
                     </td>
                   ))}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
                     {formatCurrency(netWorth)}
                   </td>
                 </tr>
@@ -1882,29 +1882,29 @@ const ClientGroupPhase2: React.FC = () => {
   const renderIncomeExpenditure = () => (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 bg-gray-50 border-b">
+        <div className="px-3 py-2 bg-gray-50 border-b">
           <h3 className="text-lg font-semibold">Income</h3>
         </div>
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Frequency</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
-              <th className="px-6 py-3"></th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Frequency</th>
+              <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
+              <th className="px-3 py-2"></th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {sampleIncome.map((income) => (
               <tr key={income.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleItemClick(income)}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{income.source}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{income.owner}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{income.frequency}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
+                <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{income.source}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{income.owner}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{income.frequency}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
                   {formatCurrency(income.amount)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                <td className="px-3 py-2 whitespace-nowrap text-right text-sm">
                   <ChevronRightIcon className="w-5 h-5 text-gray-400" />
                 </td>
               </tr>
@@ -1914,25 +1914,25 @@ const ClientGroupPhase2: React.FC = () => {
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 bg-gray-50 border-b">
+        <div className="px-3 py-2 bg-gray-50 border-b">
           <h3 className="text-lg font-semibold">Expenditure</h3>
         </div>
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Frequency</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
-              <th className="px-6 py-3"></th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Frequency</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+              <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
+              <th className="px-3 py-2"></th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {sampleExpenditure.map((exp) => (
               <tr key={exp.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleItemClick(exp)}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{exp.category}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{exp.frequency}</td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{exp.category}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{exp.frequency}</td>
+                <td className="px-3 py-2 whitespace-nowrap">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                     exp.essential
                       ? 'bg-red-100 text-red-800'
@@ -1941,10 +1941,10 @@ const ClientGroupPhase2: React.FC = () => {
                     {exp.essential ? 'Essential' : 'Discretionary'}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
                   {formatCurrency(exp.amount)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                <td className="px-3 py-2 whitespace-nowrap text-right text-sm">
                   <ChevronRightIcon className="w-5 h-5 text-gray-400" />
                 </td>
               </tr>
@@ -1964,23 +1964,23 @@ const ClientGroupPhase2: React.FC = () => {
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Provider</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Cover Amount</th>
-            <th className="px-6 py-3"></th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Provider</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
+            <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Cover Amount</th>
+            <th className="px-3 py-2"></th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {sampleProducts.map((product) => (
             <tr key={product.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => handleItemClick(product)}>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{product.type}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{product.provider}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{product.owner}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
+              <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{product.type}</td>
+              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{product.provider}</td>
+              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{product.owner}</td>
+              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
                 {formatCurrency(product.value)}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+              <td className="px-3 py-2 whitespace-nowrap text-right text-sm">
                 <ChevronRightIcon className="w-5 h-5 text-gray-400" />
               </td>
             </tr>
