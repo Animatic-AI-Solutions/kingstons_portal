@@ -1180,27 +1180,34 @@ const ClientGroupPhase2: React.FC = () => {
 
   const renderHealthVulnerability = () => (
     <div className="space-y-4">
-      <div className="flex items-center justify-center mb-6">
-        <div className="inline-flex items-center bg-gray-100 rounded-lg p-1">
+      {/* Sub-sub-section label */}
+      <div className="text-center mb-2">
+        <span className="text-xs font-semibold text-primary-600 uppercase tracking-wide">
+          View Type
+        </span>
+      </div>
+      {/* Sub-tabs with Option 5 styling - smaller, colored */}
+      <div className="flex items-center justify-center mb-4">
+        <div className="inline-flex items-center bg-primary-50 rounded-lg p-1 border border-primary-200 shadow-sm">
           <button
             onClick={() => setActiveHealthTab('health')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
               activeHealthTab === 'health'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-primary-700 text-white shadow-md'
+                : 'text-primary-700 hover:bg-primary-100 hover:text-primary-800'
             }`}
           >
-            <span className="text-sm font-medium">Health</span>
+            <span className="text-xs font-medium">Health</span>
           </button>
           <button
             onClick={() => setActiveHealthTab('vulnerability')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
               activeHealthTab === 'vulnerability'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-primary-700 text-white shadow-md'
+                : 'text-primary-700 hover:bg-primary-100 hover:text-primary-800'
             }`}
           >
-            <span className="text-sm font-medium">Vulnerability</span>
+            <span className="text-xs font-medium">Vulnerability</span>
           </button>
         </div>
       </div>
@@ -2189,21 +2196,31 @@ const ClientGroupPhase2: React.FC = () => {
     if (activeTab === 'summary') return renderSummary();
     if (activeTab === 'basic') return (
       <div className="space-y-6">
-        <div className="flex items-center justify-center">
-          <div className="inline-flex items-center bg-gray-100 rounded-lg p-1 overflow-x-auto">
-            {basicDetailsTabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveSubTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
-                  activeSubTab === tab.id
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <span className="text-sm font-medium whitespace-nowrap">{tab.label}</span>
-              </button>
-            ))}
+        {/* Divider line for visual separation - reduced spacing */}
+        <div className="border-t border-gray-200 pt-2">
+          {/* Sub-section label */}
+          <div className="text-center mb-2">
+            <span className="text-xs font-semibold text-primary-600 uppercase tracking-wide">
+              Select Section
+            </span>
+          </div>
+          {/* Sub-tabs with visual distinction - smaller, colored */}
+          <div className="flex items-center justify-center">
+            <div className="inline-flex items-center bg-primary-50 rounded-lg p-1 overflow-x-auto border border-primary-200 shadow-sm">
+              {basicDetailsTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveSubTab(tab.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
+                    activeSubTab === tab.id
+                      ? 'bg-primary-700 text-white shadow-md'
+                      : 'text-primary-700 hover:bg-primary-100 hover:text-primary-800'
+                  }`}
+                >
+                  <span className="text-xs font-medium whitespace-nowrap">{tab.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
         {renderBasicDetailsContent()}
