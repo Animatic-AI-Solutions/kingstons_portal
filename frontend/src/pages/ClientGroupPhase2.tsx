@@ -241,7 +241,7 @@ const samplePeople: Person[] = [
     passportExpiry: '22/08/2028',
     otherIds: 'UK Voter ID: 123456',
     amlCheck: 'Passed - 15/03/2024',
-    safeWords: ['Bluebird', 'Richmond'],
+    safeWords: ['Bluebird', 'Richmond', 'Garden'],
     shareDataWith: 'Sarah Mitchell, Robert Thompson (Accountant)',
   },
   {
@@ -276,7 +276,7 @@ const samplePeople: Person[] = [
     passportExpiry: '10/11/2027',
     otherIds: 'UK Voter ID: 789012',
     amlCheck: 'Passed - 15/03/2024',
-    safeWords: ['Sunshine', 'Bristol'],
+    safeWords: ['Sunshine', 'Bristol', 'Design'],
     shareDataWith: 'James Mitchell',
   },
   {
@@ -311,7 +311,7 @@ const samplePeople: Person[] = [
     passportExpiry: '05/07/2029',
     otherIds: 'Student ID: UOB987654',
     amlCheck: 'Not required',
-    safeWords: ['Rainbow', 'Medicine'],
+    safeWords: ['Rainbow', 'Medicine', 'Student'],
     shareDataWith: 'James Mitchell, Sarah Mitchell',
   },
 ];
@@ -613,11 +613,11 @@ const ClientGroupPhase2: React.FC = () => {
 
   const mainTabs = [
     { id: 'summary', label: 'Summary', icon: UserIcon },
+    { id: 'objectives', label: 'Aims & Objectives', icon: FlagIcon },
     { id: 'basic', label: 'Basic Details', icon: DocumentTextIcon },
     { id: 'assets', label: 'Assets & Liabilities', icon: CurrencyPoundIcon },
     { id: 'income', label: 'Income & Expenditure', icon: BanknotesIcon },
     { id: 'products', label: 'Other Products', icon: ShieldCheckIcon },
-    { id: 'objectives', label: 'Aims & Objectives', icon: FlagIcon },
   ];
 
   const basicDetailsTabs = [
@@ -749,7 +749,7 @@ const ClientGroupPhase2: React.FC = () => {
             {renderField('Driving License Expiry', person.drivingLicenseExpiry)}
             {renderField('Passport Expiry', person.passportExpiry)}
             {renderField('Other IDs', person.otherIds, true)}
-            {renderField('Safe Words', person.safeWords, true)}
+            {renderField('Safe Words (3 words - used to access products on client\'s behalf)', person.safeWords, true)}
             {renderField('Share Data With', person.shareDataWith, true)}
           </div>
         </div>
@@ -1064,7 +1064,7 @@ const ClientGroupPhase2: React.FC = () => {
                       <span className="font-medium text-gray-900">{person.otherIds}</span>
                     </div>
                     <div className="col-span-2">
-                      <span className="text-gray-500">Safe Words: </span>
+                      <span className="text-gray-500">Safe Words (3 words - for product access): </span>
                       <span className="font-medium text-primary-700">{person.safeWords.join(', ')}</span>
                     </div>
                     <div className="col-span-2">

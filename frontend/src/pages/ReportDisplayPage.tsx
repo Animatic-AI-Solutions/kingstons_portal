@@ -31,7 +31,7 @@ const ReportDisplayPage: React.FC = () => {
   // State management from refactored services
   const {
     state: { activeTab },
-    actions: { setReportData: setStateReportData, setPortfolioIrrValues, setIrrHistoryData, setRealTimeTotalIRR }
+    actions: { setReportData: setStateReportData, setPortfolioIrrValues, setIrrHistoryData, setRealTimeTotalIRR, setCustomProductOwnerNames }
   } = useReportStateManager();
   
   // IRR calculation service
@@ -45,6 +45,15 @@ const ReportDisplayPage: React.FC = () => {
   // Memoize reportData to prevent unnecessary re-renders of child components
   const memoizedReportData = useMemo(() => reportData, [reportData]);
 
+  // Reset custom product owner names when component unmounts (cleanup)
+  useEffect(() => {
+    return () => {
+      // Reset custom product owner names when leaving the report page
+      setCustomProductOwnerNames(null);
+      console.log('🔄 [REPORT DISPLAY CLEANUP] Reset custom product owner names on unmount');
+    };
+  }, [setCustomProductOwnerNames]);
+
   // Initialize report data from location state (fixed to prevent infinite loop)
   useEffect(() => {
     // Prevent multiple initializations
@@ -52,7 +61,11 @@ const ReportDisplayPage: React.FC = () => {
 
     const initializeReportData = async () => {
       console.log('🔍 [REPORT DISPLAY DEBUG] Initializing report data...');
-      
+
+      // Reset custom product owner names to prevent caching across different reports
+      setCustomProductOwnerNames(null);
+      console.log('🔄 [REPORT DISPLAY DEBUG] Reset custom product owner names on init');
+
       if (!location.state || !location.state.reportData) {
         console.error('❌ No report data found in location state');
         navigate('/reporting');
