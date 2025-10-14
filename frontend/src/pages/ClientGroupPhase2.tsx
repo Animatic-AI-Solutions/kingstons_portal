@@ -23,7 +23,7 @@ import DynamicPageContainer from '../components/DynamicPageContainer';
 
 interface Person {
   id: string;
-  // Personal Information
+  // Personal Details (all person information combined)
   gender: string;
   title: string;
   forename: string;
@@ -46,7 +46,6 @@ interface Person {
   dateOfBirth: string;
   placeOfBirth: string;
   age: number;
-  // Regulatory Information
   niNumber: string;
   drivingLicenseExpiry: string;
   passportExpiry: string;
@@ -212,7 +211,7 @@ const samplePeople: Person[] = [
   {
     id: '1',
     relationship: 'Husband',
-    // Personal Information
+    // Personal Details
     gender: 'Male',
     title: 'Mr',
     forename: 'James',
@@ -235,7 +234,6 @@ const samplePeople: Person[] = [
     dateOfBirth: '15/06/1975',
     placeOfBirth: 'London, UK',
     age: 49,
-    // Regulatory Information
     niNumber: 'AB 12 34 56 C',
     drivingLicenseExpiry: '15/06/2030',
     passportExpiry: '22/08/2028',
@@ -247,7 +245,7 @@ const samplePeople: Person[] = [
   {
     id: '2',
     relationship: 'Wife',
-    // Personal Information
+    // Personal Details
     gender: 'Female',
     title: 'Mrs',
     forename: 'Sarah',
@@ -270,7 +268,6 @@ const samplePeople: Person[] = [
     dateOfBirth: '22/09/1977',
     placeOfBirth: 'Bristol, UK',
     age: 47,
-    // Regulatory Information
     niNumber: 'CD 78 90 12 D',
     drivingLicenseExpiry: '22/09/2029',
     passportExpiry: '10/11/2027',
@@ -282,7 +279,7 @@ const samplePeople: Person[] = [
   {
     id: '3',
     relationship: 'Daughter',
-    // Personal Information
+    // Personal Details
     gender: 'Female',
     title: 'Miss',
     forename: 'Emma',
@@ -305,7 +302,6 @@ const samplePeople: Person[] = [
     dateOfBirth: '10/03/2005',
     placeOfBirth: 'Richmond, UK',
     age: 19,
-    // Regulatory Information
     niNumber: 'EF 34 56 78 E',
     drivingLicenseExpiry: 'Not held',
     passportExpiry: '05/07/2029',
@@ -705,11 +701,11 @@ const ClientGroupPhase2: React.FC = () => {
           </div>
         </div>
 
-        {/* Personal Information Section */}
+        {/* Personal Details Section - Combined */}
         <div className="mb-6">
           <h5 className="text-sm font-semibold text-gray-700 uppercase mb-3 flex items-center gap-2">
             <UserIcon className="w-4 h-4" />
-            Personal Information
+            Personal Details
           </h5>
           <div className="grid grid-cols-2 gap-4">
             {renderField('Title', person.title)}
@@ -734,16 +730,6 @@ const ClientGroupPhase2: React.FC = () => {
             {renderField('Phone Numbers', person.phoneNumbers, true)}
             {renderField('Employment Status', person.employmentStatus)}
             {renderField('Occupation', person.occupation)}
-          </div>
-        </div>
-
-        {/* Regulatory Information Section */}
-        <div className="pt-4 border-t border-gray-200">
-          <h5 className="text-sm font-semibold text-gray-700 uppercase mb-3 flex items-center gap-2">
-            <ShieldCheckIcon className="w-4 h-4" />
-            Regulatory Information
-          </h5>
-          <div className="grid grid-cols-2 gap-4">
             {renderField('National Insurance Number', person.niNumber, true)}
             {renderField('AML Check', person.amlCheck, true)}
             {renderField('Driving License Expiry', person.drivingLicenseExpiry)}
@@ -980,9 +966,9 @@ const ClientGroupPhase2: React.FC = () => {
                 <ChevronRightIcon className="w-5 h-5 text-gray-400" />
               </div>
 
-              {/* Personal Information */}
+              {/* Personal Details - Combined */}
               <div className="mb-4">
-                <h5 className="text-xs font-semibold text-gray-700 uppercase mb-2">Personal Information</h5>
+                <h5 className="text-xs font-semibold text-gray-700 uppercase mb-2">Personal Details</h5>
                 <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
                     <div>
@@ -1034,15 +1020,6 @@ const ClientGroupPhase2: React.FC = () => {
                       <span className="text-gray-500">Occupation: </span>
                       <span className="font-medium text-gray-900">{person.occupation}</span>
                     </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Regulatory Information */}
-              <div className="pt-3 border-t border-gray-100">
-                <h5 className="text-xs font-semibold text-gray-700 uppercase mb-2">Regulatory Information</h5>
-                <div className="space-y-1.5 text-xs">
-                  <div className="grid grid-cols-2 gap-x-3 gap-y-1">
                     <div>
                       <span className="text-gray-500">NI Number: </span>
                       <span className="font-medium text-gray-900">{person.niNumber}</span>
