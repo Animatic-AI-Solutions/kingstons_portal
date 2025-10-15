@@ -600,7 +600,6 @@ const ClientGroupPhase2: React.FC = () => {
   const [activeRelationshipTab, setActiveRelationshipTab] = useState<'personal' | 'professional'>('personal');
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [isEditing, setIsEditing] = useState(false);
   const [showProductInfoPopup, setShowProductInfoPopup] = useState(false);
   const [selectedProductAsset, setSelectedProductAsset] = useState<Asset | null>(null);
 
@@ -623,13 +622,17 @@ const ClientGroupPhase2: React.FC = () => {
     } else {
       // Show edit popup for regular assets or liabilities
       setSelectedItem(item);
-      setIsEditing(false);
     }
   };
 
   const closeDetail = () => {
     setSelectedItem(null);
-    setIsEditing(false);
+  };
+
+  const handleSave = () => {
+    // TODO: Implement save logic here
+    console.log('Saving changes:', selectedItem);
+    setSelectedItem(null);
   };
 
   const formatCurrency = (amount: number) => {
@@ -695,24 +698,18 @@ const ClientGroupPhase2: React.FC = () => {
     const renderField = (label: string, value: string | number | string[], fullWidth = false) => (
       <div className={`flex items-start py-1.5 px-2 hover:bg-gray-50 border-b border-gray-100 ${fullWidth ? 'col-span-2' : ''}`}>
         <label className="text-xs font-medium text-gray-600 w-36 flex-shrink-0 pt-0.5">{label}:</label>
-        {isEditing ? (
-          Array.isArray(value) ? (
-            <input
-              type="text"
-              defaultValue={value.join(', ')}
-              className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-            />
-          ) : (
-            <input
-              type="text"
-              defaultValue={String(value)}
-              className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-            />
-          )
+        {Array.isArray(value) ? (
+          <input
+            type="text"
+            defaultValue={value.join(', ')}
+            className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+          />
         ) : (
-          <span className="text-gray-900 text-xs flex-1 break-words">
-            {Array.isArray(value) ? value.join(', ') : String(value)}
-          </span>
+          <input
+            type="text"
+            defaultValue={String(value)}
+            className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+          />
         )}
       </div>
     );
@@ -787,24 +784,18 @@ const ClientGroupPhase2: React.FC = () => {
         return (
           <div key={key} className="flex items-start py-1.5 px-2 hover:bg-gray-50 border-b border-gray-100">
             <label className="text-xs font-medium text-gray-600 w-36 flex-shrink-0 pt-0.5">{capitalizedLabel}:</label>
-            {isEditing ? (
-              Array.isArray(value) ? (
-                <input
-                  type="text"
-                  defaultValue={value.join(', ')}
-                  className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                />
-              ) : (
-                <input
-                  type="text"
-                  defaultValue={String(value)}
-                  className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                />
-              )
+            {Array.isArray(value) ? (
+              <input
+                type="text"
+                defaultValue={value.join(', ')}
+                className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+              />
             ) : (
-              <span className="text-gray-900 text-xs flex-1 break-words">
-                {Array.isArray(value) ? value.join(', ') : String(value)}
-              </span>
+              <input
+                type="text"
+                defaultValue={String(value)}
+                className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+              />
             )}
           </div>
         );
@@ -931,32 +922,13 @@ const ClientGroupPhase2: React.FC = () => {
               {isPersonDetail ? 'Person Details' : 'Details'}
             </h3>
             <div className="flex items-center gap-1.5">
-              {!isEditing && (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="flex items-center gap-1 px-2 py-1 text-xs bg-primary-700 text-white rounded hover:bg-primary-800 transition-colors"
-                >
-                  <PencilIcon className="w-3 h-3" />
-                  <span>Edit</span>
-                </button>
-              )}
-              {isEditing && (
-                <>
-                  <button
-                    onClick={() => setIsEditing(false)}
-                    className="flex items-center gap-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                  >
-                    <CheckIcon className="w-3 h-3" />
-                    <span>Save</span>
-                  </button>
-                  <button
-                    onClick={() => setIsEditing(false)}
-                    className="px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </>
-              )}
+              <button
+                onClick={handleSave}
+                className="flex items-center gap-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+              >
+                <CheckIcon className="w-3 h-3" />
+                <span>Save</span>
+              </button>
               <button onClick={closeDetail} className="text-gray-500 hover:text-gray-700 transition-colors p-0.5">
                 <XMarkIcon className="w-5 h-5" />
               </button>
