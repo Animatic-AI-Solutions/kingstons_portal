@@ -54,6 +54,7 @@ interface Person {
   amlDate: string;
   safeWords: string[];
   shareDataWith: string;
+  notes: string;
   // For display
   relationship: string; // Relationship to client group (Husband, Wife, etc.)
 }
@@ -66,6 +67,7 @@ interface SpecialRelationship {
   dependency: string[]; // Array of person names in the client group
   contactDetails: string;
   firmName?: string; // Only for working relationships (accountants, solicitors, etc.)
+  notes: string;
 }
 
 interface HealthItem {
@@ -77,6 +79,7 @@ interface HealthItem {
   medication: string[];
   status: 'Active' | 'Historical';
   dateRecorded: string;
+  notes: string;
 }
 
 interface VulnerabilityItem {
@@ -86,30 +89,26 @@ interface VulnerabilityItem {
   adjustments: string;
   status: 'Active' | 'Historical';
   dateRecorded: string;
+  notes: string;
 }
 
-interface WillDocument {
+interface Document {
   id: string;
-  type: 'Will';
+  type: 'Will' | 'Advance Directive' | 'LPOA';
   name: string;
-  dateOfWill: string;
-  dateOfAdvDirective: string;
+  people: string[]; // Associated people from client group
+  notes: string;
+  // Will fields
+  dateOfWill?: string;
+  dateOfAdvDirective?: string;
+  // LPOA fields
+  dateOfHWLPOA?: string;
+  hwLpoaIsActive?: boolean;
+  pfLpoaIsActive?: boolean;
+  dateOfEPA?: string;
+  epaIsRegistered?: boolean;
+  other?: string;
 }
-
-interface LPOADocument {
-  id: string;
-  type: 'LPOA';
-  name: string;
-  dateOfHWLPOA: string;
-  hwLpoaIsActive: boolean;
-  pfLpoaIsActive: boolean;
-  dateOfAdvDirective: string;
-  dateOfEPA: string;
-  epaIsRegistered: boolean;
-  other: string;
-}
-
-type Document = WillDocument | LPOADocument;
 
 interface RiskAssessment {
   id: string;
@@ -244,6 +243,7 @@ const samplePeople: Person[] = [
     amlDate: '15/03/2024',
     safeWords: ['Bluebird', 'Richmond', 'Garden'],
     shareDataWith: 'Sarah Mitchell, Robert Thompson (Accountant)',
+    notes: 'Primary contact for financial matters. Prefers email communication.',
   },
   {
     id: '2',
@@ -279,6 +279,7 @@ const samplePeople: Person[] = [
     amlDate: '15/03/2024',
     safeWords: ['Sunshine', 'Bristol', 'Design'],
     shareDataWith: 'James Mitchell',
+    notes: 'Joint account holder. Interested in sustainable investments.',
   },
   {
     id: '3',
@@ -314,6 +315,7 @@ const samplePeople: Person[] = [
     amlDate: '',
     safeWords: ['Rainbow', 'Medicine', 'Student'],
     shareDataWith: 'James Mitchell, Sarah Mitchell',
+    notes: 'University student. Parents managing account until graduation.',
   },
 ];
 
@@ -325,7 +327,8 @@ const sampleRelationships: SpecialRelationship[] = [
     relationship: 'Accountant',
     dependency: ['James Mitchell', 'Sarah Mitchell'],
     contactDetails: '020 7123 4567 | r.thompson@accountingfirm.co.uk',
-    firmName: 'Thompson & Partners Accountancy'
+    firmName: 'Thompson & Partners Accountancy',
+    notes: 'Handles tax returns and business accounts. Annual review in March.',
   },
   {
     id: '2',
@@ -334,6 +337,7 @@ const sampleRelationships: SpecialRelationship[] = [
     relationship: 'Mother-in-law',
     dependency: ['Sarah Mitchell'],
     contactDetails: '07700 900 200 | mary.johnson@email.com',
+    notes: 'Lives nearby. Emergency contact for Sarah.',
   },
   {
     id: '3',
@@ -342,7 +346,8 @@ const sampleRelationships: SpecialRelationship[] = [
     relationship: 'Solicitor',
     dependency: ['James Mitchell', 'Sarah Mitchell'],
     contactDetails: '020 7456 7890 | e.baker@legalfirm.co.uk',
-    firmName: 'Baker & Associates Legal Services'
+    firmName: 'Baker & Associates Legal Services',
+    notes: 'Manages wills and estate planning. Last consultation Feb 2024.',
   },
   {
     id: '4',
@@ -351,6 +356,7 @@ const sampleRelationships: SpecialRelationship[] = [
     relationship: 'Father',
     dependency: ['James Mitchell'],
     contactDetails: '01932 123 456',
+    notes: 'Retired. Beneficiary on James\'s life insurance policy.',
   },
 ];
 
@@ -363,7 +369,8 @@ const sampleHealthItems: HealthItem[] = [
     dateOfDiagnosis: 'N/A',
     medication: [],
     status: 'Active',
-    dateRecorded: '01/2015'
+    dateRecorded: '01/2015',
+    notes: 'Successfully quit smoking in 2015 after 10 years.',
   },
   {
     id: '1',
@@ -373,7 +380,8 @@ const sampleHealthItems: HealthItem[] = [
     dateOfDiagnosis: '15/03/2023',
     medication: ['Metformin 500mg twice daily', 'Atorvastatin 20mg daily'],
     status: 'Active',
-    dateRecorded: '01/2023'
+    dateRecorded: '01/2023',
+    notes: 'Managing well with medication. HbA1c levels stable. Regular GP checkups every 3 months.',
   },
   {
     id: '2',
@@ -383,7 +391,8 @@ const sampleHealthItems: HealthItem[] = [
     dateOfDiagnosis: '10/06/2020',
     medication: ['Ramipril 5mg daily'],
     status: 'Historical',
-    dateRecorded: '06/2020'
+    dateRecorded: '06/2020',
+    notes: 'Resolved through lifestyle changes and weight loss. No longer requires medication.',
   },
   {
     id: 'smoke-2',
@@ -393,7 +402,8 @@ const sampleHealthItems: HealthItem[] = [
     dateOfDiagnosis: 'N/A',
     medication: [],
     status: 'Active',
-    dateRecorded: '01/2020'
+    dateRecorded: '01/2020',
+    notes: 'Non-smoker.',
   },
   {
     id: '3',
@@ -403,7 +413,8 @@ const sampleHealthItems: HealthItem[] = [
     dateOfDiagnosis: '22/03/2022',
     medication: ['Salbutamol inhaler as needed', 'Beclometasone preventer inhaler'],
     status: 'Active',
-    dateRecorded: '03/2022'
+    dateRecorded: '03/2022',
+    notes: 'Mild asthma, well controlled. Rarely needs reliever inhaler.',
   },
 ];
 
@@ -414,7 +425,8 @@ const sampleVulnerabilities: VulnerabilityItem[] = [
     vulnerabilityDescription: 'Recent health diagnosis affecting decision-making capacity - requires support with complex financial decisions',
     adjustments: 'Ensure all meetings include both clients, provide written summaries of discussions, allow additional time for decision-making',
     status: 'Active',
-    dateRecorded: '01/2024'
+    dateRecorded: '01/2024',
+    notes: 'Review adjustments quarterly. Sarah prefers written communication for important decisions.',
   },
   {
     id: '2',
@@ -422,7 +434,8 @@ const sampleVulnerabilities: VulnerabilityItem[] = [
     vulnerabilityDescription: 'Bereavement - loss of parent impacted emotional wellbeing and financial decisions',
     adjustments: 'Provided additional support during review meetings, deferred major decisions for 6 months',
     status: 'Historical',
-    dateRecorded: '08/2020'
+    dateRecorded: '08/2020',
+    notes: 'Father passed away August 2020. Client has fully recovered and resumed normal decision-making capacity.',
   },
 ];
 
@@ -431,6 +444,8 @@ const sampleDocuments: Document[] = [
     id: '1',
     type: 'Will',
     name: 'Last Will & Testament - James Mitchell',
+    people: ['James Mitchell'],
+    notes: 'Updated will following birth of grandchildren. Original held at solicitors office. Copy provided to executor.',
     dateOfWill: '15/01/2023',
     dateOfAdvDirective: '15/01/2023'
   },
@@ -438,13 +453,25 @@ const sampleDocuments: Document[] = [
     id: '2',
     type: 'Will',
     name: 'Last Will & Testament - Sarah Mitchell',
+    people: ['Sarah Mitchell'],
+    notes: 'Mirror will to James. Emma appointed as executor with backup executor specified.',
     dateOfWill: '15/01/2023',
     dateOfAdvDirective: '15/01/2023'
   },
   {
     id: '3',
+    type: 'Advance Directive',
+    name: 'Advance Healthcare Directive - Mitchell Family',
+    people: ['James Mitchell', 'Sarah Mitchell'],
+    notes: 'Both clients have specified healthcare preferences. GP and family members have been notified.',
+    dateOfAdvDirective: '15/01/2023'
+  },
+  {
+    id: '4',
     type: 'LPOA',
     name: 'Lasting Power of Attorney - Mitchell Family',
+    people: ['James Mitchell', 'Sarah Mitchell'],
+    notes: 'Both James and Sarah have appointed each other as primary attorney with children as replacement attorneys. Documents registered with OPG.',
     dateOfHWLPOA: '20/03/2023',
     hwLpoaIsActive: true,
     pfLpoaIsActive: true,
@@ -652,7 +679,7 @@ const ClientGroupPhase2: React.FC = () => {
     { id: 'people', label: 'People' },
     { id: 'relationships', label: 'Special Relationships' },
     { id: 'health', label: 'Health & Vulnerability' },
-    { id: 'documents', label: 'Documents' },
+    { id: 'documents', label: 'Legal Documents' },
     { id: 'risk', label: 'Risk' },
     { id: 'management', label: 'Client Management' },
   ];
@@ -699,16 +726,16 @@ const ClientGroupPhase2: React.FC = () => {
       <div className={`flex items-start py-1.5 px-2 hover:bg-gray-50 border-b border-gray-100 ${fullWidth ? 'col-span-2' : ''}`}>
         <label className="text-xs font-medium text-gray-600 w-36 flex-shrink-0 pt-0.5">{label}:</label>
         {Array.isArray(value) ? (
-          <input
-            type="text"
+          <textarea
             defaultValue={value.join(', ')}
-            className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+            rows={1}
+            className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500 resize-none"
           />
         ) : (
-          <input
-            type="text"
+          <textarea
             defaultValue={String(value)}
-            className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+            rows={1}
+            className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500 resize-none"
           />
         )}
       </div>
@@ -768,40 +795,78 @@ const ClientGroupPhase2: React.FC = () => {
             {renderField('Share Data With', person.shareDataWith)}
           </div>
         </div>
+
+        {/* Notes Section */}
+        <div className="mb-2">
+          <h5 className="text-xs font-semibold text-gray-700 uppercase mb-2 flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">
+            Notes
+          </h5>
+          <div className="border border-gray-200 rounded bg-white p-2">
+            <textarea
+              defaultValue={person.notes}
+              rows={3}
+              className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500 resize-none"
+              placeholder="Additional information or context..."
+            />
+          </div>
+        </div>
       </>
     );
   };
 
   // Render Generic Detail View - Compact table-like style
-  const renderGenericDetail = () => (
-    <div className="grid grid-cols-2 divide-x divide-gray-200 border border-gray-200 rounded bg-white">
-      {Object.entries(selectedItem).map(([key, value]) => {
-        if (key === 'id') return null;
+  const renderGenericDetail = () => {
+    const entries = Object.entries(selectedItem);
+    const regularFields = entries.filter(([key]) => key !== 'id' && key !== 'notes');
+    const notesField = entries.find(([key]) => key === 'notes');
 
-        const label = key.replace(/([A-Z])/g, ' $1').trim();
-        const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+    return (
+      <>
+        <div className="grid grid-cols-2 divide-x divide-gray-200 border border-gray-200 rounded bg-white">
+          {regularFields.map(([key, value]) => {
+            const label = key.replace(/([A-Z])/g, ' $1').trim();
+            const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
 
-        return (
-          <div key={key} className="flex items-start py-1.5 px-2 hover:bg-gray-50 border-b border-gray-100">
-            <label className="text-xs font-medium text-gray-600 w-36 flex-shrink-0 pt-0.5">{capitalizedLabel}:</label>
-            {Array.isArray(value) ? (
-              <input
-                type="text"
-                defaultValue={value.join(', ')}
-                className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+            return (
+              <div key={key} className="flex items-start py-1.5 px-2 hover:bg-gray-50 border-b border-gray-100">
+                <label className="text-xs font-medium text-gray-600 w-36 flex-shrink-0 pt-0.5">{capitalizedLabel}:</label>
+                {Array.isArray(value) ? (
+                  <textarea
+                    defaultValue={value.join(', ')}
+                    rows={1}
+                    className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                  />
+                ) : (
+                  <textarea
+                    defaultValue={String(value)}
+                    rows={1}
+                    className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Notes Section */}
+        {notesField && (
+          <div className="mt-2">
+            <h5 className="text-xs font-semibold text-gray-700 uppercase mb-2 flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">
+              Notes
+            </h5>
+            <div className="border border-gray-200 rounded bg-white p-2">
+              <textarea
+                defaultValue={String(notesField[1])}
+                rows={3}
+                className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                placeholder="Additional information or context..."
               />
-            ) : (
-              <input
-                type="text"
-                defaultValue={String(value)}
-                className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-              />
-            )}
+            </div>
           </div>
-        );
-      })}
-    </div>
-  );
+        )}
+      </>
+    );
+  };
 
   // ============================================================================
   // RENDER: Product Info Popup
@@ -1331,19 +1396,19 @@ const ClientGroupPhase2: React.FC = () => {
                             <tr>
                               {activeHealthTab === 'health' ? (
                                 <>
-                                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Condition</th>
-                                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Diagnosed</th>
-                                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Medication</th>
-                                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recorded</th>
-                                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                  <th className="px-2 py-1 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Condition</th>
+                                  <th className="px-2 py-1 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                  <th className="px-2 py-1 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Diagnosed</th>
+                                  <th className="px-2 py-1 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Medication</th>
+                                  <th className="px-2 py-1 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Recorded</th>
+                                  <th className="px-2 py-1 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 </>
                               ) : (
                                 <>
-                                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Adjustments</th>
-                                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recorded</th>
-                                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                  <th className="px-2 py-1 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                  <th className="px-2 py-1 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Adjustments</th>
+                                  <th className="px-2 py-1 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Recorded</th>
+                                  <th className="px-2 py-1 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 </>
                               )}
                             </tr>
@@ -1362,14 +1427,14 @@ const ClientGroupPhase2: React.FC = () => {
                               >
                                 {activeHealthTab === 'health' ? (
                                   <>
-                                    <td className="px-2 py-1.5 text-xs text-gray-900">{(item as HealthItem).name}</td>
-                                    <td className="px-2 py-1.5 text-xs text-gray-600 italic">{(item as HealthItem).type}</td>
-                                    <td className="px-2 py-1.5 text-xs text-gray-600">{(item as HealthItem).dateOfDiagnosis}</td>
-                                    <td className="px-2 py-1.5 text-xs text-gray-600">
+                                    <td className="px-2 py-1.5 text-sm text-gray-900">{(item as HealthItem).name}</td>
+                                    <td className="px-2 py-1.5 text-sm text-gray-600 italic">{(item as HealthItem).type}</td>
+                                    <td className="px-2 py-1.5 text-sm text-gray-600">{(item as HealthItem).dateOfDiagnosis}</td>
+                                    <td className="px-2 py-1.5 text-sm text-gray-600">
                                       {(item as HealthItem).medication.length > 0 ? (item as HealthItem).medication.join(', ') : 'None'}
                                     </td>
-                                    <td className="px-2 py-1.5 text-xs text-gray-500">{item.dateRecorded}</td>
-                                    <td className="px-2 py-1.5 text-xs">
+                                    <td className="px-2 py-1.5 text-sm text-gray-500">{item.dateRecorded}</td>
+                                    <td className="px-2 py-1.5 text-sm">
                                       <span className={`px-1.5 py-0.5 rounded font-medium ${
                                         item.status === 'Active'
                                           ? 'bg-green-100 text-green-800'
@@ -1381,10 +1446,10 @@ const ClientGroupPhase2: React.FC = () => {
                                   </>
                                 ) : (
                                   <>
-                                    <td className="px-2 py-1.5 text-xs text-gray-900">{(item as VulnerabilityItem).vulnerabilityDescription}</td>
-                                    <td className="px-2 py-1.5 text-xs text-gray-600">{(item as VulnerabilityItem).adjustments}</td>
-                                    <td className="px-2 py-1.5 text-xs text-gray-500">{item.dateRecorded}</td>
-                                    <td className="px-2 py-1.5 text-xs">
+                                    <td className="px-2 py-1.5 text-sm text-gray-900">{(item as VulnerabilityItem).vulnerabilityDescription}</td>
+                                    <td className="px-2 py-1.5 text-sm text-gray-600">{(item as VulnerabilityItem).adjustments}</td>
+                                    <td className="px-2 py-1.5 text-sm text-gray-500">{item.dateRecorded}</td>
+                                    <td className="px-2 py-1.5 text-sm">
                                       <span className={`px-1.5 py-0.5 rounded font-medium ${
                                         item.status === 'Active'
                                           ? 'bg-green-100 text-green-800'
@@ -1417,85 +1482,39 @@ const ClientGroupPhase2: React.FC = () => {
 
   const renderDocuments = () => (
     <div className="space-y-6">
-      {/* Wills Section */}
+      {/* Legal Documents - Single Table */}
       <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
         <div className="px-3 py-2 bg-gray-50 border-b">
-          <h3 className="text-lg font-semibold">Wills</h3>
+          <h3 className="text-lg font-semibold">Legal Documents</h3>
         </div>
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of Will</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of Adv Directive</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Person</th>
               <th className="px-3 py-2"></th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {sampleDocuments.filter(doc => doc.type === 'Will').map((doc) => (
+            {sampleDocuments.map((doc) => (
               <tr key={doc.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => handleItemClick(doc)}>
                 <td className="px-3 py-2 text-sm font-medium text-gray-900">{doc.name}</td>
-                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{(doc as WillDocument).dateOfWill}</td>
-                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{(doc as WillDocument).dateOfAdvDirective}</td>
+                <td className="px-3 py-2 whitespace-nowrap">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    doc.type === 'Will' ? 'bg-blue-100 text-blue-800' :
+                    doc.type === 'Advance Directive' ? 'bg-purple-100 text-purple-800' :
+                    'bg-green-100 text-green-800'
+                  }`}>
+                    {doc.type}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-sm text-gray-600">{doc.people.join(', ')}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-right text-sm">
                   <ChevronRightIcon className="w-5 h-5 text-gray-400" />
                 </td>
               </tr>
             ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* LPOAs Section */}
-      <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
-        <div className="px-3 py-2 bg-gray-50 border-b">
-          <h3 className="text-lg font-semibold">Lasting Powers of Attorney</h3>
-        </div>
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of H&W LPOA</th>
-              <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">H&W Active</th>
-              <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">P&F Active</th>
-              <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">EPA Registered</th>
-              <th className="px-3 py-2"></th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {sampleDocuments.filter(doc => doc.type === 'LPOA').map((doc) => {
-              const lpoa = doc as LPOADocument;
-              return (
-                <tr key={doc.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => handleItemClick(doc)}>
-                  <td className="px-3 py-2 text-sm font-medium text-gray-900">{lpoa.name}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{lpoa.dateOfHWLPOA}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-center">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      lpoa.hwLpoaIsActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {lpoa.hwLpoaIsActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-center">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      lpoa.pfLpoaIsActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {lpoa.pfLpoaIsActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-center">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      lpoa.epaIsRegistered ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {lpoa.epaIsRegistered ? 'Yes' : 'No'}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-right text-sm">
-                    <ChevronRightIcon className="w-5 h-5 text-gray-400" />
-                  </td>
-                </tr>
-              );
-            })}
           </tbody>
         </table>
       </div>
