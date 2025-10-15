@@ -1380,7 +1380,9 @@ const ClientGroupPhase2: React.FC = () => {
                             {items.map((item) => (
                               <tr
                                 key={item.id}
-                                className="hover:bg-gray-50 cursor-pointer transition-colors"
+                                className={`hover:bg-gray-50 cursor-pointer transition-colors ${
+                                  item.status === 'Historical' ? 'opacity-40' : ''
+                                }`}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleItemClick(item);
