@@ -14,6 +14,7 @@ import {
   XMarkIcon,
   CalendarIcon,
   HomeIcon,
+  PlusIcon,
 } from '@heroicons/react/24/outline';
 import DynamicPageContainer from '../components/DynamicPageContainer';
 
@@ -572,14 +573,14 @@ const sampleMeetings: Meeting[] = [
   },
   {
     id: '2',
-    meetingType: 'Mid-Year Check-in',
+    meetingType: 'Additional Review',
     meetingMonth: 'September 2024',
     isBooked: true,
     dateHeld: undefined
   },
   {
     id: '3',
-    meetingType: 'Quarterly Review',
+    meetingType: 'Misc',
     meetingMonth: 'December 2024',
     isBooked: false,
     dateHeld: undefined
@@ -593,7 +594,7 @@ const sampleMeetings: Meeting[] = [
   },
   {
     id: '5',
-    meetingType: 'Mid-Year Check-in',
+    meetingType: 'Additional Review',
     meetingMonth: 'September 2023',
     isBooked: true,
     dateHeld: '18/09/2023'
@@ -629,6 +630,9 @@ const ClientGroupPhase2: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [showProductInfoPopup, setShowProductInfoPopup] = useState(false);
   const [selectedProductAsset, setSelectedProductAsset] = useState<Asset | null>(null);
+  // Client order - controls display order of people
+  const [clientOrder, setClientOrder] = useState<string[]>(samplePeople.map(p => p.id));
+  const [draggedPersonId, setDraggedPersonId] = useState<string | null>(null);
 
   const toggleCardExpanded = (cardId: string) => {
     const newExpanded = new Set(expandedCards);
@@ -660,6 +664,40 @@ const ClientGroupPhase2: React.FC = () => {
     // TODO: Implement save logic here
     console.log('Saving changes:', selectedItem);
     setSelectedItem(null);
+  };
+
+  // Client order drag and drop handlers
+  const handleDragStart = (personId: string) => {
+    setDraggedPersonId(personId);
+  };
+
+  const handleDragOver = (e: React.DragEvent, targetPersonId: string) => {
+    e.preventDefault();
+
+    if (!draggedPersonId || draggedPersonId === targetPersonId) return;
+
+    const draggedIndex = clientOrder.indexOf(draggedPersonId);
+    const targetIndex = clientOrder.indexOf(targetPersonId);
+
+    if (draggedIndex === -1 || targetIndex === -1) return;
+
+    const newOrder = [...clientOrder];
+    newOrder.splice(draggedIndex, 1);
+    newOrder.splice(targetIndex, 0, draggedPersonId);
+    setClientOrder(newOrder);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedPersonId(null);
+  };
+
+  // Get people sorted by client order
+  const getSortedPeople = () => {
+    return [...samplePeople].sort((a, b) => {
+      const indexA = clientOrder.indexOf(a.id);
+      const indexB = clientOrder.indexOf(b.id);
+      return indexA - indexB;
+    });
   };
 
   const formatCurrency = (amount: number) => {
@@ -1012,11 +1050,16 @@ const ClientGroupPhase2: React.FC = () => {
   // RENDER: Summary Tab
   // ============================================================================
 
-  const renderSummary = () => (
-    <div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">People in Client Group</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {samplePeople.map((person) => {
+  const renderSummary = () => {
+    const sortedPeople = getSortedPeople();
+
+    return (
+      <div className="space-y-6">
+        {/* People in Client Group */}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">People in Client Group</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {sortedPeople.map((person) => {
           const fullName = `${person.title} ${person.forename} ${person.middleNames} ${person.surname}`.trim();
           const fullAddress = [
             person.addressLine1,
@@ -1139,28 +1182,73 @@ const ClientGroupPhase2: React.FC = () => {
             </div>
           );
         })}
+          </div>
+        </div>
+
+        {/* Client Order Section */}
+        <div className="bg-white rounded-lg shadow-md border border-gray-100 p-3">
+          <h3 className="text-sm font-semibold text-gray-900 mb-2">Client Order</h3>
+          <div className="space-y-1">
+            {sortedPeople.map((person, index) => {
+              const fullName = `${person.title} ${person.forename} ${person.surname}`.trim();
+              const isDragging = draggedPersonId === person.id;
+              return (
+                <div
+                  key={person.id}
+                  draggable
+                  onDragStart={() => handleDragStart(person.id)}
+                  onDragOver={(e) => handleDragOver(e, person.id)}
+                  onDragEnd={handleDragEnd}
+                  className={`flex items-center justify-between bg-gray-50 rounded px-2 py-1.5 border transition-all cursor-move ${
+                    isDragging
+                      ? 'border-primary-400 bg-primary-50 opacity-50 scale-105'
+                      : 'border-gray-200 hover:border-primary-300 hover:bg-gray-100'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-gray-500 w-5">{index + 1}.</span>
+                    <div className="p-1 rounded-full bg-primary-100">
+                      <UserIcon className="h-3 w-3 text-primary-700" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-900">{fullName}</p>
+                    </div>
+                  </div>
+                  <div className="text-gray-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                    </svg>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // ============================================================================
   // RENDER: People Table
   // ============================================================================
 
-  const renderPeopleTable = () => (
-    <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Relationship</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-            <th className="px-3 py-2"></th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {samplePeople.map((person) => {
+  const renderPeopleTable = () => {
+    const sortedPeople = getSortedPeople();
+
+    return (
+      <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Relationship</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+              <th className="px-3 py-2"></th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {sortedPeople.map((person) => {
             const fullName = `${person.title} ${person.forename} ${person.surname}`;
             return (
               <tr key={person.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => handleItemClick(person)}>
@@ -1177,7 +1265,8 @@ const ClientGroupPhase2: React.FC = () => {
         </tbody>
       </table>
     </div>
-  );
+    );
+  };
 
   // ============================================================================
   // RENDER: Special Relationships
@@ -1294,53 +1383,56 @@ const ClientGroupPhase2: React.FC = () => {
   // RENDER: Health & Vulnerability Cards
   // ============================================================================
 
-  const renderHealthVulnerability = () => (
-    <div className="space-y-4">
-      {/* Sub-sub-section label */}
-      <div className="text-center mb-2">
-        <span className="text-xs font-semibold text-primary-600 uppercase tracking-wide">
-          View Type
-        </span>
-      </div>
-      {/* Sub-tabs with Option 5 styling - smaller, colored */}
-      <div className="flex items-center justify-center mb-4">
-        <div className="inline-flex items-center bg-primary-50 rounded-lg p-1 border border-primary-200 shadow-sm">
-          <button
-            onClick={() => setActiveHealthTab('health')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
-              activeHealthTab === 'health'
-                ? 'bg-primary-700 text-white shadow-md'
-                : 'text-primary-700 hover:bg-primary-100 hover:text-primary-800'
-            }`}
-          >
-            <span className="text-xs font-medium">Health</span>
-          </button>
-          <button
-            onClick={() => setActiveHealthTab('vulnerability')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
-              activeHealthTab === 'vulnerability'
-                ? 'bg-primary-700 text-white shadow-md'
-                : 'text-primary-700 hover:bg-primary-100 hover:text-primary-800'
-            }`}
-          >
-            <span className="text-xs font-medium">Vulnerability</span>
-          </button>
-        </div>
-      </div>
+  const renderHealthVulnerability = () => {
+    const sortedPeople = getSortedPeople();
 
-      <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Relationship</th>
-              <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Active</th>
-              <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Historical</th>
-              <th className="px-3 py-2"></th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {samplePeople.map((person) => {
+    return (
+      <div className="space-y-4">
+        {/* Sub-sub-section label */}
+        <div className="text-center mb-2">
+          <span className="text-xs font-semibold text-primary-600 uppercase tracking-wide">
+            View Type
+          </span>
+        </div>
+        {/* Sub-tabs with Option 5 styling - smaller, colored */}
+        <div className="flex items-center justify-center mb-4">
+          <div className="inline-flex items-center bg-primary-50 rounded-lg p-1 border border-primary-200 shadow-sm">
+            <button
+              onClick={() => setActiveHealthTab('health')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
+                activeHealthTab === 'health'
+                  ? 'bg-primary-700 text-white shadow-md'
+                  : 'text-primary-700 hover:bg-primary-100 hover:text-primary-800'
+              }`}
+            >
+              <span className="text-xs font-medium">Health</span>
+            </button>
+            <button
+              onClick={() => setActiveHealthTab('vulnerability')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
+                activeHealthTab === 'vulnerability'
+                  ? 'bg-primary-700 text-white shadow-md'
+                  : 'text-primary-700 hover:bg-primary-100 hover:text-primary-800'
+              }`}
+            >
+              <span className="text-xs font-medium">Vulnerability</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Relationship</th>
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Active</th>
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Historical</th>
+                <th className="px-3 py-2"></th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {sortedPeople.map((person) => {
               const counts = activeHealthTab === 'health'
                 ? getHealthCounts(person.id)
                 : getVulnerabilityCounts(person.id);
@@ -1474,30 +1566,48 @@ const ClientGroupPhase2: React.FC = () => {
         </table>
       </div>
     </div>
-  );
+    );
+  };
 
   // ============================================================================
   // RENDER: Documents
   // ============================================================================
 
-  const renderDocuments = () => (
-    <div className="space-y-6">
-      {/* Legal Documents - Single Table */}
-      <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
-        <div className="px-3 py-2 bg-gray-50 border-b">
-          <h3 className="text-lg font-semibold">Legal Documents</h3>
-        </div>
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Person</th>
-              <th className="px-3 py-2"></th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {sampleDocuments.map((doc) => (
+  const renderDocuments = () => {
+    // Sort documents based on client order
+    // For documents with multiple people, use the earliest person in client order
+    const sortedDocuments = [...sampleDocuments].sort((a, b) => {
+      // Get the highest priority person (earliest in client order) for each document
+      const getHighestPriorityIndex = (doc: Document) => {
+        const peopleNames = doc.people;
+        const indices = peopleNames.map(name => {
+          const person = samplePeople.find(p => `${p.title} ${p.forename} ${p.surname}`.trim() === name);
+          return person ? clientOrder.indexOf(person.id) : Infinity;
+        });
+        return Math.min(...indices);
+      };
+
+      return getHighestPriorityIndex(a) - getHighestPriorityIndex(b);
+    });
+
+    return (
+      <div className="space-y-6">
+        {/* Legal Documents - Single Table */}
+        <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
+          <div className="px-3 py-2 bg-gray-50 border-b">
+            <h3 className="text-lg font-semibold">Legal Documents</h3>
+          </div>
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Person</th>
+                <th className="px-3 py-2"></th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {sortedDocuments.map((doc) => (
               <tr key={doc.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => handleItemClick(doc)}>
                 <td className="px-3 py-2 text-sm font-medium text-gray-900">{doc.name}</td>
                 <td className="px-3 py-2 whitespace-nowrap">
@@ -1519,7 +1629,8 @@ const ClientGroupPhase2: React.FC = () => {
         </table>
       </div>
     </div>
-  );
+    );
+  };
 
   // ============================================================================
   // RENDER: Risk Assessments
@@ -1543,6 +1654,7 @@ const ClientGroupPhase2: React.FC = () => {
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Risk Group</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                 <th className="px-3 py-2"></th>
               </tr>
             </thead>
@@ -1577,6 +1689,7 @@ const ClientGroupPhase2: React.FC = () => {
                       }
                     </span>
                   </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{assessment.date || '-'}</td>
                   <td className="px-3 py-2 whitespace-nowrap text-right text-sm">
                     <ChevronRightIcon className="w-5 h-5 text-gray-400" />
                   </td>
@@ -1637,10 +1750,10 @@ const ClientGroupPhase2: React.FC = () => {
           </div>
         )}
 
-        {/* Capacity to Loss */}
+        {/* Capacity for Loss */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="px-3 py-2 bg-gray-50 border-b">
-            <h3 className="text-lg font-semibold">Capacity to Loss</h3>
+            <h3 className="text-lg font-semibold">Capacity for Loss</h3>
           </div>
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -1687,60 +1800,7 @@ const ClientGroupPhase2: React.FC = () => {
 
   const renderClientManagement = () => (
     <div className="space-y-6">
-      {/* Client Information */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">Client Information</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm text-gray-600">Lead Advisor</p>
-            <p className="text-lg font-semibold text-gray-900">{clientManagementInfo.leadAdvisor}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Type of Client</p>
-            <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-              {clientManagementInfo.typeOfClient}
-            </span>
-          </div>
-          {clientManagementInfo.typeOfClient === 'Ongoing' && (
-            <div>
-              <p className="text-sm text-gray-600">Ongoing Client Start Date</p>
-              <p className="text-lg font-semibold text-gray-900">{clientManagementInfo.ongoingClientStartDate}</p>
-            </div>
-          )}
-          <div>
-            <p className="text-sm text-gray-600">Date of Client Declaration</p>
-            <p className="text-lg font-semibold text-gray-900">{clientManagementInfo.dateOfClientDeclaration}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Date of Privacy Declaration</p>
-            <p className="text-lg font-semibold text-gray-900">{clientManagementInfo.dateOfPrivacyDeclaration}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Fee Information */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">Fee Information</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm text-gray-600">Last Fee Agreement</p>
-            <p className="text-lg font-semibold text-gray-900">{clientManagementInfo.lastFeeAgreement}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Fee Achieved</p>
-            <p className="text-lg font-semibold text-gray-900">{clientManagementInfo.feeAchieved}%</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Fixed Fee</p>
-            <p className="text-lg font-semibold text-gray-900">{formatCurrency(clientManagementInfo.fixedFee)}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Next Review Date</p>
-            <p className="text-lg font-semibold text-gray-900">{clientManagementInfo.nextReviewDate}</p>
-          </div>
-        </div>
-      </div>
-
+      {/* Meeting Suite */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="px-3 py-2 bg-gray-50 border-b">
           <div className="flex items-center justify-between">
@@ -1787,6 +1847,53 @@ const ClientGroupPhase2: React.FC = () => {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Client & Fee Information */}
+      <div className="bg-white rounded-lg shadow p-3">
+        <h3 className="text-sm font-semibold mb-2">Client & Fee Information</h3>
+        <div className="grid grid-cols-3 gap-x-4 gap-y-2">
+          <div>
+            <p className="text-xs text-gray-600">Lead Advisor</p>
+            <p className="text-sm font-semibold text-gray-900">{clientManagementInfo.leadAdvisor}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-600">Type of Client</p>
+            <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              {clientManagementInfo.typeOfClient}
+            </span>
+          </div>
+          {clientManagementInfo.typeOfClient === 'Ongoing' && (
+            <div>
+              <p className="text-xs text-gray-600">Ongoing Client Start Date</p>
+              <p className="text-sm font-semibold text-gray-900">{clientManagementInfo.ongoingClientStartDate}</p>
+            </div>
+          )}
+          <div>
+            <p className="text-xs text-gray-600">Date of Client Declaration</p>
+            <p className="text-sm font-semibold text-gray-900">{clientManagementInfo.dateOfClientDeclaration}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-600">Date of Privacy Declaration</p>
+            <p className="text-sm font-semibold text-gray-900">{clientManagementInfo.dateOfPrivacyDeclaration}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-600">Last Fee Agreement</p>
+            <p className="text-sm font-semibold text-gray-900">{clientManagementInfo.lastFeeAgreement}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-600">Fee Achieved</p>
+            <p className="text-sm font-semibold text-gray-900">{clientManagementInfo.feeAchieved}%</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-600">Fixed Fee</p>
+            <p className="text-sm font-semibold text-gray-900">{formatCurrency(clientManagementInfo.fixedFee)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-600">Next Review Date</p>
+            <p className="text-sm font-semibold text-gray-900">{clientManagementInfo.nextReviewDate}</p>
+          </div>
+        </div>
       </div>
     </div>
   );
