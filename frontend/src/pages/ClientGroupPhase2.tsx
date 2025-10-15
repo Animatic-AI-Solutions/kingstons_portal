@@ -50,7 +50,8 @@ interface Person {
   drivingLicenseExpiry: string;
   passportExpiry: string;
   otherIds: string;
-  amlCheck: string;
+  amlResult: string;
+  amlDate: string;
   safeWords: string[];
   shareDataWith: string;
   // For display
@@ -70,9 +71,10 @@ interface SpecialRelationship {
 interface HealthItem {
   id: string;
   personId: string;
-  healthIssues: string;
-  smokerStatus: string;
-  medication: string;
+  name: string;
+  type: string;
+  dateOfDiagnosis: string;
+  medication: string[];
   status: 'Active' | 'Historical';
   dateRecorded: string;
 }
@@ -238,7 +240,8 @@ const samplePeople: Person[] = [
     drivingLicenseExpiry: '15/06/2030',
     passportExpiry: '22/08/2028',
     otherIds: 'UK Voter ID: 123456',
-    amlCheck: 'Passed - 15/03/2024',
+    amlResult: 'Passed',
+    amlDate: '15/03/2024',
     safeWords: ['Bluebird', 'Richmond', 'Garden'],
     shareDataWith: 'Sarah Mitchell, Robert Thompson (Accountant)',
   },
@@ -272,7 +275,8 @@ const samplePeople: Person[] = [
     drivingLicenseExpiry: '22/09/2029',
     passportExpiry: '10/11/2027',
     otherIds: 'UK Voter ID: 789012',
-    amlCheck: 'Passed - 15/03/2024',
+    amlResult: 'Passed',
+    amlDate: '15/03/2024',
     safeWords: ['Sunshine', 'Bristol', 'Design'],
     shareDataWith: 'James Mitchell',
   },
@@ -306,7 +310,8 @@ const samplePeople: Person[] = [
     drivingLicenseExpiry: 'Not held',
     passportExpiry: '05/07/2029',
     otherIds: 'Student ID: UOB987654',
-    amlCheck: 'Not required',
+    amlResult: 'Not required',
+    amlDate: '',
     safeWords: ['Rainbow', 'Medicine', 'Student'],
     shareDataWith: 'James Mitchell, Sarah Mitchell',
   },
@@ -351,29 +356,52 @@ const sampleRelationships: SpecialRelationship[] = [
 
 const sampleHealthItems: HealthItem[] = [
   {
+    id: 'smoke-1',
+    personId: '1',
+    name: 'Non-smoker (quit 2015)',
+    type: 'Smoking Status',
+    dateOfDiagnosis: 'N/A',
+    medication: [],
+    status: 'Active',
+    dateRecorded: '01/2015'
+  },
+  {
     id: '1',
     personId: '1',
-    healthIssues: 'Type 2 Diabetes, High Cholesterol',
-    smokerStatus: 'Non-smoker (quit 2015)',
-    medication: 'Metformin 500mg twice daily, Atorvastatin 20mg daily',
+    name: 'Type 2 Diabetes',
+    type: 'Chronic Condition',
+    dateOfDiagnosis: '15/03/2023',
+    medication: ['Metformin 500mg twice daily', 'Atorvastatin 20mg daily'],
     status: 'Active',
     dateRecorded: '01/2023'
   },
   {
     id: '2',
     personId: '1',
-    healthIssues: 'High Blood Pressure',
-    smokerStatus: 'Non-smoker',
-    medication: 'Ramipril 5mg daily',
+    name: 'High Blood Pressure',
+    type: 'Cardiovascular',
+    dateOfDiagnosis: '10/06/2020',
+    medication: ['Ramipril 5mg daily'],
     status: 'Historical',
     dateRecorded: '06/2020'
   },
   {
+    id: 'smoke-2',
+    personId: '2',
+    name: 'Never smoked',
+    type: 'Smoking Status',
+    dateOfDiagnosis: 'N/A',
+    medication: [],
+    status: 'Active',
+    dateRecorded: '01/2020'
+  },
+  {
     id: '3',
     personId: '2',
-    healthIssues: 'Asthma (mild)',
-    smokerStatus: 'Never smoked',
-    medication: 'Salbutamol inhaler as needed',
+    name: 'Asthma',
+    type: 'Respiratory',
+    dateOfDiagnosis: '22/03/2022',
+    medication: ['Salbutamol inhaler as needed', 'Beclometasone preventer inhaler'],
     status: 'Active',
     dateRecorded: '03/2022'
   },
@@ -569,6 +597,7 @@ const ClientGroupPhase2: React.FC = () => {
   const [activeTab, setActiveTab] = useState('summary');
   const [activeSubTab, setActiveSubTab] = useState('people');
   const [activeHealthTab, setActiveHealthTab] = useState('health');
+  const [activeRelationshipTab, setActiveRelationshipTab] = useState<'personal' | 'professional'>('personal');
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -664,103 +693,118 @@ const ClientGroupPhase2: React.FC = () => {
     ].filter(line => line).join(', ');
 
     const renderField = (label: string, value: string | number | string[], fullWidth = false) => (
-      <div className={fullWidth ? 'col-span-2' : ''}>
-        <label className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
+      <div className={`flex items-start py-1.5 px-2 hover:bg-gray-50 border-b border-gray-100 ${fullWidth ? 'col-span-2' : ''}`}>
+        <label className="text-xs font-medium text-gray-600 w-36 flex-shrink-0 pt-0.5">{label}:</label>
         {isEditing ? (
           Array.isArray(value) ? (
             <input
               type="text"
               defaultValue={value.join(', ')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+              className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
             />
           ) : (
             <input
               type="text"
               defaultValue={String(value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+              className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
             />
           )
         ) : (
-          <p className="text-gray-900 text-sm">
+          <span className="text-gray-900 text-xs flex-1 break-words">
             {Array.isArray(value) ? value.join(', ') : String(value)}
-          </p>
+          </span>
         )}
       </div>
     );
 
     return (
       <>
-        {/* Header with icon and name */}
-        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
-          <div className="p-3 rounded-full bg-primary-100">
-            <UserIcon className="h-6 w-6 text-primary-700" />
+        {/* Header with icon and name - Compact */}
+        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-200">
+          <div className="p-2 rounded-full bg-primary-100">
+            <UserIcon className="h-5 w-5 text-primary-700" />
           </div>
           <div>
-            <h4 className="text-xl font-semibold text-gray-900">{fullName}</h4>
-            <p className="text-sm text-gray-500">{person.relationship} • Known as: {person.knownAs}</p>
+            <h4 className="text-base font-semibold text-gray-900">{fullName}</h4>
+            <p className="text-xs text-gray-500">{person.relationship} • Known as: {person.knownAs}</p>
           </div>
         </div>
 
-        {/* Personal Details Section - Combined */}
-        <div className="mb-6">
-          <h5 className="text-sm font-semibold text-gray-700 uppercase mb-3 flex items-center gap-2">
-            <UserIcon className="w-4 h-4" />
+        {/* Personal Details Section - Combined & Compact */}
+        <div className="mb-2">
+          <h5 className="text-xs font-semibold text-gray-700 uppercase mb-2 flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">
+            <UserIcon className="w-3 h-3" />
             Personal Details
           </h5>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 divide-x divide-gray-200 border border-gray-200 rounded bg-white">
             {renderField('Title', person.title)}
             {renderField('Gender', person.gender)}
             {renderField('Forename', person.forename)}
             {renderField('Middle Names', person.middleNames)}
             {renderField('Surname', person.surname)}
             {renderField('Known As', person.knownAs)}
-            {renderField('Previous Names', person.previousNames, true)}
-            {renderField('Relationship Status', person.relationshipStatus, true)}
+            {renderField('Previous Names', person.previousNames)}
+            {renderField('Relationship Status', person.relationshipStatus)}
             {renderField('Date of Birth', person.dateOfBirth)}
             {renderField('Age', person.age)}
-            {renderField('Place of Birth', person.placeOfBirth, true)}
-            {renderField('Address Line 1', person.addressLine1, true)}
-            {renderField('Address Line 2', person.addressLine2, true)}
-            {renderField('Address Line 3', person.addressLine3, true)}
-            {renderField('Address Line 4', person.addressLine4, true)}
-            {renderField('Address Line 5', person.addressLine5, true)}
-            {renderField('Postcode', person.postcode)}
+            {renderField('Place of Birth', person.placeOfBirth)}
             {renderField('Date Moved In', person.dateMovedIn)}
-            {renderField('Email Addresses', person.emails, true)}
-            {renderField('Phone Numbers', person.phoneNumbers, true)}
+            {/* Address block - all in left column with other fields in right column */}
+            {renderField('Address Line 1', person.addressLine1)}
+            {renderField('Email Addresses', person.emails)}
+            {renderField('Address Line 2', person.addressLine2)}
+            {renderField('Phone Numbers', person.phoneNumbers)}
+            {renderField('Address Line 3', person.addressLine3)}
             {renderField('Employment Status', person.employmentStatus)}
+            {renderField('Address Line 4', person.addressLine4)}
             {renderField('Occupation', person.occupation)}
-            {renderField('National Insurance Number', person.niNumber, true)}
-            {renderField('AML Check', person.amlCheck, true)}
+            {renderField('Address Line 5', person.addressLine5)}
+            {renderField('NI Number', person.niNumber)}
+            {renderField('Postcode', person.postcode)}
+            {renderField('AML Result', person.amlResult)}
+            {renderField('AML Date', person.amlDate)}
+            {/* Remaining fields */}
             {renderField('Driving License Expiry', person.drivingLicenseExpiry)}
             {renderField('Passport Expiry', person.passportExpiry)}
-            {renderField('Other IDs', person.otherIds, true)}
-            {renderField('Safe Words (3 words - used to access products on client\'s behalf)', person.safeWords, true)}
-            {renderField('Share Data With', person.shareDataWith, true)}
+            {renderField('Other IDs', person.otherIds)}
+            {renderField('Safe Words (3 words)', person.safeWords)}
+            {renderField('Share Data With', person.shareDataWith)}
           </div>
         </div>
       </>
     );
   };
 
-  // Render Generic Detail View
+  // Render Generic Detail View - Compact table-like style
   const renderGenericDetail = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-2 divide-x divide-gray-200 border border-gray-200 rounded bg-white">
       {Object.entries(selectedItem).map(([key, value]) => {
         if (key === 'id') return null;
+
+        const label = key.replace(/([A-Z])/g, ' $1').trim();
+        const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+
         return (
-          <div key={key} className="col-span-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
-              {key.replace(/([A-Z])/g, ' $1').trim()}
-            </label>
+          <div key={key} className="flex items-start py-1.5 px-2 hover:bg-gray-50 border-b border-gray-100">
+            <label className="text-xs font-medium text-gray-600 w-36 flex-shrink-0 pt-0.5">{capitalizedLabel}:</label>
             {isEditing ? (
-              <input
-                type="text"
-                defaultValue={String(value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-              />
+              Array.isArray(value) ? (
+                <input
+                  type="text"
+                  defaultValue={value.join(', ')}
+                  className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
+              ) : (
+                <input
+                  type="text"
+                  defaultValue={String(value)}
+                  className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
+              )
             ) : (
-              <p className="text-gray-900 text-base">{String(value)}</p>
+              <span className="text-gray-900 text-xs flex-1 break-words">
+                {Array.isArray(value) ? value.join(', ') : String(value)}
+              </span>
             )}
           </div>
         );
@@ -827,24 +871,24 @@ const ClientGroupPhase2: React.FC = () => {
                 </ul>
               </div>
 
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h5 className="font-semibold text-gray-900 mb-3">Asset Summary</h5>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-500">Type</p>
-                    <p className="font-medium text-gray-900">{selectedProductAsset.type}</p>
+              <div className="bg-gray-50 rounded-lg p-2">
+                <h5 className="text-xs font-semibold text-gray-700 uppercase mb-2 px-2">Asset Summary</h5>
+                <div className="grid grid-cols-2 divide-x divide-gray-200 border border-gray-200 rounded bg-white">
+                  <div className="flex items-start py-1.5 px-2 hover:bg-gray-50 border-b border-gray-100">
+                    <label className="text-xs font-medium text-gray-600 w-32 flex-shrink-0 pt-0.5">Type:</label>
+                    <span className="text-gray-900 text-xs flex-1 break-words">{selectedProductAsset.type}</span>
                   </div>
-                  <div>
-                    <p className="text-gray-500">Current Value</p>
-                    <p className="font-medium text-gray-900">{formatCurrency(selectedProductAsset.value)}</p>
+                  <div className="flex items-start py-1.5 px-2 hover:bg-gray-50 border-b border-gray-100">
+                    <label className="text-xs font-medium text-gray-600 w-32 flex-shrink-0 pt-0.5">Current Value:</label>
+                    <span className="text-gray-900 text-xs flex-1 break-words">{formatCurrency(selectedProductAsset.value)}</span>
                   </div>
-                  <div>
-                    <p className="text-gray-500">Owner</p>
-                    <p className="font-medium text-gray-900">{selectedProductAsset.owner}</p>
+                  <div className="flex items-start py-1.5 px-2 hover:bg-gray-50">
+                    <label className="text-xs font-medium text-gray-600 w-32 flex-shrink-0 pt-0.5">Owner:</label>
+                    <span className="text-gray-900 text-xs flex-1 break-words">{selectedProductAsset.owner}</span>
                   </div>
-                  <div>
-                    <p className="text-gray-500">Product ID</p>
-                    <p className="font-medium text-gray-900 font-mono text-xs">{selectedProductAsset.productId}</p>
+                  <div className="flex items-start py-1.5 px-2 hover:bg-gray-50">
+                    <label className="text-xs font-medium text-gray-600 w-32 flex-shrink-0 pt-0.5">Product ID:</label>
+                    <span className="text-gray-900 text-xs flex-1 font-mono break-words">{selectedProductAsset.productId}</span>
                   </div>
                 </div>
               </div>
@@ -881,45 +925,45 @@ const ClientGroupPhase2: React.FC = () => {
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-gray-200">
-          <div className="sticky top-0 bg-white border-b border-gray-200 px-3 py-2 flex justify-between items-center">
-            <h3 className="text-xl font-semibold text-gray-900">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] overflow-y-auto border border-gray-200">
+          <div className="sticky top-0 bg-white border-b border-gray-200 px-3 py-1.5 flex justify-between items-center">
+            <h3 className="text-base font-semibold text-gray-900">
               {isPersonDetail ? 'Person Details' : 'Details'}
             </h3>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               {!isEditing && (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors shadow-sm"
+                  className="flex items-center gap-1 px-2 py-1 text-xs bg-primary-700 text-white rounded hover:bg-primary-800 transition-colors"
                 >
-                  <PencilIcon className="w-4 h-4" />
-                  <span className="font-medium">Edit</span>
+                  <PencilIcon className="w-3 h-3" />
+                  <span>Edit</span>
                 </button>
               )}
               {isEditing && (
                 <>
                   <button
                     onClick={() => setIsEditing(false)}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+                    className="flex items-center gap-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
                   >
-                    <CheckIcon className="w-4 h-4" />
-                    <span className="font-medium">Save</span>
+                    <CheckIcon className="w-3 h-3" />
+                    <span>Save</span>
                   </button>
                   <button
                     onClick={() => setIsEditing(false)}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                    className="px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
                   >
                     Cancel
                   </button>
                 </>
               )}
-              <button onClick={closeDetail} className="text-gray-500 hover:text-gray-700 transition-colors p-1">
-                <XMarkIcon className="w-6 h-6" />
+              <button onClick={closeDetail} className="text-gray-500 hover:text-gray-700 transition-colors p-0.5">
+                <XMarkIcon className="w-5 h-5" />
               </button>
             </div>
           </div>
 
-          <div className="p-6">
+          <div className="p-3">
             {isPersonDetail ? renderPersonDetail(selectedItem as Person) : renderGenericDetail()}
           </div>
         </div>
@@ -1025,8 +1069,12 @@ const ClientGroupPhase2: React.FC = () => {
                       <span className="font-medium text-gray-900">{person.niNumber}</span>
                     </div>
                     <div>
-                      <span className="text-gray-500">AML Check: </span>
-                      <span className="font-medium text-green-700">{person.amlCheck}</span>
+                      <span className="text-gray-500">AML Result: </span>
+                      <span className="font-medium text-green-700">{person.amlResult}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">AML Date: </span>
+                      <span className="font-medium text-gray-900">{person.amlDate}</span>
                     </div>
                     <div>
                       <span className="text-gray-500">Driving License: </span>
@@ -1098,58 +1146,112 @@ const ClientGroupPhase2: React.FC = () => {
   // RENDER: Special Relationships
   // ============================================================================
 
-  const renderRelationships = () => (
-    <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of Birth</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Relationship</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dependency</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Details</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Firm Name</th>
-            <th className="px-3 py-2"></th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {sampleRelationships.map((rel) => (
-            <tr key={rel.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => handleItemClick(rel)}>
-              <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{rel.name}</td>
-              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{rel.dateOfBirth}</td>
-              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  rel.firmName ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
-                }`}>
-                  {rel.relationship}
-                </span>
-              </td>
-              <td className="px-3 py-2 text-sm text-gray-600">
-                {rel.dependency.map((person, idx) => (
-                  <span key={idx} className="inline-block mr-1 mb-1">
-                    <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
-                      {person}
-                    </span>
-                  </span>
-                ))}
-              </td>
-              <td className="px-3 py-2 text-sm text-gray-600">{rel.contactDetails}</td>
-              <td className="px-3 py-2 text-sm text-gray-600">
-                {rel.firmName ? (
-                  <span className="font-medium text-gray-900">{rel.firmName}</span>
-                ) : (
-                  <span className="text-gray-400 italic">N/A</span>
+  const renderRelationships = () => {
+    // Filter relationships based on active tab
+    // Professional relationships have firmName, personal ones don't
+    const filteredRelationships = sampleRelationships.filter(rel => {
+      if (activeRelationshipTab === 'professional') {
+        return rel.firmName; // Has firmName = professional
+      } else {
+        return !rel.firmName; // No firmName = personal
+      }
+    });
+
+    return (
+      <div className="space-y-4">
+        {/* Relationship Type Tabs */}
+        <div className="text-center mb-2">
+          <span className="text-xs font-semibold text-primary-600 uppercase tracking-wide">
+            Relationship Type
+          </span>
+        </div>
+        <div className="flex items-center justify-center mb-4">
+          <div className="inline-flex items-center bg-primary-50 rounded-lg p-1 border border-primary-200 shadow-sm">
+            <button
+              onClick={() => setActiveRelationshipTab('personal')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
+                activeRelationshipTab === 'personal'
+                  ? 'bg-primary-700 text-white shadow-md'
+                  : 'text-primary-700 hover:bg-primary-100 hover:text-primary-800'
+              }`}
+            >
+              <span className="text-xs font-medium">Personal</span>
+            </button>
+            <button
+              onClick={() => setActiveRelationshipTab('professional')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
+                activeRelationshipTab === 'professional'
+                  ? 'bg-primary-700 text-white shadow-md'
+                  : 'text-primary-700 hover:bg-primary-100 hover:text-primary-800'
+              }`}
+            >
+              <span className="text-xs font-medium">Professional</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Relationships Table */}
+        <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of Birth</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Relationship</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dependency</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Details</th>
+                {activeRelationshipTab === 'professional' && (
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Firm Name</th>
                 )}
-              </td>
-              <td className="px-3 py-2 whitespace-nowrap text-right text-sm">
-                <ChevronRightIcon className="w-5 h-5 text-gray-400" />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+                <th className="px-3 py-2"></th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredRelationships.length > 0 ? (
+                filteredRelationships.map((rel) => (
+                  <tr key={rel.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => handleItemClick(rel)}>
+                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{rel.name}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{rel.dateOfBirth}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        rel.firmName ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {rel.relationship}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-sm text-gray-600">
+                      {rel.dependency.map((person, idx) => (
+                        <span key={idx} className="inline-block mr-1 mb-1">
+                          <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
+                            {person}
+                          </span>
+                        </span>
+                      ))}
+                    </td>
+                    <td className="px-3 py-2 text-sm text-gray-600">{rel.contactDetails}</td>
+                    {activeRelationshipTab === 'professional' && (
+                      <td className="px-3 py-2 text-sm text-gray-600">
+                        <span className="font-medium text-gray-900">{rel.firmName}</span>
+                      </td>
+                    )}
+                    <td className="px-3 py-2 whitespace-nowrap text-right text-sm">
+                      <ChevronRightIcon className="w-5 h-5 text-gray-400" />
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={activeRelationshipTab === 'professional' ? 7 : 6} className="px-3 py-8 text-center text-sm text-gray-500">
+                    No {activeRelationshipTab} relationships found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
 
   // ============================================================================
   // RENDER: Health & Vulnerability Cards
@@ -1189,134 +1291,148 @@ const ClientGroupPhase2: React.FC = () => {
         </div>
       </div>
 
-      <div className="space-y-3">
-        {samplePeople.map((person) => {
-          const counts = activeHealthTab === 'health'
-            ? getHealthCounts(person.id)
-            : getVulnerabilityCounts(person.id);
-          const items = activeHealthTab === 'health'
-            ? sampleHealthItems.filter(h => h.personId === person.id)
-            : sampleVulnerabilities.filter(v => v.personId === person.id);
-          const isExpanded = expandedCards.has(`${activeHealthTab}-${person.id}`);
+      <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Relationship</th>
+              <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Active</th>
+              <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Historical</th>
+              <th className="px-3 py-2"></th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {samplePeople.map((person) => {
+              const counts = activeHealthTab === 'health'
+                ? getHealthCounts(person.id)
+                : getVulnerabilityCounts(person.id);
+              const unsortedItems = activeHealthTab === 'health'
+                ? sampleHealthItems.filter(h => h.personId === person.id)
+                : sampleVulnerabilities.filter(v => v.personId === person.id);
 
-          return (
-            <div key={person.id} className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
-              <div
-                className="px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors flex items-center justify-between"
-                onClick={() => toggleCardExpanded(`${activeHealthTab}-${person.id}`)}
-              >
-                <div className="flex items-center gap-4 flex-1">
-                  <div className="p-2 rounded-full bg-primary-100">
-                    <UserIcon className="h-5 w-5 text-primary-700" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">{`${person.title} ${person.forename} ${person.surname}`}</h4>
-                    <p className="text-xs text-gray-500">{person.relationship}</p>
-                  </div>
-                  <div className="flex items-center gap-6">
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-primary-700">{counts.active}</p>
-                      <p className="text-xs text-gray-600">Active</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-gray-400">{counts.historical}</p>
-                      <p className="text-xs text-gray-600">Historical</p>
-                    </div>
-                  </div>
-                  {isExpanded ? (
-                    <ChevronDownIcon className="w-5 h-5 text-gray-400" />
-                  ) : (
-                    <ChevronRightIcon className="w-5 h-5 text-gray-400" />
+              // Sort items so smoking status always appears first for health items
+              const items = activeHealthTab === 'health'
+                ? unsortedItems.sort((a, b) => {
+                    const aIsSmoking = (a as HealthItem).type === 'Smoking Status';
+                    const bIsSmoking = (b as HealthItem).type === 'Smoking Status';
+                    if (aIsSmoking && !bIsSmoking) return -1;
+                    if (!aIsSmoking && bIsSmoking) return 1;
+                    return 0;
+                  })
+                : unsortedItems;
+
+              const isExpanded = expandedCards.has(`${activeHealthTab}-${person.id}`);
+              const fullName = `${person.title} ${person.forename} ${person.surname}`;
+
+              return (
+                <React.Fragment key={person.id}>
+                  <tr
+                    className="hover:bg-gray-50 cursor-pointer transition-colors"
+                    onClick={() => toggleCardExpanded(`${activeHealthTab}-${person.id}`)}
+                  >
+                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{fullName}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{person.relationship}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-center">
+                      <span className="inline-flex items-center justify-center min-w-[24px] px-2 py-0.5 text-sm font-semibold text-primary-700 bg-primary-50 rounded">
+                        {counts.active}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap text-center">
+                      <span className="inline-flex items-center justify-center min-w-[24px] px-2 py-0.5 text-sm font-semibold text-gray-500 bg-gray-100 rounded">
+                        {counts.historical}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap text-right text-sm">
+                      {isExpanded ? (
+                        <ChevronDownIcon className="w-5 h-5 text-gray-400 inline" />
+                      ) : (
+                        <ChevronRightIcon className="w-5 h-5 text-gray-400 inline" />
+                      )}
+                    </td>
+                  </tr>
+                  {isExpanded && (
+                    <tr>
+                      <td colSpan={5} className="px-3 py-2 bg-gray-50">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-white">
+                            <tr>
+                              {activeHealthTab === 'health' ? (
+                                <>
+                                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Condition</th>
+                                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Diagnosed</th>
+                                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Medication</th>
+                                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recorded</th>
+                                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                </>
+                              ) : (
+                                <>
+                                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Adjustments</th>
+                                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recorded</th>
+                                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                </>
+                              )}
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {items.map((item) => (
+                              <tr
+                                key={item.id}
+                                className="hover:bg-gray-50 cursor-pointer transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleItemClick(item);
+                                }}
+                              >
+                                {activeHealthTab === 'health' ? (
+                                  <>
+                                    <td className="px-2 py-1.5 text-xs text-gray-900">{(item as HealthItem).name}</td>
+                                    <td className="px-2 py-1.5 text-xs text-gray-600 italic">{(item as HealthItem).type}</td>
+                                    <td className="px-2 py-1.5 text-xs text-gray-600">{(item as HealthItem).dateOfDiagnosis}</td>
+                                    <td className="px-2 py-1.5 text-xs text-gray-600">
+                                      {(item as HealthItem).medication.length > 0 ? (item as HealthItem).medication.join(', ') : 'None'}
+                                    </td>
+                                    <td className="px-2 py-1.5 text-xs text-gray-500">{item.dateRecorded}</td>
+                                    <td className="px-2 py-1.5 text-xs">
+                                      <span className={`px-1.5 py-0.5 rounded font-medium ${
+                                        item.status === 'Active'
+                                          ? 'bg-green-100 text-green-800'
+                                          : 'bg-gray-200 text-gray-700'
+                                      }`}>
+                                        {item.status}
+                                      </span>
+                                    </td>
+                                  </>
+                                ) : (
+                                  <>
+                                    <td className="px-2 py-1.5 text-xs text-gray-900">{(item as VulnerabilityItem).vulnerabilityDescription}</td>
+                                    <td className="px-2 py-1.5 text-xs text-gray-600">{(item as VulnerabilityItem).adjustments}</td>
+                                    <td className="px-2 py-1.5 text-xs text-gray-500">{item.dateRecorded}</td>
+                                    <td className="px-2 py-1.5 text-xs">
+                                      <span className={`px-1.5 py-0.5 rounded font-medium ${
+                                        item.status === 'Active'
+                                          ? 'bg-green-100 text-green-800'
+                                          : 'bg-gray-200 text-gray-700'
+                                      }`}>
+                                        {item.status}
+                                      </span>
+                                    </td>
+                                  </>
+                                )}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </td>
+                    </tr>
                   )}
-                </div>
-              </div>
-
-              {isExpanded && (
-                <div className="border-t px-4 py-3 bg-gray-50">
-                  <div className="space-y-2">
-                    {items.filter(i => i.status === 'Active').map((item) => (
-                      <div
-                        key={item.id}
-                        className="p-3 bg-white rounded border border-gray-200 hover:border-blue-500 cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleItemClick(item);
-                        }}
-                      >
-                        {activeHealthTab === 'health' ? (
-                          <>
-                            <p className="font-medium text-sm text-gray-900 mb-1">
-                              {(item as HealthItem).healthIssues}
-                            </p>
-                            <p className="text-xs text-gray-600">
-                              <span className="font-medium">Smoker:</span> {(item as HealthItem).smokerStatus}
-                            </p>
-                            <p className="text-xs text-gray-600 mt-1">
-                              <span className="font-medium">Medication:</span> {(item as HealthItem).medication}
-                            </p>
-                          </>
-                        ) : (
-                          <>
-                            <p className="font-medium text-sm text-gray-900 mb-1">
-                              {(item as VulnerabilityItem).vulnerabilityDescription}
-                            </p>
-                            <p className="text-xs text-gray-600 mt-1">
-                              <span className="font-medium">Adjustments:</span> {(item as VulnerabilityItem).adjustments}
-                            </p>
-                          </>
-                        )}
-                        <p className="text-xs text-gray-500 mt-2">{item.dateRecorded}</p>
-                        <span className="inline-block mt-1 px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">
-                          Active
-                        </span>
-                      </div>
-                    ))}
-                    {items.filter(i => i.status === 'Historical').length > 0 && (
-                      <p className="text-xs font-medium text-gray-500 mt-4 mb-2">Historical</p>
-                    )}
-                    {items.filter(i => i.status === 'Historical').map((item) => (
-                      <div
-                        key={item.id}
-                        className="p-3 bg-gray-100 rounded border border-gray-200 hover:border-blue-500 cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleItemClick(item);
-                        }}
-                      >
-                        {activeHealthTab === 'health' ? (
-                          <>
-                            <p className="font-medium text-sm text-gray-700 mb-1">
-                              {(item as HealthItem).healthIssues}
-                            </p>
-                            <p className="text-xs text-gray-600">
-                              <span className="font-medium">Smoker:</span> {(item as HealthItem).smokerStatus}
-                            </p>
-                            <p className="text-xs text-gray-600 mt-1">
-                              <span className="font-medium">Medication:</span> {(item as HealthItem).medication}
-                            </p>
-                          </>
-                        ) : (
-                          <>
-                            <p className="font-medium text-sm text-gray-700 mb-1">
-                              {(item as VulnerabilityItem).vulnerabilityDescription}
-                            </p>
-                            <p className="text-xs text-gray-600 mt-1">
-                              <span className="font-medium">Adjustments:</span> {(item as VulnerabilityItem).adjustments}
-                            </p>
-                          </>
-                        )}
-                        <p className="text-xs text-gray-500 mt-2">{item.dateRecorded}</p>
-                        <span className="inline-block mt-1 px-2 py-1 bg-gray-200 text-gray-700 text-xs font-medium rounded">
-                          Historical
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );
