@@ -184,7 +184,8 @@ interface Objective {
   description: string;
   targetDate: string;
   priority: 'High' | 'Medium' | 'Low';
-  status: 'In Progress' | 'Completed' | 'Not Started';
+  status: 'Completed' | 'Not Started';
+  notes: string;
 }
 
 interface Action {
@@ -195,14 +196,25 @@ interface Action {
   dueDate: string;
   status: 'Pending' | 'In Progress' | 'Completed';
   priority: 'High' | 'Medium' | 'Low';
+  notes: string;
 }
 
-interface Meeting {
+interface AssignedMeeting {
   id: string;
-  meetingType: string;
-  meetingMonth: string;
-  isBooked: boolean;
-  dateHeld?: string;
+  meetingType: 'Annual Review' | 'Additional Review' | 'Misc';
+  expectedMonth: string; // e.g., "March" - when this meeting should happen each year
+  notes: string;
+}
+
+interface MeetingInstance {
+  id: string;
+  assignedMeetingId: string; // Reference to the assigned meeting
+  meetingType: 'Annual Review' | 'Additional Review' | 'Misc';
+  year: number;
+  dateBookedFor?: string; // e.g., "12/03/2024"
+  hasBeenHeld: boolean;
+  dateActuallyHeld?: string; // e.g., "15/03/2024"
+  notes: string;
 }
 
 // ============================================================================
@@ -548,56 +560,192 @@ const sampleProducts: Product[] = [
 ];
 
 const sampleObjectives: Objective[] = [
-  { id: '1', title: 'Retirement Planning', description: 'Build sufficient pension pot for retirement at age 65', targetDate: '2040', priority: 'High', status: 'In Progress' },
-  { id: '2', title: 'University Funding', description: 'Fund Emma\'s university education', targetDate: '2026', priority: 'High', status: 'In Progress' },
-  { id: '3', title: 'Mortgage Free', description: 'Pay off primary residence mortgage', targetDate: '2035', priority: 'Medium', status: 'In Progress' },
-];
-
-const sampleActions: Action[] = [
-  { id: '1', title: 'Review pension contributions', description: 'Increase monthly pension contributions by £200', assignedTo: 'Client', dueDate: '2024-11-15', status: 'Pending', priority: 'High' },
-  { id: '2', title: 'Complete risk assessment questionnaire', description: 'Fill out the updated Finemetrica risk assessment', assignedTo: 'Client', dueDate: '2024-11-01', status: 'In Progress', priority: 'High' },
-  { id: '3', title: 'Send portfolio rebalancing proposal', description: 'Prepare and send proposal for portfolio rebalancing based on Q3 performance', assignedTo: 'Advisor', dueDate: '2024-10-20', status: 'In Progress', priority: 'Medium' },
-  { id: '4', title: 'Update will documentation', description: 'Schedule meeting with solicitor to update will following property purchase', assignedTo: 'Client', dueDate: '2024-12-01', status: 'Pending', priority: 'Medium' },
-  { id: '5', title: 'Prepare annual review pack', description: 'Compile performance reports and valuation summaries for March review', assignedTo: 'Advisor', dueDate: '2024-10-25', status: 'Pending', priority: 'High' },
-  { id: '6', title: 'Research ISA transfer options', description: 'Compare ISA providers for potential transfer to reduce fees', assignedTo: 'Advisor', dueDate: '2024-11-10', status: 'Pending', priority: 'Low' },
-  { id: '7', title: 'Provide P60 documentation', description: 'Send latest P60 for tax planning purposes', assignedTo: 'Client', dueDate: '2024-10-30', status: 'Completed', priority: 'Medium' },
-];
-
-const sampleMeetings: Meeting[] = [
   {
     id: '1',
-    meetingType: 'Annual Review',
-    meetingMonth: 'March 2024',
-    isBooked: true,
-    dateHeld: '12/03/2024'
+    title: 'Retirement Planning',
+    description: 'Build sufficient pension pot for retirement at age 65',
+    targetDate: '2040',
+    priority: 'High',
+    status: 'Not Started',
+    notes: 'Current projections show on track to meet target. Reviewed contribution levels in March 2024. Consider increasing contributions if salary increases as expected.'
   },
   {
     id: '2',
-    meetingType: 'Additional Review',
-    meetingMonth: 'September 2024',
-    isBooked: true,
-    dateHeld: undefined
+    title: 'University Funding',
+    description: 'Fund Emma\'s university education',
+    targetDate: '2026',
+    priority: 'High',
+    status: 'Not Started',
+    notes: 'JISA and savings accounts set up. Currently £45,000 accumulated. Need approximately £60,000 for 3-year course. On track to meet target.'
   },
   {
     id: '3',
-    meetingType: 'Misc',
-    meetingMonth: 'December 2024',
-    isBooked: false,
-    dateHeld: undefined
+    title: 'Mortgage Free',
+    description: 'Pay off primary residence mortgage',
+    targetDate: '2035',
+    priority: 'Medium',
+    status: 'Not Started',
+    notes: 'Standard repayment schedule in place. Consider overpayments when bonuses received. Current outstanding balance £285,000.'
   },
   {
     id: '4',
-    meetingType: 'Annual Review',
-    meetingMonth: 'March 2023',
-    isBooked: true,
-    dateHeld: '15/03/2023'
+    title: 'Emergency Fund',
+    description: 'Build 6 months living expenses emergency fund',
+    targetDate: '2023',
+    priority: 'High',
+    status: 'Completed',
+    notes: 'Completed September 2023. £35,000 accumulated in easy access savings account with Marcus by Goldman Sachs. Receiving 5.15% interest.'
+  },
+];
+
+const sampleActions: Action[] = [
+  {
+    id: '1',
+    title: 'Review pension contributions',
+    description: 'Increase monthly pension contributions by £200',
+    assignedTo: 'Client',
+    dueDate: '2024-11-15',
+    status: 'Pending',
+    priority: 'High',
+    notes: 'Client confirmed salary increase. Need to update pension contribution mandate to £700/month. Send forms by email.'
+  },
+  {
+    id: '2',
+    title: 'Complete risk assessment questionnaire',
+    description: 'Fill out the updated Finemetrica risk assessment',
+    assignedTo: 'Client',
+    dueDate: '2024-11-01',
+    status: 'In Progress',
+    priority: 'High',
+    notes: 'Link sent to client on 15/10/2024. Follow up if not completed by 28/10/2024. Required for annual review.'
+  },
+  {
+    id: '3',
+    title: 'Send portfolio rebalancing proposal',
+    description: 'Prepare and send proposal for portfolio rebalancing based on Q3 performance',
+    assignedTo: 'Advisor',
+    dueDate: '2024-10-20',
+    status: 'In Progress',
+    priority: 'Medium',
+    notes: 'Performance analysis complete. Recommending shift from UK equity to global equity. Draft proposal in progress.'
+  },
+  {
+    id: '4',
+    title: 'Update will documentation',
+    description: 'Schedule meeting with solicitor to update will following property purchase',
+    assignedTo: 'Client',
+    dueDate: '2024-12-01',
+    status: 'Pending',
+    priority: 'Medium',
+    notes: 'New property completion 01/09/2024. Client intends to leave this property to Emma. Solicitor contact: Thompson & Partners.'
   },
   {
     id: '5',
+    title: 'Prepare annual review pack',
+    description: 'Compile performance reports and valuation summaries for March review',
+    assignedTo: 'Advisor',
+    dueDate: '2024-10-25',
+    status: 'Pending',
+    priority: 'High',
+    notes: 'Include IRR calculations, benchmark comparisons, and fee analysis. Print and bind 2 copies for meeting.'
+  },
+  {
+    id: '6',
+    title: 'Research ISA transfer options',
+    description: 'Compare ISA providers for potential transfer to reduce fees',
+    assignedTo: 'Advisor',
+    dueDate: '2024-11-10',
+    status: 'Pending',
+    priority: 'Low',
+    notes: 'Current platform fee 0.35%. Research Vanguard, AJ Bell, and Interactive Investor. Focus on low-cost passive options.'
+  },
+  {
+    id: '7',
+    title: 'Provide P60 documentation',
+    description: 'Send latest P60 for tax planning purposes',
+    assignedTo: 'Client',
+    dueDate: '2024-10-30',
+    status: 'Completed',
+    priority: 'Medium',
+    notes: 'Received 28/10/2024. Documents filed in client folder. Tax calculations updated to reflect actual income.'
+  },
+];
+
+// Assigned meetings - the template/plan for recurring meetings
+const assignedMeetings: AssignedMeeting[] = [
+  {
+    id: 'am1',
+    meetingType: 'Annual Review',
+    expectedMonth: 'March',
+    notes: 'Annual portfolio review and financial planning session. Typically covers investment performance, goal progress, and any necessary adjustments to strategy.'
+  },
+  {
+    id: 'am2',
     meetingType: 'Additional Review',
-    meetingMonth: 'September 2023',
-    isBooked: true,
-    dateHeld: '18/09/2023'
+    expectedMonth: 'September',
+    notes: 'Mid-year check-in to review portfolio performance and address any questions or concerns. Shorter format than annual review.'
+  },
+  {
+    id: 'am3',
+    meetingType: 'Misc',
+    expectedMonth: 'November',
+    notes: 'End-of-year planning meeting to discuss tax planning opportunities and preparation for next year.'
+  },
+];
+
+// Meeting instances - actual occurrences of assigned meetings in specific years
+const meetingInstances: MeetingInstance[] = [
+  // 2024
+  {
+    id: 'mi1',
+    assignedMeetingId: 'am1',
+    meetingType: 'Annual Review',
+    year: 2024,
+    dateBookedFor: '12/03/2024',
+    hasBeenHeld: true,
+    dateActuallyHeld: '12/03/2024',
+    notes: 'Comprehensive review completed. Discussed pension consolidation and increased ISA contributions. Client happy with portfolio performance. Action: Research pension transfer values.'
+  },
+  {
+    id: 'mi2',
+    assignedMeetingId: 'am2',
+    meetingType: 'Additional Review',
+    year: 2024,
+    dateBookedFor: '15/09/2024',
+    hasBeenHeld: false,
+    dateActuallyHeld: undefined,
+    notes: 'Scheduled for mid-September. Agenda to include market volatility discussion and rebalancing considerations.'
+  },
+  // 2023
+  {
+    id: 'mi3',
+    assignedMeetingId: 'am1',
+    meetingType: 'Annual Review',
+    year: 2023,
+    dateBookedFor: '10/03/2023',
+    hasBeenHeld: true,
+    dateActuallyHeld: '15/03/2023',
+    notes: 'Meeting rescheduled due to client illness. Discussed retirement planning and inheritance tax mitigation. Agreed to increase equity allocation by 10%.'
+  },
+  {
+    id: 'mi4',
+    assignedMeetingId: 'am2',
+    meetingType: 'Additional Review',
+    year: 2023,
+    dateBookedFor: '12/09/2023',
+    hasBeenHeld: true,
+    dateActuallyHeld: '18/09/2023',
+    notes: 'Portfolio rebalancing completed as planned. Discussed upcoming changes to pension allowances. Client expressed concern about market conditions - provided reassurance.'
+  },
+  {
+    id: 'mi5',
+    assignedMeetingId: 'am3',
+    meetingType: 'Misc',
+    year: 2023,
+    dateBookedFor: '14/11/2023',
+    hasBeenHeld: true,
+    dateActuallyHeld: '15/11/2023',
+    notes: 'Tax planning session. Reviewed capital gains position and ISA usage. Recommended additional pension contributions before year end. Client to confirm by end of month.'
   },
 ];
 
@@ -1798,55 +1946,117 @@ const ClientGroupPhase2: React.FC = () => {
   // RENDER: Client Management
   // ============================================================================
 
-  const renderClientManagement = () => (
+  const renderClientManagement = () => {
+    // Group meeting instances by year
+    const instancesByYear = meetingInstances.reduce((acc, instance) => {
+      if (!acc[instance.year]) {
+        acc[instance.year] = [];
+      }
+      acc[instance.year].push(instance);
+      return acc;
+    }, {} as Record<number, MeetingInstance[]>);
+
+    // Sort years in descending order (most recent first)
+    const sortedYears = Object.keys(instancesByYear).map(Number).sort((a, b) => b - a);
+
+    return (
     <div className="space-y-6">
       {/* Meeting Suite */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-3 py-2 bg-gray-50 border-b">
+        <div className="px-4 py-3 bg-gray-50 border-b">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Meeting Suite</h3>
-            <div className="text-right">
-              <p className="text-2xl font-bold text-primary-700">{clientManagementInfo.meetingsPerYear}</p>
-              <p className="text-xs text-gray-600">Meetings per Year</p>
+            <h3 className="text-lg font-semibold text-gray-900">Meeting Suite</h3>
+            <button className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 transition-colors">
+              <PlusIcon className="w-4 h-4" />
+              Create Meeting
+            </button>
+          </div>
+        </div>
+
+        <div className="p-4 space-y-6">
+          {/* Assigned Meetings */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-700 mb-3">Assigned Meetings</h4>
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Meeting Type</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Expected Month</th>
+                    <th className="px-3 py-2"></th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {assignedMeetings.map((meeting) => (
+                    <tr key={meeting.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleItemClick(meeting)}>
+                      <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{meeting.meetingType}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{meeting.expectedMonth}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-right text-sm">
+                        <ChevronRightIcon className="w-5 h-5 text-gray-400" />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Meeting Instances by Year */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-700 mb-3">Meeting History</h4>
+            <div className="space-y-4">
+              {sortedYears.map((year) => {
+                const yearInstances = instancesByYear[year];
+
+                return (
+                  <div key={year} className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
+                      <h5 className="text-sm font-semibold text-gray-900">{year}</h5>
+                    </div>
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Meeting Type</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date Booked For</th>
+                          <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date Actually Held</th>
+                          <th className="px-3 py-2"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {yearInstances.map((instance) => (
+                          <tr key={instance.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleItemClick(instance)}>
+                            <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{instance.meetingType}</td>
+                            <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">
+                              {instance.dateBookedFor || <span className="text-gray-400 italic">Not booked</span>}
+                            </td>
+                            <td className="px-3 py-2 whitespace-nowrap text-center">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                instance.hasBeenHeld ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                              }`}>
+                                {instance.hasBeenHeld ? 'Held' : 'Booked'}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">
+                              {instance.dateActuallyHeld ? (
+                                <span className="font-medium">{instance.dateActuallyHeld}</span>
+                              ) : (
+                                <span className="text-gray-400 italic">-</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 whitespace-nowrap text-right text-sm">
+                              <ChevronRightIcon className="w-5 h-5 text-gray-400" />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Meeting Type</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Meeting Month</th>
-              <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Booked</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date Held</th>
-              <th className="px-3 py-2"></th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {sampleMeetings.map((meeting) => (
-              <tr key={meeting.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleItemClick(meeting)}>
-                <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{meeting.meetingType}</td>
-                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{meeting.meetingMonth}</td>
-                <td className="px-3 py-2 whitespace-nowrap text-center">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    meeting.isBooked ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {meeting.isBooked ? 'Booked' : 'Not Booked'}
-                  </span>
-                </td>
-                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">
-                  {meeting.dateHeld ? (
-                    <span className="font-medium">{meeting.dateHeld}</span>
-                  ) : (
-                    <span className="text-gray-400 italic">Not held yet</span>
-                  )}
-                </td>
-                <td className="px-3 py-2 whitespace-nowrap text-right text-sm">
-                  <ChevronRightIcon className="w-5 h-5 text-gray-400" />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
 
       {/* Client & Fee Information */}
@@ -1896,7 +2106,8 @@ const ClientGroupPhase2: React.FC = () => {
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   // ============================================================================
   // RENDER: Assets & Liabilities
@@ -2198,28 +2409,32 @@ const ClientGroupPhase2: React.FC = () => {
   // RENDER: Actions (Short-term To-Do List)
   // ============================================================================
 
-  const renderActions = () => (
-    <div className="space-y-3">
+  const renderActions = () => {
+    const activeActions = sampleActions.filter(action => action.status !== 'Completed');
+    const completedActions = sampleActions.filter(action => action.status === 'Completed');
+
+    return (
+    <div className="space-y-4">
       {/* Client Actions */}
       <div>
-        <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center gap-2">
+        <h4 className="text-base font-semibold text-gray-900 mb-2 flex items-center gap-2">
           <UserIcon className="w-5 h-5 text-blue-600" />
           Client Actions
         </h4>
-        <div className="space-y-2">
-          {sampleActions.filter(action => action.assignedTo === 'Client').map((action) => (
+        <div className="space-y-1.5">
+          {activeActions.filter(action => action.assignedTo === 'Client').map((action) => (
             <div
               key={action.id}
-              className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow cursor-pointer border-l-4 border-blue-500"
+              className="bg-white rounded-lg shadow p-3 hover:shadow-md transition-shadow cursor-pointer border-l-4 border-blue-500"
               onClick={() => handleItemClick(action)}
             >
-              <div className="flex justify-between items-start mb-2">
+              <div className="flex justify-between items-start mb-1.5">
                 <div className="flex-1">
                   <h5 className="text-sm font-semibold text-gray-900">{action.title}</h5>
-                  <p className="text-xs text-gray-600 mt-1">{action.description}</p>
+                  <p className="text-sm text-gray-600 mt-1">{action.description}</p>
                 </div>
-                <div className="flex items-center gap-2 ml-3">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                <div className="flex items-center gap-1.5 ml-2">
+                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${
                     action.priority === 'High'
                       ? 'bg-red-100 text-red-800'
                       : action.priority === 'Medium'
@@ -2230,17 +2445,8 @@ const ClientGroupPhase2: React.FC = () => {
                   </span>
                 </div>
               </div>
-              <div className="flex justify-between items-center text-xs mt-2">
+              <div className="flex justify-between items-center text-sm mt-2">
                 <span className="text-gray-500">Due: {new Date(action.dueDate).toLocaleDateString('en-GB')}</span>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  action.status === 'Completed'
-                    ? 'bg-green-100 text-green-800'
-                    : action.status === 'In Progress'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-gray-100 text-gray-700'
-                }`}>
-                  {action.status}
-                </span>
               </div>
             </div>
           ))}
@@ -2249,26 +2455,26 @@ const ClientGroupPhase2: React.FC = () => {
 
       {/* Advisor Actions */}
       <div>
-        <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center gap-2 mt-6">
+        <h4 className="text-base font-semibold text-gray-900 mb-2 flex items-center gap-2">
           <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
           Advisor Actions
         </h4>
-        <div className="space-y-2">
-          {sampleActions.filter(action => action.assignedTo === 'Advisor').map((action) => (
+        <div className="space-y-1.5">
+          {activeActions.filter(action => action.assignedTo === 'Advisor').map((action) => (
             <div
               key={action.id}
-              className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow cursor-pointer border-l-4 border-primary-600"
+              className="bg-white rounded-lg shadow p-3 hover:shadow-md transition-shadow cursor-pointer border-l-4 border-primary-600"
               onClick={() => handleItemClick(action)}
             >
-              <div className="flex justify-between items-start mb-2">
+              <div className="flex justify-between items-start mb-1.5">
                 <div className="flex-1">
                   <h5 className="text-sm font-semibold text-gray-900">{action.title}</h5>
-                  <p className="text-xs text-gray-600 mt-1">{action.description}</p>
+                  <p className="text-sm text-gray-600 mt-1">{action.description}</p>
                 </div>
-                <div className="flex items-center gap-2 ml-3">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                <div className="flex items-center gap-1.5 ml-2">
+                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${
                     action.priority === 'High'
                       ? 'bg-red-100 text-red-800'
                       : action.priority === 'Medium'
@@ -2279,47 +2485,79 @@ const ClientGroupPhase2: React.FC = () => {
                   </span>
                 </div>
               </div>
-              <div className="flex justify-between items-center text-xs mt-2">
+              <div className="flex justify-between items-center text-sm mt-2">
                 <span className="text-gray-500">Due: {new Date(action.dueDate).toLocaleDateString('en-GB')}</span>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  action.status === 'Completed'
-                    ? 'bg-green-100 text-green-800'
-                    : action.status === 'In Progress'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-gray-100 text-gray-700'
-                }`}>
-                  {action.status}
-                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Historical Actions */}
+      <div className="opacity-60">
+        <h4 className="text-base font-semibold text-gray-600 mb-2 flex items-center gap-2">
+          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          Historical Actions
+        </h4>
+        <div className="space-y-1.5">
+          {completedActions.map((action) => (
+            <div
+              key={action.id}
+              className="bg-gray-50 rounded-lg shadow p-3 hover:shadow-md transition-shadow cursor-pointer border-l-4 border-gray-400"
+              onClick={() => handleItemClick(action)}
+            >
+              <div className="flex justify-between items-start mb-1.5">
+                <div className="flex-1">
+                  <h5 className="text-sm font-semibold text-gray-700">{action.title}</h5>
+                  <p className="text-sm text-gray-500 mt-1">{action.description}</p>
+                </div>
+                <div className="flex items-center gap-1.5 ml-2">
+                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${
+                    action.assignedTo === 'Client' ? 'bg-gray-200 text-gray-700' : 'bg-gray-200 text-gray-700'
+                  }`}>
+                    {action.assignedTo}
+                  </span>
+                </div>
+              </div>
+              <div className="flex justify-between items-center text-sm mt-2">
+                <span className="text-gray-500">Completed: {new Date(action.dueDate).toLocaleDateString('en-GB')}</span>
               </div>
             </div>
           ))}
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   // ============================================================================
   // RENDER: Objectives (Long-term Goals)
   // ============================================================================
 
-  const renderObjectives = () => (
+  const renderObjectives = () => {
+    const activeObjectives = sampleObjectives.filter(obj => obj.status !== 'Completed');
+    const completedObjectives = sampleObjectives.filter(obj => obj.status === 'Completed');
+
+    return (
     <div className="space-y-6">
       {/* Aims & Objectives Section */}
       <div>
-        <div className="mb-4">
-          <h3 className="text-xl font-semibold text-gray-900">Aims & Objectives</h3>
+        <div className="mb-3">
+          <h3 className="text-lg font-semibold text-gray-900">Aims & Objectives</h3>
           <p className="text-sm text-gray-600">Long-term financial goals and targets</p>
         </div>
-        <div className="grid grid-cols-1 gap-4">
-          {sampleObjectives.map((obj) => (
+        <div className="grid grid-cols-1 gap-2">
+          {activeObjectives.map((obj) => (
             <div
               key={obj.id}
-              className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer"
+              className="bg-white rounded-lg shadow p-3 hover:shadow-lg transition-shadow cursor-pointer"
               onClick={() => handleItemClick(obj)}
             >
-              <div className="flex justify-between items-start mb-3">
-                <h3 className="text-lg font-semibold text-gray-900">{obj.title}</h3>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="text-base font-semibold text-gray-900">{obj.title}</h3>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                   obj.priority === 'High'
                     ? 'bg-red-100 text-red-800'
                     : obj.priority === 'Medium'
@@ -2329,23 +2567,44 @@ const ClientGroupPhase2: React.FC = () => {
                   {obj.priority} Priority
                 </span>
               </div>
-              <p className="text-gray-600 mb-3">{obj.description}</p>
+              <p className="text-sm text-gray-600 mb-2">{obj.description}</p>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-500">Target: {obj.targetDate}</span>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  obj.status === 'Completed'
-                    ? 'bg-green-100 text-green-800'
-                    : obj.status === 'In Progress'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-gray-100 text-gray-700'
-                }`}>
-                  {obj.status}
-                </span>
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Historical Aims and Objectives */}
+      {completedObjectives.length > 0 && (
+        <div className="opacity-60">
+          <div className="mb-3">
+            <h3 className="text-lg font-semibold text-gray-600">Historical Aims and Objectives</h3>
+            <p className="text-sm text-gray-500">Completed long-term goals</p>
+          </div>
+          <div className="grid grid-cols-1 gap-2">
+            {completedObjectives.map((obj) => (
+              <div
+                key={obj.id}
+                className="bg-gray-50 rounded-lg shadow p-3 hover:shadow-lg transition-shadow cursor-pointer"
+                onClick={() => handleItemClick(obj)}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-base font-semibold text-gray-700">{obj.title}</h3>
+                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
+                    {obj.priority} Priority
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500 mb-2">{obj.description}</p>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-500">Target: {obj.targetDate}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Actions Section */}
       <div>
@@ -2356,7 +2615,8 @@ const ClientGroupPhase2: React.FC = () => {
         {renderActions()}
       </div>
     </div>
-  );
+    );
+  };
 
   // ============================================================================
   // RENDER: Basic Details Content
