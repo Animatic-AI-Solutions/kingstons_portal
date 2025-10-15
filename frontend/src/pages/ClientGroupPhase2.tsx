@@ -9,6 +9,7 @@ import {
   FlagIcon,
   ChevronRightIcon,
   ChevronDownIcon,
+  ChevronLeftIcon,
   PencilIcon,
   CheckIcon,
   XMarkIcon,
@@ -141,6 +142,8 @@ interface Asset {
   description: string;
   value: number;
   owner: string;
+  ownershipType: 'sole' | 'joint' | 'in-common';
+  ownershipPercentages?: Record<string, number>; // For in-common: { "James Mitchell": 60, "Sarah Mitchell": 40 }
   isProduct?: boolean;
   productId?: string;
 }
@@ -152,6 +155,8 @@ interface Liability {
   amount: number;
   monthlyPayment: number;
   owner: string;
+  ownershipType: 'sole' | 'joint' | 'in-common';
+  ownershipPercentages?: Record<string, number>; // For in-common: { "James Mitchell": 60, "Sarah Mitchell": 40 }
 }
 
 interface Income {
@@ -172,10 +177,20 @@ interface Expenditure {
 
 interface Product {
   id: string;
-  type: string;
   provider: string;
-  value: number;
-  owner: string;
+  policyNumber: string;
+  coverType: string;
+  termType: string;
+  livesAssured: string[];
+  sumAssured: number;
+  duration: string;
+  startDate: string;
+  monthlyPayment: number;
+  endDate: string;
+  investmentElement: boolean;
+  surrenderValue?: number;
+  inTrust: boolean;
+  notes: string;
 }
 
 interface Objective {
@@ -501,7 +516,7 @@ const sampleRiskAssessments: RiskAssessment[] = [
     personName: 'James Mitchell',
     assessmentType: 'Finemetrica',
     riskScore: 5,
-    riskGroup: 'Balanced',
+    riskGroup: 'More Adventurous',
     status: 'Current'
   },
   {
@@ -533,14 +548,69 @@ const sampleCapacityToLoss: CapacityToLoss[] = [
 ];
 
 const sampleAssets: Asset[] = [
-  { id: '1', type: 'Property', description: 'Primary Residence - Richmond', value: 875000, owner: 'Joint', isProduct: false },
-  { id: '2', type: 'ISA', description: 'Stocks & Shares ISA', value: 156000, owner: 'James Mitchell', isProduct: true, productId: 'prod-123' },
-  { id: '3', type: 'Pension', description: 'Defined Contribution Pension', value: 425000, owner: 'James Mitchell', isProduct: true, productId: 'prod-456' },
+  {
+    id: '1',
+    type: 'Property',
+    description: 'Primary Residence - Richmond',
+    value: 875000,
+    owner: 'Joint',
+    ownershipType: 'joint',
+    isProduct: false
+  },
+  {
+    id: '2',
+    type: 'ISA',
+    description: 'Stocks & Shares ISA',
+    value: 156000,
+    owner: 'James Mitchell',
+    ownershipType: 'sole',
+    isProduct: true,
+    productId: 'prod-123'
+  },
+  {
+    id: '3',
+    type: 'Pension',
+    description: 'Defined Contribution Pension',
+    value: 425000,
+    owner: 'James Mitchell',
+    ownershipType: 'sole',
+    isProduct: true,
+    productId: 'prod-456'
+  },
+  {
+    id: '4',
+    type: 'Investment',
+    description: 'Buy-to-Let Property - Brighton',
+    value: 450000,
+    owner: 'In Common',
+    ownershipType: 'in-common',
+    ownershipPercentages: {
+      'James Mitchell': 60,
+      'Sarah Mitchell': 40
+    },
+    isProduct: false
+  },
 ];
 
 const sampleLiabilities: Liability[] = [
-  { id: '1', type: 'Mortgage', description: 'Primary Residence Mortgage', amount: 185000, monthlyPayment: 1250, owner: 'Joint' },
-  { id: '2', type: 'Loan', description: 'Car Finance', amount: 15000, monthlyPayment: 350, owner: 'James Mitchell' },
+  {
+    id: '1',
+    type: 'Mortgage',
+    description: 'Primary Residence Mortgage',
+    amount: 185000,
+    monthlyPayment: 1250,
+    owner: 'Joint',
+    ownershipType: 'joint'
+  },
+  {
+    id: '2',
+    type: 'Loan',
+    description: 'Car Finance',
+    amount: 15000,
+    monthlyPayment: 350,
+    owner: 'James Mitchell',
+    ownershipType: 'sole'
+  },
 ];
 
 const sampleIncome: Income[] = [
@@ -555,8 +625,55 @@ const sampleExpenditure: Expenditure[] = [
 ];
 
 const sampleProducts: Product[] = [
-  { id: '1', type: 'Life Insurance', provider: 'Legal & General', value: 500000, owner: 'James Mitchell' },
-  { id: '2', type: 'Critical Illness', provider: 'Aviva', value: 250000, owner: 'Sarah Mitchell' },
+  {
+    id: '1',
+    provider: 'Legal & General',
+    policyNumber: 'LG-2019-847261',
+    coverType: 'Life Insurance',
+    termType: 'Level Term',
+    livesAssured: ['James Mitchell'],
+    sumAssured: 500000,
+    duration: '25 years',
+    startDate: '15/03/2019',
+    monthlyPayment: 45.50,
+    endDate: '15/03/2044',
+    investmentElement: false,
+    inTrust: true,
+    notes: 'Policy written in trust for Sarah and children. Covers mortgage and provides additional family security. Premium guaranteed for full term. Annual review scheduled for March.'
+  },
+  {
+    id: '2',
+    provider: 'Aviva',
+    policyNumber: 'AV-2020-934712',
+    coverType: 'Critical Illness',
+    termType: 'Decreasing Term',
+    livesAssured: ['Sarah Mitchell'],
+    sumAssured: 250000,
+    duration: '20 years',
+    startDate: '01/06/2020',
+    monthlyPayment: 62.80,
+    endDate: '01/06/2040',
+    investmentElement: false,
+    inTrust: false,
+    notes: 'Decreasing cover aligned with buy-to-let mortgage. Sum assured reduces annually. Covers major illnesses including cancer, heart attack, and stroke. Consider putting in trust.'
+  },
+  {
+    id: '3',
+    provider: 'Prudential',
+    policyNumber: 'PRU-2018-562384',
+    coverType: 'Whole of Life',
+    termType: 'Whole of Life',
+    livesAssured: ['James Mitchell', 'Sarah Mitchell'],
+    sumAssured: 150000,
+    duration: 'Whole of Life',
+    startDate: '10/09/2018',
+    monthlyPayment: 125.00,
+    endDate: 'N/A',
+    investmentElement: true,
+    surrenderValue: 18500,
+    inTrust: true,
+    notes: 'Joint life second death policy for IHT planning. Investment element currently valued at £18,500. Written in discretionary trust for children. Premiums reviewable every 10 years - next review September 2028.'
+  }
 ];
 
 const sampleObjectives: Objective[] = [
@@ -764,6 +881,111 @@ const clientManagementInfo = {
   meetingsPerYear: 2,
 };
 
+// Sample data for other client groups (for importing assets/liabilities)
+interface OtherClientGroup {
+  id: string;
+  name: string;
+  people: { id: string; name: string }[];
+  assets: Asset[];
+  liabilities: Liability[];
+}
+
+const otherClientGroups: OtherClientGroup[] = [
+  {
+    id: 'cg1',
+    name: 'Thompson Family',
+    people: [
+      { id: 'p1', name: 'David Thompson' },
+      { id: 'p2', name: 'Emily Thompson' }
+    ],
+    assets: [
+      {
+        id: 'a1',
+        type: 'Property',
+        description: 'Holiday Home - Cornwall',
+        value: 425000,
+        owner: 'Joint',
+        ownershipType: 'joint',
+        isProduct: false
+      },
+      {
+        id: 'a2',
+        type: 'Investment',
+        description: 'Stocks & Shares ISA',
+        value: 85000,
+        owner: 'David Thompson',
+        ownershipType: 'sole',
+        isProduct: false
+      }
+    ],
+    liabilities: [
+      {
+        id: 'l1',
+        type: 'Mortgage',
+        description: 'Holiday Home Mortgage',
+        amount: 125000,
+        monthlyPayment: 850,
+        owner: 'Joint',
+        ownershipType: 'joint'
+      }
+    ]
+  },
+  {
+    id: 'cg2',
+    name: 'Wilson Estate',
+    people: [
+      { id: 'p1', name: 'Robert Wilson' }
+    ],
+    assets: [
+      {
+        id: 'a1',
+        type: 'Property',
+        description: 'Commercial Property - Manchester',
+        value: 650000,
+        owner: 'Robert Wilson',
+        ownershipType: 'sole',
+        isProduct: false
+      },
+      {
+        id: 'a2',
+        type: 'Cash',
+        description: 'Business Account',
+        value: 125000,
+        owner: 'Robert Wilson',
+        ownershipType: 'sole',
+        isProduct: false
+      }
+    ],
+    liabilities: []
+  },
+  {
+    id: 'cg3',
+    name: 'Brown Partnership',
+    people: [
+      { id: 'p1', name: 'Michael Brown' },
+      { id: 'p2', name: 'Lisa Brown' },
+      { id: 'p3', name: 'Amanda Brown' }
+    ],
+    assets: [
+      {
+        id: 'a1',
+        type: 'Investment',
+        description: 'Investment Portfolio - Vanguard',
+        value: 340000,
+        owner: 'In Common',
+        ownershipType: 'in-common',
+        ownershipPercentages: {
+          'Michael Brown': 50,
+          'Lisa Brown': 30,
+          'Amanda Brown': 20
+        },
+        isProduct: false
+      }
+    ],
+    liabilities: []
+  }
+];
+
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -781,6 +1003,10 @@ const ClientGroupPhase2: React.FC = () => {
   // Client order - controls display order of people
   const [clientOrder, setClientOrder] = useState<string[]>(samplePeople.map(p => p.id));
   const [draggedPersonId, setDraggedPersonId] = useState<string | null>(null);
+  // Assets & Liabilities - controls which people are included in the table
+  const [includedPeople, setIncludedPeople] = useState<Set<string>>(new Set(samplePeople.map(p => p.id)));
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [selectedClientGroup, setSelectedClientGroup] = useState<string | null>(null);
 
   const toggleCardExpanded = (cardId: string) => {
     const newExpanded = new Set(expandedCards);
@@ -852,6 +1078,19 @@ const ClientGroupPhase2: React.FC = () => {
     return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(amount);
   };
 
+  const getRiskGroupLabel = (riskScore: number): string => {
+    const riskGroups: Record<number, string> = {
+      1: 'Very Minimal',
+      2: 'Minimal',
+      3: 'Modest',
+      4: 'Medium',
+      5: 'More Adventurous',
+      6: 'Adventurous',
+      7: 'Speculative'
+    };
+    return riskGroups[riskScore] || 'Unknown';
+  };
+
   const mainTabs = [
     { id: 'summary', label: 'Summary', icon: UserIcon },
     { id: 'objectives', label: 'Aims & Objectives', icon: FlagIcon },
@@ -908,20 +1147,38 @@ const ClientGroupPhase2: React.FC = () => {
       person.postcode
     ].filter(line => line).join(', ');
 
+    const handleTextareaResize = (e: React.FormEvent<HTMLTextAreaElement>) => {
+      const textarea = e.currentTarget;
+      textarea.style.height = 'auto';
+      textarea.style.height = textarea.scrollHeight + 'px';
+    };
+
     const renderField = (label: string, value: string | number | string[], fullWidth = false) => (
       <div className={`flex items-start py-1.5 px-2 hover:bg-gray-50 border-b border-gray-100 ${fullWidth ? 'col-span-2' : ''}`}>
         <label className="text-xs font-medium text-gray-600 w-36 flex-shrink-0 pt-0.5">{label}:</label>
         {Array.isArray(value) ? (
           <textarea
             defaultValue={value.join(', ')}
-            rows={1}
-            className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500 resize-none"
+            onInput={handleTextareaResize}
+            ref={(el) => {
+              if (el) {
+                el.style.height = 'auto';
+                el.style.height = el.scrollHeight + 'px';
+              }
+            }}
+            className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500 resize-none overflow-hidden"
           />
         ) : (
           <textarea
             defaultValue={String(value)}
-            rows={1}
-            className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500 resize-none"
+            onInput={handleTextareaResize}
+            ref={(el) => {
+              if (el) {
+                el.style.height = 'auto';
+                el.style.height = el.scrollHeight + 'px';
+              }
+            }}
+            className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500 resize-none overflow-hidden"
           />
         )}
       </div>
@@ -1006,6 +1263,12 @@ const ClientGroupPhase2: React.FC = () => {
     const regularFields = entries.filter(([key]) => key !== 'id' && key !== 'notes');
     const notesField = entries.find(([key]) => key === 'notes');
 
+    const handleTextareaResize = (e: React.FormEvent<HTMLTextAreaElement>) => {
+      const textarea = e.currentTarget;
+      textarea.style.height = 'auto';
+      textarea.style.height = textarea.scrollHeight + 'px';
+    };
+
     return (
       <>
         <div className="grid grid-cols-2 divide-x divide-gray-200 border border-gray-200 rounded bg-white">
@@ -1019,14 +1282,26 @@ const ClientGroupPhase2: React.FC = () => {
                 {Array.isArray(value) ? (
                   <textarea
                     defaultValue={value.join(', ')}
-                    rows={1}
-                    className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                    onInput={handleTextareaResize}
+                    ref={(el) => {
+                      if (el) {
+                        el.style.height = 'auto';
+                        el.style.height = el.scrollHeight + 'px';
+                      }
+                    }}
+                    className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500 resize-none overflow-hidden"
                   />
                 ) : (
                   <textarea
                     defaultValue={String(value)}
-                    rows={1}
-                    className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                    onInput={handleTextareaResize}
+                    ref={(el) => {
+                      if (el) {
+                        el.style.height = 'auto';
+                        el.style.height = el.scrollHeight + 'px';
+                      }
+                    }}
+                    className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500 resize-none overflow-hidden"
                   />
                 )}
               </div>
@@ -1043,8 +1318,14 @@ const ClientGroupPhase2: React.FC = () => {
             <div className="border border-gray-200 rounded bg-white p-2">
               <textarea
                 defaultValue={String(notesField[1])}
-                rows={3}
-                className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                onInput={handleTextareaResize}
+                ref={(el) => {
+                  if (el) {
+                    el.style.height = 'auto';
+                    el.style.height = el.scrollHeight + 'px';
+                  }
+                }}
+                className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500 resize-none overflow-hidden min-h-[4rem]"
                 placeholder="Additional information or context..."
               />
             </div>
@@ -1827,13 +2108,21 @@ const ClientGroupPhase2: React.FC = () => {
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      assessment.riskGroup === 'Balanced' || assessment.gopDescription?.includes('Balanced')
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-green-100 text-green-800'
+                      assessment.assessmentType === 'Finemetrica'
+                        ? (assessment.riskScore && assessment.riskScore <= 3
+                            ? 'bg-green-100 text-green-800'
+                            : assessment.riskScore && assessment.riskScore <= 5
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-orange-100 text-orange-800')
+                        : (assessment.manualRiskScore && assessment.manualRiskScore <= 3
+                            ? 'bg-green-100 text-green-800'
+                            : assessment.manualRiskScore && assessment.manualRiskScore <= 5
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-orange-100 text-orange-800')
                     }`}>
                       {assessment.assessmentType === 'Finemetrica'
-                        ? assessment.riskGroup
-                        : assessment.gopDescription?.split(' ')[0]
+                        ? getRiskGroupLabel(assessment.riskScore || 0)
+                        : getRiskGroupLabel(assessment.manualRiskScore || 0)
                       }
                     </span>
                   </td>
@@ -1882,8 +2171,8 @@ const ClientGroupPhase2: React.FC = () => {
                     <td className="px-3 py-2 whitespace-nowrap">
                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
                         {assessment.assessmentType === 'Finemetrica'
-                          ? assessment.riskGroup
-                          : assessment.gopDescription?.split(' ')[0]
+                          ? getRiskGroupLabel(assessment.riskScore || 0)
+                          : getRiskGroupLabel(assessment.manualRiskScore || 0)
                         }
                       </span>
                     </td>
@@ -2114,19 +2403,48 @@ const ClientGroupPhase2: React.FC = () => {
   // ============================================================================
 
   const renderAssetsLiabilities = () => {
+    // Filter people based on selection and sort by client order
+    const displayedPeople = samplePeople
+      .filter(p => includedPeople.has(p.id))
+      .sort((a, b) => {
+        const indexA = clientOrder.indexOf(a.id);
+        const indexB = clientOrder.indexOf(b.id);
+        return indexA - indexB;
+      });
+
+    // Toggle person inclusion
+    const togglePersonInclusion = (personId: string) => {
+      const newIncluded = new Set(includedPeople);
+      if (newIncluded.has(personId)) {
+        newIncluded.delete(personId);
+      } else {
+        newIncluded.add(personId);
+      }
+      setIncludedPeople(newIncluded);
+    };
+
     // Helper to calculate ownership amounts per person
     const getPersonOwnership = (item: Asset | Liability, personName: string): number => {
-      const owner = item.owner || '';
       const value = 'value' in item ? item.value : item.amount;
 
-      if (owner === 'Joint') {
-        // Split equally among all adult persons (excluding children/students)
-        const adults = samplePeople.filter(p => p.employmentStatus !== 'Student');
-        return value / adults.length;
-      } else if (owner.includes(personName)) {
-        return value;
+      if (item.ownershipType === 'sole') {
+        // Sole ownership - only the named owner has 100%
+        return item.owner.includes(personName) ? value : 0;
+      } else if (item.ownershipType === 'joint') {
+        // Joint ownership - not counted in individual columns (shown in Joint column)
+        return 0;
+      } else if (item.ownershipType === 'in-common') {
+        // In-common ownership - use specified percentages
+        const percentage = item.ownershipPercentages?.[personName] || 0;
+        return (value * percentage) / 100;
       }
       return 0;
+    };
+
+    // Helper to get joint ownership amount
+    const getJointOwnership = (item: Asset | Liability): number => {
+      const value = 'value' in item ? item.value : item.amount;
+      return item.ownershipType === 'joint' ? value : 0;
     };
 
     // Combine assets and liabilities into rows
@@ -2149,8 +2467,8 @@ const ClientGroupPhase2: React.FC = () => {
       }))
     ];
 
-    // Calculate totals per person
-    const personTotals = samplePeople.map(person => {
+    // Calculate totals per person (only for displayed people)
+    const personTotals = displayedPeople.map(person => {
       const personName = `${person.forename} ${person.surname}`;
       const assetTotal = sampleAssets.reduce((sum, asset) => sum + getPersonOwnership(asset, personName), 0);
       const liabilityTotal = sampleLiabilities.reduce((sum, liability) => sum + getPersonOwnership(liability, personName), 0);
@@ -2164,8 +2482,62 @@ const ClientGroupPhase2: React.FC = () => {
     const totalLiabilities = sampleLiabilities.reduce((sum, l) => sum + l.amount, 0);
     const netWorth = totalAssets - totalLiabilities;
 
+    // Get sorted people for controls (by client order)
+    const sortedPeople = [...samplePeople].sort((a, b) => {
+      const indexA = clientOrder.indexOf(a.id);
+      const indexB = clientOrder.indexOf(b.id);
+      return indexA - indexB;
+    });
+
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
+        {/* Control Section */}
+        <div className="bg-white rounded-lg shadow p-3 border border-gray-200">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-sm font-semibold text-gray-900">Include People</h4>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setIncludedPeople(new Set(samplePeople.map(p => p.id)))}
+                className="text-xs px-2 py-1 bg-primary-100 text-primary-700 rounded hover:bg-primary-200 transition-colors"
+              >
+                Select All
+              </button>
+              <button
+                onClick={() => setIncludedPeople(new Set())}
+                className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+              >
+                Clear All
+              </button>
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors flex items-center gap-1"
+              >
+                <PlusIcon className="w-3 h-3" />
+                Import from Other Client
+              </button>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {sortedPeople.map(person => {
+              const fullName = `${person.title} ${person.forename} ${person.surname}`.trim();
+              const isIncluded = includedPeople.has(person.id);
+              return (
+                <button
+                  key={person.id}
+                  onClick={() => togglePersonInclusion(person.id)}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    isIncluded
+                      ? 'bg-primary-600 text-white hover:bg-primary-700'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {fullName}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="px-3 py-2 bg-gray-50 border-b">
             <h3 className="text-lg font-semibold">Assets & Liabilities</h3>
@@ -2175,11 +2547,12 @@ const ClientGroupPhase2: React.FC = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Asset / Liability</th>
-                  {samplePeople.map((person) => (
+                  {displayedPeople.map((person) => (
                     <th key={person.id} className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">
                       {person.forename} {person.surname}
                     </th>
                   ))}
+                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Joint</th>
                   <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
                 </tr>
               </thead>
@@ -2193,7 +2566,7 @@ const ClientGroupPhase2: React.FC = () => {
                         {asset.description}
                       </div>
                     </td>
-                    {samplePeople.map((person) => {
+                    {displayedPeople.map((person) => {
                       const personName = `${person.forename} ${person.surname}`;
                       const amount = getPersonOwnership(asset, personName);
                       return (
@@ -2202,6 +2575,9 @@ const ClientGroupPhase2: React.FC = () => {
                         </td>
                       );
                     })}
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
+                      {getJointOwnership(asset) > 0 ? formatCurrency(getJointOwnership(asset)) : '-'}
+                    </td>
                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
                       {formatCurrency(asset.value)}
                     </td>
@@ -2211,7 +2587,7 @@ const ClientGroupPhase2: React.FC = () => {
                 {/* Assets Total Row */}
                 <tr className="bg-green-50 font-bold">
                   <td className="px-3 py-2 text-sm text-gray-900">Total Assets</td>
-                  {samplePeople.map((person) => {
+                  {displayedPeople.map((person) => {
                     const personName = `${person.forename} ${person.surname}`;
                     const total = sampleAssets.reduce((sum, asset) => sum + getPersonOwnership(asset, personName), 0);
                     return (
@@ -2220,6 +2596,9 @@ const ClientGroupPhase2: React.FC = () => {
                       </td>
                     );
                   })}
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
+                    {formatCurrency(sampleAssets.reduce((sum, asset) => sum + getJointOwnership(asset), 0))}
+                  </td>
                   <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
                     {formatCurrency(totalAssets)}
                   </td>
@@ -2234,7 +2613,7 @@ const ClientGroupPhase2: React.FC = () => {
                         {liability.description}
                       </div>
                     </td>
-                    {samplePeople.map((person) => {
+                    {displayedPeople.map((person) => {
                       const personName = `${person.forename} ${person.surname}`;
                       const amount = getPersonOwnership(liability, personName);
                       return (
@@ -2243,6 +2622,9 @@ const ClientGroupPhase2: React.FC = () => {
                         </td>
                       );
                     })}
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
+                      {getJointOwnership(liability) > 0 ? formatCurrency(getJointOwnership(liability)) : '-'}
+                    </td>
                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
                       {formatCurrency(liability.amount)}
                     </td>
@@ -2252,7 +2634,7 @@ const ClientGroupPhase2: React.FC = () => {
                 {/* Liabilities Total Row */}
                 <tr className="bg-red-50 font-bold">
                   <td className="px-3 py-2 text-sm text-gray-900">Total Liabilities</td>
-                  {samplePeople.map((person) => {
+                  {displayedPeople.map((person) => {
                     const personName = `${person.forename} ${person.surname}`;
                     const total = sampleLiabilities.reduce((sum, liability) => sum + getPersonOwnership(liability, personName), 0);
                     return (
@@ -2261,6 +2643,9 @@ const ClientGroupPhase2: React.FC = () => {
                       </td>
                     );
                   })}
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
+                    {formatCurrency(sampleLiabilities.reduce((sum, liability) => sum + getJointOwnership(liability), 0))}
+                  </td>
                   <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
                     {formatCurrency(totalLiabilities)}
                   </td>
@@ -2275,6 +2660,12 @@ const ClientGroupPhase2: React.FC = () => {
                     </td>
                   ))}
                   <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
+                    {formatCurrency(
+                      sampleAssets.reduce((sum, asset) => sum + getJointOwnership(asset), 0) -
+                      sampleLiabilities.reduce((sum, liability) => sum + getJointOwnership(liability), 0)
+                    )}
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
                     {formatCurrency(netWorth)}
                   </td>
                 </tr>
@@ -2282,6 +2673,131 @@ const ClientGroupPhase2: React.FC = () => {
             </table>
           </div>
         </div>
+
+        {/* Import Modal */}
+        {showImportModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowImportModal(false)}>
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+              <div className="px-6 py-4 bg-gray-50 border-b flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">Import Asset/Liability from Other Client Group</h3>
+                <button onClick={() => setShowImportModal(false)} className="text-gray-400 hover:text-gray-600">
+                  <XMarkIcon className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)]">
+                {!selectedClientGroup ? (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3">Select Client Group</h4>
+                    <div className="space-y-2">
+                      {otherClientGroups.map(group => (
+                        <button
+                          key={group.id}
+                          onClick={() => setSelectedClientGroup(group.id)}
+                          className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
+                        >
+                          <div className="font-medium text-gray-900">{group.name}</div>
+                          <div className="text-sm text-gray-600 mt-1">
+                            {group.people.map(p => p.name).join(', ')}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {group.assets.length} asset{group.assets.length !== 1 ? 's' : ''}, {group.liabilities.length} liability{group.liabilities.length !== 1 ? 'ies' : ''}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="mb-4 flex items-center gap-2">
+                      <button
+                        onClick={() => setSelectedClientGroup(null)}
+                        className="text-sm text-primary-600 hover:text-primary-700 flex items-center gap-1"
+                      >
+                        <ChevronLeftIcon className="w-4 h-4" />
+                        Back to Client Groups
+                      </button>
+                    </div>
+
+                    {(() => {
+                      const group = otherClientGroups.find(g => g.id === selectedClientGroup);
+                      if (!group) return null;
+
+                      return (
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-900 mb-1">{group.name}</h4>
+                          <p className="text-sm text-gray-600 mb-4">Select an asset or liability to import (people will be imported automatically)</p>
+
+                          {group.assets.length > 0 && (
+                            <div className="mb-6">
+                              <h5 className="text-sm font-semibold text-gray-700 mb-2">Assets</h5>
+                              <div className="space-y-2">
+                                {group.assets.map(asset => (
+                                  <button
+                                    key={asset.id}
+                                    onClick={() => {
+                                      alert(`Import functionality: Would import "${asset.description}" with associated people`);
+                                      setShowImportModal(false);
+                                      setSelectedClientGroup(null);
+                                    }}
+                                    className="w-full text-left px-4 py-3 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors"
+                                  >
+                                    <div className="flex justify-between items-start">
+                                      <div className="flex-1">
+                                        <div className="font-medium text-gray-900">{asset.description}</div>
+                                        <div className="text-sm text-gray-600 mt-1">
+                                          Type: {asset.type} • Owner: {asset.owner}
+                                        </div>
+                                      </div>
+                                      <div className="text-sm font-semibold text-gray-900">
+                                        {formatCurrency(asset.value)}
+                                      </div>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {group.liabilities.length > 0 && (
+                            <div>
+                              <h5 className="text-sm font-semibold text-gray-700 mb-2">Liabilities</h5>
+                              <div className="space-y-2">
+                                {group.liabilities.map(liability => (
+                                  <button
+                                    key={liability.id}
+                                    onClick={() => {
+                                      alert(`Import functionality: Would import "${liability.description}" with associated people`);
+                                      setShowImportModal(false);
+                                      setSelectedClientGroup(null);
+                                    }}
+                                    className="w-full text-left px-4 py-3 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors"
+                                  >
+                                    <div className="flex justify-between items-start">
+                                      <div className="flex-1">
+                                        <div className="font-medium text-gray-900">{liability.description}</div>
+                                        <div className="text-sm text-gray-600 mt-1">
+                                          Type: {liability.type} • Owner: {liability.owner}
+                                        </div>
+                                      </div>
+                                      <div className="text-sm font-semibold text-gray-900">
+                                        {formatCurrency(liability.amount)}
+                                      </div>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -2375,21 +2891,43 @@ const ClientGroupPhase2: React.FC = () => {
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cover Type</th>
             <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Provider</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
-            <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Cover Amount</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Policy Number</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lives Assured</th>
+            <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Sum Assured</th>
+            <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Monthly Payment</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Term</th>
+            <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">In Trust</th>
             <th className="px-3 py-2"></th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {sampleProducts.map((product) => (
             <tr key={product.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => handleItemClick(product)}>
-              <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{product.type}</td>
+              <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{product.coverType}</td>
               <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{product.provider}</td>
-              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{product.owner}</td>
+              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600 font-mono">{product.policyNumber}</td>
+              <td className="px-3 py-2 text-sm text-gray-600">
+                {product.livesAssured.join(', ')}
+              </td>
               <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
-                {formatCurrency(product.value)}
+                {formatCurrency(product.sumAssured)}
+              </td>
+              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
+                {formatCurrency(product.monthlyPayment)}
+              </td>
+              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">
+                {product.startDate} - {product.endDate}
+              </td>
+              <td className="px-3 py-2 whitespace-nowrap text-sm text-center">
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  product.inTrust
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {product.inTrust ? 'Yes' : 'No'}
+                </span>
               </td>
               <td className="px-3 py-2 whitespace-nowrap text-right text-sm">
                 <ChevronRightIcon className="w-5 h-5 text-gray-400" />
