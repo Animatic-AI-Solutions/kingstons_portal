@@ -24,7 +24,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Clients from './pages/Clients';
 import AddClient from './pages/AddClient';
 import ClientDetails from './pages/ClientDetails';
-import ClientGroupPhase2 from './pages/ClientGroupPhase2';
+import ClientGroupPhase2 from './pages/phase2_prototype';
 import CreateClientGroupPrototype from './pages/CreateClientGroupPrototype';
 
 // Product Management Pages - For handling financial products
