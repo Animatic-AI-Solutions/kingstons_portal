@@ -148,11 +148,11 @@ const BasicDetailsTab: React.FC<BasicDetailsTabProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Divider line for visual separation - reduced spacing */}
-      <div className="border-t border-gray-200 pt-2">
+      {/* Prominent divider line for visual separation */}
+      <div className="border-t-4 border-primary-600 pt-6 mt-4">
         {/* Sub-section label */}
-        <div className="text-center mb-2">
-          <span className="text-sm font-semibold text-primary-600 uppercase tracking-wide">
+        <div className="text-center mb-3">
+          <span className="text-base font-bold text-primary-700 uppercase tracking-wide">
             Select Section
           </span>
         </div>

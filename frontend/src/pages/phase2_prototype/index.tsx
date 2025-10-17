@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserIcon, FlagIcon, DocumentTextIcon, CurrencyPoundIcon, BanknotesIcon, ShieldCheckIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { formatMoney } from '../../utils/formatMoney';
 import DynamicPageContainer from '../../components/DynamicPageContainer';
 
 // Import tabs
@@ -62,12 +63,18 @@ const ClientGroupPhase2 = () => {
   ];
 
   // Helper functions
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(amount);
-  };
-
   const isPerson = (item: any): item is Person => {
     return item && 'forename' in item && 'surname' in item && 'niNumber' in item;
+  };
+
+  const canBeDeactivated = (item: any): boolean => {
+    // Check if item has a status field and is currently Active
+    return item && 'status' in item && (item.status === 'Active' || item.status === 'Current');
+  };
+
+  const canBeReactivated = (item: any): boolean => {
+    // Check if item has a status field and is currently Historical
+    return item && 'status' in item && (item.status === 'Historical');
   };
 
   // Event handlers
@@ -91,6 +98,22 @@ const ClientGroupPhase2 = () => {
     // TODO: Implement save logic here
     console.log('Saving changes:', selectedItem);
     setSelectedItem(null);
+  };
+
+  const handleToggleStatus = () => {
+    if (!selectedItem || !('status' in selectedItem)) return;
+
+    // Toggle status between Active/Current and Historical
+    const newStatus = (selectedItem.status === 'Active' || selectedItem.status === 'Current')
+      ? 'Historical'
+      : (selectedItem.status === 'Historical' && 'Current' in selectedItem) ? 'Current' : 'Active';
+
+    setSelectedItem({
+      ...selectedItem,
+      status: newStatus
+    });
+
+    console.log(`Toggled status for ${selectedItem.id} to ${newStatus}`);
   };
 
   // Client order drag and drop handlers
@@ -375,7 +398,7 @@ const ClientGroupPhase2 = () => {
                   </div>
                   <div className="flex items-start py-1.5 px-2 hover:bg-gray-50 border-b border-gray-100">
                     <label className="text-sm font-bold text-gray-900 w-32 flex-shrink-0 pt-0.5">Current Value:</label>
-                    <span className="text-gray-900 text-sm flex-1 break-words">{formatCurrency(selectedProductAsset.value)}</span>
+                    <span className="text-gray-900 text-sm flex-1 break-words">{formatMoney(selectedProductAsset.value)}</span>
                   </div>
                   <div className="flex items-start py-1.5 px-2 hover:bg-gray-50">
                     <label className="text-sm font-bold text-gray-900 w-32 flex-shrink-0 pt-0.5">Owner:</label>
@@ -418,6 +441,8 @@ const ClientGroupPhase2 = () => {
     if (!selectedItem) return null;
 
     const isPersonDetail = isPerson(selectedItem);
+    const showDeactivateButton = canBeDeactivated(selectedItem);
+    const showReactivateButton = canBeReactivated(selectedItem);
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
@@ -427,6 +452,24 @@ const ClientGroupPhase2 = () => {
               {isPersonDetail ? 'Person Details' : 'Details'}
             </h3>
             <div className="flex items-center gap-1.5">
+              {showDeactivateButton && (
+                <button
+                  onClick={handleToggleStatus}
+                  className="flex items-center gap-1 px-2 py-1 text-sm bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors"
+                  title="Mark as historical"
+                >
+                  <span>Deactivate</span>
+                </button>
+              )}
+              {showReactivateButton && (
+                <button
+                  onClick={handleToggleStatus}
+                  className="flex items-center gap-1 px-2 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                  title="Mark as active"
+                >
+                  <span>Reactivate</span>
+                </button>
+              )}
               <button
                 onClick={handleSave}
                 className="flex items-center gap-1 px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"

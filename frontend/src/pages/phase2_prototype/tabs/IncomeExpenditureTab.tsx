@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronRightIcon } from '@heroicons/react/24/outline';
+import { formatMoney } from '../../../utils/formatMoney';
 import { Income, Expenditure } from '../types';
 
 interface IncomeExpenditureTabProps {
@@ -15,10 +16,6 @@ const IncomeExpenditureTab: React.FC<IncomeExpenditureTabProps> = ({
   onIncomeClick,
   onExpenditureClick
 }) => {
-  // Helper function to format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(amount);
-  };
 
   return (
     <div className="space-y-6">
@@ -46,7 +43,7 @@ const IncomeExpenditureTab: React.FC<IncomeExpenditureTabProps> = ({
                 <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">{inc.owner}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">{inc.frequency}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right font-semibold">
-                  {formatCurrency(inc.amount)}
+                  {formatMoney(inc.amount)}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-right text-base">
                   <ChevronRightIcon className="w-5 h-5 text-gray-900" />
@@ -89,7 +86,7 @@ const IncomeExpenditureTab: React.FC<IncomeExpenditureTabProps> = ({
                   </span>
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right font-semibold">
-                  {formatCurrency(exp.amount)}
+                  {formatMoney(exp.amount)}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-right text-base">
                   <ChevronRightIcon className="w-5 h-5 text-gray-900" />

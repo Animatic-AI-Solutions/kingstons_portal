@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronRightIcon } from '@heroicons/react/24/outline';
+import { formatMoney } from '../../../utils/formatMoney';
 import { Product } from '../types';
 
 interface OtherProductsTabProps {
@@ -11,10 +12,6 @@ const OtherProductsTab: React.FC<OtherProductsTabProps> = ({
   products,
   onProductClick
 }) => {
-  // Helper function to format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(amount);
-  };
 
   return (
     <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
@@ -42,10 +39,10 @@ const OtherProductsTab: React.FC<OtherProductsTabProps> = ({
                 {product.livesAssured.join(', ')}
               </td>
               <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right font-semibold">
-                {formatCurrency(product.sumAssured)}
+                {formatMoney(product.sumAssured)}
               </td>
               <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
-                {formatCurrency(product.monthlyPayment)}
+                {formatMoney(product.monthlyPayment)}
               </td>
               <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">
                 {product.startDate} - {product.endDate}

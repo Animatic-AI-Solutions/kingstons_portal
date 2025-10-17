@@ -48,6 +48,7 @@ export interface SpecialRelationship {
   dependency: string[]; // Array of person names in the client group
   contactDetails: string;
   firmName?: string; // Only for working relationships (accountants, solicitors, etc.)
+  status: 'Active' | 'Historical';
   notes: string;
 }
 
@@ -78,6 +79,7 @@ export interface Document {
   type: 'Will' | 'Advance Directive' | 'LPOA';
   name: string;
   people: string[]; // Associated people from client group
+  status: 'Active' | 'Historical';
   notes: string;
   // Will fields
   dateOfWill?: string;
@@ -112,6 +114,7 @@ export interface CapacityToLoss {
   score: number;
   category: string;
   dateAssessed: string;
+  status: 'Active' | 'Historical';
   notes: string;
 }
 

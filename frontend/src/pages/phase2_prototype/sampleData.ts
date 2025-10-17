@@ -142,6 +142,7 @@ export const sampleRelationships: SpecialRelationship[] = [
     dependency: ['James Mitchell', 'Sarah Mitchell'],
     contactDetails: '020 7123 4567 | r.thompson@accountingfirm.co.uk',
     firmName: 'Thompson & Partners Accountancy',
+    status: 'Active',
     notes: 'Handles tax returns and business accounts. Annual review in March.',
   },
   {
@@ -151,6 +152,7 @@ export const sampleRelationships: SpecialRelationship[] = [
     relationship: 'Mother-in-law',
     dependency: ['Sarah Mitchell'],
     contactDetails: '07700 900 200 | mary.johnson@email.com',
+    status: 'Active',
     notes: 'Lives nearby. Emergency contact for Sarah.',
   },
   {
@@ -161,6 +163,7 @@ export const sampleRelationships: SpecialRelationship[] = [
     dependency: ['James Mitchell', 'Sarah Mitchell'],
     contactDetails: '020 7456 7890 | e.baker@legalfirm.co.uk',
     firmName: 'Baker & Associates Legal Services',
+    status: 'Active',
     notes: 'Manages wills and estate planning. Last consultation Feb 2024.',
   },
   {
@@ -170,7 +173,8 @@ export const sampleRelationships: SpecialRelationship[] = [
     relationship: 'Father',
     dependency: ['James Mitchell'],
     contactDetails: '01932 123 456',
-    notes: 'Retired. Beneficiary on James\'s life insurance policy.',
+    status: 'Historical',
+    notes: 'Retired. Beneficiary on James\'s life insurance policy. Moved to care facility October 2023.',
   },
 ];
 
@@ -259,6 +263,7 @@ export const sampleDocuments: Document[] = [
     type: 'Will',
     name: 'Last Will & Testament - James Mitchell',
     people: ['James Mitchell'],
+    status: 'Active',
     notes: 'Updated will following birth of grandchildren. Original held at solicitors office. Copy provided to executor.',
     dateOfWill: '15/01/2023',
     dateOfAdvDirective: '15/01/2023'
@@ -268,6 +273,7 @@ export const sampleDocuments: Document[] = [
     type: 'Will',
     name: 'Last Will & Testament - Sarah Mitchell',
     people: ['Sarah Mitchell'],
+    status: 'Active',
     notes: 'Mirror will to James. Emma appointed as executor with backup executor specified.',
     dateOfWill: '15/01/2023',
     dateOfAdvDirective: '15/01/2023'
@@ -277,6 +283,7 @@ export const sampleDocuments: Document[] = [
     type: 'Advance Directive',
     name: 'Advance Healthcare Directive - Mitchell Family',
     people: ['James Mitchell', 'Sarah Mitchell'],
+    status: 'Active',
     notes: 'Both clients have specified healthcare preferences. GP and family members have been notified.',
     dateOfAdvDirective: '15/01/2023'
   },
@@ -285,6 +292,7 @@ export const sampleDocuments: Document[] = [
     type: 'LPOA',
     name: 'Lasting Power of Attorney - Mitchell Family',
     people: ['James Mitchell', 'Sarah Mitchell'],
+    status: 'Active',
     notes: 'Both James and Sarah have appointed each other as primary attorney with children as replacement attorneys. Documents registered with OPG.',
     dateOfHWLPOA: '20/03/2023',
     hwLpoaIsActive: true,
@@ -293,6 +301,16 @@ export const sampleDocuments: Document[] = [
     dateOfEPA: '18/02/2023',
     epaIsRegistered: true,
     other: 'Both James and Sarah have appointed each other as primary attorney with children as replacement attorneys.'
+  },
+  {
+    id: '5',
+    type: 'Will',
+    name: 'Last Will & Testament - James Mitchell (2020)',
+    people: ['James Mitchell'],
+    status: 'Historical',
+    notes: 'Previous will superseded by 2023 version. Retained for records.',
+    dateOfWill: '10/05/2020',
+    dateOfAdvDirective: '10/05/2020'
   },
 ];
 
@@ -328,9 +346,10 @@ export const sampleRiskAssessments: RiskAssessment[] = [
 ];
 
 export const sampleCapacityToLoss: CapacityToLoss[] = [
-  { id: '1', personName: 'James Mitchell', score: 7, category: 'High', dateAssessed: '12/03/2024', notes: 'Strong financial position with diversified assets' },
-  { id: '2', personName: 'Sarah Mitchell', score: 6, category: 'Medium-High', dateAssessed: '12/03/2024', notes: 'Stable income from self-employment, moderate reserves' },
-  { id: '3', personName: 'Emma Mitchell', score: 3, category: 'Low', dateAssessed: '12/03/2024', notes: 'Student with limited income and assets' },
+  { id: '1', personName: 'James Mitchell', score: 7, category: 'High', dateAssessed: '12/03/2024', status: 'Active', notes: 'Strong financial position with diversified assets' },
+  { id: '2', personName: 'Sarah Mitchell', score: 6, category: 'Medium-High', dateAssessed: '12/03/2024', status: 'Active', notes: 'Stable income from self-employment, moderate reserves' },
+  { id: '3', personName: 'Emma Mitchell', score: 3, category: 'Low', dateAssessed: '12/03/2024', status: 'Active', notes: 'Student with limited income and assets' },
+  { id: '4', personName: 'James Mitchell', score: 5, category: 'Medium', dateAssessed: '15/03/2023', status: 'Historical', notes: 'Previous assessment before portfolio rebalancing. Financial position has since improved.' },
 ];
 
 export const sampleAssets: Asset[] = [

@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatMoney } from '../../../utils/formatMoney';
 
 interface ClientManagementInfo {
   leadAdvisor: string;
@@ -19,10 +20,6 @@ interface ClientManagementSectionProps {
 const ClientManagementSection: React.FC<ClientManagementSectionProps> = ({
   clientManagementInfo
 }) => {
-  // Helper function to format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(amount);
-  };
 
   return (
     <div className="bg-white rounded-lg shadow p-3">
@@ -62,7 +59,7 @@ const ClientManagementSection: React.FC<ClientManagementSectionProps> = ({
         </div>
         <div>
           <p className="text-sm font-bold text-blue-600">Fixed Fee</p>
-          <p className="text-base font-semibold text-gray-900">{formatCurrency(clientManagementInfo.fixedFee)}</p>
+          <p className="text-base font-semibold text-gray-900">{formatMoney(clientManagementInfo.fixedFee)}</p>
         </div>
         <div>
           <p className="text-sm font-bold text-blue-600">Next Review Date</p>

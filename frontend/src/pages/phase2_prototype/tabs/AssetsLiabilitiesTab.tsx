@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PlusIcon, XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { formatMoney } from '../../../utils/formatMoney';
 import { Person, Asset, Liability, OtherClientGroup } from '../types';
 
 interface AssetsLiabilitiesTabProps {
@@ -25,11 +26,6 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
   const [includedPeople, setIncludedPeople] = useState<Set<string>>(new Set(people.map(p => p.id)));
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedClientGroup, setSelectedClientGroup] = useState<string | null>(null);
-
-  // Helper function to format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(amount);
-  };
 
   // Helper to calculate ownership amounts per person
   const getPersonOwnership = (item: Asset | Liability, personName: string): number => {
@@ -179,15 +175,15 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
                     const amount = getPersonOwnership(asset, personName);
                     return (
                       <td key={person.id} className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
-                        {amount > 0 ? formatCurrency(amount) : '-'}
+                        {amount > 0 ? formatMoney(amount) : '-'}
                       </td>
                     );
                   })}
                   <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
-                    {getJointOwnership(asset) > 0 ? formatCurrency(getJointOwnership(asset)) : '-'}
+                    {getJointOwnership(asset) > 0 ? formatMoney(getJointOwnership(asset)) : '-'}
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right font-semibold">
-                    {formatCurrency(asset.value)}
+                    {formatMoney(asset.value)}
                   </td>
                 </tr>
               ))}
@@ -200,15 +196,15 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
                   const total = assets.reduce((sum, asset) => sum + getPersonOwnership(asset, personName), 0);
                   return (
                     <td key={person.id} className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
-                      {formatCurrency(total)}
+                      {formatMoney(total)}
                     </td>
                   );
                 })}
                 <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
-                  {formatCurrency(assets.reduce((sum, asset) => sum + getJointOwnership(asset), 0))}
+                  {formatMoney(assets.reduce((sum, asset) => sum + getJointOwnership(asset), 0))}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
-                  {formatCurrency(totalAssets)}
+                  {formatMoney(totalAssets)}
                 </td>
               </tr>
 
@@ -226,15 +222,15 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
                     const amount = getPersonOwnership(liability, personName);
                     return (
                       <td key={person.id} className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
-                        {amount > 0 ? formatCurrency(amount) : '-'}
+                        {amount > 0 ? formatMoney(amount) : '-'}
                       </td>
                     );
                   })}
                   <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
-                    {getJointOwnership(liability) > 0 ? formatCurrency(getJointOwnership(liability)) : '-'}
+                    {getJointOwnership(liability) > 0 ? formatMoney(getJointOwnership(liability)) : '-'}
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right font-semibold">
-                    {formatCurrency(liability.amount)}
+                    {formatMoney(liability.amount)}
                   </td>
                 </tr>
               ))}
@@ -247,15 +243,15 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
                   const total = liabilities.reduce((sum, liability) => sum + getPersonOwnership(liability, personName), 0);
                   return (
                     <td key={person.id} className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
-                      {formatCurrency(total)}
+                      {formatMoney(total)}
                     </td>
                   );
                 })}
                 <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
-                  {formatCurrency(liabilities.reduce((sum, liability) => sum + getJointOwnership(liability), 0))}
+                  {formatMoney(liabilities.reduce((sum, liability) => sum + getJointOwnership(liability), 0))}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
-                  {formatCurrency(totalLiabilities)}
+                  {formatMoney(totalLiabilities)}
                 </td>
               </tr>
 
@@ -264,17 +260,17 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
                 <td className="px-3 py-2 text-base text-gray-900">Net Worth</td>
                 {personTotals.map((person, index) => (
                   <td key={index} className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
-                    {formatCurrency(person.netWorth)}
+                    {formatMoney(person.netWorth)}
                   </td>
                 ))}
                 <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
-                  {formatCurrency(
+                  {formatMoney(
                     assets.reduce((sum, asset) => sum + getJointOwnership(asset), 0) -
                     liabilities.reduce((sum, liability) => sum + getJointOwnership(liability), 0)
                   )}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
-                  {formatCurrency(netWorth)}
+                  {formatMoney(netWorth)}
                 </td>
               </tr>
             </tbody>
@@ -358,7 +354,7 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
                                       </div>
                                     </div>
                                     <div className="text-base font-semibold text-gray-900">
-                                      {formatCurrency(asset.value)}
+                                      {formatMoney(asset.value)}
                                     </div>
                                   </div>
                                 </button>
@@ -389,7 +385,7 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
                                       </div>
                                     </div>
                                     <div className="text-base font-semibold text-gray-900">
-                                      {formatCurrency(liability.amount)}
+                                      {formatMoney(liability.amount)}
                                     </div>
                                   </div>
                                 </button>
