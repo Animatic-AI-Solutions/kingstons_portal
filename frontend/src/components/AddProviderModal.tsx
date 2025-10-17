@@ -19,11 +19,6 @@ interface ProviderFormData {
   theme_color: string;
 }
 
-interface ColorOption {
-  name: string;
-  value: string;
-}
-
 interface AddProviderModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -40,60 +35,22 @@ const AddProviderModal: React.FC<AddProviderModalProps> = ({
   const { api } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [availableColors, setAvailableColors] = useState<ColorOption[]>([]);
-  const [isLoadingColors, setIsLoadingColors] = useState(true);
   const [formData, setFormData] = useState<ProviderFormData>({
     name: '',
     status: 'active',
     theme_color: ''
   });
 
-  // Color palette
+  // Initialize default color
   useEffect(() => {
     if (!isOpen) return;
 
-    setIsLoadingColors(true);
-    
-    const colorPalette = [
-      // Primary Colors (Vibrant)
-      {name: 'Royal Blue', value: '#2563EB'},
-      {name: 'Crimson Red', value: '#DC2626'},
-      {name: 'Emerald Green', value: '#16A34A'},
-      {name: 'Violet Purple', value: '#8B5CF6'},
-      {name: 'Tangerine Orange', value: '#F97316'},
-      
-      // Secondary Colors (Rich)
-      {name: 'Turquoise', value: '#06B6D4'},
-      {name: 'Magenta', value: '#D946EF'},
-      {name: 'Lime Green', value: '#65A30D'},
-      {name: 'Coral', value: '#F59E0B'},
-      {name: 'Amethyst', value: '#7C3AED'},
-      
-      // Sophisticated Colors (Professional)
-      {name: 'Navy Blue', value: '#1E40AF'},
-      {name: 'Forest Green', value: '#15803D'},
-      {name: 'Burgundy', value: '#9F1239'},
-      {name: 'Midnight', value: '#1F2937'},
-      {name: 'Teal', value: '#0F766E'},
-      
-      // Modern Colors (Contemporary)
-      {name: 'Sky Blue', value: '#38BDF8'},
-      {name: 'Mint', value: '#4ADE80'},
-      {name: 'Lavender', value: '#A78BFA'},
-      {name: 'Peach', value: '#FB923C'},
-      {name: 'Rose Gold', value: '#F472B6'},
-    ];
-    
-    setAvailableColors(colorPalette);
-    
     if (!formData.theme_color) {
       setFormData(prev => ({
         ...prev,
-        theme_color: colorPalette[0].value
+        theme_color: '#2563EB' // Default to Royal Blue
       }));
     }
-    
-    setIsLoadingColors(false);
   }, [isOpen]);
 
   // Reset form when modal opens
@@ -102,7 +59,7 @@ const AddProviderModal: React.FC<AddProviderModalProps> = ({
       setFormData({
         name: '',
         status: 'active',
-        theme_color: availableColors[0]?.value || '#2563EB'
+        theme_color: '#2563EB' // Default to Royal Blue
       });
       setError(null);
     }
@@ -123,10 +80,10 @@ const AddProviderModal: React.FC<AddProviderModalProps> = ({
     }));
   };
 
-  const handleColorSelect = (color: string) => {
+  const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
       ...prev,
-      theme_color: color
+      theme_color: e.target.value
     }));
   };
 
@@ -202,55 +159,57 @@ const AddProviderModal: React.FC<AddProviderModalProps> = ({
                 <div className="px-3 py-3 bg-gray-50 border-b border-gray-200 sm:px-4">
                   <h3 className="text-base font-medium text-gray-900">Theme Color</h3>
                 </div>
-                <div className="p-4">
-                  {isLoadingColors ? (
-                    <div className="flex justify-center py-4">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-700"></div>
-                    </div>
-                  ) : (
-                    <>
-                      {availableColors.length === 0 ? (
-                        <div className="text-center py-3 text-gray-500">
-                          No colors available. All colors are currently in use.
-                        </div>
-                      ) : (
-                        <>
-                          <div className="flex items-center mb-3">
-                            <div 
-                              className="h-12 w-12 rounded-full border-2 mr-3 shadow-md" 
-                              style={{ 
-                                backgroundColor: formData.theme_color, 
-                                borderColor: formData.theme_color === '#ffffff' ? '#d1d5db' : formData.theme_color 
-                              }}
-                            ></div>
-                            <span className="text-sm font-medium text-gray-700">
-                              {availableColors.find(c => c.value === formData.theme_color)?.name || 'Select a color'}
-                            </span>
-                          </div>
+                <div className="p-6">
+                  {/* Color Preview Circle */}
+                  <div className="flex flex-col items-center mb-6">
+                    <div
+                      className="h-32 w-32 rounded-full border-4 shadow-lg mb-4 transition-all duration-200"
+                      style={{
+                        backgroundColor: formData.theme_color,
+                        borderColor: formData.theme_color
+                      }}
+                    ></div>
+                    <span className="text-lg font-semibold text-gray-900 font-mono">
+                      {formData.theme_color.toUpperCase()}
+                    </span>
+                  </div>
 
-                          <div className="grid grid-cols-4 gap-3">
-                            {availableColors.map((color) => (
-                              <button
-                                key={color.value}
-                                type="button"
-                                className={`aspect-square w-10 rounded-full hover:ring-2 hover:ring-offset-2 hover:ring-primary-500 focus:outline-none transition-all duration-200 shadow-sm ${
-                                  formData.theme_color === color.value 
-                                    ? 'ring-2 ring-offset-2 ring-gray-400 scale-110'
-                                    : ''
-                                }`}
-                                style={{ backgroundColor: color.value }}
-                                onClick={() => handleColorSelect(color.value)}
-                                title={color.name}
-                              ></button>
-                            ))}
-                          </div>
-                          <p className="mt-3 text-sm text-gray-500">
-                            Select a theme color for this provider. Each provider must have a unique color.
-                          </p>
-                        </>
-                      )}
-                    </>
-                  )}
+                  {/* Color Picker Input */}
+                  <div className="space-y-4">
+                    <div className="flex flex-col items-center">
+                      <label htmlFor="color-picker" className="block text-sm font-medium text-gray-700 mb-2">
+                        Choose Your Color
+                      </label>
+                      <input
+                        id="color-picker"
+                        type="color"
+                        value={formData.theme_color}
+                        onChange={handleColorChange}
+                        className="h-16 w-full rounded-lg cursor-pointer border-2 border-gray-300 hover:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                        style={{ colorScheme: 'light' }}
+                      />
+                    </div>
+
+                    {/* Manual Hex Input */}
+                    <div>
+                      <label htmlFor="hex-input" className="block text-sm font-medium text-gray-700 mb-1">
+                        Or Enter Hex Code
+                      </label>
+                      <input
+                        id="hex-input"
+                        type="text"
+                        value={formData.theme_color}
+                        onChange={handleColorChange}
+                        placeholder="#2563EB"
+                        maxLength={7}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      />
+                    </div>
+
+                    <p className="text-sm text-gray-500 text-center">
+                      Select a unique theme color for this provider using the color picker or enter a hex code.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -306,7 +265,7 @@ const AddProviderModal: React.FC<AddProviderModalProps> = ({
               context="Provider"
               design="descriptive"
               type="submit"
-              disabled={isSubmitting || isLoadingColors || availableColors.length === 0}
+              disabled={isSubmitting}
               loading={isSubmitting}
             />
           </div>
