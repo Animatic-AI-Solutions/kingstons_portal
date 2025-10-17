@@ -700,9 +700,15 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   }, [pendingEdits, isSubmitting]);
 
   // Sync activitiesState when activities prop changes
+  // BUT preserve pending edits to avoid losing user's unsaved input when another user refreshes data
   useEffect(() => {
-    setActivities(activities);
-  }, [activities]);
+    // Only update if there are no pending edits (to avoid erasing user's current input)
+    if (pendingEdits.length === 0) {
+      setActivities(activities);
+    }
+    // If there are pending edits, we keep the current activitiesState to preserve user input
+    // The edits will be applied when the user saves their changes
+  }, [activities, pendingEdits.length]);
 
   // Add click handler to deselect switch cells when clicking elsewhere
   useEffect(() => {
