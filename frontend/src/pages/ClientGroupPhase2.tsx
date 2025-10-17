@@ -161,6 +161,7 @@ interface Liability {
 
 interface Income {
   id: string;
+  type: 'Net Pay' | 'Secondary Wage' | 'Self Employment Profit' | 'Own Limited Company Dividends' | 'Investment Income' | 'Share Income' | 'Pension Income' | 'State Pension' | 'State Benefits' | 'Other Income';
   source: string;
   amount: number;
   frequency: string;
@@ -169,7 +170,8 @@ interface Income {
 
 interface Expenditure {
   id: string;
-  category: string;
+  type: 'Home' | 'Personal' | 'Pets' | 'Children' | 'Financial' | 'Rental & Second Homes' | 'Car(s) and Travel' | 'Discretionary';
+  description: string;
   amount: number;
   frequency: string;
   essential: boolean;
@@ -614,14 +616,22 @@ const sampleLiabilities: Liability[] = [
 ];
 
 const sampleIncome: Income[] = [
-  { id: '1', source: 'Employment Salary', amount: 75000, frequency: 'Annual', owner: 'James Mitchell' },
-  { id: '2', source: 'Employment Salary', amount: 45000, frequency: 'Annual', owner: 'Sarah Mitchell' },
+  { id: '1', type: 'Net Pay', source: 'Kingston & Associates Ltd', amount: 75000, frequency: 'Annual', owner: 'James Mitchell' },
+  { id: '2', type: 'Net Pay', source: 'Self-Employed Consultancy', amount: 45000, frequency: 'Annual', owner: 'Sarah Mitchell' },
+  { id: '3', type: 'Investment Income', source: 'Stocks & Shares ISA', amount: 3500, frequency: 'Annual', owner: 'James Mitchell' },
+  { id: '4', type: 'State Benefits', source: 'Child Benefit', amount: 1248, frequency: 'Annual', owner: 'Sarah Mitchell' },
 ];
 
 const sampleExpenditure: Expenditure[] = [
-  { id: '1', category: 'Mortgage', amount: 1250, frequency: 'Monthly', essential: true },
-  { id: '2', category: 'Utilities', amount: 350, frequency: 'Monthly', essential: true },
-  { id: '3', category: 'Holidays', amount: 5000, frequency: 'Annual', essential: false },
+  { id: '1', type: 'Home', description: 'Mortgage Payment', amount: 1250, frequency: 'Monthly', essential: true },
+  { id: '2', type: 'Home', description: 'Utilities (Gas, Electric, Water)', amount: 350, frequency: 'Monthly', essential: true },
+  { id: '3', type: 'Home', description: 'Council Tax', amount: 185, frequency: 'Monthly', essential: true },
+  { id: '4', type: 'Personal', description: 'Groceries & Food Shopping', amount: 450, frequency: 'Monthly', essential: true },
+  { id: '5', type: 'Children', description: 'School Fees - Emma', amount: 850, frequency: 'Monthly', essential: true },
+  { id: '6', type: 'Car(s) and Travel', description: 'Car Insurance & Tax', amount: 95, frequency: 'Monthly', essential: true },
+  { id: '7', type: 'Financial', description: 'Life Insurance Premiums', amount: 125, frequency: 'Monthly', essential: true },
+  { id: '8', type: 'Discretionary', description: 'Holidays & Travel', amount: 5000, frequency: 'Annual', essential: false },
+  { id: '9', type: 'Discretionary', description: 'Dining Out & Entertainment', amount: 300, frequency: 'Monthly', essential: false },
 ];
 
 const sampleProducts: Product[] = [
@@ -1512,8 +1522,8 @@ const ClientGroupPhase2: React.FC = () => {
                     <UserIcon className="h-5 w-5 text-primary-700" />
                   </div>
                   <div>
-                    <h4 className="text-base font-semibold text-gray-900">{fullName}</h4>
-                    <p className="text-xs text-gray-500">{person.relationship} • Known as: {person.knownAs}</p>
+                    <h4 className="text-lg font-semibold text-gray-900">{fullName}</h4>
+                    <p className="text-sm text-gray-500">{person.relationship} • Known as: {person.knownAs}</p>
                   </div>
                 </div>
                 <ChevronRightIcon className="w-5 h-5 text-gray-400" />
@@ -1521,9 +1531,9 @@ const ClientGroupPhase2: React.FC = () => {
 
               {/* Personal Details - Combined */}
               <div className="mb-4">
-                <h5 className="text-xs font-semibold text-gray-700 uppercase mb-2">Personal Details</h5>
+                <h5 className="text-sm font-semibold text-gray-700 uppercase mb-2">Personal Details</h5>
                 <div className="space-y-2">
-                  <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm">
                     <div>
                       <span className="text-gray-500">Gender: </span>
                       <span className="font-medium text-gray-900">{person.gender}</span>
@@ -1551,12 +1561,12 @@ const ClientGroupPhase2: React.FC = () => {
                   </div>
 
                   <div className="pt-1">
-                    <p className="text-xs text-gray-500 mb-0.5">Address</p>
-                    <p className="text-xs font-medium text-gray-900 leading-relaxed">{fullAddress}</p>
-                    <p className="text-xs text-gray-500 mt-1">Moved in: {person.dateMovedIn}</p>
+                    <p className="text-sm text-gray-500 mb-0.5">Address</p>
+                    <p className="text-sm font-medium text-gray-900 leading-relaxed">{fullAddress}</p>
+                    <p className="text-sm text-gray-500 mt-1">Moved in: {person.dateMovedIn}</p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs pt-1">
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm pt-1">
                     <div className="col-span-2">
                       <span className="text-gray-500">Email: </span>
                       <span className="font-medium text-gray-900">{person.emails.join(', ')}</span>
@@ -2815,6 +2825,7 @@ const ClientGroupPhase2: React.FC = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Frequency</th>
@@ -2825,6 +2836,7 @@ const ClientGroupPhase2: React.FC = () => {
           <tbody className="bg-white divide-y divide-gray-200">
             {sampleIncome.map((income) => (
               <tr key={income.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleItemClick(income)}>
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{income.type}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{income.source}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{income.owner}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{income.frequency}</td>
@@ -2847,9 +2859,10 @@ const ClientGroupPhase2: React.FC = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Frequency</th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Frequency</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Essential</th>
               <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
               <th className="px-3 py-2"></th>
             </tr>
@@ -2857,7 +2870,8 @@ const ClientGroupPhase2: React.FC = () => {
           <tbody className="bg-white divide-y divide-gray-200">
             {sampleExpenditure.map((exp) => (
               <tr key={exp.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleItemClick(exp)}>
-                <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{exp.category}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{exp.type}</td>
+                <td className="px-3 py-2 text-sm font-medium text-gray-900">{exp.description}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{exp.frequency}</td>
                 <td className="px-3 py-2 whitespace-nowrap">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -2865,7 +2879,7 @@ const ClientGroupPhase2: React.FC = () => {
                       ? 'bg-red-100 text-red-800'
                       : 'bg-gray-100 text-gray-700'
                   }`}>
-                    {exp.essential ? 'Essential' : 'Discretionary'}
+                    {exp.essential ? 'Yes' : 'No'}
                   </span>
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
