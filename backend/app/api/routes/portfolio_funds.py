@@ -366,7 +366,7 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
             # Check if this might be a valid scenario (e.g., all money withdrawn)
             total_outflows = sum(amount for amount in monthly_amounts if amount > 0)
             total_inflows = abs(sum(amount for amount in monthly_amounts if amount < 0))
-            
+
             if total_outflows > total_inflows:
                 # This might be a valid scenario where more money was withdrawn than invested
                 logger.warning(f"Final cash flow is negative ({final_value}), but total outflows ({total_outflows}) > total inflows ({total_inflows}). Proceeding with calculation.")
@@ -375,14 +375,10 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
                 logger.error(error_msg)
                 raise ValueError(error_msg)
         elif final_value == 0:
-            # Special case: final value is exactly 0, meaning no net change
-            # This should result in an IRR of 0% (no growth or loss)
-            logger.info(f"Final cash flow is exactly 0.0 - this indicates no net change over the period. Returning IRR of 0%.")
-            days_in_period = (end_date - start_date).days
-            return {
-                'period_irr': 0.0,  # 0% IRR for no net change
-                'days_in_period': days_in_period
-            }
+            # Final month has zero net cash flow - this is valid and common
+            # Example: Fund switches that net to zero, or no activity in final month
+            # Let the IRR calculation proceed normally - numpy can handle zero values
+            logger.info(f"Final cash flow is 0.0 (zero net flow for final month). Proceeding with IRR calculation using full cash flow series.")
         
         # Check if we have a valid investment pattern (negative initial flow, positive final flow)
         if monthly_amounts[0] >= 0:
