@@ -755,9 +755,8 @@ const PreviousFundsIRRDisplay: React.FC<{
         <div className={`font-medium text-right ${
           livePreviousFundsIRR >= 0 ? 'text-green-700' : 'text-red-700'
         }`}>
-          {Math.abs(livePreviousFundsIRR) > 1 
-            ? `${livePreviousFundsIRR.toFixed(1)}%` 
-            : formatPercentage(livePreviousFundsIRR)}
+          {/* API returns percentage values (e.g., 5.2 for 5.2%), so display directly with % sign */}
+          {livePreviousFundsIRR.toFixed(1)}%
           <span className="ml-1">
             {livePreviousFundsIRR >= 0 ? '▲' : '▼'}
           </span>

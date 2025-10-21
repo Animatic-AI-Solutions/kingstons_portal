@@ -151,9 +151,23 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
       window.familyFormatterTestRun = true;
     }
 
-    const result = formatFamilyNames(reportData.productOwnerNames);
+    // Use productOwnerOrder if it exists to maintain the user's specified order
+    let orderedNames = reportData.productOwnerNames;
+    if (reportData.productOwnerOrder && reportData.productOwnerOrder.length > 0) {
+      // Order the names according to productOwnerOrder
+      // Only include names that are in both arrays (in case of data inconsistency)
+      const nameSet = new Set(reportData.productOwnerNames);
+      orderedNames = reportData.productOwnerOrder.filter(name => nameSet.has(name));
+
+      // Add any names that are in productOwnerNames but not in productOwnerOrder (shouldn't happen, but defensive)
+      const orderedSet = new Set(orderedNames);
+      const remainingNames = reportData.productOwnerNames.filter(name => !orderedSet.has(name));
+      orderedNames = [...orderedNames, ...remainingNames];
+    }
+
+    const result = formatFamilyNames(orderedNames);
     return result;
-  }, [reportData.productOwnerNames, customProductOwnerNames]);
+  }, [reportData.productOwnerNames, reportData.productOwnerOrder, customProductOwnerNames]);
 
   // PERFORMANCE OPTIMIZATION: Memoized event handlers
   const handleBackToGenerator = useCallback(() => {
