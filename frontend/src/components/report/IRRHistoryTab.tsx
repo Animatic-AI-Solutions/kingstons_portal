@@ -215,22 +215,20 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
         word-wrap: break-word !important;
         overflow-wrap: break-word !important;
       }
-      /* Fund Name column - 25% width for ~40 characters */
+      /* Fund Name column - 25% width, allow text wrapping for long names */
       .irr-history-table th:nth-child(1) {
         width: 25% !important;
         text-align: left !important;
-        max-width: 0 !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        vertical-align: top !important;
       }
       .irr-history-table td:nth-child(1) {
         width: 25% !important;
         text-align: left !important;
-        max-width: 0 !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        vertical-align: top !important;
       }
       /* Risk column - 5% width (thinner) */
       .irr-history-table th:nth-child(2) {
