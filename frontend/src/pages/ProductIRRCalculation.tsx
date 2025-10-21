@@ -1938,6 +1938,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                         <th className="px-1 py-1 text-right text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Product Switch Outs">PROD SWITCH OUT</th>
                         <th className="px-1 py-1 text-right text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Withdrawals">WITH.</th>
                         <th className="px-1 py-1 text-right text-xs font-medium text-gray-700 uppercase tracking-wider w-20" title="Most Recent Valuation">Valuation</th>
+                        <th className="px-1 py-1 text-right text-xs font-medium text-gray-700 uppercase tracking-wider w-20" title="Profit Made">Profit Made</th>
                         <th className="px-1 py-1 text-right text-xs font-medium text-gray-700 uppercase tracking-wider w-16" title="Most Recent IRR">IRR</th>
                       </tr>
                     </thead>
@@ -2107,11 +2108,48 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                   </div>
                                 </td>
                                 <td className="px-1 py-1 whitespace-nowrap">
+                                  <div className={`text-sm text-right ${holding.isVirtual ? "font-medium text-blue-800" : "text-gray-900"}`}>
+                                    {holding.isVirtual ? (
+                                      (() => {
+                                        const valuation = 0;
+                                        const investments = calculatePreviousFundsInvestments(allTimeActivities, inactiveHoldings);
+                                        const regularInvestments = calculatePreviousFundsRegularInvestments(allTimeActivities, inactiveHoldings);
+                                        const taxUplifts = calculatePreviousFundsTaxUplifts(allTimeActivities, inactiveHoldings);
+                                        const fundSwitchIn = calculatePreviousFundsSwitchIns(allTimeActivities, inactiveHoldings);
+                                        const fundSwitchOut = calculatePreviousFundsSwitchOuts(allTimeActivities, inactiveHoldings);
+                                        const productSwitchIn = calculatePreviousFundsProductSwitchIns(allTimeActivities, inactiveHoldings);
+                                        const productSwitchOut = calculatePreviousFundsProductSwitchOuts(allTimeActivities, inactiveHoldings);
+                                        const withdrawals = calculatePreviousFundsWithdrawals(allTimeActivities, inactiveHoldings);
+
+                                        const profit = valuation - (investments + regularInvestments + taxUplifts + fundSwitchIn + productSwitchIn) + (withdrawals + fundSwitchOut + productSwitchOut);
+                                        return formatCurrency(profit);
+                                      })()
+                                    ) : (
+                                      holding.market_value !== undefined && holding.market_value !== null ? (
+                                        (() => {
+                                          const valuation = holding.market_value;
+                                          const investments = calculateInvestments(allTimeActivities, holding.id);
+                                          const regularInvestments = calculateRegularInvestments(allTimeActivities, holding.id);
+                                          const taxUplifts = calculateTaxUplifts(allTimeActivities, holding.id);
+                                          const fundSwitchIn = calculateSwitchIns(allTimeActivities, holding.id);
+                                          const fundSwitchOut = calculateSwitchOuts(allTimeActivities, holding.id);
+                                          const productSwitchIn = calculateProductSwitchIns(allTimeActivities, holding.id);
+                                          const productSwitchOut = calculateProductSwitchOuts(allTimeActivities, holding.id);
+                                          const withdrawals = calculateWithdrawals(allTimeActivities, holding.id);
+
+                                          const profit = valuation - (investments + regularInvestments + taxUplifts + fundSwitchIn + productSwitchIn) + (withdrawals + fundSwitchOut + productSwitchOut);
+                                          return formatCurrency(profit);
+                                        })()
+                                      ) : 'N/A'
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="px-1 py-1 whitespace-nowrap">
                                   <div className="text-right">
                                       {holding.isVirtual ? (
                                       // Use live Previous Funds IRR component
-                                      <PreviousFundsIRRDisplay 
-                                        inactiveHoldings={inactiveHoldings} 
+                                      <PreviousFundsIRRDisplay
+                                        inactiveHoldings={inactiveHoldings}
                                         latestValuationDate={latestValuationDate}
                                         activityLogs={activityLogs}
                                       />
@@ -2193,6 +2231,24 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                   </td>
                                   <td className="px-1 py-1 whitespace-nowrap">
                                     <div className="text-sm text-right text-gray-700">
+                                      {(() => {
+                                        const valuation = 0;
+                                        const investments = calculateInvestments(allTimeActivities, inactiveHolding.id);
+                                        const regularInvestments = calculateRegularInvestments(allTimeActivities, inactiveHolding.id);
+                                        const taxUplifts = calculateTaxUplifts(allTimeActivities, inactiveHolding.id);
+                                        const fundSwitchIn = calculateSwitchIns(allTimeActivities, inactiveHolding.id);
+                                        const fundSwitchOut = calculateSwitchOuts(allTimeActivities, inactiveHolding.id);
+                                        const productSwitchIn = calculateProductSwitchIns(allTimeActivities, inactiveHolding.id);
+                                        const productSwitchOut = calculateProductSwitchOuts(allTimeActivities, inactiveHolding.id);
+                                        const withdrawals = calculateWithdrawals(allTimeActivities, inactiveHolding.id);
+
+                                        const profit = valuation - (investments + regularInvestments + taxUplifts + fundSwitchIn + productSwitchIn) + (withdrawals + fundSwitchOut + productSwitchOut);
+                                        return formatCurrency(profit);
+                                      })()}
+                                    </div>
+                                  </td>
+                                  <td className="px-1 py-1 whitespace-nowrap">
+                                    <div className="text-sm text-right text-gray-700">
                                       {getSingleFundIRRDisplay(inactiveHolding)}
                                     </div>
                                   </td>
@@ -2261,6 +2317,24 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                                 {formatDateMonthYear(latestValuationDate)}
                               </div>
                             )}
+                          </div>
+                        </td>
+                        <td className="px-1 py-1 whitespace-nowrap">
+                          <div className="text-sm text-right font-bold text-red-700">
+                            {(() => {
+                              const totalValuation = calculateTotalValue(holdings);
+                              const totalInvestments = calculateTotalInvestments(allTimeActivities, holdings);
+                              const totalRegularInvestments = calculateTotalRegularInvestments(allTimeActivities, holdings);
+                              const totalTaxUplifts = calculateTotalTaxUplifts(allTimeActivities, holdings);
+                              const totalFundSwitchIn = calculateTotalSwitchIns(allTimeActivities, holdings);
+                              const totalFundSwitchOut = calculateTotalSwitchOuts(allTimeActivities, holdings);
+                              const totalProductSwitchIn = calculateTotalProductSwitchIns(allTimeActivities, holdings);
+                              const totalProductSwitchOut = calculateTotalProductSwitchOuts(allTimeActivities, holdings);
+                              const totalWithdrawals = calculateTotalWithdrawals(allTimeActivities, holdings);
+
+                              const totalProfit = totalValuation - (totalInvestments + totalRegularInvestments + totalTaxUplifts + totalFundSwitchIn + totalProductSwitchIn) + (totalWithdrawals + totalFundSwitchOut + totalProductSwitchOut);
+                              return formatCurrency(totalProfit);
+                            })()}
                           </div>
                         </td>
                         <td className="px-1 py-1 whitespace-nowrap">

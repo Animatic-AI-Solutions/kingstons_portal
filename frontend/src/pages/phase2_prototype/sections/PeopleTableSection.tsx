@@ -28,6 +28,7 @@ const PeopleTableSection: React.FC<PeopleTableSectionProps> = ({
             <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Name</th>
             <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Relationship</th>
             <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Age</th>
+            <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">DOB</th>
             <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Contact</th>
             <th className="px-3 py-2"></th>
           </tr>
@@ -44,7 +45,8 @@ const PeopleTableSection: React.FC<PeopleTableSectionProps> = ({
                 <td className="px-3 py-2 whitespace-nowrap text-base font-medium text-gray-900">{fullName}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">{person.relationship}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">{person.age}</td>
-                <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">{person.emails[0]}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">{person.dateOfBirth}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">{person.primaryEmail}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-right text-base">
                   <ChevronRightIcon className="w-5 h-5 text-gray-900" />
                 </td>

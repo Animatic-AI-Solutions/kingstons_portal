@@ -216,12 +216,14 @@ const ClientGroupPhase2 = () => {
             {renderField('Date Moved In', person.dateMovedIn)}
             {/* Address block - all in left column with other fields in right column */}
             {renderField('Address Line 1', person.addressLine1)}
-            {renderField('Email Addresses', person.emails)}
+            {renderField('Primary Email', person.primaryEmail)}
             {renderField('Address Line 2', person.addressLine2)}
-            {renderField('Phone Numbers', person.phoneNumbers)}
+            {renderField('Secondary Email', person.secondaryEmail)}
             {renderField('Address Line 3', person.addressLine3)}
-            {renderField('Employment Status', person.employmentStatus)}
+            {renderField('Primary Phone', person.primaryPhone)}
             {renderField('Address Line 4', person.addressLine4)}
+            {renderField('Secondary Phone', person.secondaryPhone)}
+            {renderField('Employment Status', person.employmentStatus)}
             {renderField('Occupation', person.occupation)}
             {renderField('Address Line 5', person.addressLine5)}
             {renderField('NI Number', person.niNumber)}

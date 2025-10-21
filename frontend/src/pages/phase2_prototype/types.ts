@@ -19,8 +19,10 @@ export interface Person {
   addressLine4: string;
   addressLine5: string;
   postcode: string;
-  emails: string[];
-  phoneNumbers: string[];
+  primaryEmail: string;
+  secondaryEmail: string;
+  primaryPhone: string;
+  secondaryPhone: string;
   employmentStatus: string;
   occupation: string;
   dateMovedIn: string;
