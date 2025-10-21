@@ -75,6 +75,17 @@ const BasicDetailsTab: React.FC<BasicDetailsTabProps> = ({
 }) => {
   const [activeSubTab, setActiveSubTab] = useState('people');
 
+  // Action handlers
+  const handleDelete = (item: any) => {
+    console.log('Delete:', item);
+    // TODO: Implement delete logic
+  };
+
+  const handleLapse = (item: any) => {
+    console.log('Lapse:', item);
+    // TODO: Implement lapse logic
+  };
+
   const basicDetailsTabs = [
     { id: 'people', label: 'People' },
     { id: 'relationships', label: 'Special Relationships' },
@@ -92,6 +103,8 @@ const BasicDetailsTab: React.FC<BasicDetailsTabProps> = ({
             people={people}
             clientOrder={clientOrder}
             onPersonClick={onPersonClick}
+            onDelete={handleDelete}
+            onLapse={handleLapse}
           />
         );
       case 'relationships':
@@ -99,6 +112,8 @@ const BasicDetailsTab: React.FC<BasicDetailsTabProps> = ({
           <RelationshipsSection
             relationships={relationships}
             onRelationshipClick={onRelationshipClick}
+            onDelete={handleDelete}
+            onLapse={handleLapse}
           />
         );
       case 'health':
@@ -118,6 +133,8 @@ const BasicDetailsTab: React.FC<BasicDetailsTabProps> = ({
             people={people}
             clientOrder={clientOrder}
             onDocumentClick={onDocumentClick}
+            onDelete={handleDelete}
+            onLapse={handleLapse}
           />
         );
       case 'risk':

@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
-import { ChevronRightIcon } from '@heroicons/react/24/outline';
+import { ChevronRightIcon, TrashIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { SpecialRelationship } from '../types';
 
 interface RelationshipsSectionProps {
   relationships: SpecialRelationship[];
   onRelationshipClick: (relationship: SpecialRelationship) => void;
+  onDelete?: (relationship: SpecialRelationship) => void;
+  onLapse?: (relationship: SpecialRelationship) => void;
 }
 
 const RelationshipsSection: React.FC<RelationshipsSectionProps> = ({
   relationships,
-  onRelationshipClick
+  onRelationshipClick,
+  onDelete,
+  onLapse
 }) => {
   const [activeRelationshipTab, setActiveRelationshipTab] = useState<'personal' | 'professional'>('personal');
 
@@ -70,13 +74,20 @@ const RelationshipsSection: React.FC<RelationshipsSectionProps> = ({
             <tr>
               <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Name</th>
               <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Date of Birth</th>
+              {activeRelationshipTab === 'personal' && (
+                <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Age</th>
+              )}
               <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Relationship</th>
-              <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Dependency</th>
+              {activeRelationshipTab === 'personal' && (
+                <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Dependency</th>
+              )}
+              <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Associated Person(s)</th>
               <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Contact Details</th>
               {activeRelationshipTab === 'professional' && (
                 <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Firm Name</th>
               )}
               <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Status</th>
+              <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Actions</th>
               <th className="px-3 py-2"></th>
             </tr>
           </thead>
@@ -92,6 +103,9 @@ const RelationshipsSection: React.FC<RelationshipsSectionProps> = ({
                 >
                   <td className="px-3 py-2 whitespace-nowrap text-base font-medium text-gray-900">{rel.name}</td>
                   <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">{rel.dateOfBirth}</td>
+                  {activeRelationshipTab === 'personal' && (
+                    <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">{rel.age || '-'}</td>
+                  )}
                   <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">
                     <span className={`px-2 py-1 rounded-full text-sm font-medium ${
                       rel.status === 'Historical'
@@ -103,14 +117,31 @@ const RelationshipsSection: React.FC<RelationshipsSectionProps> = ({
                       {rel.relationship}
                     </span>
                   </td>
+                  {activeRelationshipTab === 'personal' && (
+                    <td className="px-3 py-2 text-base text-gray-900">
+                      {rel.isDependency !== undefined ? (rel.isDependency ? 'Yes' : 'No') : '-'}
+                    </td>
+                  )}
                   <td className="px-3 py-2 text-base text-gray-900">
-                    {rel.dependency.map((person, idx) => (
-                      <span key={idx} className="inline-block mr-1 mb-1">
-                        <span className="px-2 py-1 bg-gray-100 text-gray-900 rounded text-sm">
-                          {person}
+                    {activeRelationshipTab === 'professional' ? (
+                      rel.dependency?.map((person, idx) => (
+                        <span key={idx} className="inline-block mr-1 mb-1">
+                          <span className="px-2 py-1 bg-gray-100 text-gray-900 rounded text-sm">
+                            {person}
+                          </span>
                         </span>
-                      </span>
-                    ))}
+                      ))
+                    ) : (
+                      rel.associatedPerson && rel.associatedPerson.length > 0 ? (
+                        rel.associatedPerson.map((person, idx) => (
+                          <span key={idx} className="inline-block mr-1 mb-1">
+                            <span className="px-2 py-1 bg-gray-100 text-gray-900 rounded text-sm">
+                              {person}
+                            </span>
+                          </span>
+                        ))
+                      ) : '-'
+                    )}
                   </td>
                   <td className="px-3 py-2 text-base text-gray-900">{rel.contactDetails}</td>
                   {activeRelationshipTab === 'professional' && (
@@ -127,6 +158,34 @@ const RelationshipsSection: React.FC<RelationshipsSectionProps> = ({
                       {rel.status}
                     </span>
                   </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-base">
+                    <div className="flex items-center gap-2">
+                      {onLapse && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onLapse(rel);
+                          }}
+                          className="p-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded transition-colors"
+                          title="Lapse"
+                        >
+                          <XCircleIcon className="w-4 h-4" />
+                        </button>
+                      )}
+                      {onDelete && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(rel);
+                          }}
+                          className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                          title="Delete"
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-3 py-2 whitespace-nowrap text-right text-base">
                     <ChevronRightIcon className="w-5 h-5 text-gray-900" />
                   </td>
@@ -134,7 +193,7 @@ const RelationshipsSection: React.FC<RelationshipsSectionProps> = ({
               ))
             ) : (
               <tr>
-                <td colSpan={activeRelationshipTab === 'professional' ? 8 : 7} className="px-3 py-8 text-center text-base text-gray-900">
+                <td colSpan={activeRelationshipTab === 'professional' ? 9 : 10} className="px-3 py-8 text-center text-base text-gray-900">
                   No {activeRelationshipTab} relationships found
                 </td>
               </tr>

@@ -46,10 +46,15 @@ export interface SpecialRelationship {
   id: string;
   name: string;
   dateOfBirth: string;
+  age?: number; // For personal relationships
   relationship: string;
-  dependency: string[]; // Array of person names in the client group
+  // Personal relationship fields
+  isDependency?: boolean; // For personal relationships - yes/no
+  associatedPerson?: string[]; // For personal relationships - which people in client group
+  // Professional relationship fields
+  dependency?: string[]; // For professional relationships - Array of person names in the client group
+  firmName?: string; // Only for professional relationships
   contactDetails: string;
-  firmName?: string; // Only for working relationships (accountants, solicitors, etc.)
   status: 'Active' | 'Historical';
   notes: string;
 }

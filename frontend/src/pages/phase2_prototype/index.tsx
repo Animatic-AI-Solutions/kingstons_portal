@@ -13,7 +13,7 @@ import OtherProductsTab from './tabs/OtherProductsTab';
 import ObjectivesTab from './tabs/ObjectivesTab';
 
 // Import types
-import { Person, Asset } from './types';
+import { Person, Asset, SpecialRelationship } from './types';
 
 // Import sample data
 import {
@@ -195,47 +195,280 @@ const ClientGroupPhase2 = () => {
           </div>
         </div>
 
-        {/* Personal Details Section - Combined & Compact */}
+        {/* Personal Details Section - Matching Summary Card Layout */}
         <div className="mb-2">
           <h5 className="text-sm font-semibold text-gray-900 uppercase mb-2 flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">
             <UserIcon className="w-3 h-3" />
             Personal Details
           </h5>
-          <div className="grid grid-cols-2 divide-x divide-gray-200 border border-gray-200 rounded bg-white">
-            {renderField('Title', person.title)}
-            {renderField('Gender', person.gender)}
-            {renderField('Forename', person.forename)}
-            {renderField('Middle Names', person.middleNames)}
-            {renderField('Surname', person.surname)}
-            {renderField('Known As', person.knownAs)}
-            {renderField('Previous Names', person.previousNames)}
-            {renderField('Relationship Status', person.relationshipStatus)}
-            {renderField('Date of Birth', person.dateOfBirth)}
-            {renderField('Age', person.age)}
-            {renderField('Place of Birth', person.placeOfBirth)}
-            {renderField('Date Moved In', person.dateMovedIn)}
-            {/* Address block - all in left column with other fields in right column */}
-            {renderField('Address Line 1', person.addressLine1)}
-            {renderField('Primary Email', person.primaryEmail)}
-            {renderField('Address Line 2', person.addressLine2)}
-            {renderField('Secondary Email', person.secondaryEmail)}
-            {renderField('Address Line 3', person.addressLine3)}
-            {renderField('Primary Phone', person.primaryPhone)}
-            {renderField('Address Line 4', person.addressLine4)}
-            {renderField('Secondary Phone', person.secondaryPhone)}
-            {renderField('Employment Status', person.employmentStatus)}
-            {renderField('Occupation', person.occupation)}
-            {renderField('Address Line 5', person.addressLine5)}
-            {renderField('NI Number', person.niNumber)}
-            {renderField('Postcode', person.postcode)}
-            {renderField('AML Result', person.amlResult)}
-            {renderField('AML Date', person.amlDate)}
-            {/* Remaining fields */}
-            {renderField('Driving License Expiry', person.drivingLicenseExpiry)}
-            {renderField('Passport Expiry', person.passportExpiry)}
-            {renderField('Other IDs', person.otherIds)}
-            {renderField('Safe Words (3 words)', person.safeWords)}
-            {renderField('Share Data With', person.shareDataWith)}
+          <div className="border border-gray-200 rounded bg-white p-3 space-y-2">
+            {/* First Grid - Name fields and Previous Names/Status/Place of Birth */}
+            <div className="grid grid-cols-2 gap-x-3 text-sm">
+              <div className="space-y-2">
+                <div>
+                  <label className="block font-bold text-blue-600 mb-0.5">Title</label>
+                  <input
+                    type="text"
+                    defaultValue={person.title}
+                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-blue-600 mb-0.5">Forename</label>
+                  <input
+                    type="text"
+                    defaultValue={person.forename}
+                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-blue-600 mb-0.5">Middle Names</label>
+                  <input
+                    type="text"
+                    defaultValue={person.middleNames}
+                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-blue-600 mb-0.5">Surname</label>
+                  <input
+                    type="text"
+                    defaultValue={person.surname}
+                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-blue-600 mb-0.5">Known As</label>
+                  <input
+                    type="text"
+                    defaultValue={person.knownAs}
+                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-blue-600 mb-0.5">Gender</label>
+                  <input
+                    type="text"
+                    defaultValue={person.gender}
+                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-blue-600 mb-0.5">DOB</label>
+                  <input
+                    type="text"
+                    defaultValue={person.dateOfBirth}
+                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-blue-600 mb-0.5">Age</label>
+                  <input
+                    type="number"
+                    defaultValue={person.age}
+                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div>
+                  <label className="block font-bold text-blue-600 mb-0.5">Previous Names</label>
+                  <input
+                    type="text"
+                    defaultValue={person.previousNames}
+                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-blue-600 mb-0.5">Status</label>
+                  <input
+                    type="text"
+                    defaultValue={person.relationshipStatus}
+                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-blue-600 mb-0.5">Place of Birth</label>
+                  <input
+                    type="text"
+                    defaultValue={person.placeOfBirth}
+                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Address Section */}
+            <div className="pt-1 space-y-2">
+              <div>
+                <label className="block text-sm font-bold text-blue-600 mb-0.5">Address Line 1</label>
+                <input
+                  type="text"
+                  defaultValue={person.addressLine1}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-blue-600 mb-0.5">Address Line 2</label>
+                <input
+                  type="text"
+                  defaultValue={person.addressLine2}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-blue-600 mb-0.5">Address Line 3</label>
+                <input
+                  type="text"
+                  defaultValue={person.addressLine3}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-blue-600 mb-0.5">Address Line 4</label>
+                <input
+                  type="text"
+                  defaultValue={person.addressLine4}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-blue-600 mb-0.5">Address Line 5</label>
+                <input
+                  type="text"
+                  defaultValue={person.addressLine5}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-blue-600 mb-0.5">Postcode</label>
+                <input
+                  type="text"
+                  defaultValue={person.postcode}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-blue-600 mb-0.5">Moved in</label>
+                <input
+                  type="text"
+                  defaultValue={person.dateMovedIn}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+            </div>
+
+            {/* Contact Section */}
+            <div className="pt-1 space-y-2 text-sm">
+              <div>
+                <label className="block font-bold text-blue-600 mb-0.5">Primary Email</label>
+                <input
+                  type="email"
+                  defaultValue={person.primaryEmail}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-blue-600 mb-0.5">Secondary Email</label>
+                <input
+                  type="email"
+                  defaultValue={person.secondaryEmail}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-blue-600 mb-0.5">Primary Phone</label>
+                <input
+                  type="tel"
+                  defaultValue={person.primaryPhone}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-blue-600 mb-0.5">Secondary Phone</label>
+                <input
+                  type="tel"
+                  defaultValue={person.secondaryPhone}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+            </div>
+
+            {/* Employment/Security Section */}
+            <div className="grid grid-cols-2 gap-x-3 text-sm pt-3">
+              <div>
+                <div className="space-y-2">
+                  <div>
+                    <label className="block font-bold text-blue-600 mb-0.5">Employment Status</label>
+                    <input
+                      type="text"
+                      defaultValue={person.employmentStatus}
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-blue-600 mb-0.5">Occupation</label>
+                    <input
+                      type="text"
+                      defaultValue={person.occupation}
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-blue-600 mb-0.5">NI Number</label>
+                    <input
+                      type="text"
+                      defaultValue={person.niNumber}
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2 mt-3">
+                  <div>
+                    <label className="block font-bold text-blue-600 mb-0.5">3 words</label>
+                    <input
+                      type="text"
+                      defaultValue={person.safeWords.join(', ')}
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-blue-600 mb-0.5">Share Data With</label>
+                    <input
+                      type="text"
+                      defaultValue={person.shareDataWith}
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div>
+                  <label className="block font-bold text-blue-600 mb-0.5">Passport</label>
+                  <input
+                    type="text"
+                    defaultValue={person.passportExpiry}
+                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-blue-600 mb-0.5">AML Result</label>
+                  <input
+                    type="text"
+                    defaultValue={person.amlResult}
+                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-blue-600 mb-0.5">AML Date</label>
+                  <input
+                    type="text"
+                    defaultValue={person.amlDate}
+                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -263,50 +496,97 @@ const ClientGroupPhase2 = () => {
     const regularFields = entries.filter(([key]) => key !== 'id' && key !== 'notes');
     const notesField = entries.find(([key]) => key === 'notes');
 
+    const isSpecialRelationship = 'relationship' in selectedItem && 'dateOfBirth' in selectedItem && 'contactDetails' in selectedItem;
+    const peopleNames = samplePeople.map(p => `${p.title} ${p.forename} ${p.surname}`.trim());
+
     const handleTextareaResize = (e: React.FormEvent<HTMLTextAreaElement>) => {
       const textarea = e.currentTarget;
       textarea.style.height = 'auto';
       textarea.style.height = textarea.scrollHeight + 'px';
     };
 
+    const renderFieldInput = (key: string, value: any) => {
+      const label = key.replace(/([A-Z])/g, ' $1').trim();
+      const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+
+      // Special handling for special relationship fields
+      if (isSpecialRelationship) {
+        // Professional relationships - multi-select for dependency
+        if (key === 'dependency' && Array.isArray(value)) {
+          return (
+            <div key={key} className="flex items-start py-1.5 px-2 hover:bg-gray-50 border-b border-gray-100">
+              <label className="text-sm font-bold text-gray-900 w-36 flex-shrink-0 pt-0.5">{capitalizedLabel}:</label>
+              <select
+                multiple
+                defaultValue={value}
+                className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                size={Math.min(peopleNames.length, 5)}
+              >
+                {peopleNames.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            </div>
+          );
+        }
+
+        // Personal relationships - multi-select for associatedPerson
+        if (key === 'associatedPerson' && Array.isArray(value)) {
+          return (
+            <div key={key} className="flex items-start py-1.5 px-2 hover:bg-gray-50 border-b border-gray-100">
+              <label className="text-sm font-bold text-gray-900 w-36 flex-shrink-0 pt-0.5">{capitalizedLabel}:</label>
+              <select
+                multiple
+                defaultValue={value}
+                className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                size={Math.min(peopleNames.length, 5)}
+              >
+                {peopleNames.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            </div>
+          );
+        }
+      }
+
+      // Default rendering for other fields
+      return (
+        <div key={key} className="flex items-start py-1.5 px-2 hover:bg-gray-50 border-b border-gray-100">
+          <label className="text-sm font-bold text-gray-900 w-36 flex-shrink-0 pt-0.5">{capitalizedLabel}:</label>
+          {Array.isArray(value) ? (
+            <textarea
+              defaultValue={value.join(', ')}
+              onInput={handleTextareaResize}
+              ref={(el) => {
+                if (el) {
+                  el.style.height = 'auto';
+                  el.style.height = el.scrollHeight + 'px';
+                }
+              }}
+              className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500 resize-none overflow-hidden"
+            />
+          ) : (
+            <textarea
+              defaultValue={String(value)}
+              onInput={handleTextareaResize}
+              ref={(el) => {
+                if (el) {
+                  el.style.height = 'auto';
+                  el.style.height = el.scrollHeight + 'px';
+                }
+              }}
+              className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500 resize-none overflow-hidden"
+            />
+          )}
+        </div>
+      );
+    };
+
     return (
       <>
         <div className="grid grid-cols-2 divide-x divide-gray-200 border border-gray-200 rounded bg-white">
-          {regularFields.map(([key, value]) => {
-            const label = key.replace(/([A-Z])/g, ' $1').trim();
-            const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
-
-            return (
-              <div key={key} className="flex items-start py-1.5 px-2 hover:bg-gray-50 border-b border-gray-100">
-                <label className="text-sm font-bold text-gray-900 w-36 flex-shrink-0 pt-0.5">{capitalizedLabel}:</label>
-                {Array.isArray(value) ? (
-                  <textarea
-                    defaultValue={value.join(', ')}
-                    onInput={handleTextareaResize}
-                    ref={(el) => {
-                      if (el) {
-                        el.style.height = 'auto';
-                        el.style.height = el.scrollHeight + 'px';
-                      }
-                    }}
-                    className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500 resize-none overflow-hidden"
-                  />
-                ) : (
-                  <textarea
-                    defaultValue={String(value)}
-                    onInput={handleTextareaResize}
-                    ref={(el) => {
-                      if (el) {
-                        el.style.height = 'auto';
-                        el.style.height = el.scrollHeight + 'px';
-                      }
-                    }}
-                    className="flex-1 px-2 py-0.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500 resize-none overflow-hidden"
-                  />
-                )}
-              </div>
-            );
-          })}
+          {regularFields.map(([key, value]) => renderFieldInput(key, value))}
         </div>
 
         {/* Notes Section */}

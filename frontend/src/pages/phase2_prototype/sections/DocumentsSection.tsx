@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRightIcon } from '@heroicons/react/24/outline';
+import { ChevronRightIcon, TrashIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { Document, Person } from '../types';
 
 interface DocumentsSectionProps {
@@ -7,13 +7,17 @@ interface DocumentsSectionProps {
   people: Person[];
   clientOrder: string[];
   onDocumentClick: (document: Document) => void;
+  onDelete?: (document: Document) => void;
+  onLapse?: (document: Document) => void;
 }
 
 const DocumentsSection: React.FC<DocumentsSectionProps> = ({
   documents,
   people,
   clientOrder,
-  onDocumentClick
+  onDocumentClick,
+  onDelete,
+  onLapse
 }) => {
   // Sort documents: Active before Historical, then by client order
   // For documents with multiple people, use the earliest person in client order
@@ -49,6 +53,7 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
               <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Type</th>
               <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Person</th>
               <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Status</th>
+              <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Actions</th>
               <th className="px-3 py-2"></th>
             </tr>
           </thead>
@@ -84,6 +89,34 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
                   }`}>
                     {doc.status}
                   </span>
+                </td>
+                <td className="px-3 py-2 whitespace-nowrap text-base">
+                  <div className="flex items-center gap-2">
+                    {onLapse && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onLapse(doc);
+                        }}
+                        className="p-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded transition-colors"
+                        title="Lapse"
+                      >
+                        <XCircleIcon className="w-4 h-4" />
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete(doc);
+                        }}
+                        className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                        title="Delete"
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-right text-base">
                   <ChevronRightIcon className="w-5 h-5 text-gray-900" />

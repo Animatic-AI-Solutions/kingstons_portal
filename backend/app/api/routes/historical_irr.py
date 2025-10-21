@@ -393,7 +393,7 @@ async def get_irr_history_summary(
                         valuation_result = await db.fetchrow(
                             """
                             SELECT SUM(fv.valuation) as total_valuation
-                            FROM fund_valuations fv
+                            FROM portfolio_fund_valuations fv
                             JOIN portfolio_funds pf ON pf.id = fv.portfolio_fund_id
                             WHERE pf.portfolio_id = $1 AND fv.valuation_date = $2
                             """,
@@ -549,7 +549,7 @@ async def get_irr_history_summary(
                     valuation_result = await db.fetchrow(
                         """
                         SELECT SUM(fv.valuation) as total_valuation
-                        FROM fund_valuations fv
+                        FROM portfolio_fund_valuations fv
                         JOIN portfolio_funds pf ON pf.id = fv.portfolio_fund_id
                         WHERE pf.portfolio_id = ANY($1::int[]) AND fv.valuation_date = $2
                         """,

@@ -1,101 +1,717 @@
-chunk-QYFCA5BS.js?v=68f90eaa:21609 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
-ProductDetails.tsx:26 🔍 ProductDetails: productId from useParams: 303
-ProductDetails.tsx:27 🔍 ProductDetails: location.pathname: /products/303/irr-history
-ProductDetails.tsx:26 🔍 ProductDetails: productId from useParams: 303
-ProductDetails.tsx:27 🔍 ProductDetails: location.pathname: /products/303/irr-history
-ProductIRRHistory.tsx:185 AccountIRRHistory: Fetching data for accountId: 303
-ProductIRRHistory.tsx:197 AccountIRRHistory: Making API request to complete endpoint for product data
-ProductIRRHistory.tsx:185 AccountIRRHistory: Fetching data for accountId: 303
-ProductIRRHistory.tsx:197 AccountIRRHistory: Making API request to complete endpoint for product data
-ProductDetails.tsx:26 🔍 ProductDetails: productId from useParams: 303
-ProductDetails.tsx:27 🔍 ProductDetails: location.pathname: /products/303/irr-history
-ProductDetails.tsx:26 🔍 ProductDetails: productId from useParams: 303
-ProductDetails.tsx:27 🔍 ProductDetails: location.pathname: /products/303/irr-history
-ProductIRRHistory.tsx:203 AccountIRRHistory: Complete product data received: {id: 303, client_id: 86, product_name: 'Stocks & Shares', product_type: 'Pension', status: 'inactive', …}
-ProductIRRHistory.tsx:224 Processing portfolio funds for standardized IRR history calculation: 316
-ProductIRRHistory.tsx:230 🔍 DEBUG: ProductIRRHistory all portfolio funds from API:
-ProductIRRHistory.tsx:232 🔍 DEBUG: ProductIRRHistory Fund 1: ID=1541, Name=LF Equity Income , Status=active
-ProductIRRHistory.tsx:232 🔍 DEBUG: ProductIRRHistory Fund 2: ID=1542, Name=FTF ClearBridge UK Rising Dividends, Status=active
-ProductIRRHistory.tsx:232 🔍 DEBUG: ProductIRRHistory Fund 3: ID=1543, Name=Historical Funds, Status=active
-ProductIRRHistory.tsx:232 🔍 DEBUG: ProductIRRHistory Fund 4: ID=1540, Name=Vanguard LifeStrategy 40% Equity A Acc, Status=active
-ProductIRRHistory.tsx:232 🔍 DEBUG: ProductIRRHistory Fund 5: ID=1536, Name=Cash, Status=active
-ProductIRRHistory.tsx:232 🔍 DEBUG: ProductIRRHistory Fund 6: ID=1537, Name=Stewart Investors Worldwide Leaders , Status=active
-ProductIRRHistory.tsx:232 🔍 DEBUG: ProductIRRHistory Fund 7: ID=1539, Name=BNY Mellon Global Income, Status=active
-ProductIRRHistory.tsx:232 🔍 DEBUG: ProductIRRHistory Fund 8: ID=1538, Name=Royal London Sustainable World Trust C , Status=active
-ProductIRRHistory.tsx:264 Found 8 active holdings and 0 inactive holdings
-ProductDetails.tsx:26 🔍 ProductDetails: productId from useParams: 303
-ProductDetails.tsx:27 🔍 ProductDetails: location.pathname: /products/303/irr-history
-ProductDetails.tsx:26 🔍 ProductDetails: productId from useParams: 303
-ProductDetails.tsx:27 🔍 ProductDetails: location.pathname: /products/303/irr-history
-ProductIRRHistory.tsx:203 AccountIRRHistory: Complete product data received: {id: 303, client_id: 86, product_name: 'Stocks & Shares', product_type: 'Pension', status: 'inactive', …}
-ProductIRRHistory.tsx:224 Processing portfolio funds for standardized IRR history calculation: 316
-ProductIRRHistory.tsx:230 🔍 DEBUG: ProductIRRHistory all portfolio funds from API:
-ProductIRRHistory.tsx:232 🔍 DEBUG: ProductIRRHistory Fund 1: ID=1541, Name=LF Equity Income , Status=active
-ProductIRRHistory.tsx:232 🔍 DEBUG: ProductIRRHistory Fund 2: ID=1542, Name=FTF ClearBridge UK Rising Dividends, Status=active
-ProductIRRHistory.tsx:232 🔍 DEBUG: ProductIRRHistory Fund 3: ID=1543, Name=Historical Funds, Status=active
-ProductIRRHistory.tsx:232 🔍 DEBUG: ProductIRRHistory Fund 4: ID=1540, Name=Vanguard LifeStrategy 40% Equity A Acc, Status=active
-ProductIRRHistory.tsx:232 🔍 DEBUG: ProductIRRHistory Fund 5: ID=1536, Name=Cash, Status=active
-ProductIRRHistory.tsx:232 🔍 DEBUG: ProductIRRHistory Fund 6: ID=1537, Name=Stewart Investors Worldwide Leaders , Status=active
-ProductIRRHistory.tsx:232 🔍 DEBUG: ProductIRRHistory Fund 7: ID=1539, Name=BNY Mellon Global Income, Status=active
-ProductIRRHistory.tsx:232 🔍 DEBUG: ProductIRRHistory Fund 8: ID=1538, Name=Royal London Sustainable World Trust C , Status=active
-ProductIRRHistory.tsx:264 Found 8 active holdings and 0 inactive holdings
-ProductDetails.tsx:26 🔍 ProductDetails: productId from useParams: 303
-ProductDetails.tsx:27 🔍 ProductDetails: location.pathname: /products/303/irr-history
-ProductDetails.tsx:26 🔍 ProductDetails: productId from useParams: 303
-ProductDetails.tsx:27 🔍 ProductDetails: location.pathname: /products/303/irr-history
-ProductIRRHistory.tsx:319 Available IRR dates found: (12) ['2025-05-01', '2025-02-01', '2025-01-01', '2024-07-01', '2024-02-01', '2023-11-01', '2023-04-01', '2022-07-01', '2021-11-01', '2021-03-01', '2020-06-01', '2019-05-01']
-ProductIRRHistory.tsx:328 🔍 DEBUG: Fetching stored portfolio IRR data for product 303
-ProductIRRHistory.tsx:319 Available IRR dates found: (12) ['2025-05-01', '2025-02-01', '2025-01-01', '2024-07-01', '2024-02-01', '2023-11-01', '2023-04-01', '2022-07-01', '2021-11-01', '2021-03-01', '2020-06-01', '2019-05-01']
-ProductIRRHistory.tsx:328 🔍 DEBUG: Fetching stored portfolio IRR data for product 303
-ProductIRRHistory.tsx:336 ✅ Found 8 funds with stored IRR records
-ProductIRRHistory.tsx:344 🔍 DEBUG: Using portfolio ID for IRR lookup: 316
-ProductIRRHistory.tsx:353 🔍 Looking for stored portfolio IRR values for portfolio 316
-ProductIRRHistory.tsx:361 📡 Successfully fetched portfolio IRR data for portfolio 316
-ProductIRRHistory.tsx:364 📡 Response status: 200, received 12 portfolio IRR records
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR May 2025: 5.1%
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Feb 2025: 5.1%
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Jan 2025: 5.1%
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Jul 2024: 5.1%
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Feb 2024: 5.1%
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Nov 2023: 5.1%
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Apr 2023: 6.1%
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Jul 2022: 6.3%
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Nov 2021: 9.3%
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Mar 2021: 7.9%
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Jun 2020: 7.3%
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR May 2019: 8.7%
-ProductIRRHistory.tsx:404 🔍 DEBUG: Portfolio IRR fetch complete. Setting 12 results: {May 2025: 5.1, Feb 2025: 5.1, Jan 2025: 5.1, Jul 2024: 5.1, Feb 2024: 5.1, …}
-ProductIRRHistory.tsx:336 ✅ Found 8 funds with stored IRR records
-ProductIRRHistory.tsx:344 🔍 DEBUG: Using portfolio ID for IRR lookup: 316
-ProductIRRHistory.tsx:353 🔍 Looking for stored portfolio IRR values for portfolio 316
-ProductIRRHistory.tsx:361 📡 Successfully fetched portfolio IRR data for portfolio 316
-ProductIRRHistory.tsx:364 📡 Response status: 200, received 12 portfolio IRR records
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR May 2025: 5.1%
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Feb 2025: 5.1%
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Jan 2025: 5.1%
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Jul 2024: 5.1%
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Feb 2024: 5.1%
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Nov 2023: 5.1%
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Apr 2023: 6.1%
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Jul 2022: 6.3%
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Nov 2021: 9.3%
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Mar 2021: 7.9%
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Jun 2020: 7.3%
-ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR May 2019: 8.7%
-ProductIRRHistory.tsx:404 🔍 DEBUG: Portfolio IRR fetch complete. Setting 12 results: {May 2025: 5.1, Feb 2025: 5.1, Jan 2025: 5.1, Jul 2024: 5.1, Feb 2024: 5.1, …}
-ProductIRRHistory.tsx:510 📊 Loaded 12 IRR values for fund: LF Equity Income 
-ProductIRRHistory.tsx:510 📊 Loaded 12 IRR values for fund: FTF ClearBridge UK Rising Dividends
-ProductIRRHistory.tsx:510 📊 Loaded 12 IRR values for fund: Historical Funds
-ProductIRRHistory.tsx:510 📊 Loaded 12 IRR values for fund: Vanguard LifeStrategy 40% Equity A Acc
-ProductIRRHistory.tsx:510 📊 Loaded 3 IRR values for fund: Cash
-ProductIRRHistory.tsx:510 📊 Loaded 12 IRR values for fund: Stewart Investors Worldwide Leaders 
-ProductIRRHistory.tsx:510 📊 Loaded 12 IRR values for fund: BNY Mellon Global Income
-ProductIRRHistory.tsx:510 📊 Loaded 12 IRR values for fund: Royal London Sustainable World Trust C 
-ProductIRRHistory.tsx:510 📊 Loaded 12 IRR values for fund: LF Equity Income 
-ProductIRRHistory.tsx:510 📊 Loaded 12 IRR values for fund: FTF ClearBridge UK Rising Dividends
-ProductIRRHistory.tsx:510 📊 Loaded 12 IRR values for fund: Historical Funds
-ProductIRRHistory.tsx:510 📊 Loaded 12 IRR values for fund: Vanguard LifeStrategy 40% Equity A Acc
-ProductIRRHistory.tsx:510 📊 Loaded 3 IRR values for fund: Cash
-ProductIRRHistory.tsx:510 📊 Loaded 12 IRR values for fund: Stewart Investors Worldwide Leaders 
-ProductIRRHistory.tsx:510 📊 Loaded 12 IRR values for fund: BNY Mellon Global Income
-ProductIRRHistory.tsx:510 📊 Loaded 12 IRR values for fund: Royal London Sustainable World Trust C 
+ReportGenerator.tsx:799 🕐 PHASE 2.1: Using debounced updateRelatedProducts (300ms delay)
+ReportGenerator.tsx:446 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 0 products
+ReportGenerator.tsx:495 🔍 [EXTRACT OWNERS DEBUG] Final result: []
+ReportGenerator.tsx:446 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 0 products
+ReportGenerator.tsx:495 🔍 [EXTRACT OWNERS DEBUG] Final result: []
+ReportGenerator.tsx:3065 🚫 PHASE 1.2 FIX: Skipping IRR dates fetch - no included products
+ReportGenerator.tsx:728 Fetching 1 client groups in parallel...
+ReportGenerator.tsx:739 Fetched client group 85: 4 products
+ReportGenerator.tsx:769 Parallel fetch complete: 1 client groups processed
+ReportGenerator.tsx:779 Total products displayed: 4
+ReportGenerator.tsx:780 Client group cache size: 0 groups
+ReportGenerator.tsx:446 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 4 products
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 283, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 283
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 284, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 284
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 285, name: 'Stocks & Shares ISA', product_owner_name: 'Colin Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 285
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 96, firstname: 'Colin', surname: 'Cotton', known_as: 'Colin'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Colin Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Colin Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 286, name: 'Retirement Account', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 286
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Colin Cotton', 'Jackie Cotton']
+ 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 4 products
+ 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 283, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 283
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 284, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 284
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 285, name: 'Stocks & Shares ISA', product_owner_name: 'Colin Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 285
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 96, firstname: 'Colin', surname: 'Cotton', known_as: 'Colin'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Colin Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Colin Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 286, name: 'Retirement Account', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 286
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Colin Cotton', 'Jackie Cotton']
+ 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 4 products
+ 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 283, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 283
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 284, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 284
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 285, name: 'Stocks & Shares ISA', product_owner_name: 'Colin Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 285
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 96, firstname: 'Colin', surname: 'Cotton', known_as: 'Colin'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Colin Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Colin Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 286, name: 'Retirement Account', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 286
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Colin Cotton', 'Jackie Cotton']
+ 🕐 PHASE 2.1: Using debounced updateRelatedProducts (300ms delay)
+ 📊 Fetching available IRR dates for 4 products
+ 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 4 products
+ 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 283, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 283
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 284, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 284
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 285, name: 'Stocks & Shares ISA', product_owner_name: 'Colin Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 285
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 96, firstname: 'Colin', surname: 'Cotton', known_as: 'Colin'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Colin Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Colin Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 286, name: 'Retirement Account', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 286
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Colin Cotton', 'Jackie Cotton']
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ReportGenerator.tsx:3507 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
+ReportGenerator.tsx:3525 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
+ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
+ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
+ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
+ReportGenerator.tsx:446 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 4 products
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 283, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 283
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 284, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 284
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 285, name: 'Stocks & Shares ISA', product_owner_name: 'Colin Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 285
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 96, firstname: 'Colin', surname: 'Cotton', known_as: 'Colin'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Colin Cotton
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Colin Cotton
+ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 286, name: 'Retirement Account', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 286
+ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ReportGenerator.tsx:495 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Colin Cotton', 'Jackie Cotton']
+ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ReportGenerator.tsx:3507 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
+ReportGenerator.tsx:3525 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
+ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
+ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
+ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
+ 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 4 products
+ 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 283, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 283
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 284, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 284
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 285, name: 'Stocks & Shares ISA', product_owner_name: 'Colin Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 285
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 96, firstname: 'Colin', surname: 'Cotton', known_as: 'Colin'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Colin Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Colin Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 286, name: 'Retirement Account', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 286
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Colin Cotton', 'Jackie Cotton']
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
+ 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
+ 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
+ReportGenerator.tsx:3525 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
+ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
+ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
+ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
+ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ReportGenerator.tsx:3507 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
+ReportGenerator.tsx:3525 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
+ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
+ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
+ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
+ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ReportGenerator.tsx:3507 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
+ReportGenerator.tsx:3525 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
+ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
+ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
+ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
+ 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
+ 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
+ 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
+ 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
+ Using cached data for client group 85: 4 products
+ Total products displayed: 4
+ Client group cache size: 1 groups
+ 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 4 products
+ 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 283, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 283
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 284, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 284
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 285, name: 'Stocks & Shares ISA', product_owner_name: 'Colin Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 285
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 96, firstname: 'Colin', surname: 'Cotton', known_as: 'Colin'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Colin Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Colin Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 286, name: 'Retirement Account', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 286
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Colin Cotton', 'Jackie Cotton']
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
+ 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
+ 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
+ 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 4 products
+ 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 283, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 283
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 284, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 284
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 285, name: 'Stocks & Shares ISA', product_owner_name: 'Colin Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 285
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 96, firstname: 'Colin', surname: 'Cotton', known_as: 'Colin'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Colin Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Colin Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 286, name: 'Retirement Account', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 286
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Colin Cotton', 'Jackie Cotton']
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
+ 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
+ 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
+ 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 4 products
+ 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 283, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 283
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 284, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 284
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 285, name: 'Stocks & Shares ISA', product_owner_name: 'Colin Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 285
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 96, firstname: 'Colin', surname: 'Cotton', known_as: 'Colin'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Colin Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Colin Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 286, name: 'Retirement Account', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
+ 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 286
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
+ 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Colin Cotton', 'Jackie Cotton']
+ 📊 Fetching available IRR dates for 4 products
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
+ 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
+ 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
+ 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
+ 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
+ Global Top 8 Most Recent Dates: []
+ Product 283: Selected 0 out of 8 global dates: []
+ Product 284: Selected 0 out of 8 global dates: []
+ Product 285: Selected 0 out of 8 global dates: []
+ Product 286: Selected 0 out of 8 global dates: []
+ Select All Results Summary:
+ Global unique dates selected: 0
+ Product 283: 0/0 global dates selected
+ Product 284: 0/0 global dates selected
+ Product 285: 0/0 global dates selected
+ Product 286: 0/0 global dates selected
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
+ 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
+ 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
+ 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
+ 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
+ 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
+ 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
+ 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
+ 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
+ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
+ReportGenerator.tsx:2947 Global Top 8 Most Recent Dates: []
+ReportGenerator.tsx:2967 Product 283: Selected 0 out of 8 global dates: []
+ReportGenerator.tsx:2967 Product 284: Selected 0 out of 8 global dates: []
+ReportGenerator.tsx:2967 Product 285: Selected 0 out of 8 global dates: []
+ReportGenerator.tsx:2967 Product 286: Selected 0 out of 8 global dates: []
+ReportGenerator.tsx:2970 Select All Results Summary:
+ReportGenerator.tsx:2971 Global unique dates selected: 0
+ReportGenerator.tsx:2974 Product 283: 0/0 global dates selected
+ReportGenerator.tsx:2974 Product 284: 0/0 global dates selected
+ReportGenerator.tsx:2974 Product 285: 0/0 global dates selected
+ReportGenerator.tsx:2974 Product 286: 0/0 global dates selected
+ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ReportGenerator.tsx:3507 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
+ReportGenerator.tsx:3525 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
+ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
+ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
+ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
+ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ReportGenerator.tsx:3507 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
+ReportGenerator.tsx:3525 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
+ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
+ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
+ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
+ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ReportGenerator.tsx:3507 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
+ReportGenerator.tsx:3525 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
+ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
+ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
+ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
+ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ReportGenerator.tsx:3507 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
+ReportGenerator.tsx:3525 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
+ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
+ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
+ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
+ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
+ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
+ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products

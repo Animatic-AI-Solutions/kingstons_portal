@@ -1,17 +1,21 @@
 import React from 'react';
-import { ChevronRightIcon } from '@heroicons/react/24/outline';
+import { ChevronRightIcon, TrashIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { Person } from '../types';
 
 interface PeopleTableSectionProps {
   people: Person[];
   clientOrder: string[];
   onPersonClick: (person: Person) => void;
+  onDelete?: (person: Person) => void;
+  onLapse?: (person: Person) => void;
 }
 
 const PeopleTableSection: React.FC<PeopleTableSectionProps> = ({
   people,
   clientOrder,
-  onPersonClick
+  onPersonClick,
+  onDelete,
+  onLapse
 }) => {
   // Get people sorted by client order
   const sortedPeople = [...people].sort((a, b) => {
@@ -30,6 +34,7 @@ const PeopleTableSection: React.FC<PeopleTableSectionProps> = ({
             <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Age</th>
             <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">DOB</th>
             <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Contact</th>
+            <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Actions</th>
             <th className="px-3 py-2"></th>
           </tr>
         </thead>
@@ -47,6 +52,34 @@ const PeopleTableSection: React.FC<PeopleTableSectionProps> = ({
                 <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">{person.age}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">{person.dateOfBirth}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">{person.primaryEmail}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-base">
+                  <div className="flex items-center gap-2">
+                    {onLapse && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onLapse(person);
+                        }}
+                        className="p-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded transition-colors"
+                        title="Lapse"
+                      >
+                        <XCircleIcon className="w-4 h-4" />
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete(person);
+                        }}
+                        className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                        title="Delete"
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </td>
                 <td className="px-3 py-2 whitespace-nowrap text-right text-base">
                   <ChevronRightIcon className="w-5 h-5 text-gray-900" />
                 </td>

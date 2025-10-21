@@ -3481,27 +3481,22 @@ Please select a different valuation date or ensure all active funds have valuati
                                     
                                     if (p.product_owners && p.product_owners.length > 0) {
                                       p.product_owners.forEach(productOwner => {
-                                        // Check if this product owner matches the current owner name
-                                        const knownAs = (productOwner.known_as && productOwner.known_as.trim()) || '';
-                                        const firstname = (productOwner.firstname && productOwner.firstname.trim()) || '';
-                                        const surname = (productOwner.surname && productOwner.surname.trim()) || '';
-                                        
-                                        // Create both possible display names
-                                        const knownAsDisplayName = knownAs || firstname;  // For product titles
-                                        const formalDisplayName = (firstname && surname) ? `${firstname} ${surname}` : (knownAs || firstname);  // For report headers
-                                        
+                                        // Use the same formal display name logic as extraction to ensure consistency
+                                        const knownAsDisplayName = getProductOwnerKnownAsDisplayName(productOwner);  // For product titles
+                                        const formalDisplayName = getProductOwnerFormalDisplayName(productOwner);  // For report headers
+
                                         console.log(`🔍 [PRODUCT COUNT DEBUG] Product owner check:`, {
                                           owner_id: productOwner.id,
-                                          knownAs,
-                                          firstname,
-                                          surname,
+                                          knownAs: productOwner.known_as,
+                                          firstname: productOwner.firstname,
+                                          surname: productOwner.surname,
                                           knownAsDisplayName,
                                           formalDisplayName,
                                           target_owner: owner,
                                           matches_known_as: knownAsDisplayName === owner,
                                           matches_formal: formalDisplayName === owner
                                         });
-                                        
+
                                         // Match against either display name format
                                         if (knownAsDisplayName === owner || formalDisplayName === owner) {
                                           console.log(`🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: ${productOwner.id} for "${owner}"`);
