@@ -358,22 +358,33 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
         
         # Validate cash flow sequence
         final_value = monthly_amounts[-1]
-        
+
         # UPDATED: More flexible validation for final cash flow
         # The final cash flow should generally be positive (representing current valuation)
         # but we'll allow some flexibility for edge cases
         if final_value < 0:
-            # Check if this might be a valid scenario (e.g., all money withdrawn)
-            total_outflows = sum(amount for amount in monthly_amounts if amount > 0)
-            total_inflows = abs(sum(amount for amount in monthly_amounts if amount < 0))
+            # Check if there are positive cash flows earlier in the sequence
+            # This is a valid scenario for fully-exited funds (zero valuation)
+            # where the final cash flow is just the last activity
+            positive_flows_exist = any(amount > 0 for amount in monthly_amounts)
 
-            if total_outflows > total_inflows:
-                # This might be a valid scenario where more money was withdrawn than invested
-                logger.warning(f"Final cash flow is negative ({final_value}), but total outflows ({total_outflows}) > total inflows ({total_inflows}). Proceeding with calculation.")
+            if positive_flows_exist:
+                # Valid scenario: Fund has positive cash flows earlier but negative final value
+                # This happens with fully-exited funds (£0 valuation) where last activity is investment/fee
+                logger.warning(f"Final cash flow is negative ({final_value}), but positive cash flows exist earlier in sequence. This is valid for fully-exited funds. Proceeding with calculation.")
             else:
-                error_msg = f"Final cash flow (valuation) must be positive, but got {final_value}. This typically indicates the valuation is being combined with activities in the same month."
-                logger.error(error_msg)
-                raise ValueError(error_msg)
+                # No positive flows at all - this shouldn't happen as we validated earlier
+                # but keep as safety check
+                total_outflows = sum(amount for amount in monthly_amounts if amount > 0)
+                total_inflows = abs(sum(amount for amount in monthly_amounts if amount < 0))
+
+                if total_outflows > total_inflows:
+                    # This might be a valid scenario where more money was withdrawn than invested
+                    logger.warning(f"Final cash flow is negative ({final_value}), but total outflows ({total_outflows}) > total inflows ({total_inflows}). Proceeding with calculation.")
+                else:
+                    error_msg = f"Final cash flow (valuation) must be positive, but got {final_value}. This typically indicates the valuation is being combined with activities in the same month."
+                    logger.error(error_msg)
+                    raise ValueError(error_msg)
         elif final_value == 0:
             # Final month has zero net cash flow - this is valid and common
             # Example: Fund switches that net to zero, or no activity in final month
@@ -385,9 +396,10 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
             error_msg = f"Initial cash flow should be negative (investment), but got {monthly_amounts[0]}"
             logger.warning(error_msg)  # Warning only, as this might work in some cases
         
-        logger.info("\nMonthly cash flows:")
-        for i, amount in enumerate(monthly_amounts):
-            logger.info(f"Month {i}: {amount}")
+        # Monthly cash flows logging (commented out to reduce log volume)
+        # logger.info("\nMonthly cash flows:")
+        # for i, amount in enumerate(monthly_amounts):
+        #     logger.info(f"Month {i}: {amount}")
         
         # Calculate IRR using the monthly cash flows
         logger.info("Calculating IRR using numpy_financial.irr...")
@@ -2020,11 +2032,12 @@ async def calculate_portfolio_fund_irr(
             logger.info(f"Start date: {base_date.year}-{base_date.month:02d}")
             logger.info(f"End date: {calculation_date.year}-{calculation_date.month:02d}")
             logger.info(f"Total months: {total_months + 1}")
-            
-            logger.info("\nMonthly cash flows:")
-            for i, amount in enumerate(monthly_amounts):
-                logger.info(f"Month {i}: {amount}")
-            
+
+            # Monthly cash flows logging (commented out to reduce log volume)
+            # logger.info("\nMonthly cash flows:")
+            # for i, amount in enumerate(monthly_amounts):
+            #     logger.info(f"Month {i}: {amount}")
+
             # Calculate IRR using numpy_financial
             logger.info("Calculating IRR using numpy_financial.irr...")
             monthly_irr = npf.irr(monthly_amounts)
@@ -2259,22 +2272,22 @@ async def calculate_multiple_portfolio_funds_irr(
                 logger.warning(f"No valuation found for fund {fund_id} as of {irr_date_obj}")
                 fund_valuations[fund_id] = None  # Use None instead of 0.0 for missing valuations
         
-        # DEBUG: Log detailed valuation information for historical IRR troubleshooting
-        logger.error(f"💰 DEBUG: Valuation lookup for historical date {irr_date_obj}:")
-        logger.error(f"💰 DEBUG: Requested fund IDs: {portfolio_fund_ids}")
-        logger.error(f"💰 DEBUG: Found valuations: {fund_valuations}")
-        for fund_id, valuation in fund_valuations.items():
-            if valuation is not None:
-                logger.error(f"💰 DEBUG: Fund {fund_id} has valuation £{valuation} as of {irr_date_obj}")
-            else:
-                logger.error(f"💰 DEBUG: Fund {fund_id} has NO valuation as of {irr_date_obj}")
-        
+        # DEBUG: Log detailed valuation information for historical IRR troubleshooting (commented out to reduce log clutter)
+        # logger.error(f"💰 DEBUG: Valuation lookup for historical date {irr_date_obj}:")
+        # logger.error(f"💰 DEBUG: Requested fund IDs: {portfolio_fund_ids}")
+        # logger.error(f"💰 DEBUG: Found valuations: {fund_valuations}")
+        # for fund_id, valuation in fund_valuations.items():
+        #     if valuation is not None:
+        #         logger.error(f"💰 DEBUG: Fund {fund_id} has valuation £{valuation} as of {irr_date_obj}")
+        #     else:
+        #         logger.error(f"💰 DEBUG: Fund {fund_id} has NO valuation as of {irr_date_obj}")
+
         logger.info(f"✅ Batch valuation optimization complete - Fund valuations: {fund_valuations}")
-        
+
         # NEW: Check if we have any actual valuations for the historical date
         # If no valuations exist as of the historical date, we cannot calculate a meaningful IRR
         funds_with_valuations = sum(1 for v in fund_valuations.values() if v is not None)
-        logger.error(f"💰 DEBUG: {funds_with_valuations} out of {len(fund_valuations)} funds have valuations as of {irr_date_obj}")
+        # logger.error(f"💰 DEBUG: {funds_with_valuations} out of {len(fund_valuations)} funds have valuations as of {irr_date_obj}")
         
         if funds_with_valuations == 0:
             logger.warning(f"💰 DEBUG: ⚠️ No valuations found for any funds as of {irr_date_obj}, cannot calculate historical IRR")
@@ -2296,7 +2309,7 @@ async def calculate_multiple_portfolio_funds_irr(
         # CRITICAL FIX: Filter out portfolio funds without valuations for this date
         # This prevents products like AJ1055J from distorting IRR calculations
         # when they have activities but no valuations for a specific historical date
-        logger.error(f"🔍 DEBUG: ORIGINAL FUND IDs REQUESTED: {portfolio_fund_ids}")
+        # logger.error(f"🔍 DEBUG: ORIGINAL FUND IDs REQUESTED: {portfolio_fund_ids}")
 
         portfolio_fund_ids_with_valuations = [
             fund_id for fund_id in portfolio_fund_ids
@@ -2313,7 +2326,7 @@ async def calculate_multiple_portfolio_funds_irr(
             logger.warning(f"💰 DEBUG: ✅ Including {len(portfolio_fund_ids_with_valuations)} funds with valuations: {portfolio_fund_ids_with_valuations}")
 
         # Update portfolio_fund_ids to only include funds with valuations
-        logger.error(f"🔍 DEBUG: FUND IDs AFTER FILTERING (only with valuations): {portfolio_fund_ids_with_valuations}")
+        # logger.error(f"🔍 DEBUG: FUND IDs AFTER FILTERING (only with valuations): {portfolio_fund_ids_with_valuations}")
         portfolio_fund_ids = portfolio_fund_ids_with_valuations
         
         # If no funds remain after filtering, return 0% IRR
@@ -2537,12 +2550,12 @@ async def calculate_multiple_portfolio_funds_irr(
             "period_end": max(cash_flows.keys()).isoformat(),
             "days_in_period": days_in_period
         }
-        
 
-        # 🔴 DEBUG: Final result
-        logger.error(f"🔴 ✅ MULTIPLE FUNDS IRR CALCULATION COMPLETE")
-        logger.error(f"🔴 🎯 FINAL RESULT: {result['irr_percentage']}%")
-        
+
+        # 🔴 DEBUG: Final result (commented out to reduce log clutter)
+        # logger.error(f"🔴 ✅ MULTIPLE FUNDS IRR CALCULATION COMPLETE")
+        # logger.error(f"🔴 🎯 FINAL RESULT: {result['irr_percentage']}%")
+
         # Cache the result for future use (include cash flows and fund valuations for uniqueness)
         cash_flow_values = [cash_flows[month] for month in sorted(cash_flows.keys())]
         # Round amounts below a pence to zero to handle floating point precision errors
@@ -2728,8 +2741,8 @@ async def calculate_single_portfolio_fund_irr(
                 activity_date = activity_timestamp.date() if hasattr(activity_timestamp, 'date') else activity_timestamp
             month_key = activity_date.replace(day=1)
             
-            # DEBUG: Log each activity processing
-            logger.info(f"💰 DEBUG: Processing activity ID {activity.get('id')} - Type: {activity['activity_type']}, Amount: £{activity['amount']}, Timestamp: {activity_timestamp}, Parsed Date: {activity_date}, Month Key: {month_key}")
+            # DEBUG: Log each activity processing (commented out to reduce log volume)
+            # logger.info(f"💰 DEBUG: Processing activity ID {activity.get('id')} - Type: {activity['activity_type']}, Amount: £{activity['amount']}, Timestamp: {activity_timestamp}, Parsed Date: {activity_date}, Month Key: {month_key}")
             
             if month_key not in cash_flows:
                 cash_flows[month_key] = 0.0
@@ -2746,37 +2759,37 @@ async def calculate_single_portfolio_fund_irr(
                 continue
                 
             activity_type = raw_activity_type.lower()  # Convert to lowercase for comparison
-            
-            logger.info(f"💰 DEBUG: Processing activity - Date: {activity_date}, Type: {activity['activity_type']}, Amount: £{amount}")
+
+            # logger.info(f"💰 DEBUG: Processing activity - Date: {activity_date}, Type: {activity['activity_type']}, Amount: £{amount}")
             
             # Use explicit matching for fund switches and substring matching for other activities
             if any(keyword in activity_type for keyword in ["investment"]):
                 cash_flows[month_key] -= amount  # Negative for investments
-                logger.info(f"💰 DEBUG: Applied as INVESTMENT (negative): -£{amount}")
+                # logger.info(f"💰 DEBUG: Applied as INVESTMENT (negative): -£{amount}")
             elif activity_type in ["taxuplift", "taxuplift_tax"]:
                 cash_flows[month_key] -= amount  # Tax uplift = negative (inflow)
-                logger.info(f"💰 DEBUG: Applied as TAX UPLIFT (negative): -£{amount}")
+                # logger.info(f"💰 DEBUG: Applied as TAX UPLIFT (negative): -£{amount}")
             elif activity_type in ["productswitchin"]:
                 cash_flows[month_key] -= amount  # Product switch in = negative (money out)
-                logger.info(f"💰 DEBUG: Applied as PRODUCT SWITCH IN (negative): -£{amount}")
+                # logger.info(f"💰 DEBUG: Applied as PRODUCT SWITCH IN (negative): -£{amount}")
             elif activity_type in ["fundswitchin"]:
                 cash_flows[month_key] -= amount  # Fund switch in = negative (money coming into fund)
-                logger.info(f"💰 DEBUG: Applied as FUND SWITCH IN (negative): -£{amount}")
+                # logger.info(f"💰 DEBUG: Applied as FUND SWITCH IN (negative): -£{amount}")
             elif any(keyword in activity_type for keyword in ["withdrawal"]):
                 cash_flows[month_key] += amount  # Positive for withdrawals
-                logger.info(f"💰 DEBUG: Applied as WITHDRAWAL (positive): +£{amount}")
+                # logger.info(f"💰 DEBUG: Applied as WITHDRAWAL (positive): +£{amount}")
             elif activity_type in ["productswitchout"]:
                 cash_flows[month_key] += amount  # Product switch out = positive (money in)
-                logger.info(f"💰 DEBUG: Applied as PRODUCT SWITCH OUT (positive): +£{amount}")
+                # logger.info(f"💰 DEBUG: Applied as PRODUCT SWITCH OUT (positive): +£{amount}")
             elif activity_type in ["fundswitchout"]:
                 cash_flows[month_key] += amount  # Fund switch out = positive (money leaving fund)
-                logger.info(f"💰 DEBUG: Applied as FUND SWITCH OUT (positive): +£{amount}")
+                # logger.info(f"💰 DEBUG: Applied as FUND SWITCH OUT (positive): +£{amount}")
             elif any(keyword in activity_type for keyword in ["fee", "charge", "expense"]):
                 cash_flows[month_key] += amount  # Positive for fees (money out)
-                logger.info(f"💰 DEBUG: Applied as FEE (positive): +£{amount}")
+                # logger.info(f"💰 DEBUG: Applied as FEE (positive): +£{amount}")
             elif any(keyword in activity_type for keyword in ["dividend", "interest", "capital gain"]):
                 cash_flows[month_key] -= amount  # Negative for reinvested gains
-                logger.info(f"💰 DEBUG: Applied as DIVIDEND/GAIN (negative): -£{amount}")
+                # logger.info(f"💰 DEBUG: Applied as DIVIDEND/GAIN (negative): -£{amount}")
             else:
                 logger.warning(f"💰 DEBUG: ⚠️  Unknown activity type: {activity['activity_type']}, treating as neutral (amount=£{amount})")
         
@@ -2807,10 +2820,10 @@ async def calculate_single_portfolio_fund_irr(
         
         logger.info(f"💰 DEBUG: Aggregated cash flows: {len(cash_flows)} flows from {min(cash_flows.keys()) if cash_flows else 'N/A'} to {max(cash_flows.keys()) if cash_flows else 'N/A'}")
         logger.info(f"💰 DEBUG: Total valuation: £{valuation_amount}")
-        
-        # DEBUG: Print all cash flows
-        for month, amount in sorted(cash_flows.items()):
-            logger.info(f"💰 DEBUG: Cash flow - {month}: £{amount}")
+
+        # DEBUG: Print all cash flows (commented out to reduce log clutter)
+        # for month, amount in sorted(cash_flows.items()):
+        #     logger.info(f"💰 DEBUG: Cash flow - {month}: £{amount}")
         
         # Check if we have no activities (only valuation)
         if len(activities) == 0:

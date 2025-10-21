@@ -437,26 +437,26 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
                   <col key={index} className="w-[15%]" />
                 ))}
               </colgroup>
-              
+
               <thead className="bg-gray-100">
                 {/* Table Header */}
                 <tr>
                   {/* Product Name Column */}
-                  <th 
-                    scope="col" 
+                  <th
+                    scope="col"
                     className="px-2 py-2 text-left text-[10px] font-semibold text-gray-700 uppercase tracking-wide"
                   >
                     Product
                   </th>
-                  
+
                   {/* Current Risk Column */}
-                  <th 
-                    scope="col" 
+                  <th
+                    scope="col"
                     className="px-2 py-2 text-center text-[10px] font-semibold text-gray-700 uppercase tracking-wide"
                   >
                     Current "Risk" 1-7 scale, (7 High)
                   </th>
-                  
+
                   {/* Date Columns */}
                   {tableData.dateHeaders.map((date, index) => {
                     // Check if this is the most recent (first) date since dates are sorted newest first

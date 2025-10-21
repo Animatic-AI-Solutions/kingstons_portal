@@ -359,10 +359,10 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
                 
                 const response = await api.get(`/api/historical-irr/portfolio-irr-values/${portfolioIdForIRR}`);
                 console.log(`📡 Successfully fetched portfolio IRR data for portfolio ${portfolioIdForIRR}`);
-                
+
                 const portfolioIRRData = response.data;
                 console.log(`📡 Response status: ${response.status}, received ${portfolioIRRData?.length || 0} portfolio IRR records`);
-                
+
                 if (portfolioIRRData && portfolioIRRData.length > 0) {
                   for (const irrRecord of portfolioIRRData) {
                     if (irrRecord.irr_result !== null && irrRecord.date) {
@@ -449,7 +449,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
               console.log(`Found ${irrValues.length} IRR values for inactive fund ${holding.fund_name}:`, irrValues);
               
               const fundValues: {[monthYear: string]: number} = {};
-              
+
               irrValues.forEach((irr: any) => {
                 const monthYear = formatMonthYear(irr.date);
                 fundValues[monthYear] = parseFloat(irr.irr);
@@ -572,7 +572,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
   // Format percentage value with smart decimal places (removes unnecessary zeros)
   const formatPercentage = (value: number | undefined, maxDecimalPlaces: number = 2, forceDecimalPlaces: boolean = false): string => {
     if (value === undefined || value === null) return 'N/A';
-    
+
     if (forceDecimalPlaces) {
       // Always show the specified number of decimal places
       return `${value.toFixed(maxDecimalPlaces)}%`;

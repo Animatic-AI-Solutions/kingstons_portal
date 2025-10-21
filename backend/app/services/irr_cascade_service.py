@@ -211,20 +211,21 @@ class IRRCascadeService:
     async def handle_fund_valuation_creation_edit(self, portfolio_fund_id: int, valuation_date: str) -> Dict:
         """
         Handle IRR calculation when a portfolio fund valuation is created or edited.
-        
+
         Flow:
         1. Calculate/recalculate portfolio fund IRR for this date
         2. Check if ALL active portfolio funds now have valuations for this date
         3. If complete, calculate/recalculate portfolio IRR
         4. If not complete but portfolio IRR exists, delete it
-        
+
         Args:
             portfolio_fund_id: The portfolio fund that had valuation created/edited
             valuation_date: The date of the valuation (YYYY-MM-DD)
-            
+
         Returns:
             Dict with calculation summary
         """
+        logger.info(f"📈 [IRR CASCADE] ==================== VALUATION CREATION/EDIT FLOW ====================")
         logger.info(f"📈 [IRR CASCADE] Starting valuation creation/edit flow for fund {portfolio_fund_id}, date {valuation_date}")
         
         try:
@@ -565,45 +566,73 @@ class IRRCascadeService:
     async def _recalculate_all_fund_irrs_for_date(self, portfolio_id: int, date: str) -> int:
         """Recalculate all portfolio fund IRRs for a specific date"""
         try:
+            logger.info(f"🔍 [BATCH IRR CALC] ========== RECALCULATING ALL FUND IRRs FOR DATE ==========")
+            logger.info(f"🔍 [BATCH IRR CALC] Portfolio ID: {portfolio_id}, Date: {date}")
+
             # Convert string date to date object for PostgreSQL comparison
             from datetime import datetime
             if isinstance(date, str):
                 date_obj = datetime.strptime(date, '%Y-%m-%d').date()
             else:
                 date_obj = date
-                
+
+            logger.info(f"🔍 [BATCH IRR CALC] Converted date to date_obj: {date_obj}")
+
             # Get all portfolio funds for this portfolio that have valuations on this date
             funds_with_valuations = await self.db.fetch(
                 "SELECT portfolio_fund_id FROM portfolio_fund_valuations WHERE valuation_date = $1",
                 date_obj
             )
-            
+
+            logger.info(f"🔍 [BATCH IRR CALC] Found {len(funds_with_valuations)} funds with valuations on {date}")
+
             if not funds_with_valuations:
                 logger.info(f"📊 No fund valuations found for portfolio {portfolio_id} on {date}")
                 return 0
-            
+
             # Get portfolio funds that belong to this portfolio
             portfolio_funds = await self.db.fetch(
                 "SELECT id FROM portfolio_funds WHERE portfolio_id = $1",
                 portfolio_id
             )
-            
+
+            logger.info(f"🔍 [BATCH IRR CALC] Portfolio {portfolio_id} has {len(portfolio_funds)} total funds")
+
             # Ensure all IDs are integers for consistent type comparison
             portfolio_fund_ids = [int(pf["id"]) for pf in portfolio_funds] if portfolio_funds else []
-            
+
             # Filter to only funds that belong to this portfolio and have valuations
+            logger.info(f"🔍 [BATCH IRR CALC] Funds with valuations on {date}: {[int(v['portfolio_fund_id']) for v in funds_with_valuations]}")
+            logger.info(f"🔍 [BATCH IRR CALC] Portfolio fund IDs: {portfolio_fund_ids}")
+
             relevant_fund_ids = [
-                int(v["portfolio_fund_id"]) for v in funds_with_valuations 
+                int(v["portfolio_fund_id"]) for v in funds_with_valuations
                 if int(v["portfolio_fund_id"]) in portfolio_fund_ids
             ]
-            
+
+            logger.info(f"🔍 [BATCH IRR CALC] Relevant fund IDs for IRR calculation: {relevant_fund_ids}")
+            logger.info(f"🔍 [BATCH IRR CALC] Expected 8 funds, got {len(relevant_fund_ids)} funds")
+
+            if 1536 not in relevant_fund_ids:
+                logger.warning(f"🔍 [BATCH IRR CALC] ⚠️ Cash fund (1536) is MISSING from relevant_fund_ids!")
+                logger.warning(f"🔍 [BATCH IRR CALC] ⚠️ Checking if 1536 has valuation on {date}...")
+                cash_valuation_check = await self.db.fetch(
+                    "SELECT id, valuation FROM portfolio_fund_valuations WHERE portfolio_fund_id = 1536 AND valuation_date = $1",
+                    date_obj
+                )
+                logger.warning(f"🔍 [BATCH IRR CALC] ⚠️ Cash valuation check result: {cash_valuation_check}")
+
             recalculated_count = 0
-            
+
             # Recalculate IRR for each relevant fund
             for fund_id in relevant_fund_ids:
+                logger.info(f"🔍 [BATCH IRR CALC] Processing fund {fund_id} for date {date}")
                 success = await self._calculate_and_store_fund_irr(fund_id, date)
                 if success:
                     recalculated_count += 1
+                    logger.info(f"🔍 [BATCH IRR CALC] ✅ Successfully calculated IRR for fund {fund_id}")
+                else:
+                    logger.warning(f"🔍 [BATCH IRR CALC] ❌ Failed to calculate IRR for fund {fund_id}")
             
             # FIXED: Invalidate IRR cache for recalculated funds to prevent stale cached results
             if recalculated_count > 0:
@@ -658,58 +687,85 @@ class IRRCascadeService:
     async def _calculate_and_store_fund_irr(self, portfolio_fund_id: int, date: str) -> bool:
         """Calculate and store portfolio fund IRR for specific date"""
         try:
+            logger.info(f"🔍 [FUND IRR CALC] ========== CALCULATING FUND IRR ==========")
+            logger.info(f"🔍 [FUND IRR CALC] Fund ID: {portfolio_fund_id}, Date: {date}")
+
             # Convert string date to date object for PostgreSQL comparison
             from datetime import datetime
             if isinstance(date, str):
                 date_obj = datetime.strptime(date, '%Y-%m-%d').date()
             else:
                 date_obj = date
+
+            logger.info(f"🔍 [FUND IRR CALC] Converted date to date_obj: {date_obj}")
+
             # Import IRR calculation function
             from app.api.routes.portfolio_funds import calculate_single_portfolio_fund_irr
             
                          # Calculate IRR with cache bypass for fresh calculation
+            logger.info(f"🔍 [FUND IRR CALC] Calling calculate_single_portfolio_fund_irr with bypass_cache=True")
+
             irr_result = await calculate_single_portfolio_fund_irr(
                 portfolio_fund_id=portfolio_fund_id,
                 irr_date=date,
                 bypass_cache=True,  # Force fresh calculation during cascade operations
                 db=self.db
              )
-            
+
+            logger.info(f"🔍 [FUND IRR CALC] IRR calculation returned: {irr_result}")
+
             if not irr_result.get("success"):
                 logger.warning(f"📊 Failed to calculate fund IRR for fund {portfolio_fund_id} on {date}")
+                logger.warning(f"📊 Failure details: {irr_result}")
                 return False
             
             irr_percentage = safe_irr_value(irr_result.get("irr_percentage", 0.0))
-            
+
+            logger.info(f"🔍 [FUND IRR CALC] Calculated IRR percentage: {irr_percentage}%")
+
             # Get fund valuation ID for this date
+            logger.info(f"🔍 [FUND IRR CALC] Looking for fund valuation with fund_id={portfolio_fund_id}, date={date_obj}")
+
             valuation_result = await self.db.fetchrow(
                 "SELECT id FROM portfolio_fund_valuations WHERE portfolio_fund_id = $1 AND valuation_date = $2",
                 portfolio_fund_id, date_obj
             )
-            
+
             fund_valuation_id = valuation_result["id"] if valuation_result else None
-            
+            logger.info(f"🔍 [FUND IRR CALC] Fund valuation ID: {fund_valuation_id}")
+
             # Check if IRR already exists for this fund and date
+            logger.info(f"🔍 [FUND IRR CALC] Checking for existing IRR record with fund_id={portfolio_fund_id}, date={date_obj}")
+
             existing_irr = await self.db.fetchrow(
                 "SELECT id FROM portfolio_fund_irr_values WHERE fund_id = $1 AND date = $2",
                 portfolio_fund_id, date_obj
             )
+
+            if existing_irr:
+                logger.info(f"🔍 [FUND IRR CALC] Found existing IRR record with ID: {existing_irr['id']}")
+            else:
+                logger.info(f"🔍 [FUND IRR CALC] No existing IRR record found - will create new one")
             
             if existing_irr:
                 # Update existing IRR
+                logger.info(f"🔍 [FUND IRR CALC] Updating existing IRR ID {existing_irr['id']} with value {irr_percentage}%")
+
                 await self.db.execute(
                     "UPDATE portfolio_fund_irr_values SET irr_result = $1, fund_valuation_id = $2 WHERE id = $3",
                     irr_percentage, fund_valuation_id, existing_irr["id"]
                 )
-                logger.info(f"📊 Updated fund IRR for fund {portfolio_fund_id} on {date}: {irr_percentage}%")
+                logger.info(f"📊 ✅ Updated fund IRR for fund {portfolio_fund_id} on {date}: {irr_percentage}%")
             else:
                 # Create new IRR record
+                logger.info(f"🔍 [FUND IRR CALC] Creating new IRR record: fund_id={portfolio_fund_id}, irr={irr_percentage}%, date={date_obj}, valuation_id={fund_valuation_id}")
+
                 try:
                     await self.db.execute(
                         "INSERT INTO portfolio_fund_irr_values (fund_id, irr_result, date, fund_valuation_id) VALUES ($1, $2, $3, $4)",
                         portfolio_fund_id, irr_percentage, date_obj, fund_valuation_id
                     )
-                    logger.info(f"📊 Created fund IRR for fund {portfolio_fund_id} on {date}: {irr_percentage}%")
+                    logger.info(f"📊 ✅ Created fund IRR for fund {portfolio_fund_id} on {date}: {irr_percentage}%")
                 except Exception as insert_error:
                     if "duplicate key" in str(insert_error).lower():
                         # Race condition - record was inserted by another process, try to update

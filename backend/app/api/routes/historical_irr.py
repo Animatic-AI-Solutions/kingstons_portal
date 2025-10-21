@@ -98,7 +98,7 @@ async def get_portfolio_irr_values(
     """
     try:
         logger.info(f"Fetching stored portfolio IRR values for portfolio {portfolio_id}")
-        
+
         # Query the portfolio_irr_values table directly
         result = await db.fetch(
             """
@@ -109,10 +109,10 @@ async def get_portfolio_irr_values(
             """,
             portfolio_id
         )
-        
+
         if result:
             logger.info(f"Found {len(result)} stored portfolio IRR values for portfolio {portfolio_id}")
-            
+
             # Format the response
             irr_values = []
             for record in result:
@@ -123,12 +123,12 @@ async def get_portfolio_irr_values(
                     "irr_result": float(record["irr_result"]) if record["irr_result"] is not None else None,
                     "created_at": record["created_at"]
                 })
-            
+
             return irr_values
         else:
             logger.info(f"No stored portfolio IRR values found for portfolio {portfolio_id}")
             return []
-            
+
     except Exception as e:
         logger.error(f"Error fetching stored portfolio IRR values for portfolio {portfolio_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch stored portfolio IRR values: {str(e)}")
@@ -353,7 +353,11 @@ async def get_irr_history_summary(
                             "provider_theme_color": product_info["provider_theme_color"],
                             "status": product_info["status"],
                             "irr_date": date_str,
-                            "irr_result": None
+                            "irr_result": None,
+                            "valuation": None,
+                            "profit": None,
+                            "investments": None,
+                            "withdrawals": None
                         })
                     continue
                 
@@ -381,10 +385,56 @@ async def get_irr_history_summary(
                         irr_value = None
                         if stored_irr_result and stored_irr_result["irr_result"] is not None:
                             irr_value = float(stored_irr_result["irr_result"])
-                        
+
                         logger.info(f"🔍 [SUMMARY ENDPOINT RESULT] Product {product_id} for date {date_str}: storing irr_result = {irr_value}% in response")
-                        
-                        # Add entry with stored IRR (or None if not found)
+
+                        # Fetch valuation for this portfolio on this date
+                        valuation = 0.0
+                        valuation_result = await db.fetchrow(
+                            """
+                            SELECT SUM(fv.valuation) as total_valuation
+                            FROM fund_valuations fv
+                            JOIN portfolio_funds pf ON pf.id = fv.portfolio_fund_id
+                            WHERE pf.portfolio_id = $1 AND fv.valuation_date = $2
+                            """,
+                            portfolio_id, normalized_date
+                        )
+                        if valuation_result and valuation_result["total_valuation"]:
+                            valuation = float(valuation_result["total_valuation"])
+
+                        # Fetch activities up to this date and sum by type for profit calculation
+                        activities = await db.fetch(
+                            """
+                            SELECT activity_type, SUM(amount) as total_amount
+                            FROM holding_activity_log
+                            WHERE portfolio_fund_id IN (
+                                SELECT id FROM portfolio_funds WHERE portfolio_id = $1
+                            )
+                            AND activity_timestamp <= $2
+                            GROUP BY activity_type
+                            """,
+                            portfolio_id, normalized_date
+                        )
+
+                        # Calculate profit components
+                        investments = 0.0
+                        withdrawals = 0.0
+
+                        for activity in activities:
+                            activity_type = activity["activity_type"].lower()
+                            amount = float(activity["total_amount"])
+
+                            # Money IN (subtract from profit)
+                            if any(keyword in activity_type for keyword in ["investment", "taxuplift", "fundswitchin", "productswitchin"]):
+                                investments += amount
+                            # Money OUT (subtract from profit)
+                            elif any(keyword in activity_type for keyword in ["withdrawal", "fundswitchout", "productswitchout"]):
+                                withdrawals += amount
+
+                        # Calculate profit: valuation - investments - withdrawals
+                        profit = valuation - investments - withdrawals
+
+                        # Add entry with stored IRR and calculated profit/valuation
                         product_irr_history.append({
                             "product_id": product_id,
                             "product_name": product_info["product_name"],
@@ -392,12 +442,16 @@ async def get_irr_history_summary(
                             "provider_theme_color": product_info["provider_theme_color"],
                             "status": product_info["status"],
                             "irr_date": date_str,
-                            "irr_result": irr_value
+                            "irr_result": irr_value,
+                            "valuation": valuation,
+                            "profit": profit,
+                            "investments": investments,
+                            "withdrawals": withdrawals
                         })
                         
                     except Exception as product_date_error:
                         logger.error(f"Error fetching stored IRR for product {product_id} on date {date_str}: {str(product_date_error)}")
-                        # Still create a row with null IRR value for consistency
+                        # Still create a row with null values for consistency
                         product_irr_history.append({
                             "product_id": product_id,
                             "product_name": product_info["product_name"],
@@ -405,7 +459,11 @@ async def get_irr_history_summary(
                             "provider_theme_color": product_info["provider_theme_color"],
                             "status": product_info["status"],
                             "irr_date": date_str,
-                            "irr_result": None
+                            "irr_result": None,
+                            "valuation": None,
+                            "profit": None,
+                            "investments": None,
+                            "withdrawals": None
                         })
                 
             # Calculate portfolio totals for each date (aggregated across multiple portfolios)
@@ -434,7 +492,11 @@ async def get_irr_history_summary(
                         logger.warning(f"No portfolio IDs found for products {request.product_ids}")
                         portfolio_irr_history.append({
                             "date": date_str,
-                            "portfolio_irr": None
+                            "portfolio_irr": None,
+                            "valuation": None,
+                            "profit": None,
+                            "investments": None,
+                            "withdrawals": None
                         })
                         continue
                     
@@ -450,7 +512,11 @@ async def get_irr_history_summary(
                         logger.warning(f"No portfolio fund IDs found for portfolios {portfolio_id_list} on date {date_str}")
                         portfolio_irr_history.append({
                             "date": date_str,
-                            "portfolio_irr": None
+                            "portfolio_irr": None,
+                            "valuation": None,
+                            "profit": None,
+                            "investments": None,
+                            "withdrawals": None
                         })
                         continue
                     
@@ -477,17 +543,71 @@ async def get_irr_history_summary(
                     except Exception as calc_error:
                         logger.error(f"❌ Portfolio IRR calculation failed for {date_str}: {str(calc_error)}")
                         portfolio_irr = None
-                    
+
+                    # Get total valuation for all portfolios on this date
+                    total_valuation = 0.0
+                    valuation_result = await db.fetchrow(
+                        """
+                        SELECT SUM(fv.valuation) as total_valuation
+                        FROM fund_valuations fv
+                        JOIN portfolio_funds pf ON pf.id = fv.portfolio_fund_id
+                        WHERE pf.portfolio_id = ANY($1::int[]) AND fv.valuation_date = $2
+                        """,
+                        portfolio_id_list, normalized_date
+                    )
+                    if valuation_result and valuation_result["total_valuation"]:
+                        total_valuation = float(valuation_result["total_valuation"])
+
+                    # Get total activities for all portfolios up to this date
+                    activities = await db.fetch(
+                        """
+                        SELECT activity_type, SUM(amount) as total_amount
+                        FROM holding_activity_log
+                        WHERE portfolio_fund_id IN (
+                            SELECT id FROM portfolio_funds WHERE portfolio_id = ANY($1::int[])
+                        )
+                        AND activity_timestamp <= $2
+                        GROUP BY activity_type
+                        """,
+                        portfolio_id_list, normalized_date
+                    )
+
+                    # Calculate total profit components
+                    total_investments = 0.0
+                    total_withdrawals = 0.0
+
+                    for activity in activities:
+                        activity_type = activity["activity_type"].lower()
+                        amount = float(activity["total_amount"])
+
+                        # Money IN (subtract from profit)
+                        if any(keyword in activity_type for keyword in ["investment", "taxuplift", "fundswitchin", "productswitchin"]):
+                            total_investments += amount
+                        # Money OUT (subtract from profit)
+                        elif any(keyword in activity_type for keyword in ["withdrawal", "fundswitchout", "productswitchout"]):
+                            total_withdrawals += amount
+
+                    # Calculate total profit: valuation - investments - withdrawals
+                    total_profit = total_valuation - total_investments - total_withdrawals
+
                     portfolio_irr_history.append({
                         "date": date_str,
-                        "portfolio_irr": portfolio_irr
+                        "portfolio_irr": portfolio_irr,
+                        "valuation": total_valuation,
+                        "profit": total_profit,
+                        "investments": total_investments,
+                        "withdrawals": total_withdrawals
                     })
                     
                 except Exception as date_error:
                     logger.error(f"Error calculating aggregated portfolio IRR for date {date_str}: {str(date_error)}")
                     portfolio_irr_history.append({
                         "date": date_str,
-                        "portfolio_irr": None
+                        "portfolio_irr": None,
+                        "valuation": None,
+                        "profit": None,
+                        "investments": None,
+                        "withdrawals": None
                     })
             
             logger.info(f"Successfully fetched IRR history summary: {len(product_irr_history)} product rows, {len(portfolio_irr_history)} date totals")
