@@ -18,15 +18,8 @@ const RelationshipsSection: React.FC<RelationshipsSectionProps> = ({
   const [activeRelationshipTab, setActiveRelationshipTab] = useState<'personal' | 'professional'>('personal');
 
   // Filter relationships based on active tab, then sort by status (Active first, Historical last)
-  // Professional relationships have firmName, personal ones don't
   const filteredRelationships = relationships
-    .filter(rel => {
-      if (activeRelationshipTab === 'professional') {
-        return rel.firmName; // Has firmName = professional
-      } else {
-        return !rel.firmName; // No firmName = personal
-      }
-    })
+    .filter(rel => rel.type === activeRelationshipTab)
     .sort((a, b) => {
       // Sort Active before Historical
       if (a.status === 'Active' && b.status === 'Historical') return -1;
@@ -110,7 +103,7 @@ const RelationshipsSection: React.FC<RelationshipsSectionProps> = ({
                     <span className={`px-2 py-1 rounded-full text-sm font-medium ${
                       rel.status === 'Historical'
                         ? 'bg-gray-200 text-gray-900'
-                        : rel.firmName
+                        : rel.type === 'professional'
                         ? 'bg-purple-100 text-purple-800'
                         : 'bg-blue-100 text-blue-800'
                     }`}>

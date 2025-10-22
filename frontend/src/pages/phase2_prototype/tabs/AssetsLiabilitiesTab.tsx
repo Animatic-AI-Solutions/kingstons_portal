@@ -60,6 +60,28 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
       return indexA - indexB;
     });
 
+  // Helper to check if an asset/liability is owned by any displayed person
+  const isOwnedByDisplayedPeople = (item: Asset | Liability): boolean => {
+    const displayedNames = displayedPeople.map(p => `${p.forename} ${p.surname}`);
+
+    // Check if any displayed person is an owner
+    if (item.ownershipType === 'sole') {
+      return displayedNames.some(name => item.owner.includes(name));
+    } else if (item.ownershipType === 'joint' || item.ownershipType === 'in-common') {
+      // For joint/in-common, check if any displayed person has ownership
+      if (item.ownershipPercentages) {
+        return displayedNames.some(name => (item.ownershipPercentages?.[name] || 0) > 0);
+      }
+      // Fallback: check if owner string includes any displayed person
+      return displayedNames.some(name => item.owner.includes(name));
+    }
+    return false;
+  };
+
+  // Filter assets and liabilities to only show those owned by displayed people
+  const filteredAssets = assets.filter(isOwnedByDisplayedPeople);
+  const filteredLiabilities = liabilities.filter(isOwnedByDisplayedPeople);
+
   // Toggle person inclusion
   const togglePersonInclusion = (personId: string) => {
     const newIncluded = new Set(includedPeople);
@@ -71,19 +93,19 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
     setIncludedPeople(newIncluded);
   };
 
-  // Calculate totals per person (only for displayed people)
+  // Calculate totals per person (only for displayed people and filtered assets/liabilities)
   const personTotals = displayedPeople.map(person => {
     const personName = `${person.forename} ${person.surname}`;
-    const assetTotal = assets.reduce((sum, asset) => sum + getPersonOwnership(asset, personName), 0);
-    const liabilityTotal = liabilities.reduce((sum, liability) => sum + getPersonOwnership(liability, personName), 0);
+    const assetTotal = filteredAssets.reduce((sum, asset) => sum + getPersonOwnership(asset, personName), 0);
+    const liabilityTotal = filteredLiabilities.reduce((sum, liability) => sum + getPersonOwnership(liability, personName), 0);
     return {
       name: personName,
       netWorth: assetTotal - liabilityTotal
     };
   });
 
-  const totalAssets = assets.reduce((sum, a) => sum + a.value, 0);
-  const totalLiabilities = liabilities.reduce((sum, l) => sum + l.amount, 0);
+  const totalAssets = filteredAssets.reduce((sum, a) => sum + a.value, 0);
+  const totalLiabilities = filteredLiabilities.reduce((sum, l) => sum + l.amount, 0);
   const netWorth = totalAssets - totalLiabilities;
 
   // Get sorted people for controls (by client order)
@@ -156,13 +178,16 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
                     {person.forename} {person.surname}
                   </th>
                 ))}
-                <th className="px-3 py-2 text-right text-sm font-bold text-gray-900 uppercase">Joint</th>
+                {/* Only show Joint column if more than one person is displayed */}
+                {displayedPeople.length > 1 && (
+                  <th className="px-3 py-2 text-right text-sm font-bold text-gray-900 uppercase">Joint</th>
+                )}
                 <th className="px-3 py-2 text-right text-sm font-bold text-gray-900 uppercase">Total</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {/* Asset Rows */}
-              {assets.map((asset, index) => (
+              {filteredAssets.map((asset, index) => (
                 <tr key={asset.id} className={`hover:bg-gray-50 cursor-pointer ${index === 0 ? 'border-t-2 border-gray-300' : ''}`} onClick={() => onAssetClick(asset)}>
                   <td className="px-3 py-2 text-base font-medium text-gray-900">
                     <div className="flex items-center gap-2">
@@ -179,9 +204,12 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
                       </td>
                     );
                   })}
-                  <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
-                    {getJointOwnership(asset) > 0 ? formatMoney(getJointOwnership(asset)) : '-'}
-                  </td>
+                  {/* Only show Joint column if more than one person is displayed */}
+                  {displayedPeople.length > 1 && (
+                    <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
+                      {getJointOwnership(asset) > 0 ? formatMoney(getJointOwnership(asset)) : '-'}
+                    </td>
+                  )}
                   <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right font-semibold">
                     {formatMoney(asset.value)}
                   </td>
@@ -193,23 +221,26 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
                 <td className="px-3 py-2 text-base text-gray-900">Total Assets</td>
                 {displayedPeople.map((person) => {
                   const personName = `${person.forename} ${person.surname}`;
-                  const total = assets.reduce((sum, asset) => sum + getPersonOwnership(asset, personName), 0);
+                  const total = filteredAssets.reduce((sum, asset) => sum + getPersonOwnership(asset, personName), 0);
                   return (
                     <td key={person.id} className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
                       {formatMoney(total)}
                     </td>
                   );
                 })}
-                <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
-                  {formatMoney(assets.reduce((sum, asset) => sum + getJointOwnership(asset), 0))}
-                </td>
+                {/* Only show Joint column if more than one person is displayed */}
+                {displayedPeople.length > 1 && (
+                  <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
+                    {formatMoney(filteredAssets.reduce((sum, asset) => sum + getJointOwnership(asset), 0))}
+                  </td>
+                )}
                 <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
                   {formatMoney(totalAssets)}
                 </td>
               </tr>
 
               {/* Liability Rows */}
-              {liabilities.map((liability, index) => (
+              {filteredLiabilities.map((liability, index) => (
                 <tr key={liability.id} className={`hover:bg-gray-50 cursor-pointer ${index === 0 ? 'border-t-2 border-gray-300' : ''}`} onClick={() => onLiabilityClick(liability)}>
                   <td className="px-3 py-2 text-base font-medium text-gray-900">
                     <div className="flex items-center gap-2">
@@ -226,9 +257,12 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
                       </td>
                     );
                   })}
-                  <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
-                    {getJointOwnership(liability) > 0 ? formatMoney(getJointOwnership(liability)) : '-'}
-                  </td>
+                  {/* Only show Joint column if more than one person is displayed */}
+                  {displayedPeople.length > 1 && (
+                    <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
+                      {getJointOwnership(liability) > 0 ? formatMoney(getJointOwnership(liability)) : '-'}
+                    </td>
+                  )}
                   <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right font-semibold">
                     {formatMoney(liability.amount)}
                   </td>
@@ -240,16 +274,19 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
                 <td className="px-3 py-2 text-base text-gray-900">Total Liabilities</td>
                 {displayedPeople.map((person) => {
                   const personName = `${person.forename} ${person.surname}`;
-                  const total = liabilities.reduce((sum, liability) => sum + getPersonOwnership(liability, personName), 0);
+                  const total = filteredLiabilities.reduce((sum, liability) => sum + getPersonOwnership(liability, personName), 0);
                   return (
                     <td key={person.id} className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
                       {formatMoney(total)}
                     </td>
                   );
                 })}
-                <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
-                  {formatMoney(liabilities.reduce((sum, liability) => sum + getJointOwnership(liability), 0))}
-                </td>
+                {/* Only show Joint column if more than one person is displayed */}
+                {displayedPeople.length > 1 && (
+                  <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
+                    {formatMoney(filteredLiabilities.reduce((sum, liability) => sum + getJointOwnership(liability), 0))}
+                  </td>
+                )}
                 <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
                   {formatMoney(totalLiabilities)}
                 </td>
@@ -263,12 +300,15 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
                     {formatMoney(person.netWorth)}
                   </td>
                 ))}
-                <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
-                  {formatMoney(
-                    assets.reduce((sum, asset) => sum + getJointOwnership(asset), 0) -
-                    liabilities.reduce((sum, liability) => sum + getJointOwnership(liability), 0)
-                  )}
-                </td>
+                {/* Only show Joint column if more than one person is displayed */}
+                {displayedPeople.length > 1 && (
+                  <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
+                    {formatMoney(
+                      filteredAssets.reduce((sum, asset) => sum + getJointOwnership(asset), 0) -
+                      filteredLiabilities.reduce((sum, liability) => sum + getJointOwnership(liability), 0)
+                    )}
+                  </td>
+                )}
                 <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
                   {formatMoney(netWorth)}
                 </td>

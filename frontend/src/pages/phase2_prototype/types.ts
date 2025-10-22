@@ -44,6 +44,7 @@ export interface Person {
 
 export interface SpecialRelationship {
   id: string;
+  type: 'professional' | 'personal'; // Type of special relationship
   name: string;
   dateOfBirth: string;
   age?: number; // For personal relationships
@@ -54,6 +55,7 @@ export interface SpecialRelationship {
   // Professional relationship fields
   dependency?: string[]; // For professional relationships - Array of person names in the client group
   firmName?: string; // Only for professional relationships
+  address?: string; // Address for the special relationship
   contactDetails: string;
   status: 'Active' | 'Historical';
   notes: string;
