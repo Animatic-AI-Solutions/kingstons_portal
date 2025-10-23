@@ -282,6 +282,71 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
     return flatRow ? flatRow.irr_result : null;
   };
 
+  // Get the most recent NON-NULL IRR value for a product (for carrying forward to future dates)
+  const getMostRecentIRRForProduct = (productId: number): { irr: number; date: string } | null => {
+    // Get all IRR entries for this product that have non-null IRR values
+    const productRows = tableData.productRows.filter((row: any) =>
+      row.product_id === productId && row.irr_result !== null && row.irr_result !== undefined
+    );
+
+    console.log(`[IRR CARRY-FORWARD] Product ${productId} has ${productRows.length} non-null IRR entries:`,
+      productRows.map((r: any) => ({ date: r.irr_date, irr: r.irr_result }))
+    );
+
+    if (productRows.length === 0) {
+      console.log(`[IRR CARRY-FORWARD] Product ${productId} - No non-null IRR entries found`);
+      return null;
+    }
+
+    // Sort by date descending (most recent first) and get the first entry with non-null IRR
+    const sortedRows = productRows.sort((a: any, b: any) => b.irr_date.localeCompare(a.irr_date));
+    const mostRecent = sortedRows[0] as any;
+
+    console.log(`[IRR CARRY-FORWARD] Product ${productId} - Most recent non-null IRR:`,
+      { date: mostRecent.irr_date, irr: mostRecent.irr_result }
+    );
+
+    return {
+      irr: mostRecent.irr_result,
+      date: mostRecent.irr_date
+    };
+  };
+
+  // Get IRR value for a product and date, with carry-forward logic
+  // Carry forward means: if a date is MORE RECENT than the most recent non-null IRR, show that IRR
+  const getIRRValueWithCarryForward = (productId: number, date: string): number | null => {
+    console.log(`[IRR CARRY-FORWARD] Requesting IRR for product ${productId}, date ${date}`);
+
+    // First, try to get the exact non-null IRR for this date
+    const exactIRR = getIRRValueForProductAndDate(productId, date);
+    if (exactIRR !== null) {
+      console.log(`[IRR CARRY-FORWARD] Found exact IRR: ${exactIRR}`);
+      return exactIRR;
+    }
+
+    console.log(`[IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...`);
+
+    // Get the most recent non-null IRR
+    const mostRecentIRR = getMostRecentIRRForProduct(productId);
+    if (!mostRecentIRR) {
+      console.log(`[IRR CARRY-FORWARD] No non-null IRR data available for product ${productId}`);
+      return null;
+    }
+
+    console.log(`[IRR CARRY-FORWARD] Comparing dates: requested=${date}, mostRecent=${mostRecentIRR.date}`);
+    console.log(`[IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = ${date > mostRecentIRR.date}`);
+
+    // If the requested date is more recent than the most recent non-null IRR date, carry forward
+    if (date > mostRecentIRR.date) {
+      console.log(`[IRR CARRY-FORWARD] ✅ Carrying forward IRR ${mostRecentIRR.irr} from ${mostRecentIRR.date} to ${date}`);
+      return mostRecentIRR.irr;
+    }
+
+    // Otherwise (date is older than available data), return null to show dash
+    console.log(`[IRR CARRY-FORWARD] ❌ Date ${date} is not more recent than most recent IRR date, returning null`);
+    return null;
+  };
+
   // Get unique products from flat rows (including Previous Funds entries)
   const getUniqueProducts = () => {
     if (!tableData.productRows || tableData.productRows.length === 0) return [];
@@ -572,7 +637,8 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
                         if (isVirtual && product.lapsedProductIds) {
                           const lapsedIrrs: number[] = [];
                           product.lapsedProductIds.forEach((productId: number) => {
-                            const irr = getIRRValueForProductAndDate(productId, date);
+                            // Use carry-forward logic for lapsed products too
+                            const irr = getIRRValueWithCarryForward(productId, date);
                             if (irr !== null) {
                               lapsedIrrs.push(irr);
                             }
@@ -598,9 +664,9 @@ const IRRHistorySummaryTable: React.FC<IRRHistorySummaryTableProps> = ({
                           );
                         }
 
-                        // For regular products, get individual IRR
-                        const shouldShow = shouldShowDateForProduct(product.product_id, date);
-                        const irrValue = shouldShow ? getIRRValueForProductAndDate(product.product_id, date) : null;
+                        // For regular products, get individual IRR with carry-forward logic
+                        // Always use carry-forward logic regardless of per-product date selection
+                        const irrValue = getIRRValueWithCarryForward(product.product_id, date);
                         const formatType = isLapsed ? 'inactive' : 'total';
 
                         return (

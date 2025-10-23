@@ -1,717 +1,876 @@
-ReportGenerator.tsx:799 🕐 PHASE 2.1: Using debounced updateRelatedProducts (300ms delay)
-ReportGenerator.tsx:446 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 0 products
-ReportGenerator.tsx:495 🔍 [EXTRACT OWNERS DEBUG] Final result: []
-ReportGenerator.tsx:446 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 0 products
-ReportGenerator.tsx:495 🔍 [EXTRACT OWNERS DEBUG] Final result: []
-ReportGenerator.tsx:3065 🚫 PHASE 1.2 FIX: Skipping IRR dates fetch - no included products
-ReportGenerator.tsx:728 Fetching 1 client groups in parallel...
-ReportGenerator.tsx:739 Fetched client group 85: 4 products
-ReportGenerator.tsx:769 Parallel fetch complete: 1 client groups processed
-ReportGenerator.tsx:779 Total products displayed: 4
-ReportGenerator.tsx:780 Client group cache size: 0 groups
-ReportGenerator.tsx:446 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 4 products
-ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 283, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
-ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 283
-ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
-ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 284, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 284
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 285, name: 'Stocks & Shares ISA', product_owner_name: 'Colin Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 285
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 96, firstname: 'Colin', surname: 'Cotton', known_as: 'Colin'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Colin Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Colin Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 286, name: 'Retirement Account', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 286
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Colin Cotton', 'Jackie Cotton']
- 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 4 products
- 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 283, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 283
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 284, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 284
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 285, name: 'Stocks & Shares ISA', product_owner_name: 'Colin Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 285
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 96, firstname: 'Colin', surname: 'Cotton', known_as: 'Colin'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Colin Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Colin Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 286, name: 'Retirement Account', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 286
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Colin Cotton', 'Jackie Cotton']
- 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 4 products
- 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 283, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 283
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 284, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 284
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 285, name: 'Stocks & Shares ISA', product_owner_name: 'Colin Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 285
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 96, firstname: 'Colin', surname: 'Cotton', known_as: 'Colin'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Colin Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Colin Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 286, name: 'Retirement Account', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 286
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Colin Cotton', 'Jackie Cotton']
- 🕐 PHASE 2.1: Using debounced updateRelatedProducts (300ms delay)
- 📊 Fetching available IRR dates for 4 products
- 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 4 products
- 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 283, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 283
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 284, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 284
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 285, name: 'Stocks & Shares ISA', product_owner_name: 'Colin Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 285
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 96, firstname: 'Colin', surname: 'Cotton', known_as: 'Colin'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Colin Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Colin Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 286, name: 'Retirement Account', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 286
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Colin Cotton', 'Jackie Cotton']
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
-ReportGenerator.tsx:3507 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
-ReportGenerator.tsx:3525 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
-ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
-ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
-ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
-ReportGenerator.tsx:446 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 4 products
-ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 283, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
-ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 283
-ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
-ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
-ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
-ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 284, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
-ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 284
-ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
-ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
-ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
-ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 285, name: 'Stocks & Shares ISA', product_owner_name: 'Colin Cotton', product_owners_array: Array(1), product_owners_count: 1}
-ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 285
-ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 96, firstname: 'Colin', surname: 'Cotton', known_as: 'Colin'}
-ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Colin Cotton
-ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Colin Cotton
-ReportGenerator.tsx:449 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 286, name: 'Retirement Account', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
-ReportGenerator.tsx:462 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 286
-ReportGenerator.tsx:464 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
-ReportGenerator.tsx:473 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
-ReportGenerator.tsx:476 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
-ReportGenerator.tsx:495 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Colin Cotton', 'Jackie Cotton']
-ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
-ReportGenerator.tsx:3507 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
-ReportGenerator.tsx:3525 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
-ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
-ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
-ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
- 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 4 products
- 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 283, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 283
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 284, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 284
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 285, name: 'Stocks & Shares ISA', product_owner_name: 'Colin Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 285
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 96, firstname: 'Colin', surname: 'Cotton', known_as: 'Colin'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Colin Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Colin Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 286, name: 'Retirement Account', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 286
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Colin Cotton', 'Jackie Cotton']
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
- 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
- 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
- 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
-ReportGenerator.tsx:3525 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
-ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
-ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
-ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
-ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
-ReportGenerator.tsx:3507 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
-ReportGenerator.tsx:3525 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
-ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
-ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
-ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
-ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
-ReportGenerator.tsx:3507 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
-ReportGenerator.tsx:3525 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
-ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
-ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
-ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
- 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
- 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
- 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
- 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
- Using cached data for client group 85: 4 products
- Total products displayed: 4
- Client group cache size: 1 groups
- 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 4 products
- 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 283, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 283
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 284, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 284
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 285, name: 'Stocks & Shares ISA', product_owner_name: 'Colin Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 285
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 96, firstname: 'Colin', surname: 'Cotton', known_as: 'Colin'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Colin Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Colin Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 286, name: 'Retirement Account', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 286
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Colin Cotton', 'Jackie Cotton']
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
- 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
- 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
- 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 4 products
- 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 283, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 283
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 284, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 284
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 285, name: 'Stocks & Shares ISA', product_owner_name: 'Colin Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 285
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 96, firstname: 'Colin', surname: 'Cotton', known_as: 'Colin'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Colin Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Colin Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 286, name: 'Retirement Account', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 286
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Colin Cotton', 'Jackie Cotton']
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
- 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
- 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
- 🔍 [EXTRACT OWNERS DEBUG] Starting extraction for 4 products
- 🔍 [EXTRACT OWNERS DEBUG] Product 1: {id: 283, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 283
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 2: {id: 284, name: 'Stocks & Shares ISA', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 284
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 3: {id: 285, name: 'Stocks & Shares ISA', product_owner_name: 'Colin Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 285
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 96, firstname: 'Colin', surname: 'Cotton', known_as: 'Colin'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Colin Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Colin Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Product 4: {id: 286, name: 'Retirement Account', product_owner_name: 'Jacqueline Cotton', product_owners_array: Array(1), product_owners_count: 1}
- 🔍 [EXTRACT OWNERS DEBUG] Using Method 2 (product_owners array) for product 286
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Owner 1: {id: 95, firstname: 'Jacqueline', surname: 'Cotton', known_as: 'Jackie'}
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - getProductOwnerFormalDisplayName result: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Method 2 - Adding name: Jackie Cotton
- 🔍 [EXTRACT OWNERS DEBUG] Final result: (2) ['Colin Cotton', 'Jackie Cotton']
- 📊 Fetching available IRR dates for 4 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
- 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
- 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
- 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
- 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
- Global Top 8 Most Recent Dates: []
- Product 283: Selected 0 out of 8 global dates: []
- Product 284: Selected 0 out of 8 global dates: []
- Product 285: Selected 0 out of 8 global dates: []
- Product 286: Selected 0 out of 8 global dates: []
- Select All Results Summary:
- Global unique dates selected: 0
- Product 283: 0/0 global dates selected
- Product 284: 0/0 global dates selected
- Product 285: 0/0 global dates selected
- Product 286: 0/0 global dates selected
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
- 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
- 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
- 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
- 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
- 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
- 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
- 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
- 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
- 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
- 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
- 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
- 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
-ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
-ReportGenerator.tsx:2947 Global Top 8 Most Recent Dates: []
-ReportGenerator.tsx:2967 Product 283: Selected 0 out of 8 global dates: []
-ReportGenerator.tsx:2967 Product 284: Selected 0 out of 8 global dates: []
-ReportGenerator.tsx:2967 Product 285: Selected 0 out of 8 global dates: []
-ReportGenerator.tsx:2967 Product 286: Selected 0 out of 8 global dates: []
-ReportGenerator.tsx:2970 Select All Results Summary:
-ReportGenerator.tsx:2971 Global unique dates selected: 0
-ReportGenerator.tsx:2974 Product 283: 0/0 global dates selected
-ReportGenerator.tsx:2974 Product 284: 0/0 global dates selected
-ReportGenerator.tsx:2974 Product 285: 0/0 global dates selected
-ReportGenerator.tsx:2974 Product 286: 0/0 global dates selected
-ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
-ReportGenerator.tsx:3507 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
-ReportGenerator.tsx:3525 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
-ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
-ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
-ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
-ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
-ReportGenerator.tsx:3507 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
-ReportGenerator.tsx:3525 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
-ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
-ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
-ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
-ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
-ReportGenerator.tsx:3507 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
-ReportGenerator.tsx:3525 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
-ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
-ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
-ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
-ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Colin Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
-ReportGenerator.tsx:3507 🔍 [PRODUCT COUNT DEBUG] ✅ Found matching owner ID: 96 for "Colin Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 1 matching owner IDs for "Colin Cotton": [96]
-ReportGenerator.tsx:3525 🔍 [PRODUCT COUNT DEBUG] ✅ Product 285 (Stocks & Shares ISA) belongs to "Colin Cotton"
-ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Colin Cotton": 1 products
-ReportGenerator.tsx:3464 🔍 [PRODUCT COUNT DEBUG] Starting count for owner: "Jackie Cotton"
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 283 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 284 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 285 (Stocks & Shares ISA): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 96, knownAs: 'Colin', firstname: 'Colin', surname: 'Cotton', knownAsDisplayName: 'Colin', …}
-ReportGenerator.tsx:3471 🔍 [PRODUCT COUNT DEBUG] Checking product 286 (Retirement Account): {has_product_owners: true, product_owners_count: 1, product_owners: Array(1)}
-ReportGenerator.tsx:3493 🔍 [PRODUCT COUNT DEBUG] Product owner check: {owner_id: 95, knownAs: 'Jackie', firstname: 'Jacqueline', surname: 'Cotton', knownAsDisplayName: 'Jackie', …}
-ReportGenerator.tsx:3514 🔍 [PRODUCT COUNT DEBUG] Found 0 matching owner IDs for "Jackie Cotton": []
-ReportGenerator.tsx:3531 🔍 [PRODUCT COUNT DEBUG] Final count for "Jackie Cotton": 0 products
+chunk-QYFCA5BS.js?v=68f90eaa:21609 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+ReportDisplayPage.tsx:63 🔍 [REPORT DISPLAY DEBUG] Initializing report data...
+ReportDisplayPage.tsx:67 🔄 [REPORT DISPLAY DEBUG] Reset custom product owner names on init
+ReportDisplayPage.tsx:77 🔍 [REPORT DISPLAY DEBUG] Received report data with 8 products
+ReportDisplayPage.tsx:94 🎯 [OPTIMIZATION] Using pre-fetched portfolio IRR values from reportData: {371: 4.6, 372: 6.2, 373: 3.8, 374: 6, 378: 1.3, 379: 4.8, 380: 14.5, 395: 4.8}
+ReportDisplayPage.tsx:53 🔄 [REPORT DISPLAY CLEANUP] Reset custom product owner names on unmount
+ReportDisplayPage.tsx:53 🔄 [REPORT DISPLAY CLEANUP] Reset custom product owner names on unmount
+ 🔍 [IRR HISTORY DEBUG] Processed historical IRR data: {length: 8, sample: {…}}
+ 🔍 ========== TOTAL IRR CALCULATION DEBUG START ==========
+ 🔍 [TOTAL IRR] Total products in productSummaries: 8
+ 🔍 [PRODUCT 1] Product ID: 371, Name: Stocks & Shares, Status: active
+    └─ IRR: 4.6%
+    └─ Has funds: true, Funds count: 12
+    └─ [FUND 1] ID: 1849, Name: BNY Mellon Global Income
+    └─ [FUND 2] ID: 1850, Name: BNY Mellon Multi-Asset Balanced
+    └─ [FUND 3] ID: 1851, Name: Fidelity UK Smaller Companies
+    └─ [FUND 4] ID: 1852, Name: FTF ClearBridge UK Rising Dividends
+    └─ [FUND 5] ID: 1854, Name: Historical Funds
+    └─ [FUND 6] ID: 1853, Name: Invesco Global Emerging Markets
+    └─ [FUND 7] ID: 1856, Name: L&G All Stock Index Link Gilt Index Tst
+    └─ [FUND 8] ID: 1855, Name: LF Equity Income 
+    └─ [FUND 9] ID: 1857, Name: Royal London Sustainable World Trust C 
+    └─ [FUND 10] ID: 1858, Name: Stewart Investors Worldwide Leaders 
+    └─ [FUND 11] ID: 1859, Name: Vgd FTSE Developed World ex UK Eq Index
+    └─ [FUND 12] ID: 1848, Name: Cash
+ 🔍 [PRODUCT 2] Product ID: 372, Name: Stocks & Shares, Status: active
+    └─ IRR: 6.2%
+    └─ Has funds: true, Funds count: 12
+    └─ [FUND 1] ID: 1861, Name: BNY Mellon Global Income
+    └─ [FUND 2] ID: 1862, Name: BNY Mellon Multi-Asset Balanced
+    └─ [FUND 3] ID: 1863, Name: Fidelity UK Smaller Companies
+    └─ [FUND 4] ID: 1864, Name: FTF ClearBridge UK Rising Dividends
+    └─ [FUND 5] ID: 1867, Name: Historical Funds
+    └─ [FUND 6] ID: 1901, Name: Invesco Global Emerging Markets
+    └─ [FUND 7] ID: 1870, Name: LF Equity Income 
+    └─ [FUND 8] ID: 1865, Name: RL Sustainable World Trust
+    └─ [FUND 9] ID: 1866, Name: Stewart Investors Worldwide Leaders 
+    └─ [FUND 10] ID: 1869, Name: Vanguard LifeStrategy 40% Equity A Acc
+    └─ [FUND 11] ID: 1868, Name: Vanguard LifeStrategy 80% Equity A Acc
+    └─ [FUND 12] ID: 1860, Name: Cash
+ 🔍 [PRODUCT 3] Product ID: 373, Name: International Bond, Status: active
+    └─ IRR: 3.8%
+    └─ Has funds: true, Funds count: 2
+    └─ [FUND 1] ID: 1872, Name: PruFund Growth (Sterling)
+    └─ [FUND 2] ID: 1871, Name: Cash
+ 🔍 [PRODUCT 4] Product ID: 374, Name: SIPP, Status: active
+    └─ IRR: 6%
+    └─ Has funds: true, Funds count: 14
+    └─ [FUND 1] ID: 1881, Name: BNY Mellon Global Income
+    └─ [FUND 2] ID: 1880, Name: BNY Mellon Multi-Asset Balanced
+    └─ [FUND 3] ID: 1874, Name: Fidelity UK Smaller Companies
+    └─ [FUND 4] ID: 1879, Name: FTF ClearBridge UK Rising Dividends
+    └─ [FUND 5] ID: 1888, Name: Historical Funds
+    └─ [FUND 6] ID: 1878, Name: L&G All Stock Index Link Gilt Index Tst
+    └─ [FUND 7] ID: 1882, Name: Liontrust INV FDS1 Liontst GBL ALPHA C GBP Acc 
+    └─ [FUND 8] ID: 1883, Name: Liontrust Sus Fut Liontst Sust Futr MgD Gth 2 
+    └─ [FUND 9] ID: 1875, Name: QUILTER INVRS CIR QI CIRLUM DYNM PASSV PTF R
+    └─ [FUND 10] ID: 1877, Name: Royal London Sustainable World Trust C 
+    └─ [FUND 11] ID: 1876, Name: Unicorn Mastertrust B Inc
+    └─ [FUND 12] ID: 1884, Name: Vanguard LifeStrategy 60% Equity 
+    └─ [FUND 13] ID: 1885, Name: Vgd FTSE Developed World ex UK Eq Index
+    └─ [FUND 14] ID: 1873, Name: Cash
+ 🔍 [PRODUCT 5] Product ID: 378, Name: Retirement Account - Uncrystallised, Status: inactive
+    └─ IRR: 1.3%
+    └─ Has funds: true, Funds count: 2
+    └─ [FUND 1] ID: 1892, Name: Cash
+    └─ [FUND 2] ID: 1893, Name: PruFund Growth Series E
+ 🔍 [PRODUCT 6] Product ID: 379, Name: Retirement Account - Crystallised, Status: active
+    └─ IRR: 4.8%
+    └─ Has funds: true, Funds count: 2
+    └─ [FUND 1] ID: 1895, Name: PruFund Growth Series E
+    └─ [FUND 2] ID: 1894, Name: Cash
+ 🔍 [PRODUCT 7] Product ID: 380, Name: SIPP - Uncrystallised, Status: active
+    └─ IRR: 14.5%
+    └─ Has funds: true, Funds count: 4
+    └─ [FUND 1] ID: 1899, Name: Landseer Global Artificial Intelligence
+    └─ [FUND 2] ID: 1897, Name: Pictet Robotics I GBP
+    └─ [FUND 3] ID: 1898, Name: Polar Capital Global Technology I Inc
+    └─ [FUND 4] ID: 1896, Name: Cash
+ReportDisplayPage.tsx:112 🔍 [PRODUCT 8] Product ID: 395, Name: Bond, Status: active
+ReportDisplayPage.tsx:113    └─ IRR: 4.8%
+ReportDisplayPage.tsx:114    └─ Has funds: true, Funds count: 4
+ReportDisplayPage.tsx:126    └─ [FUND 1] ID: 1968, Name: BNY Mellon Multi-Asset Balanced
+ReportDisplayPage.tsx:126    └─ [FUND 2] ID: 1967, Name: Historical Funds
+ReportDisplayPage.tsx:126    └─ [FUND 3] ID: 1966, Name: Liontrust Sus Fut Liontst Sust Futr MgD Gth 2 
+ReportDisplayPage.tsx:126    └─ [FUND 4] ID: 1965, Name: Cash
+ReportDisplayPage.tsx:137 🔍 [TOTAL IRR] Starting fund ID collection...
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1849 (BNY Mellon Global Income) from product 371
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1850 (BNY Mellon Multi-Asset Balanced) from product 371
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1851 (Fidelity UK Smaller Companies) from product 371
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1852 (FTF ClearBridge UK Rising Dividends) from product 371
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1854 (Historical Funds) from product 371
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1853 (Invesco Global Emerging Markets) from product 371
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1856 (L&G All Stock Index Link Gilt Index Tst) from product 371
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1855 (LF Equity Income ) from product 371
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1857 (Royal London Sustainable World Trust C ) from product 371
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1858 (Stewart Investors Worldwide Leaders ) from product 371
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1859 (Vgd FTSE Developed World ex UK Eq Index) from product 371
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1848 (Cash) from product 371
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1861 (BNY Mellon Global Income) from product 372
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1862 (BNY Mellon Multi-Asset Balanced) from product 372
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1863 (Fidelity UK Smaller Companies) from product 372
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1864 (FTF ClearBridge UK Rising Dividends) from product 372
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1867 (Historical Funds) from product 372
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1901 (Invesco Global Emerging Markets) from product 372
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1870 (LF Equity Income ) from product 372
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1865 (RL Sustainable World Trust) from product 372
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1866 (Stewart Investors Worldwide Leaders ) from product 372
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1869 (Vanguard LifeStrategy 40% Equity A Acc) from product 372
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1868 (Vanguard LifeStrategy 80% Equity A Acc) from product 372
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1860 (Cash) from product 372
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1872 (PruFund Growth (Sterling)) from product 373
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1871 (Cash) from product 373
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1881 (BNY Mellon Global Income) from product 374
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1880 (BNY Mellon Multi-Asset Balanced) from product 374
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1874 (Fidelity UK Smaller Companies) from product 374
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1879 (FTF ClearBridge UK Rising Dividends) from product 374
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1888 (Historical Funds) from product 374
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1878 (L&G All Stock Index Link Gilt Index Tst) from product 374
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1882 (Liontrust INV FDS1 Liontst GBL ALPHA C GBP Acc ) from product 374
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1883 (Liontrust Sus Fut Liontst Sust Futr MgD Gth 2 ) from product 374
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1875 (QUILTER INVRS CIR QI CIRLUM DYNM PASSV PTF R) from product 374
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1877 (Royal London Sustainable World Trust C ) from product 374
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1876 (Unicorn Mastertrust B Inc) from product 374
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1884 (Vanguard LifeStrategy 60% Equity ) from product 374
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1885 (Vgd FTSE Developed World ex UK Eq Index) from product 374
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1873 (Cash) from product 374
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1892 (Cash) from product 378
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1893 (PruFund Growth Series E) from product 378
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1895 (PruFund Growth Series E) from product 379
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1894 (Cash) from product 379
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1899 (Landseer Global Artificial Intelligence) from product 380
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1897 (Pictet Robotics I GBP) from product 380
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1898 (Polar Capital Global Technology I Inc) from product 380
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1896 (Cash) from product 380
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1968 (BNY Mellon Multi-Asset Balanced) from product 395
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1967 (Historical Funds) from product 395
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1966 (Liontrust Sus Fut Liontst Sust Futr MgD Gth 2 ) from product 395
+ReportDisplayPage.tsx:154    ✅ Added active fund ID: 1965 (Cash) from product 395
+ReportDisplayPage.tsx:160 🎯 [TOTAL IRR] Collected 52 total fund IDs for IRR calculation
+ReportDisplayPage.tsx:161 🎯 [TOTAL IRR] Fund IDs: (52) [1849, 1850, 1851, 1852, 1854, 1853, 1856, 1855, 1857, 1858, 1859, 1848, 1861, 1862, 1863, 1864, 1867, 1901, 1870, 1865, 1866, 1869, 1868, 1860, 1872, 1871, 1881, 1880, 1874, 1879, 1888, 1878, 1882, 1883, 1875, 1877, 1876, 1884, 1885, 1873, 1892, 1893, 1895, 1894, 1899, 1897, 1898, 1896, 1968, 1967, 1966, 1965]
+ReportDisplayPage.tsx:173 🎯 [TOTAL IRR] Using end date for real-time IRR: 2025-10-31
+ReportDisplayPage.tsx:174 🎯 [TOTAL IRR] Calling IRR API with 52 fund IDs...
+IRRHistoryTab.tsx:1768 ⚠️ [DATE MISMATCH WARNING] Product 379 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(6), selectedDatesFromReport: Array(7), availableButNotSelected: Array(0), suggestion: 'No alternative dates available'}
+(anonymous) @ IRRHistoryTab.tsx:1768
+(anonymous) @ IRRHistoryTab.tsx:1823
+(anonymous) @ IRRHistoryTab.tsx:1141
+IRRHistoryTab @ IRRHistoryTab.tsx:1838
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14630
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+IRRHistoryTab.tsx:1768 ⚠️ [DATE MISMATCH WARNING] Product 379 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(6), selectedDatesFromReport: Array(7), availableButNotSelected: Array(0), suggestion: 'No alternative dates available'}
+(anonymous) @ IRRHistoryTab.tsx:1768
+(anonymous) @ IRRHistoryTab.tsx:1823
+(anonymous) @ IRRHistoryTab.tsx:1141
+IRRHistoryTab @ IRRHistoryTab.tsx:1838
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14635
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+ReportDisplayPage.tsx:53 🔄 [REPORT DISPLAY CLEANUP] Reset custom product owner names on unmount
+IRRHistoryTab.tsx:1768 ⚠️ [DATE MISMATCH WARNING] Product 379 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(6), selectedDatesFromReport: Array(7), availableButNotSelected: Array(0), suggestion: 'No alternative dates available'}
+(anonymous) @ IRRHistoryTab.tsx:1768
+(anonymous) @ IRRHistoryTab.tsx:1823
+(anonymous) @ IRRHistoryTab.tsx:1141
+IRRHistoryTab @ IRRHistoryTab.tsx:1838
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14630
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+IRRHistoryTab.tsx:1768 ⚠️ [DATE MISMATCH WARNING] Product 379 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(6), selectedDatesFromReport: Array(7), availableButNotSelected: Array(0), suggestion: 'No alternative dates available'}
+(anonymous) @ IRRHistoryTab.tsx:1768
+(anonymous) @ IRRHistoryTab.tsx:1823
+(anonymous) @ IRRHistoryTab.tsx:1141
+IRRHistoryTab @ IRRHistoryTab.tsx:1838
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14635
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+ReportDisplayPage.tsx:183 ✅ [TOTAL IRR] API Response: {portfolioIRR: 4.7, fundIRRs: {…}, historicalIRR: null, irrDate: '2025-10-31'}
+ReportDisplayPage.tsx:184 ✅ [TOTAL IRR] Calculated Total IRR: 4.7%
+ReportDisplayPage.tsx:187 🔍 [TOTAL IRR] Individual Product IRRs for comparison:
+ReportDisplayPage.tsx:190    Product 1 (Stocks & Shares, Status: active): 4.6%
+ReportDisplayPage.tsx:190    Product 2 (Stocks & Shares, Status: active): 6.2%
+ReportDisplayPage.tsx:190    Product 3 (International Bond, Status: active): 3.8%
+ReportDisplayPage.tsx:190    Product 4 (SIPP, Status: active): 6%
+ReportDisplayPage.tsx:190    Product 5 (Retirement Account - Uncrystallised, Status: inactive): 1.3%
+ReportDisplayPage.tsx:190    Product 6 (Retirement Account - Crystallised, Status: active): 4.8%
+ReportDisplayPage.tsx:190    Product 7 (SIPP - Uncrystallised, Status: active): 14.5%
+ReportDisplayPage.tsx:190    Product 8 (Bond, Status: active): 4.8%
+ReportDisplayPage.tsx:194 🔍 ========== TOTAL IRR CALCULATION DEBUG END ==========
+IRRHistoryTab.tsx:1768 ⚠️ [DATE MISMATCH WARNING] Product 379 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(6), selectedDatesFromReport: Array(7), availableButNotSelected: Array(0), suggestion: 'No alternative dates available'}
+(anonymous) @ IRRHistoryTab.tsx:1768
+(anonymous) @ IRRHistoryTab.tsx:1823
+(anonymous) @ IRRHistoryTab.tsx:1141
+IRRHistoryTab @ IRRHistoryTab.tsx:1838
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14630
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+IRRHistoryTab.tsx:1768 ⚠️ [DATE MISMATCH WARNING] Product 379 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(6), selectedDatesFromReport: Array(7), availableButNotSelected: Array(0), suggestion: 'No alternative dates available'}
+(anonymous) @ IRRHistoryTab.tsx:1768
+(anonymous) @ IRRHistoryTab.tsx:1823
+(anonymous) @ IRRHistoryTab.tsx:1141
+IRRHistoryTab @ IRRHistoryTab.tsx:1838
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14635
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18728
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+ReportDisplayPage.tsx:53 🔄 [REPORT DISPLAY CLEANUP] Reset custom product owner names on unmount
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.4
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.4
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6.2
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 8.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 7.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.2
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 0.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 10.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 14.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 11.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 14
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 13.2
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: -8.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: -13.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 11.4
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2025-10-01
+ [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+ [IRR CARRY-FORWARD] Product 379 has 8 IRR entries: (8) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+ [IRR CARRY-FORWARD] Product 379 - Most recent IRR: {date: '2025-10-01', irr: null}
+ [IRR CARRY-FORWARD] Comparing dates: requested=2025-10-01, mostRecent=2025-10-01
+ [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = false
+ [IRR CARRY-FORWARD] ❌ Date 2025-10-01 is older than available data, returning null
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 10.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2021-05-01
+ [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+ [IRR CARRY-FORWARD] Product 379 has 8 IRR entries: (8) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+ [IRR CARRY-FORWARD] Product 379 - Most recent IRR: {date: '2025-10-01', irr: null}
+ [IRR CARRY-FORWARD] Comparing dates: requested=2021-05-01, mostRecent=2025-10-01
+ [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = false
+ [IRR CARRY-FORWARD] ❌ Date 2021-05-01 is older than available data, returning null
+ [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2025-10-01
+ [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+ [IRR CARRY-FORWARD] Product 378 has 8 IRR entries: (8) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+ [IRR CARRY-FORWARD] Product 378 - Most recent IRR: {date: '2025-10-01', irr: null}
+ [IRR CARRY-FORWARD] Comparing dates: requested=2025-10-01, mostRecent=2025-10-01
+ [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = false
+ [IRR CARRY-FORWARD] ❌ Date 2025-10-01 is older than available data, returning null
+ [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2025-07-01
+ [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+ [IRR CARRY-FORWARD] Product 378 has 8 IRR entries: (8) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+ [IRR CARRY-FORWARD] Product 378 - Most recent IRR: {date: '2025-10-01', irr: null}
+ [IRR CARRY-FORWARD] Comparing dates: requested=2025-07-01, mostRecent=2025-10-01
+ [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = false
+ [IRR CARRY-FORWARD] ❌ Date 2025-07-01 is older than available data, returning null
+ [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 1.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 1.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 1.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 1.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 1.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 1.2
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.4
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.4
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6.2
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 8.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 7.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.2
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 0.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 10.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 14.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 11.8
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2025-01-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 14
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2024-07-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 13.2
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2023-11-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 4.1
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2023-01-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: -8.6
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2022-07-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: -13.5
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2021-05-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 11.4
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2025-10-01
+IRRHistorySummaryTable.tsx:324 [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+IRRHistorySummaryTable.tsx:290 [IRR CARRY-FORWARD] Product 379 has 8 IRR entries: (8) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:303 [IRR CARRY-FORWARD] Product 379 - Most recent IRR: {date: '2025-10-01', irr: null}
+IRRHistorySummaryTable.tsx:333 [IRR CARRY-FORWARD] Comparing dates: requested=2025-10-01, mostRecent=2025-10-01
+IRRHistorySummaryTable.tsx:334 [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = false
+IRRHistorySummaryTable.tsx:343 [IRR CARRY-FORWARD] ❌ Date 2025-10-01 is older than available data, returning null
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2025-07-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 4.8
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2025-01-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 4.8
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2024-07-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 4.6
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2023-11-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 4.1
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2023-01-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 6.3
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2022-07-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 10.3
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2021-05-01
+IRRHistorySummaryTable.tsx:324 [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+IRRHistorySummaryTable.tsx:290 [IRR CARRY-FORWARD] Product 379 has 8 IRR entries: (8) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:303 [IRR CARRY-FORWARD] Product 379 - Most recent IRR: {date: '2025-10-01', irr: null}
+IRRHistorySummaryTable.tsx:333 [IRR CARRY-FORWARD] Comparing dates: requested=2021-05-01, mostRecent=2025-10-01
+IRRHistorySummaryTable.tsx:334 [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = false
+IRRHistorySummaryTable.tsx:343 [IRR CARRY-FORWARD] ❌ Date 2021-05-01 is older than available data, returning null
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2025-10-01
+IRRHistorySummaryTable.tsx:324 [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+IRRHistorySummaryTable.tsx:290 [IRR CARRY-FORWARD] Product 378 has 8 IRR entries: (8) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:303 [IRR CARRY-FORWARD] Product 378 - Most recent IRR: {date: '2025-10-01', irr: null}
+IRRHistorySummaryTable.tsx:333 [IRR CARRY-FORWARD] Comparing dates: requested=2025-10-01, mostRecent=2025-10-01
+IRRHistorySummaryTable.tsx:334 [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = false
+IRRHistorySummaryTable.tsx:343 [IRR CARRY-FORWARD] ❌ Date 2025-10-01 is older than available data, returning null
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2025-07-01
+IRRHistorySummaryTable.tsx:324 [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+IRRHistorySummaryTable.tsx:290 [IRR CARRY-FORWARD] Product 378 has 8 IRR entries: (8) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:303 [IRR CARRY-FORWARD] Product 378 - Most recent IRR: {date: '2025-10-01', irr: null}
+IRRHistorySummaryTable.tsx:333 [IRR CARRY-FORWARD] Comparing dates: requested=2025-07-01, mostRecent=2025-10-01
+IRRHistorySummaryTable.tsx:334 [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = false
+IRRHistorySummaryTable.tsx:343 [IRR CARRY-FORWARD] ❌ Date 2025-07-01 is older than available data, returning null
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2025-01-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 1.3
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2024-07-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 1.3
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2023-11-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 1.3
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2023-01-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 1.3
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2022-07-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 1.3
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2021-05-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 1.2
+IRRHistoryTab.tsx:1768 ⚠️ [DATE MISMATCH WARNING] Product 379 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(6), selectedDatesFromReport: Array(7), availableButNotSelected: Array(0), suggestion: 'No alternative dates available'}
+(anonymous) @ IRRHistoryTab.tsx:1768
+(anonymous) @ IRRHistoryTab.tsx:1823
+(anonymous) @ IRRHistoryTab.tsx:1141
+IRRHistoryTab @ IRRHistoryTab.tsx:1838
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14630
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performSyncWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18927
+flushSyncCallbacks @ chunk-QYFCA5BS.js?v=68f90eaa:9166
+(anonymous) @ chunk-QYFCA5BS.js?v=68f90eaa:18677
+ ⚠️ [DATE MISMATCH WARNING] Product 379 selected dates not found in database: {missingSelectedDates: Array(1), availableDatesInDatabase: Array(6), selectedDatesFromReport: Array(7), availableButNotSelected: Array(0), suggestion: 'No alternative dates available'}
+(anonymous) @ IRRHistoryTab.tsx?t=1761211481796:1936
+(anonymous) @ IRRHistoryTab.tsx?t=1761211481796:1994
+(anonymous) @ IRRHistoryTab.tsx?t=1761211481796:1338
+IRRHistoryTab @ IRRHistoryTab.tsx?t=1761211481796:2032
+renderWithHooks @ chunk-QYFCA5BS.js?v=68f90eaa:11596
+updateFunctionComponent @ chunk-QYFCA5BS.js?v=68f90eaa:14635
+beginWork @ chunk-QYFCA5BS.js?v=68f90eaa:15972
+beginWork$1 @ chunk-QYFCA5BS.js?v=68f90eaa:19806
+performUnitOfWork @ chunk-QYFCA5BS.js?v=68f90eaa:19251
+workLoopSync @ chunk-QYFCA5BS.js?v=68f90eaa:19190
+renderRootSync @ chunk-QYFCA5BS.js?v=68f90eaa:19169
+performSyncWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18927
+flushSyncCallbacks @ chunk-QYFCA5BS.js?v=68f90eaa:9166
+(anonymous) @ chunk-QYFCA5BS.js?v=68f90eaa:18677
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.4
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.4
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6.2
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 8.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 7.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.2
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 0.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 10.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 14.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 11.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 14
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 13.2
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: -8.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: -13.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 11.4
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2025-10-01
+ [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+ [IRR CARRY-FORWARD] Product 379 has 8 IRR entries: (8) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+ [IRR CARRY-FORWARD] Product 379 - Most recent IRR: {date: '2025-10-01', irr: null}
+ [IRR CARRY-FORWARD] Comparing dates: requested=2025-10-01, mostRecent=2025-10-01
+ [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = false
+ [IRR CARRY-FORWARD] ❌ Date 2025-10-01 is older than available data, returning null
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 10.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2021-05-01
+ [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+ [IRR CARRY-FORWARD] Product 379 has 8 IRR entries: (8) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+ [IRR CARRY-FORWARD] Product 379 - Most recent IRR: {date: '2025-10-01', irr: null}
+ [IRR CARRY-FORWARD] Comparing dates: requested=2021-05-01, mostRecent=2025-10-01
+ [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = false
+ [IRR CARRY-FORWARD] ❌ Date 2021-05-01 is older than available data, returning null
+ [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2025-10-01
+ [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+ [IRR CARRY-FORWARD] Product 378 has 8 IRR entries: (8) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+ [IRR CARRY-FORWARD] Product 378 - Most recent IRR: {date: '2025-10-01', irr: null}
+ [IRR CARRY-FORWARD] Comparing dates: requested=2025-10-01, mostRecent=2025-10-01
+ [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = false
+ [IRR CARRY-FORWARD] ❌ Date 2025-10-01 is older than available data, returning null
+ [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2025-07-01
+ [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+ [IRR CARRY-FORWARD] Product 378 has 8 IRR entries: (8) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+ [IRR CARRY-FORWARD] Product 378 - Most recent IRR: {date: '2025-10-01', irr: null}
+ [IRR CARRY-FORWARD] Comparing dates: requested=2025-07-01, mostRecent=2025-10-01
+ [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = false
+ [IRR CARRY-FORWARD] ❌ Date 2025-07-01 is older than available data, returning null
+ [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 1.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 1.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 1.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 1.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 1.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 1.2
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.4
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.4
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6.2
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 8.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 7.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.2
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 0.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2021-05-01
+ [IRR CARRY-FORWARD] Found exact IRR: 10.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 14.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 11.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2025-01-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 14
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2024-07-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 13.2
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2023-11-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 4.1
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2023-01-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: -8.6
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2022-07-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: -13.5
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2021-05-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 11.4
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2025-10-01
+IRRHistorySummaryTable.tsx:324 [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+IRRHistorySummaryTable.tsx:290 [IRR CARRY-FORWARD] Product 379 has 8 IRR entries: (8) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:303 [IRR CARRY-FORWARD] Product 379 - Most recent IRR: {date: '2025-10-01', irr: null}
+IRRHistorySummaryTable.tsx:333 [IRR CARRY-FORWARD] Comparing dates: requested=2025-10-01, mostRecent=2025-10-01
+IRRHistorySummaryTable.tsx:334 [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = false
+IRRHistorySummaryTable.tsx:343 [IRR CARRY-FORWARD] ❌ Date 2025-10-01 is older than available data, returning null
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2025-07-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 4.8
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2025-01-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 4.8
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2024-07-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 4.6
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2023-11-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 4.1
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2023-01-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 6.3
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2022-07-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 10.3
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2021-05-01
+IRRHistorySummaryTable.tsx:324 [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+IRRHistorySummaryTable.tsx:290 [IRR CARRY-FORWARD] Product 379 has 8 IRR entries: (8) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:303 [IRR CARRY-FORWARD] Product 379 - Most recent IRR: {date: '2025-10-01', irr: null}
+IRRHistorySummaryTable.tsx:333 [IRR CARRY-FORWARD] Comparing dates: requested=2021-05-01, mostRecent=2025-10-01
+IRRHistorySummaryTable.tsx:334 [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = false
+IRRHistorySummaryTable.tsx:343 [IRR CARRY-FORWARD] ❌ Date 2021-05-01 is older than available data, returning null
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2025-10-01
+IRRHistorySummaryTable.tsx:324 [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+IRRHistorySummaryTable.tsx:290 [IRR CARRY-FORWARD] Product 378 has 8 IRR entries: (8) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:303 [IRR CARRY-FORWARD] Product 378 - Most recent IRR: {date: '2025-10-01', irr: null}
+IRRHistorySummaryTable.tsx:333 [IRR CARRY-FORWARD] Comparing dates: requested=2025-10-01, mostRecent=2025-10-01
+IRRHistorySummaryTable.tsx:334 [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = false
+IRRHistorySummaryTable.tsx:343 [IRR CARRY-FORWARD] ❌ Date 2025-10-01 is older than available data, returning null
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2025-07-01
+IRRHistorySummaryTable.tsx:324 [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+IRRHistorySummaryTable.tsx:290 [IRR CARRY-FORWARD] Product 378 has 8 IRR entries: (8) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:303 [IRR CARRY-FORWARD] Product 378 - Most recent IRR: {date: '2025-10-01', irr: null}
+IRRHistorySummaryTable.tsx:333 [IRR CARRY-FORWARD] Comparing dates: requested=2025-07-01, mostRecent=2025-10-01
+IRRHistorySummaryTable.tsx:334 [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = false
+IRRHistorySummaryTable.tsx:343 [IRR CARRY-FORWARD] ❌ Date 2025-07-01 is older than available data, returning null
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2025-01-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 1.3
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2024-07-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 1.3
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2023-11-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 1.3
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2023-01-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 1.3
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2022-07-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 1.3
+IRRHistorySummaryTable.tsx:315 [IRR CARRY-FORWARD] Requesting IRR for product 378, date 2021-05-01
+IRRHistorySummaryTable.tsx:320 [IRR CARRY-FORWARD] Found exact IRR: 1.2
+ReportDisplayPage.tsx:53 🔄 [REPORT DISPLAY CLEANUP] Reset custom product owner names on unmount
