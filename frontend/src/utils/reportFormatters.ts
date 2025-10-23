@@ -20,15 +20,18 @@ export const formatCurrencyWithTruncation = (
   options: CurrencyFormattingOptions = {}
 ): string => {
   if (amount === null || amount === undefined) return '£0';
-  
+
   // Always round to nearest whole number
-  const roundedAmount = Math.round(amount);
-  
+  let roundedAmount = Math.round(amount);
+
+  // Normalize -0 to 0 to avoid displaying "-£0"
+  if (Object.is(roundedAmount, -0)) roundedAmount = 0;
+
   // Handle negative values to display as -£XXXX
   if (roundedAmount < 0) {
     return `-£${Math.abs(roundedAmount).toLocaleString()}`;
   }
-  
+
   return `£${roundedAmount.toLocaleString()}`;
 };
 
@@ -38,15 +41,19 @@ export const formatCurrencyWithZeroToggle = (
   hideZeros: boolean = false
 ): string => {
   if (amount === null || amount === undefined) return hideZeros ? '-' : '£0';
-  
-  const roundedAmount = Math.round(amount);
+
+  let roundedAmount = Math.round(amount);
+
+  // Normalize -0 to 0 to avoid displaying "-£0"
+  if (Object.is(roundedAmount, -0)) roundedAmount = 0;
+
   if (hideZeros && roundedAmount === 0) return '-';
-  
+
   // Handle negative values to display as -£XXXX
   if (roundedAmount < 0) {
     return `-£${Math.abs(roundedAmount).toLocaleString()}`;
   }
-  
+
   return `£${roundedAmount.toLocaleString()}`;
 };
 
@@ -135,7 +142,10 @@ export const formatCurrencyWithVisualSigning = (
       };
     }
 
-    const roundedAmount = Math.round(amount);
+    let roundedAmount = Math.round(amount);
+    // Normalize -0 to 0
+    if (Object.is(roundedAmount, -0)) roundedAmount = 0;
+
     if (hideZeros && roundedAmount === 0) {
       return {
         value: '-',
@@ -165,7 +175,10 @@ export const formatCurrencyWithVisualSigning = (
     };
   }
 
-  const roundedAmount = Math.round(amount);
+  let roundedAmount = Math.round(amount);
+  // Normalize -0 to 0
+  if (Object.is(roundedAmount, -0)) roundedAmount = 0;
+
   if (hideZeros && roundedAmount === 0) {
     return {
       value: '-',

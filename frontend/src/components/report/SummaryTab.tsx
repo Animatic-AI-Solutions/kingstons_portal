@@ -749,7 +749,9 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                                     </td>
                                     <td className="px-2 py-2 text-xs text-right">
                                       {(() => {
-                                        const netFundSwitch = (fund.total_fund_switch_in || 0) - (fund.total_fund_switch_out || 0);
+                                        let netFundSwitch = (fund.total_fund_switch_in || 0) - (fund.total_fund_switch_out || 0);
+                                        // Normalize -0 to 0 to avoid displaying "-0"
+                                        if (Object.is(netFundSwitch, -0)) netFundSwitch = 0;
                                         const formatted = formatCurrencyWithVisualSigningWrapper(netFundSwitch, 'fund_switch');
                                         return <span className={formatted.className}>{formatted.value}</span>;
                                       })()}
@@ -810,7 +812,12 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                               {formatCurrencyWithTruncation(product.total_product_switch_in || 0)}
                             </td>
                             <td className="px-2 py-2 text-xs font-bold text-right text-black">
-                              {formatCurrencyWithTruncation((product.total_fund_switch_in || 0) - (product.total_fund_switch_out || 0))}
+                              {(() => {
+                                let netSwitch = (product.total_fund_switch_in || 0) - (product.total_fund_switch_out || 0);
+                                // Normalize -0 to 0 to avoid displaying "-0"
+                                if (Object.is(netSwitch, -0)) netSwitch = 0;
+                                return formatCurrencyWithTruncation(netSwitch);
+                              })()}
                             </td>
                             <td className="px-2 py-2 text-xs font-bold text-right text-black">
                               {formatCurrencyWithTruncation(product.total_product_switch_out || 0)}
