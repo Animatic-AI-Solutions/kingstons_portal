@@ -26,6 +26,7 @@ export class ReportStateManager implements IReportStateManager {
       portfolioIrrValues: new Map<number, number>(),
       hideZeros: true,
       visualSigning: false,
+      hideCashIRR: false,
       customTitles: new Map<number, string>(),
       showTitleModal: false,
       modalTitles: new Map<number, string>(),
@@ -75,6 +76,10 @@ export class ReportStateManager implements IReportStateManager {
 
   getVisualSigning(): boolean {
     return this.state.visualSigning;
+  }
+
+  getHideCashIRR(): boolean {
+    return this.state.hideCashIRR;
   }
 
   getCustomTitles(): Map<number, string> {
@@ -135,6 +140,10 @@ export class ReportStateManager implements IReportStateManager {
 
   setVisualSigning(enabled: boolean): void {
     this.updateState('visualSigning', enabled);
+  }
+
+  setHideCashIRR(hide: boolean): void {
+    this.updateState('hideCashIRR', hide);
   }
 
   setCustomTitles(titles: Map<number, string>): void {

@@ -232,11 +232,20 @@ const detectNonCommonValuationDates = (holdings: Holding[]): {
   commonDates: string[];
 } => {
   // Filter to only active holdings (ignore inactive ones)
-  const activeHoldings = filterActiveHoldings(holdings);
-  
+  const allActiveHoldings = filterActiveHoldings(holdings);
+
+  // IMPORTANT: Exclude Cash funds from valuation date completeness check
+  // Cash funds are included in portfolio IRR calculations but don't need their own IRR
+  // and shouldn't block portfolio IRR calculation due to different valuation dates
+  const activeHoldings = allActiveHoldings.filter(h =>
+    !isCashFund({ fund_name: h.fund_name, isin_number: h.isin_number, id: h.id })
+  );
+
   console.log('🔍 Valuation Date Detection Debug:', {
     totalHoldings: holdings.length,
-    activeHoldings: activeHoldings.length,
+    allActiveHoldings: allActiveHoldings.length,
+    activeHoldingsExcludingCash: activeHoldings.length,
+    excludedCashFunds: allActiveHoldings.length - activeHoldings.length,
     holdingsData: activeHoldings.map(h => ({
       id: h.id,
       fund_name: h.fund_name,
@@ -319,7 +328,7 @@ const detectNonCommonValuationDates = (holdings: Holding[]): {
   if (incompleteDates.length > 0) {
     // Create the list of funds that are missing valuations for incomplete dates
     const nonCommonFunds: Array<{ fund_name: string; valuation_date: string }> = [];
-    
+
     incompleteDetails.forEach(({ date, missingFunds }) => {
       missingFunds.forEach(fundName => {
         nonCommonFunds.push({
@@ -328,13 +337,14 @@ const detectNonCommonValuationDates = (holdings: Holding[]): {
         });
       });
     });
-    
-    console.log('🔍 INCOMPLETE VALUATION DATES DETECTED:', {
+
+    console.log('⚠️ [VALUATION CHECK] INCOMPLETE VALUATION DATES DETECTED:', {
       incompleteDates,
       affectedFunds: nonCommonFunds.length,
       details: incompleteDetails
     });
-    
+    console.log('⚠️ [VALUATION CHECK] Portfolio IRR CAN still be calculated for complete dates:', completeDates);
+
     return {
       hasNonCommonDates: true,
       nonCommonFunds,
@@ -372,10 +382,12 @@ const detectNonCommonValuationDates = (holdings: Holding[]): {
 
   // All dates are complete - no warnings needed
   console.log('🔍 All valuation dates are complete across all funds');
+  console.log('✅ [VALUATION CHECK] PASSED - Common dates found:', completeDates);
+  console.log('✅ [VALUATION CHECK] Portfolio IRR can be calculated for these dates:', completeDates);
   return {
-    hasNonCommonDates: false, 
-    nonCommonFunds: [], 
-    commonDates: completeDates 
+    hasNonCommonDates: false,
+    nonCommonFunds: [],
+    commonDates: completeDates
   };
 };
 
@@ -1271,9 +1283,35 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
   // Function to trigger single fund IRR recalculation when activities change
   const triggerSingleFundIRRRecalculation = useCallback(async (portfolioFundIds: number[]) => {
     if (!api) return;
-    
+
+    // IMPORTANT: Filter out Cash funds - they should never have their own IRR calculated
+    // Cash funds can still be included in portfolio IRR calculations
+    const nonCashFundIds = portfolioFundIds.filter(fundId => {
+      const holding = holdings.find(h => h.id === fundId);
+      if (!holding) return true; // Keep if holding not found (defensive)
+
+      const isCash = isCashFund({
+        fund_name: holding.fund_name,
+        isin_number: holding.isin_number,
+        id: holding.id
+      });
+
+      if (isCash) {
+        console.log(`⏭️ Skipping IRR calculation for Cash fund (ID: ${fundId})`);
+      }
+
+      return !isCash;
+    });
+
+    console.log(`📊 IRR Calculation: ${portfolioFundIds.length} funds requested, ${nonCashFundIds.length} non-Cash funds will be calculated`);
+
+    if (nonCashFundIds.length === 0) {
+      console.log('⏭️ No non-Cash funds to calculate IRR for');
+      return;
+    }
+
     try {
-      const promises = portfolioFundIds.map(async (fundId) => {
+      const promises = nonCashFundIds.map(async (fundId) => {
         try {
           const response = await calculateStandardizedSingleFundIRR({ portfolioFundId: fundId });
           return response.data;
@@ -1282,28 +1320,85 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
           return null;
         }
       });
-      
+
       await Promise.all(promises);
-      
+
     } catch (error) {
       console.error('Error during single fund IRR recalculation:', error);
     }
-  }, [api]);
+  }, [api, holdings]);
 
   const triggerPortfolioIRRRecalculation = useCallback(async () => {
-    if (!api || !account?.portfolio_id) return;
-    
+    console.log('🚀 [PORTFOLIO IRR] triggerPortfolioIRRRecalculation CALLED');
+
+    if (!api) {
+      console.log('❌ [PORTFOLIO IRR] API not available');
+      return;
+    }
+
+    if (!account?.portfolio_id) {
+      console.log('❌ [PORTFOLIO IRR] No portfolio_id available');
+      return;
+    }
+
+    console.log(`✅ [PORTFOLIO IRR] Starting calculation for portfolio ${account.portfolio_id}`);
+
     try {
       const activeHoldings = filterActiveHoldings(holdings);
+      console.log(`📋 [PORTFOLIO IRR] Active holdings count: ${activeHoldings.length}`, activeHoldings.map(h => ({
+        id: h.id,
+        fund_name: h.fund_name,
+        isin: h.isin_number,
+        valuation_date: h.valuation_date,
+        market_value: h.market_value
+      })));
+
+      // IMPORTANT: Include ALL active funds (including Cash) in portfolio IRR calculation
+      // The backend will naturally handle funds without valuations by skipping them
+      // This allows Cash valuations to be included when they exist, while not blocking
+      // portfolio IRR calculation when Cash doesn't have a valuation
       const portfolioFundIds = activeHoldings.map(h => h.id);
-      
+
+      const cashFunds = activeHoldings.filter(h =>
+        isCashFund({
+          fund_name: h.fund_name,
+          isin_number: h.isin_number,
+          id: h.id
+        })
+      );
+
+      console.log(`📊 [PORTFOLIO IRR] Portfolio IRR Calculation Summary:`);
+      console.log(`   - Total active holdings: ${activeHoldings.length}`);
+      console.log(`   - Cash funds (will be included if they have valuations): ${cashFunds.length}`);
+      if (cashFunds.length > 0) {
+        cashFunds.forEach(cf => {
+          const hasValuation = cf.valuation_date && cf.market_value !== null && cf.market_value !== undefined;
+          console.log(`   💵 Cash fund ${cf.fund_name} (ID: ${cf.id}): ${hasValuation ? `Has valuation (${cf.valuation_date}, £${cf.market_value})` : 'No valuation'}`);
+        });
+      }
+      console.log(`   - All funds to include: ${portfolioFundIds.length}`);
+      console.log(`   - Fund IDs: [${portfolioFundIds.join(', ')}]`);
+
+      if (portfolioFundIds.length === 0) {
+        console.log('⏭️ [PORTFOLIO IRR] No active funds to calculate portfolio IRR for');
+        return null;
+      }
+
+      console.log(`🔄 [PORTFOLIO IRR] Calling calculateStandardizedMultipleFundsIRR with ${portfolioFundIds.length} funds...`);
+
       const response = await calculateStandardizedMultipleFundsIRR({
         portfolioFundIds
       });
-      
+
+      console.log(`✅ [PORTFOLIO IRR] Calculation successful!`, response.data);
       return response.data;
     } catch (error) {
-      console.error('Error during portfolio IRR recalculation:', error);
+      console.error('❌ [PORTFOLIO IRR] Error during portfolio IRR recalculation:', error);
+      console.error('❌ [PORTFOLIO IRR] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        response: error.response?.data
+      });
       return null;
     }
   }, [api, account?.portfolio_id, holdings]);
@@ -2465,22 +2560,33 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                     activities={convertActivityLogs(allActivities)}
                     accountHoldingId={accountId ? parseInt(accountId) : 0}
                                 onActivitiesUpdated={async (affectedFundIds?: number[]) => {
+              console.log('🔄 [ACTIVITIES UPDATED] onActivitiesUpdated callback triggered', { affectedFundIds });
               try {
                 // Trigger single fund IRR recalculation for affected funds
                 if (affectedFundIds && affectedFundIds.length > 0) {
+                  console.log('📊 [ACTIVITIES UPDATED] Triggering single fund IRR recalculation for funds:', affectedFundIds);
                   await triggerSingleFundIRRRecalculation(affectedFundIds);
+                  console.log('✅ [ACTIVITIES UPDATED] Single fund IRR recalculation complete');
                 }
-                
+
+                // IMPORTANT: Also trigger portfolio IRR recalculation
+                // This ensures the portfolio-level IRR is updated after any transaction changes
+                console.log('📊 [ACTIVITIES UPDATED] Triggering portfolio IRR recalculation...');
+                await triggerPortfolioIRRRecalculation();
+                console.log('✅ [ACTIVITIES UPDATED] Portfolio IRR recalculation complete');
+
                 // Refresh the data to get updated IRRs from views
+                console.log('🔄 [ACTIVITIES UPDATED] Refreshing data...');
                 await refreshData();
-                
+                console.log('✅ [ACTIVITIES UPDATED] Data refresh complete');
+
               } catch (error) {
-                console.error('Error in onActivitiesUpdated callback:', error);
+                console.error('❌ [ACTIVITIES UPDATED] Error in onActivitiesUpdated callback:', error);
                 // Still try to refresh data even if IRR recalculation fails
                 try {
                   await refreshData();
                 } catch (refreshError) {
-                  console.error('refreshData() also failed:', refreshError);
+                  console.error('❌ [ACTIVITIES UPDATED] refreshData() also failed:', refreshError);
                 }
               }
             }}

@@ -48,6 +48,7 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
       activeTab,
       hideZeros,
       visualSigning,
+      hideCashIRR,
       customTitles,
       customProductOwnerNames,
       loading,
@@ -58,6 +59,7 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
       setActiveTab,
       setHideZeros,
       setVisualSigning,
+      setHideCashIRR,
       setShowTitleModal,
       setShowProductOwnerModal,
       setIrrHistoryData
@@ -186,6 +188,10 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
     setHideZeros(!hideZeros);
   }, [hideZeros, setHideZeros]);
 
+  const toggleHideCashIRR = useCallback(() => {
+    setHideCashIRR(!hideCashIRR);
+  }, [hideCashIRR, setHideCashIRR]);
+
   const openTitleModal = useCallback(() => {
     setShowTitleModal(true);
   }, [setShowTitleModal]);
@@ -273,14 +279,27 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
               <button
                 onClick={toggleHideZeros}
                 className={`flex items-center px-4 py-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${
-                  hideZeros 
-                    ? 'bg-orange-600 text-white hover:bg-orange-700' 
+                  hideZeros
+                    ? 'bg-orange-600 text-white hover:bg-orange-700'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
                 aria-label={`${hideZeros ? 'Show' : 'Hide'} zero values`}
               >
                 <span className="text-sm font-medium">
                   {hideZeros ? 'Show Zeros' : 'Hide Zeros'}
+                </span>
+              </button>
+              <button
+                onClick={toggleHideCashIRR}
+                className={`flex items-center px-4 py-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${
+                  hideCashIRR
+                    ? 'bg-red-600 text-white hover:bg-red-700'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+                aria-label={`${hideCashIRR ? 'Show' : 'Hide'} Cash fund IRRs`}
+              >
+                <span className="text-sm font-medium">
+                  {hideCashIRR ? 'Show Cash IRR' : 'Hide Cash IRR'}
                 </span>
               </button>
               <div className="flex items-center space-x-2">

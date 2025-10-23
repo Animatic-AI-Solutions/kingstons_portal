@@ -40,7 +40,8 @@ export interface ReportState {
   // Display Options
   hideZeros: boolean;
   visualSigning: boolean;
-  
+  hideCashIRR: boolean;
+
   // Title Management
   customTitles: Map<number, string>;
   showTitleModal: boolean;
@@ -65,6 +66,7 @@ export interface StateUpdateActions {
   setPortfolioIrrValues: (values: Map<number, number>) => void;
   setHideZeros: (hide: boolean) => void;
   setVisualSigning: (enabled: boolean) => void;
+  setHideCashIRR: (hide: boolean) => void;
   setCustomTitles: (titles: Map<number, string>) => void;
   setShowTitleModal: (show: boolean) => void;
   setModalTitles: (titles: Map<number, string>) => void;
@@ -86,6 +88,7 @@ export interface IReportStateManager extends StateUpdateActions {
   getPortfolioIrrValues(): Map<number, number>;
   getHideZeros(): boolean;
   getVisualSigning(): boolean;
+  getHideCashIRR(): boolean;
   getCustomTitles(): Map<number, string>;
   getShowTitleModal(): boolean;
   getModalTitles(): Map<number, string>;

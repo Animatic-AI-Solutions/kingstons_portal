@@ -22,6 +22,7 @@ import {
 } from '../../utils/reportFormatters';
 import { normalizeProductType, PRODUCT_TYPE_ORDER } from '../../utils/reportConstants';
 import { generateEffectiveProductTitle, sortProductsByOwnerOrder } from '../../utils/productTitleUtils';
+import { isCashFund } from '../../utils/fundUtils';
 
 interface SummaryTabProps {
   reportData: ReportData;
@@ -41,6 +42,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
       customTitles,
       hideZeros,
       visualSigning,
+      hideCashIRR,
       loading,
       showInactiveProductDetails
     },
@@ -777,13 +779,23 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
                                       </span>
                                     </td>
                                     <td className="px-2 py-2 text-xs text-right bg-purple-50">
-                                      {fund.irr !== null && fund.irr !== undefined ? (
-                                        <span className={fund.irr >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-                                          {formatFundIrr(fund.irr)}
-                                        </span>
-                                      ) : (
-                                        <span className="text-black font-bold">N/A</span>
-                                      )}
+                                      {(() => {
+                                        // Check if this is a Cash fund and should be hidden
+                                        const isCash = isCashFund({ fund_name: fund.fund_name, isin_number: fund.isin_number, id: fund.id });
+                                        if (hideCashIRR && isCash) {
+                                          return <span className="text-black font-bold">N/A</span>;
+                                        }
+
+                                        // Display normal IRR
+                                        if (fund.irr !== null && fund.irr !== undefined) {
+                                          return (
+                                            <span className={fund.irr >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                                              {formatFundIrr(fund.irr)}
+                                            </span>
+                                          );
+                                        }
+                                        return <span className="text-black font-bold">N/A</span>;
+                                      })()}
                                     </td>
                                     <td className="px-2 py-2 text-xs text-right">
                                       {fund.risk_factor !== undefined && fund.risk_factor !== null ? (

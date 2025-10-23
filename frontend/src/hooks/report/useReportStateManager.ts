@@ -45,6 +45,7 @@ export const useReportStateManager = (): UseReportStateManager => {
     setPortfolioIrrValues: stateManager.setPortfolioIrrValues.bind(stateManager),
     setHideZeros: stateManager.setHideZeros.bind(stateManager),
     setVisualSigning: stateManager.setVisualSigning.bind(stateManager),
+    setHideCashIRR: stateManager.setHideCashIRR.bind(stateManager),
     setCustomTitles: stateManager.setCustomTitles.bind(stateManager),
     setShowTitleModal: stateManager.setShowTitleModal.bind(stateManager),
     setModalTitles: stateManager.setModalTitles.bind(stateManager),

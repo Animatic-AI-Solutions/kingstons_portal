@@ -41,6 +41,7 @@ import {
 import { generateEffectiveProductTitle, extractPlanNumber, sortProductsByOwnerOrder } from '../../utils/productTitleUtils';
 import { normalizeProductType, PRODUCT_TYPE_ORDER } from '../../utils/reportConstants';
 import { useIRRCalculationService } from '../../hooks/report/useIRRCalculationService';
+import { isCashFund } from '../../utils/fundUtils';
 import api from '../../services/api';
 // Local function to format fund IRRs with consistent 1 decimal place display
 const formatFundIrr = (irr: number | null | undefined): string => {
@@ -64,6 +65,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       irrHistoryData,
       customTitles: stableCustomTitles,
       hideZeros,
+      hideCashIRR,
       loading,
       showInactiveProductDetails,
       portfolioIrrValues
@@ -1532,6 +1534,16 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                 </td>
                                 <td className="px-2 py-2 text-xs text-right bg-purple-50">
                                   {(() => {
+                                    // Check if this is a Cash fund and should be hidden
+                                    const isCash = isCashFund({
+                                      fund_name: fund.fund_name,
+                                      isin_number: fund.isin_number || 'N/A',
+                                      id: fund.portfolio_fund_id
+                                    });
+                                    if (hideCashIRR && isCash) {
+                                      return <span className="text-gray-400">N/A</span>;
+                                    }
+
                                     // For Previous Funds, get IRR from the existing Previous Funds entry in SummaryTab data
                                     if (fund.isVirtual && fund.fund_name === 'Previous Funds') {
                                       // First check if the Previous Funds entry from SummaryTab has an IRR value
@@ -1619,6 +1631,16 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                 {sortedDates.map((date) => (
                                   <td key={date} className="px-2 py-2 text-xs text-right">
                                     {(() => {
+                                      // Check if this is a Cash fund and should be hidden
+                                      const isCash = isCashFund({
+                                        fund_name: fund.fund_name,
+                                        isin_number: fund.isin_number || 'N/A',
+                                        id: fund.portfolio_fund_id
+                                      });
+                                      if (hideCashIRR && isCash) {
+                                        return <span className="text-gray-400">N/A</span>;
+                                      }
+
                                       const irrValue = fundIrrMap.get(date);
                                       if (irrValue !== null && irrValue !== undefined) {
                                         return (

@@ -2566,9 +2566,50 @@ async def calculate_multiple_portfolio_funds_irr(
             calculation_date=irr_date_obj.isoformat() if irr_date_obj else None,
             result=result
         )
-        
+
+        # IMPORTANT: Save portfolio IRR to database so it can be retrieved by getLatestPortfolioIRR
+        # This ensures the UI Period Overview table shows the calculated portfolio IRR
+        try:
+            # Get the portfolio_id from the first fund
+            portfolio_info = await db.fetchrow("""
+                SELECT portfolio_id
+                FROM portfolio_funds
+                WHERE id = $1
+            """, portfolio_fund_ids[0])
+
+            if portfolio_info:
+                portfolio_id = portfolio_info["portfolio_id"]
+
+                # Check if portfolio IRR already exists for this date
+                existing_portfolio_irr = await db.fetchrow("""
+                    SELECT id FROM portfolio_irr_values
+                    WHERE portfolio_id = $1 AND date = $2
+                """, portfolio_id, irr_date_obj)
+
+                if existing_portfolio_irr:
+                    # Update existing portfolio IRR
+                    await db.execute("""
+                        UPDATE portfolio_irr_values
+                        SET irr_result = $1
+                        WHERE id = $2
+                    """, result['irr_percentage'], existing_portfolio_irr["id"])
+                    logger.info(f"✅ Updated portfolio IRR in database for portfolio {portfolio_id}, date {irr_date_obj}: {result['irr_percentage']}%")
+                else:
+                    # Insert new portfolio IRR
+                    await db.execute("""
+                        INSERT INTO portfolio_irr_values (portfolio_id, irr_result, date)
+                        VALUES ($1, $2, $3)
+                    """, portfolio_id, result['irr_percentage'], irr_date_obj)
+                    logger.info(f"✅ Saved new portfolio IRR to database for portfolio {portfolio_id}, date {irr_date_obj}: {result['irr_percentage']}%")
+            else:
+                logger.warning(f"⚠️ Could not find portfolio_id for fund {portfolio_fund_ids[0]}")
+
+        except Exception as save_error:
+            logger.error(f"❌ Error saving portfolio IRR to database: {str(save_error)}")
+            # Don't fail the entire request if saving fails - the IRR is still cached and returned
+
         logger.info(f"✅ Successfully calculated aggregate IRR for {len(portfolio_fund_ids)} portfolio funds: {result['irr_percentage']}%")
-        
+
         return result
         
     except HTTPException:
