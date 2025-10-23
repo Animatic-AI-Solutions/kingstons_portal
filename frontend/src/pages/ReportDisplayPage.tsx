@@ -46,13 +46,15 @@ const ReportDisplayPage: React.FC = () => {
   const memoizedReportData = useMemo(() => reportData, [reportData]);
 
   // Reset custom product owner names when component unmounts (cleanup)
+  // IMPORTANT: No dependency array - this should ONLY run on unmount, not on every state change
   useEffect(() => {
     return () => {
       // Reset custom product owner names when leaving the report page
       setCustomProductOwnerNames(null);
       console.log('🔄 [REPORT DISPLAY CLEANUP] Reset custom product owner names on unmount');
     };
-  }, [setCustomProductOwnerNames]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - cleanup runs only on unmount
 
   // Initialize report data from location state (fixed to prevent infinite loop)
   useEffect(() => {
