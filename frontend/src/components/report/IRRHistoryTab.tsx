@@ -1146,6 +1146,28 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
             if (!productHistory) {
               return null;
             }
+
+            // 🔍 DIAGNOSTIC: Check if this is the GIBX002486 product
+            const planNumber = extractPlanNumber(product);
+            const isGIBXProduct = planNumber && planNumber.includes('GIBX002486');
+            if (isGIBXProduct) {
+              console.log('🔍 [GIBX002486 DEBUG] Found product:', {
+                productId: product.id,
+                planNumber,
+                productName: product.product_name,
+                provider: product.provider_name,
+                status: product.status,
+                currentValuation: product.current_valuation,
+                productIRR: product.irr,
+                hasHistoricalIRR: !!productHistory?.portfolio_historical_irr,
+                historicalIRRCount: productHistory?.portfolio_historical_irr?.length || 0,
+                portfolioHistoricalIRRData: productHistory?.portfolio_historical_irr,
+                hasFundHistoricalIRR: !!productHistory?.funds_historical_irr,
+                fundHistoricalIRRCount: productHistory?.funds_historical_irr?.length || 0,
+                fundsHistoricalIRRData: productHistory?.funds_historical_irr
+              });
+            }
+
             // ✅ USE PER-PRODUCT HISTORICAL DATES - Each product should only show its own historical dates (excluding current valuation date)
             const productSelectedDates = memoizedPerProductDates[product.id] || [];
             const currentValuationDate = reportData?.selectedValuationDate;
@@ -1534,6 +1556,20 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                 </td>
                                 <td className="px-2 py-2 text-xs text-right bg-purple-50">
                                   {(() => {
+                                    // 🔍 DIAGNOSTIC: Log Current Average Return calculation for GIBX product
+                                    if (isGIBXProduct) {
+                                      console.log(`🔍 [GIBX002486] Current Average Return for fund "${fund.fund_name}":`, {
+                                        fundName: fund.fund_name,
+                                        portfolioFundId: fund.portfolio_fund_id,
+                                        fundStatus: fund.status,
+                                        isVirtual: fund.isVirtual,
+                                        riskFactor: fund.risk_factor,
+                                        hasHistoricalIRR: !!fund.historical_irr,
+                                        historicalIRRCount: fund.historical_irr?.length || 0,
+                                        historicalIRRData: fund.historical_irr
+                                      });
+                                    }
+
                                     // Check if this is a Cash fund and should be hidden
                                     const isCash = isCashFund({
                                       fund_name: fund.fund_name,
@@ -1541,6 +1577,9 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                       id: fund.portfolio_fund_id
                                     });
                                     if (hideCashIRR && isCash) {
+                                      if (isGIBXProduct) {
+                                        console.log(`🔍 [GIBX002486] Hiding Cash IRR for "${fund.fund_name}"`);
+                                      }
                                       return <span className="text-gray-400">N/A</span>;
                                     }
 
@@ -1575,11 +1614,22 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                     const productSelectedDates = memoizedPerProductDates[productHistory.product_id] || [];
                                     let foundHistoricalIRR = false;
 
+                                    if (isGIBXProduct) {
+                                      console.log(`🔍 [GIBX002486] Looking for historical IRR for "${fund.fund_name}":`, {
+                                        productSelectedDates,
+                                        productSelectedDatesCount: productSelectedDates.length
+                                      });
+                                    }
+
                                     if (productSelectedDates.length > 0) {
                                       // Sort selected dates to find the latest one
                                       const latestSelectedDate = productSelectedDates
                                         .slice()
                                         .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
+
+                                      if (isGIBXProduct) {
+                                        console.log(`🔍 [GIBX002486] Latest selected date for "${fund.fund_name}":`, latestSelectedDate);
+                                      }
 
                                       // Look up IRR for this latest selected date from historical data
                                       if (fund.historical_irr && latestSelectedDate) {
@@ -1589,10 +1639,21 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
                                           return normalizedRecordDate === normalizedSelectedDate;
                                         });
 
+                                        if (isGIBXProduct) {
+                                          console.log(`🔍 [GIBX002486] Historical record search for "${fund.fund_name}":`, {
+                                            foundRecord: !!historicalRecord,
+                                            historicalRecord,
+                                            irrResult: historicalRecord?.irr_result
+                                          });
+                                        }
+
                                         if (historicalRecord && historicalRecord.irr_result !== null && historicalRecord.irr_result !== undefined) {
                                           const irrValue = parseFloat(historicalRecord.irr_result);
                                           if (!isNaN(irrValue)) {
                                             foundHistoricalIRR = true;
+                                            if (isGIBXProduct) {
+                                              console.log(`✅ [GIBX002486] Displaying historical IRR for "${fund.fund_name}": ${irrValue}%`);
+                                            }
                                             return (
                                               <span className={irrValue >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}
                                                     title={`IRR for latest selected date: ${latestSelectedDate}`}>

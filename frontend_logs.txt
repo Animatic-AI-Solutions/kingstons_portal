@@ -1,298 +1,908 @@
- 🔄 [ACTIVITIES UPDATED] onActivitiesUpdated callback triggered {affectedFundIds: undefined}
- 📊 [ACTIVITIES UPDATED] Triggering portfolio IRR recalculation...
- 🚀 [PORTFOLIO IRR] triggerPortfolioIRRRecalculation CALLED
- ✅ [PORTFOLIO IRR] Starting calculation for portfolio 291
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- 📋 [PORTFOLIO IRR] Active holdings count: 2 (2) [{…}, {…}]
- 💵 [PORTFOLIO IRR] Excluding Cash fund: Cash (ID: 1398)
- 📊 [PORTFOLIO IRR] Portfolio IRR Calculation Summary:
-    - Total active holdings: 2
-    - Cash funds excluded: 1
-    - Non-Cash funds to include: 1
-    - Fund IDs: [1399]
- 🔄 [PORTFOLIO IRR] Calling calculateStandardizedMultipleFundsIRR with 1 funds...
- ✅ [PORTFOLIO IRR] Calculation successful! {success: true, irr_percentage: 104.5, irr_decimal: 1.0453753561106156, calculation_date: '2025-02-01', portfolio_fund_ids: Array(1), …}
- ✅ [ACTIVITIES UPDATED] Portfolio IRR recalculation complete
- 🔄 [ACTIVITIES UPDATED] Refreshing data...
- ✅ [ACTIVITIES UPDATED] Data refresh complete
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Creating Previous Funds entry with 0 inactive holdings
- No inactive holdings found, not creating Previous Funds entry
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Creating Previous Funds entry with 0 inactive holdings
- No inactive holdings found, not creating Previous Funds entry
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- ProductIRRCalculation: Starting optimized data fetch for account ID: 278
- ProductIRRCalculation: Account/product data received: {id: 278, client_id: 28, product_name: 'Z. TEST INACTIVE IRR BUG', product_type: 'ISA', status: 'active', …}
- ProductIRRCalculation: Using portfolio ID: 291
- ProductIRRCalculation: Fetching complete portfolio data with new optimized endpoint
- ProductIRRCalculation: Complete portfolio data received: {portfolio: {…}, template_info: null, portfolio_funds: Array(2), valuations_map: {…}, irr_map: {…}}
- ProductIRRCalculation: Complete activity logs received: {activity_logs: Array(1), summary: {…}}
- Filtering inactive holdings from: 2 holdings
- All holdings status values: (2) [{…}, {…}]
- Holding ID 1398 (Cash): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
- Holding ID 1399 (Artemis Income): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
- Found inactive holdings: []
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- 🔍 Valuation Date Detection Debug: {totalHoldings: 2, allActiveHoldings: 2, activeHoldingsExcludingCash: 1, excludedCashFunds: 1, holdingsData: Array(1)}
- 🔍 All unique valuation dates found: ['2025-02-01']
- 🔍 Date 2025-02-01 completeness: {totalActiveFunds: 1, fundsWithThisDate: 1, fundsWithoutThisDate: 0, missingFunds: Array(0)}
- 🔍 Date completeness analysis: {completeDates: 1, incompleteDates: 0, incompleteDetails: Array(0)}
- 🔍 All valuation dates are complete across all funds
- ✅ [VALUATION CHECK] PASSED - Common dates found: ['2025-02-01']
- ✅ [VALUATION CHECK] Portfolio IRR can be calculated for these dates: ['2025-02-01']
- Filtering inactive holdings from: 2 holdings
- All holdings status values: (2) [{…}, {…}]
- Holding ID 1398 (Cash): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
- Holding ID 1399 (Artemis Income): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
- Found inactive holdings: []
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- 🔍 Valuation Date Detection Debug: {totalHoldings: 2, allActiveHoldings: 2, activeHoldingsExcludingCash: 1, excludedCashFunds: 1, holdingsData: Array(1)}
- 🔍 All unique valuation dates found: ['2025-02-01']
- 🔍 Date 2025-02-01 completeness: {totalActiveFunds: 1, fundsWithThisDate: 1, fundsWithoutThisDate: 0, missingFunds: Array(0)}
- 🔍 Date completeness analysis: {completeDates: 1, incompleteDates: 0, incompleteDetails: Array(0)}
- 🔍 All valuation dates are complete across all funds
- ✅ [VALUATION CHECK] PASSED - Common dates found: ['2025-02-01']
- ✅ [VALUATION CHECK] Portfolio IRR can be calculated for these dates: ['2025-02-01']
- Mapping IRR values from holdings data for 2 funds
- No IRR data for fund 1398 (Cash)
- Mapped IRR for fund 1399 (Artemis Income): {irr: 104.5, date: '2025-02-01'}
- Provider switches loaded: []
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Creating Previous Funds entry with 0 inactive holdings
- No inactive holdings found, not creating Previous Funds entry
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Creating Previous Funds entry with 0 inactive holdings
- No inactive holdings found, not creating Previous Funds entry
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
-usePresence.ts:138 WebSocket connection to 'ws://localhost:8001/api/ws/presence/irr-calculation:product-278' failed: WebSocket is closed before the connection is established.
-(anonymous) @ usePresence.ts:138
-safelyCallDestroy @ chunk-QYFCA5BS.js?v=68f90eaa:16796
-commitHookEffectListUnmount @ chunk-QYFCA5BS.js?v=68f90eaa:16923
-invokePassiveEffectUnmountInDEV @ chunk-QYFCA5BS.js?v=68f90eaa:18413
-invokeEffectsInDev @ chunk-QYFCA5BS.js?v=68f90eaa:19754
-commitDoubleInvokeEffectsInDEV @ chunk-QYFCA5BS.js?v=68f90eaa:19735
-flushPassiveEffectsImpl @ chunk-QYFCA5BS.js?v=68f90eaa:19556
-flushPassiveEffects @ chunk-QYFCA5BS.js?v=68f90eaa:19500
-(anonymous) @ chunk-QYFCA5BS.js?v=68f90eaa:19381
-workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
-flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
-performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
-usePresence.ts:115 ❌ usePresence: WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
-ws.onerror @ usePresence.ts:115
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Creating Previous Funds entry with 0 inactive holdings
- No inactive holdings found, not creating Previous Funds entry
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Creating Previous Funds entry with 0 inactive holdings
- No inactive holdings found, not creating Previous Funds entry
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Creating Previous Funds entry with 0 inactive holdings
- No inactive holdings found, not creating Previous Funds entry
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Creating Previous Funds entry with 0 inactive holdings
- No inactive holdings found, not creating Previous Funds entry
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Filtering inactive holdings from: 2 holdings
- All holdings status values: (2) [{…}, {…}]
- Holding ID 1398 (Cash): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
- Holding ID 1399 (Artemis Income): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
- Found inactive holdings: []
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- 🔍 Valuation Date Detection Debug: {totalHoldings: 2, allActiveHoldings: 2, activeHoldingsExcludingCash: 1, excludedCashFunds: 1, holdingsData: Array(1)}
- 🔍 All unique valuation dates found: ['2025-02-01']
- 🔍 Date 2025-02-01 completeness: {totalActiveFunds: 1, fundsWithThisDate: 1, fundsWithoutThisDate: 0, missingFunds: Array(0)}
- 🔍 Date completeness analysis: {completeDates: 1, incompleteDates: 0, incompleteDetails: Array(0)}
- 🔍 All valuation dates are complete across all funds
- ✅ [VALUATION CHECK] PASSED - Common dates found: ['2025-02-01']
- ✅ [VALUATION CHECK] Portfolio IRR can be calculated for these dates: ['2025-02-01']
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Creating Previous Funds entry with 0 inactive holdings
- No inactive holdings found, not creating Previous Funds entry
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Filtering inactive holdings from: 2 holdings
- All holdings status values: (2) [{…}, {…}]
- Holding ID 1398 (Cash): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
- Holding ID 1399 (Artemis Income): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
- Found inactive holdings: []
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- 🔍 Valuation Date Detection Debug: {totalHoldings: 2, allActiveHoldings: 2, activeHoldingsExcludingCash: 1, excludedCashFunds: 1, holdingsData: Array(1)}
- 🔍 All unique valuation dates found: ['2025-02-01']
- 🔍 Date 2025-02-01 completeness: {totalActiveFunds: 1, fundsWithThisDate: 1, fundsWithoutThisDate: 0, missingFunds: Array(0)}
- 🔍 Date completeness analysis: {completeDates: 1, incompleteDates: 0, incompleteDetails: Array(0)}
- 🔍 All valuation dates are complete across all funds
- ✅ [VALUATION CHECK] PASSED - Common dates found: ['2025-02-01']
- ✅ [VALUATION CHECK] Portfolio IRR can be calculated for these dates: ['2025-02-01']
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Creating Previous Funds entry with 0 inactive holdings
- No inactive holdings found, not creating Previous Funds entry
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Mapping IRR values from holdings data for 2 funds
- No IRR data for fund 1398 (Cash)
- Mapped IRR for fund 1399 (Artemis Income): {irr: 104.5, date: '2025-02-01'}
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Creating Previous Funds entry with 0 inactive holdings
- No inactive holdings found, not creating Previous Funds entry
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Creating Previous Funds entry with 0 inactive holdings
- No inactive holdings found, not creating Previous Funds entry
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Creating Previous Funds entry with 0 inactive holdings
- No inactive holdings found, not creating Previous Funds entry
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Creating Previous Funds entry with 0 inactive holdings
- No inactive holdings found, not creating Previous Funds entry
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- Calculating total investments...
- Investments only for holding 1398 (Cash): 0
- Investments only for holding 1399 (Artemis Income): 110
- Total investments (Investment type only): 110
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
+chunk-QYFCA5BS.js?v=68f90eaa:21609 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+ReportDisplayPage.tsx:65 🔍 [REPORT DISPLAY DEBUG] Initializing report data...
+ReportDisplayPage.tsx:69 🔄 [REPORT DISPLAY DEBUG] Reset custom product owner names on init
+ReportDisplayPage.tsx:79 🔍 [REPORT DISPLAY DEBUG] Received report data with 7 products
+ReportDisplayPage.tsx:96 🎯 [OPTIMIZATION] Using pre-fetched portfolio IRR values from reportData: {371: 4.7, 372: 6.2, 373: 4.7, 374: 6.2, 379: 3.4, 380: 14.2, 395: 4.8}
+ReportDisplayPage.tsx:54 🔄 [REPORT DISPLAY CLEANUP] Reset custom product owner names on unmount
+ReportDisplayPage.tsx:102 🔍 [IRR HISTORY DEBUG] Processed historical IRR data: {length: 7, sample: {…}}
+ 🔍 ========== TOTAL IRR CALCULATION DEBUG START ==========
+ 🔍 [TOTAL IRR] Total products in productSummaries: 7
+ 🔍 [PRODUCT 1] Product ID: 371, Name: Stocks & Shares, Status: active
+    └─ IRR: 4.7%
+    └─ Has funds: true, Funds count: 12
+    └─ [FUND 1] ID: 1849, Name: BNY Mellon Global Income
+    └─ [FUND 2] ID: 1850, Name: BNY Mellon Multi-Asset Balanced
+    └─ [FUND 3] ID: 1851, Name: Fidelity UK Smaller Companies
+    └─ [FUND 4] ID: 1852, Name: FTF ClearBridge UK Rising Dividends
+    └─ [FUND 5] ID: 1854, Name: Historical Funds
+    └─ [FUND 6] ID: 1853, Name: Invesco Global Emerging Markets
+    └─ [FUND 7] ID: 1856, Name: L&G All Stock Index Link Gilt Index Tst
+    └─ [FUND 8] ID: 1855, Name: LF Equity Income 
+    └─ [FUND 9] ID: 1857, Name: Royal London Sustainable World Trust C 
+    └─ [FUND 10] ID: 1858, Name: Stewart Investors Worldwide Leaders 
+    └─ [FUND 11] ID: 1859, Name: Vgd FTSE Developed World ex UK Eq Index
+    └─ [FUND 12] ID: 1848, Name: Cash
+ 🔍 [PRODUCT 2] Product ID: 372, Name: Stocks & Shares, Status: active
+    └─ IRR: 6.2%
+    └─ Has funds: true, Funds count: 12
+    └─ [FUND 1] ID: 1861, Name: BNY Mellon Global Income
+    └─ [FUND 2] ID: 1862, Name: BNY Mellon Multi-Asset Balanced
+    └─ [FUND 3] ID: 1863, Name: Fidelity UK Smaller Companies
+    └─ [FUND 4] ID: 1864, Name: FTF ClearBridge UK Rising Dividends
+    └─ [FUND 5] ID: 1867, Name: Historical Funds
+    └─ [FUND 6] ID: 1901, Name: Invesco Global Emerging Markets
+    └─ [FUND 7] ID: 1870, Name: LF Equity Income 
+    └─ [FUND 8] ID: 1865, Name: RL Sustainable World Trust
+    └─ [FUND 9] ID: 1866, Name: Stewart Investors Worldwide Leaders 
+    └─ [FUND 10] ID: 1869, Name: Vanguard LifeStrategy 40% Equity A Acc
+    └─ [FUND 11] ID: 1868, Name: Vanguard LifeStrategy 80% Equity A Acc
+    └─ [FUND 12] ID: 1860, Name: Cash
+ 🔍 [PRODUCT 3] Product ID: 373, Name: International Bond, Status: active
+    └─ IRR: 4.7%
+    └─ Has funds: true, Funds count: 2
+    └─ [FUND 1] ID: 1872, Name: PruFund Growth (Sterling)
+    └─ [FUND 2] ID: 1871, Name: Cash
+ 🔍 [PRODUCT 4] Product ID: 374, Name: SIPP, Status: active
+    └─ IRR: 6.2%
+    └─ Has funds: true, Funds count: 14
+    └─ [FUND 1] ID: 1881, Name: BNY Mellon Global Income
+    └─ [FUND 2] ID: 1880, Name: BNY Mellon Multi-Asset Balanced
+    └─ [FUND 3] ID: 1874, Name: Fidelity UK Smaller Companies
+    └─ [FUND 4] ID: 1879, Name: FTF ClearBridge UK Rising Dividends
+    └─ [FUND 5] ID: 1888, Name: Historical Funds
+    └─ [FUND 6] ID: 1878, Name: L&G All Stock Index Link Gilt Index Tst
+    └─ [FUND 7] ID: 1882, Name: Liontrust INV FDS1 Liontst GBL ALPHA C GBP Acc 
+    └─ [FUND 8] ID: 1883, Name: Liontrust Sus Fut Liontst Sust Futr MgD Gth 2 
+    └─ [FUND 9] ID: 1875, Name: QUILTER INVRS CIR QI CIRLUM DYNM PASSV PTF R
+    └─ [FUND 10] ID: 1877, Name: Royal London Sustainable World Trust C 
+    └─ [FUND 11] ID: 1876, Name: Unicorn Mastertrust B Inc
+    └─ [FUND 12] ID: 1884, Name: Vanguard LifeStrategy 60% Equity 
+    └─ [FUND 13] ID: 1885, Name: Vgd FTSE Developed World ex UK Eq Index
+    └─ [FUND 14] ID: 1873, Name: Cash
+ 🔍 [PRODUCT 5] Product ID: 379, Name: Retirement Account - Crystallised, Status: active
+    └─ IRR: 3.4%
+    └─ Has funds: true, Funds count: 2
+    └─ [FUND 1] ID: 1895, Name: PruFund Growth Series E
+    └─ [FUND 2] ID: 1894, Name: Cash
+ 🔍 [PRODUCT 6] Product ID: 380, Name: SIPP - Uncrystallised, Status: active
+    └─ IRR: 14.2%
+    └─ Has funds: true, Funds count: 4
+    └─ [FUND 1] ID: 1899, Name: Landseer Global Artificial Intelligence
+    └─ [FUND 2] ID: 1897, Name: Pictet Robotics I GBP
+    └─ [FUND 3] ID: 1898, Name: Polar Capital Global Technology I Inc
+    └─ [FUND 4] ID: 1896, Name: Cash
+ 🔍 [PRODUCT 7] Product ID: 395, Name: Bond, Status: active
+    └─ IRR: 4.8%
+    └─ Has funds: true, Funds count: 4
+    └─ [FUND 1] ID: 1968, Name: BNY Mellon Multi-Asset Balanced
+    └─ [FUND 2] ID: 1967, Name: Historical Funds
+    └─ [FUND 3] ID: 1966, Name: Liontrust Sus Fut Liontst Sust Futr MgD Gth 2 
+    └─ [FUND 4] ID: 1965, Name: Cash
+ 🔍 [TOTAL IRR] Starting fund ID collection...
+    ✅ Added active fund ID: 1849 (BNY Mellon Global Income) from product 371
+    ✅ Added active fund ID: 1850 (BNY Mellon Multi-Asset Balanced) from product 371
+    ✅ Added active fund ID: 1851 (Fidelity UK Smaller Companies) from product 371
+    ✅ Added active fund ID: 1852 (FTF ClearBridge UK Rising Dividends) from product 371
+    ✅ Added active fund ID: 1854 (Historical Funds) from product 371
+    ✅ Added active fund ID: 1853 (Invesco Global Emerging Markets) from product 371
+    ✅ Added active fund ID: 1856 (L&G All Stock Index Link Gilt Index Tst) from product 371
+    ✅ Added active fund ID: 1855 (LF Equity Income ) from product 371
+    ✅ Added active fund ID: 1857 (Royal London Sustainable World Trust C ) from product 371
+    ✅ Added active fund ID: 1858 (Stewart Investors Worldwide Leaders ) from product 371
+    ✅ Added active fund ID: 1859 (Vgd FTSE Developed World ex UK Eq Index) from product 371
+    ✅ Added active fund ID: 1848 (Cash) from product 371
+    ✅ Added active fund ID: 1861 (BNY Mellon Global Income) from product 372
+    ✅ Added active fund ID: 1862 (BNY Mellon Multi-Asset Balanced) from product 372
+    ✅ Added active fund ID: 1863 (Fidelity UK Smaller Companies) from product 372
+    ✅ Added active fund ID: 1864 (FTF ClearBridge UK Rising Dividends) from product 372
+    ✅ Added active fund ID: 1867 (Historical Funds) from product 372
+    ✅ Added active fund ID: 1901 (Invesco Global Emerging Markets) from product 372
+    ✅ Added active fund ID: 1870 (LF Equity Income ) from product 372
+    ✅ Added active fund ID: 1865 (RL Sustainable World Trust) from product 372
+    ✅ Added active fund ID: 1866 (Stewart Investors Worldwide Leaders ) from product 372
+    ✅ Added active fund ID: 1869 (Vanguard LifeStrategy 40% Equity A Acc) from product 372
+    ✅ Added active fund ID: 1868 (Vanguard LifeStrategy 80% Equity A Acc) from product 372
+    ✅ Added active fund ID: 1860 (Cash) from product 372
+    ✅ Added active fund ID: 1872 (PruFund Growth (Sterling)) from product 373
+    ✅ Added active fund ID: 1871 (Cash) from product 373
+    ✅ Added active fund ID: 1881 (BNY Mellon Global Income) from product 374
+    ✅ Added active fund ID: 1880 (BNY Mellon Multi-Asset Balanced) from product 374
+    ✅ Added active fund ID: 1874 (Fidelity UK Smaller Companies) from product 374
+    ✅ Added active fund ID: 1879 (FTF ClearBridge UK Rising Dividends) from product 374
+    ✅ Added active fund ID: 1888 (Historical Funds) from product 374
+    ✅ Added active fund ID: 1878 (L&G All Stock Index Link Gilt Index Tst) from product 374
+    ✅ Added active fund ID: 1882 (Liontrust INV FDS1 Liontst GBL ALPHA C GBP Acc ) from product 374
+    ✅ Added active fund ID: 1883 (Liontrust Sus Fut Liontst Sust Futr MgD Gth 2 ) from product 374
+    ✅ Added active fund ID: 1875 (QUILTER INVRS CIR QI CIRLUM DYNM PASSV PTF R) from product 374
+    ✅ Added active fund ID: 1877 (Royal London Sustainable World Trust C ) from product 374
+    ✅ Added active fund ID: 1876 (Unicorn Mastertrust B Inc) from product 374
+    ✅ Added active fund ID: 1884 (Vanguard LifeStrategy 60% Equity ) from product 374
+    ✅ Added active fund ID: 1885 (Vgd FTSE Developed World ex UK Eq Index) from product 374
+    ✅ Added active fund ID: 1873 (Cash) from product 374
+    ✅ Added active fund ID: 1895 (PruFund Growth Series E) from product 379
+    ✅ Added active fund ID: 1894 (Cash) from product 379
+    ✅ Added active fund ID: 1899 (Landseer Global Artificial Intelligence) from product 380
+    ✅ Added active fund ID: 1897 (Pictet Robotics I GBP) from product 380
+    ✅ Added active fund ID: 1898 (Polar Capital Global Technology I Inc) from product 380
+    ✅ Added active fund ID: 1896 (Cash) from product 380
+    ✅ Added active fund ID: 1968 (BNY Mellon Multi-Asset Balanced) from product 395
+    ✅ Added active fund ID: 1967 (Historical Funds) from product 395
+    ✅ Added active fund ID: 1966 (Liontrust Sus Fut Liontst Sust Futr MgD Gth 2 ) from product 395
+    ✅ Added active fund ID: 1965 (Cash) from product 395
+ 🎯 [TOTAL IRR] Collected 50 total fund IDs for IRR calculation
+ 🎯 [TOTAL IRR] Fund IDs: (50) [1849, 1850, 1851, 1852, 1854, 1853, 1856, 1855, 1857, 1858, 1859, 1848, 1861, 1862, 1863, 1864, 1867, 1901, 1870, 1865, 1866, 1869, 1868, 1860, 1872, 1871, 1881, 1880, 1874, 1879, 1888, 1878, 1882, 1883, 1875, 1877, 1876, 1884, 1885, 1873, 1895, 1894, 1899, 1897, 1898, 1896, 1968, 1967, 1966, 1965]
+ReportDisplayPage.tsx:175 🎯 [TOTAL IRR] Using end date for real-time IRR: 2025-10-31
+ReportDisplayPage.tsx:176 🎯 [TOTAL IRR] Calling IRR API with 50 fund IDs...
+IRRHistoryTab.tsx:1154 🔍 [GIBX002486 DEBUG] Found product: {productId: 371, planNumber: 'GIBX002486', productName: 'Stocks & Shares', provider: 'Fidelity', status: 'active', …}
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "BNY Mellon Global Income": {fundName: 'BNY Mellon Global Income', portfolioFundId: 1849, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "BNY Mellon Global Income": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "BNY Mellon Global Income": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "BNY Mellon Global Income": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "BNY Mellon Global Income": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "BNY Mellon Multi-Asset Balanced": {fundName: 'BNY Mellon Multi-Asset Balanced', portfolioFundId: 1850, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "BNY Mellon Multi-Asset Balanced": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "BNY Mellon Multi-Asset Balanced": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "BNY Mellon Multi-Asset Balanced": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "BNY Mellon Multi-Asset Balanced": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Fidelity UK Smaller Companies": {fundName: 'Fidelity UK Smaller Companies', portfolioFundId: 1851, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Fidelity UK Smaller Companies": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Fidelity UK Smaller Companies": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Fidelity UK Smaller Companies": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Fidelity UK Smaller Companies": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "FTF ClearBridge UK Rising Dividends": {fundName: 'FTF ClearBridge UK Rising Dividends', portfolioFundId: 1852, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "FTF ClearBridge UK Rising Dividends": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "FTF ClearBridge UK Rising Dividends": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "FTF ClearBridge UK Rising Dividends": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "FTF ClearBridge UK Rising Dividends": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Historical Funds": {fundName: 'Historical Funds', portfolioFundId: 1854, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Historical Funds": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Historical Funds": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Historical Funds": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Historical Funds": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Invesco Global Emerging Markets": {fundName: 'Invesco Global Emerging Markets', portfolioFundId: 1853, fundStatus: undefined, isVirtual: undefined, riskFactor: 6, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Invesco Global Emerging Markets": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Invesco Global Emerging Markets": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Invesco Global Emerging Markets": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Invesco Global Emerging Markets": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "L&G All Stock Index Link Gilt Index Tst": {fundName: 'L&G All Stock Index Link Gilt Index Tst', portfolioFundId: 1856, fundStatus: undefined, isVirtual: undefined, riskFactor: 3, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "L&G All Stock Index Link Gilt Index Tst": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "L&G All Stock Index Link Gilt Index Tst": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "L&G All Stock Index Link Gilt Index Tst": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "L&G All Stock Index Link Gilt Index Tst": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "LF Equity Income ": {fundName: 'LF Equity Income ', portfolioFundId: 1855, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "LF Equity Income ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "LF Equity Income ": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "LF Equity Income ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "LF Equity Income ": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Royal London Sustainable World Trust C ": {fundName: 'Royal London Sustainable World Trust C ', portfolioFundId: 1857, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Royal London Sustainable World Trust C ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Royal London Sustainable World Trust C ": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Royal London Sustainable World Trust C ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Royal London Sustainable World Trust C ": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Stewart Investors Worldwide Leaders ": {fundName: 'Stewart Investors Worldwide Leaders ', portfolioFundId: 1858, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Stewart Investors Worldwide Leaders ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Stewart Investors Worldwide Leaders ": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Stewart Investors Worldwide Leaders ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Stewart Investors Worldwide Leaders ": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Vgd FTSE Developed World ex UK Eq Index": {fundName: 'Vgd FTSE Developed World ex UK Eq Index', portfolioFundId: 1859, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Vgd FTSE Developed World ex UK Eq Index": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Vgd FTSE Developed World ex UK Eq Index": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Vgd FTSE Developed World ex UK Eq Index": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Vgd FTSE Developed World ex UK Eq Index": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Cash": {fundName: 'Cash', portfolioFundId: 1848, fundStatus: undefined, isVirtual: undefined, riskFactor: 2, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Cash": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Cash": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Cash": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Cash": 0%
+IRRHistoryTab.tsx:1154 🔍 [GIBX002486 DEBUG] Found product: {productId: 371, planNumber: 'GIBX002486', productName: 'Stocks & Shares', provider: 'Fidelity', status: 'active', …}
+ 🔍 [GIBX002486] Current Average Return for fund "BNY Mellon Global Income": {fundName: 'BNY Mellon Global Income', portfolioFundId: 1849, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "BNY Mellon Global Income": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "BNY Mellon Global Income": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "BNY Mellon Global Income": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "BNY Mellon Global Income": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "BNY Mellon Multi-Asset Balanced": {fundName: 'BNY Mellon Multi-Asset Balanced', portfolioFundId: 1850, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "BNY Mellon Multi-Asset Balanced": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "BNY Mellon Multi-Asset Balanced": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "BNY Mellon Multi-Asset Balanced": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "BNY Mellon Multi-Asset Balanced": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "Fidelity UK Smaller Companies": {fundName: 'Fidelity UK Smaller Companies', portfolioFundId: 1851, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "Fidelity UK Smaller Companies": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "Fidelity UK Smaller Companies": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "Fidelity UK Smaller Companies": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "Fidelity UK Smaller Companies": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "FTF ClearBridge UK Rising Dividends": {fundName: 'FTF ClearBridge UK Rising Dividends', portfolioFundId: 1852, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "FTF ClearBridge UK Rising Dividends": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "FTF ClearBridge UK Rising Dividends": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "FTF ClearBridge UK Rising Dividends": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "FTF ClearBridge UK Rising Dividends": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "Historical Funds": {fundName: 'Historical Funds', portfolioFundId: 1854, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "Historical Funds": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "Historical Funds": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "Historical Funds": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "Historical Funds": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "Invesco Global Emerging Markets": {fundName: 'Invesco Global Emerging Markets', portfolioFundId: 1853, fundStatus: undefined, isVirtual: undefined, riskFactor: 6, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "Invesco Global Emerging Markets": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "Invesco Global Emerging Markets": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "Invesco Global Emerging Markets": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "Invesco Global Emerging Markets": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "L&G All Stock Index Link Gilt Index Tst": {fundName: 'L&G All Stock Index Link Gilt Index Tst', portfolioFundId: 1856, fundStatus: undefined, isVirtual: undefined, riskFactor: 3, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "L&G All Stock Index Link Gilt Index Tst": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "L&G All Stock Index Link Gilt Index Tst": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "L&G All Stock Index Link Gilt Index Tst": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "L&G All Stock Index Link Gilt Index Tst": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "LF Equity Income ": {fundName: 'LF Equity Income ', portfolioFundId: 1855, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "LF Equity Income ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "LF Equity Income ": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "LF Equity Income ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "LF Equity Income ": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "Royal London Sustainable World Trust C ": {fundName: 'Royal London Sustainable World Trust C ', portfolioFundId: 1857, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "Royal London Sustainable World Trust C ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "Royal London Sustainable World Trust C ": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "Royal London Sustainable World Trust C ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "Royal London Sustainable World Trust C ": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "Stewart Investors Worldwide Leaders ": {fundName: 'Stewart Investors Worldwide Leaders ', portfolioFundId: 1858, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "Stewart Investors Worldwide Leaders ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "Stewart Investors Worldwide Leaders ": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "Stewart Investors Worldwide Leaders ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "Stewart Investors Worldwide Leaders ": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "Vgd FTSE Developed World ex UK Eq Index": {fundName: 'Vgd FTSE Developed World ex UK Eq Index', portfolioFundId: 1859, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "Vgd FTSE Developed World ex UK Eq Index": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "Vgd FTSE Developed World ex UK Eq Index": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "Vgd FTSE Developed World ex UK Eq Index": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "Vgd FTSE Developed World ex UK Eq Index": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "Cash": {fundName: 'Cash', portfolioFundId: 1848, fundStatus: undefined, isVirtual: undefined, riskFactor: 2, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "Cash": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "Cash": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "Cash": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "Cash": 0%
+ 🔍 [GIBX002486 DEBUG] Found product: {productId: 371, planNumber: 'GIBX002486', productName: 'Stocks & Shares', provider: 'Fidelity', status: 'active', …}
+ 🔍 [GIBX002486] Current Average Return for fund "BNY Mellon Global Income": {fundName: 'BNY Mellon Global Income', portfolioFundId: 1849, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "BNY Mellon Global Income": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "BNY Mellon Global Income": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "BNY Mellon Global Income": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "BNY Mellon Global Income": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "BNY Mellon Multi-Asset Balanced": {fundName: 'BNY Mellon Multi-Asset Balanced', portfolioFundId: 1850, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "BNY Mellon Multi-Asset Balanced": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "BNY Mellon Multi-Asset Balanced": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "BNY Mellon Multi-Asset Balanced": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "BNY Mellon Multi-Asset Balanced": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "Fidelity UK Smaller Companies": {fundName: 'Fidelity UK Smaller Companies', portfolioFundId: 1851, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "Fidelity UK Smaller Companies": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "Fidelity UK Smaller Companies": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "Fidelity UK Smaller Companies": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "Fidelity UK Smaller Companies": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "FTF ClearBridge UK Rising Dividends": {fundName: 'FTF ClearBridge UK Rising Dividends', portfolioFundId: 1852, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "FTF ClearBridge UK Rising Dividends": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "FTF ClearBridge UK Rising Dividends": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "FTF ClearBridge UK Rising Dividends": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "FTF ClearBridge UK Rising Dividends": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "Historical Funds": {fundName: 'Historical Funds', portfolioFundId: 1854, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "Historical Funds": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "Historical Funds": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "Historical Funds": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "Historical Funds": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "Invesco Global Emerging Markets": {fundName: 'Invesco Global Emerging Markets', portfolioFundId: 1853, fundStatus: undefined, isVirtual: undefined, riskFactor: 6, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "Invesco Global Emerging Markets": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "Invesco Global Emerging Markets": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "Invesco Global Emerging Markets": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "Invesco Global Emerging Markets": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "L&G All Stock Index Link Gilt Index Tst": {fundName: 'L&G All Stock Index Link Gilt Index Tst', portfolioFundId: 1856, fundStatus: undefined, isVirtual: undefined, riskFactor: 3, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "L&G All Stock Index Link Gilt Index Tst": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "L&G All Stock Index Link Gilt Index Tst": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "L&G All Stock Index Link Gilt Index Tst": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "L&G All Stock Index Link Gilt Index Tst": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "LF Equity Income ": {fundName: 'LF Equity Income ', portfolioFundId: 1855, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "LF Equity Income ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "LF Equity Income ": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "LF Equity Income ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "LF Equity Income ": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "Royal London Sustainable World Trust C ": {fundName: 'Royal London Sustainable World Trust C ', portfolioFundId: 1857, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "Royal London Sustainable World Trust C ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "Royal London Sustainable World Trust C ": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "Royal London Sustainable World Trust C ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "Royal London Sustainable World Trust C ": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "Stewart Investors Worldwide Leaders ": {fundName: 'Stewart Investors Worldwide Leaders ', portfolioFundId: 1858, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "Stewart Investors Worldwide Leaders ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "Stewart Investors Worldwide Leaders ": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "Stewart Investors Worldwide Leaders ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "Stewart Investors Worldwide Leaders ": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "Vgd FTSE Developed World ex UK Eq Index": {fundName: 'Vgd FTSE Developed World ex UK Eq Index', portfolioFundId: 1859, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "Vgd FTSE Developed World ex UK Eq Index": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "Vgd FTSE Developed World ex UK Eq Index": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "Vgd FTSE Developed World ex UK Eq Index": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "Vgd FTSE Developed World ex UK Eq Index": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "Cash": {fundName: 'Cash', portfolioFundId: 1848, fundStatus: undefined, isVirtual: undefined, riskFactor: 2, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "Cash": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Cash": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Cash": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Cash": 0%
+IRRHistoryTab.tsx:1154 🔍 [GIBX002486 DEBUG] Found product: {productId: 371, planNumber: 'GIBX002486', productName: 'Stocks & Shares', provider: 'Fidelity', status: 'active', …}
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "BNY Mellon Global Income": {fundName: 'BNY Mellon Global Income', portfolioFundId: 1849, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "BNY Mellon Global Income": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "BNY Mellon Global Income": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "BNY Mellon Global Income": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "BNY Mellon Global Income": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "BNY Mellon Multi-Asset Balanced": {fundName: 'BNY Mellon Multi-Asset Balanced', portfolioFundId: 1850, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "BNY Mellon Multi-Asset Balanced": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "BNY Mellon Multi-Asset Balanced": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "BNY Mellon Multi-Asset Balanced": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "BNY Mellon Multi-Asset Balanced": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Fidelity UK Smaller Companies": {fundName: 'Fidelity UK Smaller Companies', portfolioFundId: 1851, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Fidelity UK Smaller Companies": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Fidelity UK Smaller Companies": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Fidelity UK Smaller Companies": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Fidelity UK Smaller Companies": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "FTF ClearBridge UK Rising Dividends": {fundName: 'FTF ClearBridge UK Rising Dividends', portfolioFundId: 1852, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "FTF ClearBridge UK Rising Dividends": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "FTF ClearBridge UK Rising Dividends": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "FTF ClearBridge UK Rising Dividends": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "FTF ClearBridge UK Rising Dividends": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Historical Funds": {fundName: 'Historical Funds', portfolioFundId: 1854, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Historical Funds": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Historical Funds": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Historical Funds": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Historical Funds": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Invesco Global Emerging Markets": {fundName: 'Invesco Global Emerging Markets', portfolioFundId: 1853, fundStatus: undefined, isVirtual: undefined, riskFactor: 6, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Invesco Global Emerging Markets": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Invesco Global Emerging Markets": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Invesco Global Emerging Markets": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Invesco Global Emerging Markets": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "L&G All Stock Index Link Gilt Index Tst": {fundName: 'L&G All Stock Index Link Gilt Index Tst', portfolioFundId: 1856, fundStatus: undefined, isVirtual: undefined, riskFactor: 3, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "L&G All Stock Index Link Gilt Index Tst": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "L&G All Stock Index Link Gilt Index Tst": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "L&G All Stock Index Link Gilt Index Tst": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "L&G All Stock Index Link Gilt Index Tst": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "LF Equity Income ": {fundName: 'LF Equity Income ', portfolioFundId: 1855, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "LF Equity Income ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "LF Equity Income ": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "LF Equity Income ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "LF Equity Income ": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Royal London Sustainable World Trust C ": {fundName: 'Royal London Sustainable World Trust C ', portfolioFundId: 1857, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Royal London Sustainable World Trust C ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Royal London Sustainable World Trust C ": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Royal London Sustainable World Trust C ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Royal London Sustainable World Trust C ": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Stewart Investors Worldwide Leaders ": {fundName: 'Stewart Investors Worldwide Leaders ', portfolioFundId: 1858, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Stewart Investors Worldwide Leaders ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Stewart Investors Worldwide Leaders ": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Stewart Investors Worldwide Leaders ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Stewart Investors Worldwide Leaders ": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Vgd FTSE Developed World ex UK Eq Index": {fundName: 'Vgd FTSE Developed World ex UK Eq Index', portfolioFundId: 1859, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Vgd FTSE Developed World ex UK Eq Index": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Vgd FTSE Developed World ex UK Eq Index": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Vgd FTSE Developed World ex UK Eq Index": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Vgd FTSE Developed World ex UK Eq Index": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Cash": {fundName: 'Cash', portfolioFundId: 1848, fundStatus: undefined, isVirtual: undefined, riskFactor: 2, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Cash": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Cash": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Cash": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Cash": 0%
+ReportDisplayPage.tsx:185 ✅ [TOTAL IRR] API Response: {portfolioIRR: 4.8, fundIRRs: {…}, historicalIRR: null, irrDate: '2025-10-31'}
+ReportDisplayPage.tsx:186 ✅ [TOTAL IRR] Calculated Total IRR: 4.8%
+ReportDisplayPage.tsx:189 🔍 [TOTAL IRR] Individual Product IRRs for comparison:
+ReportDisplayPage.tsx:192    Product 1 (Stocks & Shares, Status: active): 4.7%
+ReportDisplayPage.tsx:192    Product 2 (Stocks & Shares, Status: active): 6.2%
+ReportDisplayPage.tsx:192    Product 3 (International Bond, Status: active): 4.7%
+ReportDisplayPage.tsx:192    Product 4 (SIPP, Status: active): 6.2%
+ReportDisplayPage.tsx:192    Product 5 (Retirement Account - Crystallised, Status: active): 3.4%
+ReportDisplayPage.tsx:192    Product 6 (SIPP - Uncrystallised, Status: active): 14.2%
+ReportDisplayPage.tsx:192    Product 7 (Bond, Status: active): 4.8%
+ReportDisplayPage.tsx:196 🔍 ========== TOTAL IRR CALCULATION DEBUG END ==========
+IRRHistoryTab.tsx:1154 🔍 [GIBX002486 DEBUG] Found product: {productId: 371, planNumber: 'GIBX002486', productName: 'Stocks & Shares', provider: 'Fidelity', status: 'active', …}
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "BNY Mellon Global Income": {fundName: 'BNY Mellon Global Income', portfolioFundId: 1849, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "BNY Mellon Global Income": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "BNY Mellon Global Income": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "BNY Mellon Global Income": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "BNY Mellon Global Income": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "BNY Mellon Multi-Asset Balanced": {fundName: 'BNY Mellon Multi-Asset Balanced', portfolioFundId: 1850, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "BNY Mellon Multi-Asset Balanced": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "BNY Mellon Multi-Asset Balanced": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "BNY Mellon Multi-Asset Balanced": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "BNY Mellon Multi-Asset Balanced": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Fidelity UK Smaller Companies": {fundName: 'Fidelity UK Smaller Companies', portfolioFundId: 1851, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Fidelity UK Smaller Companies": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Fidelity UK Smaller Companies": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Fidelity UK Smaller Companies": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Fidelity UK Smaller Companies": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "FTF ClearBridge UK Rising Dividends": {fundName: 'FTF ClearBridge UK Rising Dividends', portfolioFundId: 1852, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "FTF ClearBridge UK Rising Dividends": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "FTF ClearBridge UK Rising Dividends": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "FTF ClearBridge UK Rising Dividends": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "FTF ClearBridge UK Rising Dividends": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Historical Funds": {fundName: 'Historical Funds', portfolioFundId: 1854, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Historical Funds": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Historical Funds": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Historical Funds": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Historical Funds": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Invesco Global Emerging Markets": {fundName: 'Invesco Global Emerging Markets', portfolioFundId: 1853, fundStatus: undefined, isVirtual: undefined, riskFactor: 6, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Invesco Global Emerging Markets": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Invesco Global Emerging Markets": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Invesco Global Emerging Markets": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Invesco Global Emerging Markets": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "L&G All Stock Index Link Gilt Index Tst": {fundName: 'L&G All Stock Index Link Gilt Index Tst', portfolioFundId: 1856, fundStatus: undefined, isVirtual: undefined, riskFactor: 3, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "L&G All Stock Index Link Gilt Index Tst": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "L&G All Stock Index Link Gilt Index Tst": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "L&G All Stock Index Link Gilt Index Tst": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "L&G All Stock Index Link Gilt Index Tst": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "LF Equity Income ": {fundName: 'LF Equity Income ', portfolioFundId: 1855, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "LF Equity Income ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "LF Equity Income ": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "LF Equity Income ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "LF Equity Income ": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Royal London Sustainable World Trust C ": {fundName: 'Royal London Sustainable World Trust C ', portfolioFundId: 1857, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Royal London Sustainable World Trust C ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Royal London Sustainable World Trust C ": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Royal London Sustainable World Trust C ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Royal London Sustainable World Trust C ": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Stewart Investors Worldwide Leaders ": {fundName: 'Stewart Investors Worldwide Leaders ', portfolioFundId: 1858, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Stewart Investors Worldwide Leaders ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Stewart Investors Worldwide Leaders ": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Stewart Investors Worldwide Leaders ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Stewart Investors Worldwide Leaders ": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Vgd FTSE Developed World ex UK Eq Index": {fundName: 'Vgd FTSE Developed World ex UK Eq Index', portfolioFundId: 1859, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Vgd FTSE Developed World ex UK Eq Index": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Vgd FTSE Developed World ex UK Eq Index": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Vgd FTSE Developed World ex UK Eq Index": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Vgd FTSE Developed World ex UK Eq Index": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Cash": {fundName: 'Cash', portfolioFundId: 1848, fundStatus: undefined, isVirtual: undefined, riskFactor: 2, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Cash": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Cash": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Cash": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Cash": 0%
+IRRHistoryTab.tsx:1154 🔍 [GIBX002486 DEBUG] Found product: {productId: 371, planNumber: 'GIBX002486', productName: 'Stocks & Shares', provider: 'Fidelity', status: 'active', …}
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "BNY Mellon Global Income": {fundName: 'BNY Mellon Global Income', portfolioFundId: 1849, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "BNY Mellon Global Income": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "BNY Mellon Global Income": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "BNY Mellon Global Income": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "BNY Mellon Global Income": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "BNY Mellon Multi-Asset Balanced": {fundName: 'BNY Mellon Multi-Asset Balanced', portfolioFundId: 1850, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "BNY Mellon Multi-Asset Balanced": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "BNY Mellon Multi-Asset Balanced": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "BNY Mellon Multi-Asset Balanced": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "BNY Mellon Multi-Asset Balanced": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Fidelity UK Smaller Companies": {fundName: 'Fidelity UK Smaller Companies', portfolioFundId: 1851, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Fidelity UK Smaller Companies": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Fidelity UK Smaller Companies": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Fidelity UK Smaller Companies": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Fidelity UK Smaller Companies": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "FTF ClearBridge UK Rising Dividends": {fundName: 'FTF ClearBridge UK Rising Dividends', portfolioFundId: 1852, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "FTF ClearBridge UK Rising Dividends": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "FTF ClearBridge UK Rising Dividends": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "FTF ClearBridge UK Rising Dividends": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "FTF ClearBridge UK Rising Dividends": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Historical Funds": {fundName: 'Historical Funds', portfolioFundId: 1854, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Historical Funds": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Historical Funds": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Historical Funds": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Historical Funds": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Invesco Global Emerging Markets": {fundName: 'Invesco Global Emerging Markets', portfolioFundId: 1853, fundStatus: undefined, isVirtual: undefined, riskFactor: 6, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Invesco Global Emerging Markets": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Invesco Global Emerging Markets": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Invesco Global Emerging Markets": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Invesco Global Emerging Markets": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "L&G All Stock Index Link Gilt Index Tst": {fundName: 'L&G All Stock Index Link Gilt Index Tst', portfolioFundId: 1856, fundStatus: undefined, isVirtual: undefined, riskFactor: 3, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "L&G All Stock Index Link Gilt Index Tst": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "L&G All Stock Index Link Gilt Index Tst": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "L&G All Stock Index Link Gilt Index Tst": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "L&G All Stock Index Link Gilt Index Tst": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "LF Equity Income ": {fundName: 'LF Equity Income ', portfolioFundId: 1855, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "LF Equity Income ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "LF Equity Income ": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "LF Equity Income ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "LF Equity Income ": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Royal London Sustainable World Trust C ": {fundName: 'Royal London Sustainable World Trust C ', portfolioFundId: 1857, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Royal London Sustainable World Trust C ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Royal London Sustainable World Trust C ": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Royal London Sustainable World Trust C ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Royal London Sustainable World Trust C ": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Stewart Investors Worldwide Leaders ": {fundName: 'Stewart Investors Worldwide Leaders ', portfolioFundId: 1858, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Stewart Investors Worldwide Leaders ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Stewart Investors Worldwide Leaders ": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Stewart Investors Worldwide Leaders ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Stewart Investors Worldwide Leaders ": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Vgd FTSE Developed World ex UK Eq Index": {fundName: 'Vgd FTSE Developed World ex UK Eq Index', portfolioFundId: 1859, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Vgd FTSE Developed World ex UK Eq Index": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Vgd FTSE Developed World ex UK Eq Index": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Vgd FTSE Developed World ex UK Eq Index": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Vgd FTSE Developed World ex UK Eq Index": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Cash": {fundName: 'Cash', portfolioFundId: 1848, fundStatus: undefined, isVirtual: undefined, riskFactor: 2, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Cash": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Cash": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Cash": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Cash": 0%
+IRRHistoryTab.tsx:1154 🔍 [GIBX002486 DEBUG] Found product: {productId: 371, planNumber: 'GIBX002486', productName: 'Stocks & Shares', provider: 'Fidelity', status: 'active', …}
+ 🔍 [GIBX002486] Current Average Return for fund "BNY Mellon Global Income": {fundName: 'BNY Mellon Global Income', portfolioFundId: 1849, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "BNY Mellon Global Income": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "BNY Mellon Global Income": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "BNY Mellon Global Income": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "BNY Mellon Global Income": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "BNY Mellon Multi-Asset Balanced": {fundName: 'BNY Mellon Multi-Asset Balanced', portfolioFundId: 1850, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "BNY Mellon Multi-Asset Balanced": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "BNY Mellon Multi-Asset Balanced": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "BNY Mellon Multi-Asset Balanced": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "BNY Mellon Multi-Asset Balanced": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "Fidelity UK Smaller Companies": {fundName: 'Fidelity UK Smaller Companies', portfolioFundId: 1851, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "Fidelity UK Smaller Companies": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "Fidelity UK Smaller Companies": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "Fidelity UK Smaller Companies": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "Fidelity UK Smaller Companies": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "FTF ClearBridge UK Rising Dividends": {fundName: 'FTF ClearBridge UK Rising Dividends', portfolioFundId: 1852, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "FTF ClearBridge UK Rising Dividends": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "FTF ClearBridge UK Rising Dividends": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "FTF ClearBridge UK Rising Dividends": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "FTF ClearBridge UK Rising Dividends": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "Historical Funds": {fundName: 'Historical Funds', portfolioFundId: 1854, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "Historical Funds": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "Historical Funds": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "Historical Funds": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "Historical Funds": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "Invesco Global Emerging Markets": {fundName: 'Invesco Global Emerging Markets', portfolioFundId: 1853, fundStatus: undefined, isVirtual: undefined, riskFactor: 6, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "Invesco Global Emerging Markets": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "Invesco Global Emerging Markets": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "Invesco Global Emerging Markets": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "Invesco Global Emerging Markets": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "L&G All Stock Index Link Gilt Index Tst": {fundName: 'L&G All Stock Index Link Gilt Index Tst', portfolioFundId: 1856, fundStatus: undefined, isVirtual: undefined, riskFactor: 3, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "L&G All Stock Index Link Gilt Index Tst": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "L&G All Stock Index Link Gilt Index Tst": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "L&G All Stock Index Link Gilt Index Tst": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "L&G All Stock Index Link Gilt Index Tst": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "LF Equity Income ": {fundName: 'LF Equity Income ', portfolioFundId: 1855, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "LF Equity Income ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "LF Equity Income ": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "LF Equity Income ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "LF Equity Income ": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "Royal London Sustainable World Trust C ": {fundName: 'Royal London Sustainable World Trust C ', portfolioFundId: 1857, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "Royal London Sustainable World Trust C ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "Royal London Sustainable World Trust C ": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "Royal London Sustainable World Trust C ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "Royal London Sustainable World Trust C ": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "Stewart Investors Worldwide Leaders ": {fundName: 'Stewart Investors Worldwide Leaders ', portfolioFundId: 1858, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "Stewart Investors Worldwide Leaders ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "Stewart Investors Worldwide Leaders ": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "Stewart Investors Worldwide Leaders ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "Stewart Investors Worldwide Leaders ": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "Vgd FTSE Developed World ex UK Eq Index": {fundName: 'Vgd FTSE Developed World ex UK Eq Index', portfolioFundId: 1859, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "Vgd FTSE Developed World ex UK Eq Index": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+ 🔍 [GIBX002486] Latest selected date for "Vgd FTSE Developed World ex UK Eq Index": 2025-10-31
+ 🔍 [GIBX002486] Historical record search for "Vgd FTSE Developed World ex UK Eq Index": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+ ✅ [GIBX002486] Displaying historical IRR for "Vgd FTSE Developed World ex UK Eq Index": 0%
+ 🔍 [GIBX002486] Current Average Return for fund "Cash": {fundName: 'Cash', portfolioFundId: 1848, fundStatus: undefined, isVirtual: undefined, riskFactor: 2, …}
+ 🔍 [GIBX002486] Looking for historical IRR for "Cash": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Cash": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Cash": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Cash": 0%
+IRRHistoryTab.tsx:1154 🔍 [GIBX002486 DEBUG] Found product: {productId: 371, planNumber: 'GIBX002486', productName: 'Stocks & Shares', provider: 'Fidelity', status: 'active', …}
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "BNY Mellon Global Income": {fundName: 'BNY Mellon Global Income', portfolioFundId: 1849, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "BNY Mellon Global Income": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "BNY Mellon Global Income": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "BNY Mellon Global Income": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "BNY Mellon Global Income": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "BNY Mellon Multi-Asset Balanced": {fundName: 'BNY Mellon Multi-Asset Balanced', portfolioFundId: 1850, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "BNY Mellon Multi-Asset Balanced": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "BNY Mellon Multi-Asset Balanced": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "BNY Mellon Multi-Asset Balanced": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "BNY Mellon Multi-Asset Balanced": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Fidelity UK Smaller Companies": {fundName: 'Fidelity UK Smaller Companies', portfolioFundId: 1851, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Fidelity UK Smaller Companies": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Fidelity UK Smaller Companies": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Fidelity UK Smaller Companies": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Fidelity UK Smaller Companies": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "FTF ClearBridge UK Rising Dividends": {fundName: 'FTF ClearBridge UK Rising Dividends', portfolioFundId: 1852, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "FTF ClearBridge UK Rising Dividends": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "FTF ClearBridge UK Rising Dividends": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "FTF ClearBridge UK Rising Dividends": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "FTF ClearBridge UK Rising Dividends": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Historical Funds": {fundName: 'Historical Funds', portfolioFundId: 1854, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Historical Funds": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Historical Funds": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Historical Funds": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Historical Funds": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Invesco Global Emerging Markets": {fundName: 'Invesco Global Emerging Markets', portfolioFundId: 1853, fundStatus: undefined, isVirtual: undefined, riskFactor: 6, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Invesco Global Emerging Markets": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Invesco Global Emerging Markets": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Invesco Global Emerging Markets": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Invesco Global Emerging Markets": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "L&G All Stock Index Link Gilt Index Tst": {fundName: 'L&G All Stock Index Link Gilt Index Tst', portfolioFundId: 1856, fundStatus: undefined, isVirtual: undefined, riskFactor: 3, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "L&G All Stock Index Link Gilt Index Tst": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "L&G All Stock Index Link Gilt Index Tst": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "L&G All Stock Index Link Gilt Index Tst": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "L&G All Stock Index Link Gilt Index Tst": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "LF Equity Income ": {fundName: 'LF Equity Income ', portfolioFundId: 1855, fundStatus: undefined, isVirtual: undefined, riskFactor: 4, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "LF Equity Income ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "LF Equity Income ": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "LF Equity Income ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "LF Equity Income ": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Royal London Sustainable World Trust C ": {fundName: 'Royal London Sustainable World Trust C ', portfolioFundId: 1857, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Royal London Sustainable World Trust C ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Royal London Sustainable World Trust C ": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Royal London Sustainable World Trust C ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Royal London Sustainable World Trust C ": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Stewart Investors Worldwide Leaders ": {fundName: 'Stewart Investors Worldwide Leaders ', portfolioFundId: 1858, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Stewart Investors Worldwide Leaders ": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Stewart Investors Worldwide Leaders ": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Stewart Investors Worldwide Leaders ": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Stewart Investors Worldwide Leaders ": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Vgd FTSE Developed World ex UK Eq Index": {fundName: 'Vgd FTSE Developed World ex UK Eq Index', portfolioFundId: 1859, fundStatus: undefined, isVirtual: undefined, riskFactor: 5, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Vgd FTSE Developed World ex UK Eq Index": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Vgd FTSE Developed World ex UK Eq Index": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Vgd FTSE Developed World ex UK Eq Index": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Vgd FTSE Developed World ex UK Eq Index": 0%
+IRRHistoryTab.tsx:1561 🔍 [GIBX002486] Current Average Return for fund "Cash": {fundName: 'Cash', portfolioFundId: 1848, fundStatus: undefined, isVirtual: undefined, riskFactor: 2, …}
+IRRHistoryTab.tsx:1618 🔍 [GIBX002486] Looking for historical IRR for "Cash": {productSelectedDates: Array(8), productSelectedDatesCount: 8}
+IRRHistoryTab.tsx:1631 🔍 [GIBX002486] Latest selected date for "Cash": 2025-10-31
+IRRHistoryTab.tsx:1643 🔍 [GIBX002486] Historical record search for "Cash": {foundRecord: true, historicalRecord: {…}, irrResult: 0}
+IRRHistoryTab.tsx:1655 ✅ [GIBX002486] Displaying historical IRR for "Cash": 0%
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2025-10-31
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: 4.8
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2025-10-01
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: 4.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.4
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.4
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2025-10-31
+ [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+ [IRR CARRY-FORWARD] Product 372 has 7 non-null IRR entries: (7) [{…}, {…}, {…}, {…}, {…}, {…}, {…}]
+ [IRR CARRY-FORWARD] Product 372 - Most recent non-null IRR: {date: '2025-10-01', irr: 6.2}
+ [IRR CARRY-FORWARD] Comparing dates: requested=2025-10-31, mostRecent=2025-10-01
+ [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = true
+ [IRR CARRY-FORWARD] ✅ Carrying forward IRR 6.2 from 2025-10-01 to 2025-10-31
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6.2
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2025-10-31
+ [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+ [IRR CARRY-FORWARD] Product 395 has 7 non-null IRR entries: (7) [{…}, {…}, {…}, {…}, {…}, {…}, {…}]
+ [IRR CARRY-FORWARD] Product 395 - Most recent non-null IRR: {date: '2025-10-01', irr: 4.8}
+ [IRR CARRY-FORWARD] Comparing dates: requested=2025-10-31, mostRecent=2025-10-01
+ [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = true
+ [IRR CARRY-FORWARD] ✅ Carrying forward IRR 4.8 from 2025-10-01 to 2025-10-31
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2025-10-31
+ [IRR CARRY-FORWARD] Found exact IRR: 4.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.4
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.2
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.2
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2025-10-31
+ [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+ [IRR CARRY-FORWARD] Product 374 has 7 non-null IRR entries: (7) [{…}, {…}, {…}, {…}, {…}, {…}, {…}]
+ [IRR CARRY-FORWARD] Product 374 - Most recent non-null IRR: {date: '2025-10-01', irr: 6.2}
+ [IRR CARRY-FORWARD] Comparing dates: requested=2025-10-31, mostRecent=2025-10-01
+ [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = true
+ [IRR CARRY-FORWARD] ✅ Carrying forward IRR 6.2 from 2025-10-01 to 2025-10-31
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6.2
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2025-10-31
+ [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+ [IRR CARRY-FORWARD] Product 380 has 7 non-null IRR entries: (7) [{…}, {…}, {…}, {…}, {…}, {…}, {…}]
+ [IRR CARRY-FORWARD] Product 380 - Most recent non-null IRR: {date: '2025-10-01', irr: 14.2}
+ [IRR CARRY-FORWARD] Comparing dates: requested=2025-10-31, mostRecent=2025-10-01
+ [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = true
+ [IRR CARRY-FORWARD] ✅ Carrying forward IRR 14.2 from 2025-10-01 to 2025-10-31
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 14.2
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 11.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 13.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 12.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: -9.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: -13.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2025-10-31
+ [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+ [IRR CARRY-FORWARD] Product 379 has 7 non-null IRR entries: (7) [{…}, {…}, {…}, {…}, {…}, {…}, {…}]
+ [IRR CARRY-FORWARD] Product 379 - Most recent non-null IRR: {date: '2025-10-01', irr: 3.4}
+ [IRR CARRY-FORWARD] Comparing dates: requested=2025-10-31, mostRecent=2025-10-01
+ [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = true
+ [IRR CARRY-FORWARD] ✅ Carrying forward IRR 3.4 from 2025-10-01 to 2025-10-31
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.4
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3
+ [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2025-10-31
+ [IRR CARRY-FORWARD] Found exact IRR: 4.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.4
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 371, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 2.4
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2025-10-31
+ [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+ [IRR CARRY-FORWARD] Product 372 has 7 non-null IRR entries: (7) [{…}, {…}, {…}, {…}, {…}, {…}, {…}]
+ [IRR CARRY-FORWARD] Product 372 - Most recent non-null IRR: {date: '2025-10-01', irr: 6.2}
+ [IRR CARRY-FORWARD] Comparing dates: requested=2025-10-31, mostRecent=2025-10-01
+ [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = true
+ [IRR CARRY-FORWARD] ✅ Carrying forward IRR 6.2 from 2025-10-01 to 2025-10-31
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6.2
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 6.1
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 372, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 5.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2025-10-31
+ [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+ [IRR CARRY-FORWARD] Product 395 has 7 non-null IRR entries: (7) [{…}, {…}, {…}, {…}, {…}, {…}, {…}]
+ [IRR CARRY-FORWARD] Product 395 - Most recent non-null IRR: {date: '2025-10-01', irr: 4.8}
+ [IRR CARRY-FORWARD] Comparing dates: requested=2025-10-31, mostRecent=2025-10-01
+ [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = true
+ [IRR CARRY-FORWARD] ✅ Carrying forward IRR 4.8 from 2025-10-01 to 2025-10-31
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.6
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.3
+ [IRR CARRY-FORWARD] Requesting IRR for product 395, date 2022-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.9
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2025-10-31
+ [IRR CARRY-FORWARD] Found exact IRR: 4.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2025-10-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.8
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2025-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.5
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2025-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.4
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2024-07-01
+ [IRR CARRY-FORWARD] Found exact IRR: 4.2
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2023-11-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.2
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2023-01-01
+ [IRR CARRY-FORWARD] Found exact IRR: 3.7
+ [IRR CARRY-FORWARD] Requesting IRR for product 373, date 2022-07-01
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: 3.8
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2025-10-31
+IRRHistorySummaryTable.tsx:327 [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+IRRHistorySummaryTable.tsx:292 [IRR CARRY-FORWARD] Product 374 has 7 non-null IRR entries: (7) [{…}, {…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:305 [IRR CARRY-FORWARD] Product 374 - Most recent non-null IRR: {date: '2025-10-01', irr: 6.2}
+IRRHistorySummaryTable.tsx:336 [IRR CARRY-FORWARD] Comparing dates: requested=2025-10-31, mostRecent=2025-10-01
+IRRHistorySummaryTable.tsx:337 [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = true
+IRRHistorySummaryTable.tsx:341 [IRR CARRY-FORWARD] ✅ Carrying forward IRR 6.2 from 2025-10-01 to 2025-10-31
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2025-10-01
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: 6.2
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2025-07-01
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: 5.7
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2025-01-01
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: 5.5
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2024-07-01
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: 5.3
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2023-11-01
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: 3.5
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2023-01-01
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: 3.9
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 374, date 2022-07-01
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: 3.6
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2025-10-31
+IRRHistorySummaryTable.tsx:327 [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+IRRHistorySummaryTable.tsx:292 [IRR CARRY-FORWARD] Product 380 has 7 non-null IRR entries: (7) [{…}, {…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:305 [IRR CARRY-FORWARD] Product 380 - Most recent non-null IRR: {date: '2025-10-01', irr: 14.2}
+IRRHistorySummaryTable.tsx:336 [IRR CARRY-FORWARD] Comparing dates: requested=2025-10-31, mostRecent=2025-10-01
+IRRHistorySummaryTable.tsx:337 [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = true
+IRRHistorySummaryTable.tsx:341 [IRR CARRY-FORWARD] ✅ Carrying forward IRR 14.2 from 2025-10-01 to 2025-10-31
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2025-10-01
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: 14.2
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2025-07-01
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: 11.5
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2025-01-01
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: 13.6
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2024-07-01
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: 12.8
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2023-11-01
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: 3.5
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2023-01-01
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: -9.8
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 380, date 2022-07-01
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: -13.5
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2025-10-31
+IRRHistorySummaryTable.tsx:327 [IRR CARRY-FORWARD] No exact IRR found, checking for carry-forward...
+IRRHistorySummaryTable.tsx:292 [IRR CARRY-FORWARD] Product 379 has 7 non-null IRR entries: (7) [{…}, {…}, {…}, {…}, {…}, {…}, {…}]
+IRRHistorySummaryTable.tsx:305 [IRR CARRY-FORWARD] Product 379 - Most recent non-null IRR: {date: '2025-10-01', irr: 3.4}
+IRRHistorySummaryTable.tsx:336 [IRR CARRY-FORWARD] Comparing dates: requested=2025-10-31, mostRecent=2025-10-01
+IRRHistorySummaryTable.tsx:337 [IRR CARRY-FORWARD] Date comparison: date > mostRecentIRR.date = true
+IRRHistorySummaryTable.tsx:341 [IRR CARRY-FORWARD] ✅ Carrying forward IRR 3.4 from 2025-10-01 to 2025-10-31
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2025-10-01
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: 3.4
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2025-07-01
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: 3.3
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2025-01-01
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: 3.1
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2024-07-01
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: 2.9
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2023-11-01
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: 2.5
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2023-01-01
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: 3
+IRRHistorySummaryTable.tsx:318 [IRR CARRY-FORWARD] Requesting IRR for product 379, date 2022-07-01
+IRRHistorySummaryTable.tsx:323 [IRR CARRY-FORWARD] Found exact IRR: 3.7

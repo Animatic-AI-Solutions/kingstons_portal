@@ -899,36 +899,41 @@ class IRRCascadeService:
             
             portfolio_valuation_id = valuation_result["id"] if valuation_result else None
             
-            # Check if portfolio IRR already exists
+            # Check if portfolio IRR already exists for this date
             existing_irr = await self.db.fetchrow(
                 "SELECT id FROM portfolio_irr_values WHERE portfolio_id = $1 AND date = $2",
                 portfolio_id, date_obj
             )
-            
+
             if existing_irr:
-                # Update existing portfolio IRR
+                # Update existing record
                 await self.db.execute(
                     "UPDATE portfolio_irr_values SET irr_result = $1, portfolio_valuation_id = $2 WHERE id = $3",
                     irr_percentage, portfolio_valuation_id, existing_irr["id"]
                 )
                 logger.info(f"📊 Updated portfolio IRR for portfolio {portfolio_id} on {date}: {irr_percentage}%")
             else:
-                # Create new portfolio IRR record
+                # Insert new record (with duplicate handling)
                 try:
                     await self.db.execute(
                         "INSERT INTO portfolio_irr_values (portfolio_id, irr_result, date, portfolio_valuation_id) VALUES ($1, $2, $3, $4)",
                         portfolio_id, irr_percentage, date_obj, portfolio_valuation_id
                     )
-                    logger.info(f"📊 Created portfolio IRR for portfolio {portfolio_id} on {date}: {irr_percentage}%")
+                    logger.info(f"📊 Inserted portfolio IRR for portfolio {portfolio_id} on {date}: {irr_percentage}%")
                 except Exception as insert_error:
-                    if "duplicate key" in str(insert_error).lower():
-                        # Race condition - record was inserted by another process, try to update
-                        logger.warning(f"Race condition detected, attempting update for portfolio {portfolio_id} on {date}")
-                        await self.db.execute(
-                            "UPDATE portfolio_irr_values SET irr_result = $1, portfolio_valuation_id = $2 WHERE portfolio_id = $3 AND date = $4",
-                            irr_percentage, portfolio_valuation_id, portfolio_id, date_obj
+                    # If duplicate key error (race condition), try to update instead
+                    if "duplicate key" in str(insert_error).lower() or "unique constraint" in str(insert_error).lower():
+                        logger.warning(f"⚠️ Duplicate portfolio IRR detected (race condition), updating instead for portfolio {portfolio_id} on {date}")
+                        existing_irr = await self.db.fetchrow(
+                            "SELECT id FROM portfolio_irr_values WHERE portfolio_id = $1 AND date = $2",
+                            portfolio_id, date_obj
                         )
-                        logger.info(f"📊 Updated portfolio IRR (race condition) for portfolio {portfolio_id} on {date}: {irr_percentage}%")
+                        if existing_irr:
+                            await self.db.execute(
+                                "UPDATE portfolio_irr_values SET irr_result = $1, portfolio_valuation_id = $2 WHERE id = $3",
+                                irr_percentage, portfolio_valuation_id, existing_irr["id"]
+                            )
+                            logger.info(f"📊 Updated portfolio IRR after race condition for portfolio {portfolio_id} on {date}: {irr_percentage}%")
                     else:
                         raise insert_error
             

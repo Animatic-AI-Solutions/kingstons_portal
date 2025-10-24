@@ -78,6 +78,7 @@ export interface VulnerabilityItem {
   personId: string;
   vulnerabilityDescription: string;
   adjustments: string;
+  diagnosed: boolean; // Whether the condition is officially diagnosed
   status: 'Active' | 'Historical';
   dateRecorded: string;
   notes: string;

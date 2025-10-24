@@ -2587,20 +2587,38 @@ async def calculate_multiple_portfolio_funds_irr(
                 """, portfolio_id, irr_date_obj)
 
                 if existing_portfolio_irr:
-                    # Update existing portfolio IRR
+                    # Update existing record
                     await db.execute("""
                         UPDATE portfolio_irr_values
                         SET irr_result = $1
                         WHERE id = $2
                     """, result['irr_percentage'], existing_portfolio_irr["id"])
-                    logger.info(f"✅ Updated portfolio IRR in database for portfolio {portfolio_id}, date {irr_date_obj}: {result['irr_percentage']}%")
+                    logger.info(f"✅ Updated portfolio IRR for portfolio {portfolio_id}, date {irr_date_obj}: {result['irr_percentage']}%")
                 else:
-                    # Insert new portfolio IRR
-                    await db.execute("""
-                        INSERT INTO portfolio_irr_values (portfolio_id, irr_result, date)
-                        VALUES ($1, $2, $3)
-                    """, portfolio_id, result['irr_percentage'], irr_date_obj)
-                    logger.info(f"✅ Saved new portfolio IRR to database for portfolio {portfolio_id}, date {irr_date_obj}: {result['irr_percentage']}%")
+                    # Insert new record (with duplicate handling)
+                    try:
+                        await db.execute("""
+                            INSERT INTO portfolio_irr_values (portfolio_id, irr_result, date)
+                            VALUES ($1, $2, $3)
+                        """, portfolio_id, result['irr_percentage'], irr_date_obj)
+                        logger.info(f"✅ Inserted portfolio IRR for portfolio {portfolio_id}, date {irr_date_obj}: {result['irr_percentage']}%")
+                    except Exception as insert_error:
+                        # If duplicate key error (race condition), try to update instead
+                        if "duplicate key" in str(insert_error).lower() or "unique constraint" in str(insert_error).lower():
+                            logger.warning(f"⚠️ Duplicate portfolio IRR detected (race condition), updating instead for portfolio {portfolio_id} on {irr_date_obj}")
+                            existing_portfolio_irr = await db.fetchrow("""
+                                SELECT id FROM portfolio_irr_values
+                                WHERE portfolio_id = $1 AND date = $2
+                            """, portfolio_id, irr_date_obj)
+                            if existing_portfolio_irr:
+                                await db.execute("""
+                                    UPDATE portfolio_irr_values
+                                    SET irr_result = $1
+                                    WHERE id = $2
+                                """, result['irr_percentage'], existing_portfolio_irr["id"])
+                                logger.info(f"✅ Updated portfolio IRR after race condition for portfolio {portfolio_id}, date {irr_date_obj}: {result['irr_percentage']}%")
+                        else:
+                            raise insert_error
             else:
                 logger.warning(f"⚠️ Could not find portfolio_id for fund {portfolio_fund_ids[0]}")
 
