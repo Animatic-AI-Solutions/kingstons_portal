@@ -2580,6 +2580,39 @@ async def calculate_multiple_portfolio_funds_irr(
             if portfolio_info:
                 portfolio_id = portfolio_info["portfolio_id"]
 
+                # Check portfolio completeness (all non-cash funds must have valuations)
+                # Get all active non-cash funds
+                non_cash_funds = await db.fetch("""
+                    SELECT pf.id
+                    FROM portfolio_funds pf
+                    JOIN available_funds af ON pf.available_funds_id = af.id
+                    WHERE pf.portfolio_id = $1
+                      AND pf.status = 'active'
+                      AND NOT (af.fund_name = 'Cash' AND af.isin_number = 'N/A')
+                """, portfolio_id)
+
+                if non_cash_funds:
+                    non_cash_fund_ids = [int(f["id"]) for f in non_cash_funds]
+
+                    # Check which non-cash funds have valuations for this date
+                    funds_with_valuations = await db.fetch("""
+                        SELECT DISTINCT portfolio_fund_id
+                        FROM portfolio_fund_valuations
+                        WHERE portfolio_fund_id = ANY($1::int[])
+                          AND valuation_date = $2
+                    """, non_cash_fund_ids, irr_date_obj)
+
+                    funds_with_val_count = len(funds_with_valuations) if funds_with_valuations else 0
+                    is_complete = funds_with_val_count == len(non_cash_fund_ids)
+
+                    logger.info(f"📊 Portfolio {portfolio_id} completeness for {irr_date_obj}: {funds_with_val_count}/{len(non_cash_fund_ids)} non-cash funds = {'COMPLETE' if is_complete else 'INCOMPLETE'}")
+
+                    if not is_complete:
+                        logger.warning(f"⚠️ Portfolio {portfolio_id} is incomplete for {irr_date_obj}, skipping portfolio IRR save")
+                        # Portfolio is incomplete - don't save portfolio IRR
+                        # The cascade service will handle deletion if needed
+                        raise ValueError("Portfolio incomplete - not all non-cash funds have valuations")
+
                 # Check if portfolio IRR already exists for this date
                 existing_portfolio_irr = await db.fetchrow("""
                     SELECT id FROM portfolio_irr_values
@@ -3549,9 +3582,8 @@ async def calculate_multiple_portfolio_funds_historical_irr(
                     # Handle different date formats
                     if len(date_str) == 7:  # YYYY-MM format
                         year, month = date_str.split('-')
-                        # Use last day of month for end-of-month calculations
-                        last_day = calendar.monthrange(int(year), int(month))[1]
-                        date_obj = datetime.strptime(f"{year}-{month}-{last_day:02d}", "%Y-%m-%d").date()
+                        # Use first day of month for IRR calculations (portfolio valuations should be at month start)
+                        date_obj = datetime.strptime(f"{year}-{month}-01", "%Y-%m-%d").date()
                     elif 'T' in date_str:  # ISO datetime format
                         date_obj = datetime.fromisoformat(date_str.replace('Z', '+00:00')).date()
                     else:  # YYYY-MM-DD format

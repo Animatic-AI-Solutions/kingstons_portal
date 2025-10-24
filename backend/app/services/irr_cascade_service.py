@@ -376,60 +376,64 @@ class IRRCascadeService:
             return False
     
     async def _check_portfolio_completeness_after_deletion(self, portfolio_id: int, date: str, excluding_fund_id: int) -> bool:
-        """Check if portfolio will still be complete after deleting a specific fund's valuation"""
+        """Check if portfolio will still be complete after deleting a specific fund's valuation (excluding cash funds)"""
         try:
-            # FIXED: Get ALL active portfolio funds (including the one being deleted)
-            # We need to check if ALL active funds will have valuations AFTER the deletion
-            all_active_funds = await self.db.fetch(
-                "SELECT id FROM portfolio_funds WHERE portfolio_id = $1 AND status = $2",
-                int(portfolio_id), "active"
-            )
-            
+            # Get ALL active non-cash portfolio funds (including the one being deleted)
+            # Cash funds don't need valuations, so we exclude them from completeness check
+            all_active_funds = await self.db.fetch("""
+                SELECT pf.id
+                FROM portfolio_funds pf
+                JOIN available_funds af ON pf.available_funds_id = af.id
+                WHERE pf.portfolio_id = $1
+                  AND pf.status = $2
+                  AND NOT (af.fund_name = 'Cash' AND af.isin_number = 'N/A')
+            """, int(portfolio_id), "active")
+
             if not all_active_funds:
-                logger.info(f"🔍 No active funds found in portfolio {portfolio_id}")
+                logger.info(f"🔍 No active non-cash funds found in portfolio {portfolio_id}")
                 return False
-            
+
             # Ensure all fund IDs are integers
             all_fund_ids = [int(f["id"]) for f in all_active_funds]
             excluding_fund_id = int(excluding_fund_id)  # Ensure excluding_fund_id is also an integer
-            logger.info(f"🔍 Portfolio {portfolio_id} has {len(all_fund_ids)} active funds: {all_fund_ids}")
-            
+            logger.info(f"🔍 Portfolio {portfolio_id} has {len(all_fund_ids)} active non-cash funds: {all_fund_ids}")
+
             # Convert string date to date object for PostgreSQL comparison
             from datetime import datetime
             if isinstance(date, str):
                 date_obj = datetime.strptime(date, '%Y-%m-%d').date()
             else:
                 date_obj = date
-            
+
             # Get current valuations for this date (BEFORE deletion)
             current_valuations = await self.db.fetch(
                 "SELECT portfolio_fund_id FROM portfolio_fund_valuations WHERE portfolio_fund_id = ANY($1::int[]) AND valuation_date = $2",
                 all_fund_ids, date_obj
             )
-            
+
             # Ensure all portfolio_fund_ids from database are integers
             current_funds_with_valuations = set([int(v["portfolio_fund_id"]) for v in current_valuations]) if current_valuations else set()
-            
+
             # Simulate what will happen AFTER deleting the specified fund's valuation
             funds_with_valuations_after_deletion = current_funds_with_valuations.copy()
             if excluding_fund_id in funds_with_valuations_after_deletion:
                 funds_with_valuations_after_deletion.remove(excluding_fund_id)
-            
-            # Check if ALL active funds will have valuations after the deletion
+
+            # Check if ALL active non-cash funds will have valuations after the deletion
             is_complete = len(funds_with_valuations_after_deletion) == len(all_fund_ids)
-            
+
             logger.info(f"📊 Portfolio {portfolio_id} completeness check for {date}:")
-            logger.info(f"   • Total active funds: {len(all_fund_ids)}")
-            logger.info(f"   • Funds with valuations before deletion: {len(current_funds_with_valuations)}")
-            logger.info(f"   • Funds with valuations after deleting fund {excluding_fund_id}: {len(funds_with_valuations_after_deletion)}")
+            logger.info(f"   • Total active non-cash funds: {len(all_fund_ids)}")
+            logger.info(f"   • Non-cash funds with valuations before deletion: {len(current_funds_with_valuations)}")
+            logger.info(f"   • Non-cash funds with valuations after deleting fund {excluding_fund_id}: {len(funds_with_valuations_after_deletion)}")
             logger.info(f"   • Will be complete: {is_complete}")
-            
+
             if not is_complete:
                 missing_funds = [f for f in all_fund_ids if f not in funds_with_valuations_after_deletion]
-                logger.info(f"🚨 Portfolio {portfolio_id} will be incomplete on {date}: missing valuations for funds {missing_funds}")
-            
+                logger.info(f"🚨 Portfolio {portfolio_id} will be incomplete on {date}: missing valuations for non-cash funds {missing_funds}")
+
             return is_complete
-            
+
         except Exception as e:
             logger.error(f"Error checking portfolio completeness: {str(e)}")
             return False
@@ -656,7 +660,7 @@ class IRRCascadeService:
         try:
             # Check if portfolio is complete for this date
             is_complete = await self._check_portfolio_completeness(portfolio_id, date)
-            
+
             if is_complete:
                 # Portfolio is complete - calculate/update portfolio IRR
                 return await self._calculate_and_store_portfolio_irr(portfolio_id, date)
@@ -665,7 +669,7 @@ class IRRCascadeService:
                 await self._delete_portfolio_irr_by_date(portfolio_id, date)
                 logger.info(f"📊 Portfolio {portfolio_id} not complete on {date}, portfolio IRR deleted")
                 return False
-                
+
         except Exception as e:
             logger.error(f"Error recalculating portfolio IRR: {str(e)}")
             return False
@@ -794,22 +798,26 @@ class IRRCascadeService:
             return False
     
     async def _check_portfolio_completeness(self, portfolio_id: int, date: str) -> bool:
-        """Check if all active portfolio funds have valuations for specific date"""
+        """Check if all active non-cash portfolio funds have valuations for specific date"""
         try:
-            # Get all active portfolio funds
-            # FIXED: Use consistent "active" status filtering instead of end_date check
-            active_funds = await self.db.fetch(
-                "SELECT id FROM portfolio_funds WHERE portfolio_id = $1 AND status = $2",
-                int(portfolio_id), "active"
-            )
-            
+            # Get all active portfolio funds (excluding cash funds)
+            # Cash funds don't need valuations, so we exclude them from completeness check
+            active_funds = await self.db.fetch("""
+                SELECT pf.id
+                FROM portfolio_funds pf
+                JOIN available_funds af ON pf.available_funds_id = af.id
+                WHERE pf.portfolio_id = $1
+                  AND pf.status = $2
+                  AND NOT (af.fund_name = 'Cash' AND af.isin_number = 'N/A')
+            """, int(portfolio_id), "active")
+
             if not active_funds:
-                logger.info(f"🔍 No active funds found in portfolio {portfolio_id}")
+                logger.info(f"🔍 No active non-cash funds found in portfolio {portfolio_id}")
                 return False
-            
+
             # Ensure fund IDs are integers for consistent type comparison
             fund_ids = [int(f["id"]) for f in active_funds]
-            
+
             # Check valuations for this date
             # Convert string date to date object for PostgreSQL comparison
             from datetime import datetime
@@ -817,20 +825,20 @@ class IRRCascadeService:
                 date_obj = datetime.strptime(date, '%Y-%m-%d').date()
             else:
                 date_obj = date
-                
+
             valuations = await self.db.fetch(
                 "SELECT portfolio_fund_id FROM portfolio_fund_valuations WHERE portfolio_fund_id = ANY($1::int[]) AND valuation_date = $2",
                 fund_ids, date_obj
             )
-            
+
             # Ensure portfolio_fund_ids are integers for consistent type comparison
             funds_with_valuations = len(set([int(v["portfolio_fund_id"]) for v in valuations])) if valuations else 0
-            
+
             is_complete = funds_with_valuations == len(fund_ids)
-            logger.info(f"📊 Portfolio {portfolio_id} completeness for {date}: {funds_with_valuations}/{len(fund_ids)} = {is_complete}")
-            
+            logger.info(f"📊 Portfolio {portfolio_id} completeness for {date}: {funds_with_valuations}/{len(fund_ids)} non-cash funds = {is_complete}")
+
             return is_complete
-            
+
         except Exception as e:
             logger.error(f"Error checking portfolio completeness: {str(e)}")
             return False
