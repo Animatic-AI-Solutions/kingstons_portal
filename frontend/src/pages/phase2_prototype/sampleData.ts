@@ -191,7 +191,7 @@ export const sampleRelationships: SpecialRelationship[] = [
     associatedPerson: ['James Mitchell'],
     address: 'Oakwood Care Facility, 22 Park Road, Walton-on-Thames, KT12 1NQ',
     contactDetails: '01932 123 456',
-    status: 'Historical',
+    status: 'Lapsed',
     notes: 'Retired. Beneficiary on James\'s life insurance policy. Moved to care facility October 2023.',
   },
 ];
@@ -237,7 +237,7 @@ export const sampleHealthItems: HealthItem[] = [
     type: 'Cardiovascular',
     dateOfDiagnosis: '10/06/2020',
     medication: ['Ramipril 5mg daily'],
-    status: 'Historical',
+    status: 'Lapsed',
     dateRecorded: '06/2020',
     notes: 'Resolved through lifestyle changes and weight loss. No longer requires medication.',
   },
@@ -315,7 +315,7 @@ export const sampleVulnerabilities: VulnerabilityItem[] = [
     vulnerabilityDescription: 'Bereavement - loss of parent impacted emotional wellbeing and financial decisions',
     adjustments: 'Provided additional support during review meetings, deferred major decisions for 6 months',
     diagnosed: false,
-    status: 'Historical',
+    status: 'Lapsed',
     dateRecorded: '08/2020',
     notes: 'Father passed away August 2020. Client has fully recovered and resumed normal decision-making capacity.',
   },
@@ -325,56 +325,61 @@ export const sampleDocuments: Document[] = [
   {
     id: '1',
     type: 'Will',
-    name: 'Last Will & Testament - James Mitchell',
     people: ['James Mitchell'],
     status: 'Active',
-    notes: 'Updated will following birth of grandchildren. Original held at solicitors office. Copy provided to executor.',
-    dateOfWill: '15/01/2023',
-    dateOfAdvDirective: '15/01/2023'
+    date: '15/01/2023',
+    notes: 'Updated will following birth of grandchildren. Original held at solicitors office. Copy provided to executor.'
   },
   {
     id: '2',
     type: 'Will',
-    name: 'Last Will & Testament - Sarah Mitchell',
     people: ['Sarah Mitchell'],
     status: 'Active',
-    notes: 'Mirror will to James. Emma appointed as executor with backup executor specified.',
-    dateOfWill: '15/01/2023',
-    dateOfAdvDirective: '15/01/2023'
+    date: '15/01/2023',
+    notes: 'Mirror will to James. Emma appointed as executor with backup executor specified.'
   },
   {
     id: '3',
     type: 'Advance Directive',
-    name: 'Advance Healthcare Directive - Mitchell Family',
     people: ['James Mitchell', 'Sarah Mitchell'],
     status: 'Active',
-    notes: 'Both clients have specified healthcare preferences. GP and family members have been notified.',
-    dateOfAdvDirective: '15/01/2023'
+    date: '15/01/2023',
+    notes: 'Both clients have specified healthcare preferences. GP and family members have been notified.'
   },
   {
     id: '4',
-    type: 'LPOA',
-    name: 'Lasting Power of Attorney - Mitchell Family',
+    type: 'LPA H&W',
     people: ['James Mitchell', 'Sarah Mitchell'],
     status: 'Active',
+    date: '20/03/2023',
     notes: 'Both James and Sarah have appointed each other as primary attorney with children as replacement attorneys. Documents registered with OPG.',
-    dateOfHWLPOA: '20/03/2023',
-    hwLpoaIsActive: true,
-    pfLpoaIsActive: true,
-    dateOfAdvDirective: '20/03/2023',
-    dateOfEPA: '18/02/2023',
-    epaIsRegistered: true,
-    other: 'Both James and Sarah have appointed each other as primary attorney with children as replacement attorneys.'
+    hwLpoaIsActive: true
   },
   {
     id: '5',
-    type: 'Will',
-    name: 'Last Will & Testament - James Mitchell (2020)',
+    type: 'LPA P&F',
+    people: ['James Mitchell', 'Sarah Mitchell'],
+    status: 'Active',
+    date: '20/03/2023',
+    notes: 'Both James and Sarah have appointed each other as primary attorney for property and financial affairs. Documents registered with OPG.',
+    pfLpoaIsActive: true
+  },
+  {
+    id: '6',
+    type: 'EPA',
     people: ['James Mitchell'],
-    status: 'Historical',
-    notes: 'Previous will superseded by 2023 version. Retained for records.',
-    dateOfWill: '10/05/2020',
-    dateOfAdvDirective: '10/05/2020'
+    status: 'Lapsed',
+    date: '18/02/2015',
+    notes: 'Previous EPA superseded by LPA documents in 2023. Retained for records.',
+    epaIsRegistered: true
+  },
+  {
+    id: '7',
+    type: 'Will',
+    people: ['James Mitchell'],
+    status: 'Lapsed',
+    date: '10/05/2020',
+    notes: 'Previous will superseded by 2023 version. Retained for records.'
   },
 ];
 
@@ -385,6 +390,7 @@ export const sampleRiskAssessments: RiskAssessment[] = [
     assessmentType: 'Finemetrica',
     riskScore: 5,
     riskGroup: 'More Adventurous',
+    rawResult: 68,
     status: 'Current'
   },
   {
@@ -395,6 +401,7 @@ export const sampleRiskAssessments: RiskAssessment[] = [
     manualRiskScore: 4,
     gopDescription: 'Cautious investor with preference for lower volatility',
     reason: 'Client preference for stable returns',
+    rawResult: 52,
     status: 'Current'
   },
   {
@@ -405,7 +412,8 @@ export const sampleRiskAssessments: RiskAssessment[] = [
     manualRiskScore: 3,
     gopDescription: 'Cautious approach due to market conditions',
     reason: 'Economic uncertainty at time of assessment',
-    status: 'Historical'
+    rawResult: 38,
+    status: 'Lapsed'
   },
 ];
 
@@ -413,7 +421,7 @@ export const sampleCapacityToLoss: CapacityToLoss[] = [
   { id: '1', personName: 'James Mitchell', score: 7, category: 'High', dateAssessed: '12/03/2024', status: 'Active', notes: 'Strong financial position with diversified assets' },
   { id: '2', personName: 'Sarah Mitchell', score: 6, category: 'Medium-High', dateAssessed: '12/03/2024', status: 'Active', notes: 'Stable income from self-employment, moderate reserves' },
   { id: '3', personName: 'Emma Mitchell', score: 3, category: 'Low', dateAssessed: '12/03/2024', status: 'Active', notes: 'Student with limited income and assets' },
-  { id: '4', personName: 'James Mitchell', score: 5, category: 'Medium', dateAssessed: '15/03/2023', status: 'Historical', notes: 'Previous assessment before portfolio rebalancing. Financial position has since improved.' },
+  { id: '4', personName: 'James Mitchell', score: 5, category: 'Medium', dateAssessed: '15/03/2023', status: 'Lapsed', notes: 'Previous assessment before portfolio rebalancing. Financial position has since improved.' },
 ];
 
 export const sampleAssets: Asset[] = [
@@ -668,74 +676,144 @@ export const sampleActions: Action[] = [
 export const assignedMeetings: AssignedMeeting[] = [
   {
     id: 'am1',
-    meetingType: 'Annual Review',
+    meetingType: 'Review',
     expectedMonth: 'March',
+    status: 'Active',
     notes: 'Annual portfolio review and financial planning session. Typically covers investment performance, goal progress, and any necessary adjustments to strategy.'
   },
   {
     id: 'am2',
-    meetingType: 'Additional Review',
+    meetingType: 'Update',
     expectedMonth: 'September',
+    status: 'Active',
     notes: 'Mid-year check-in to review portfolio performance and address any questions or concerns. Shorter format than annual review.'
   },
   {
     id: 'am3',
-    meetingType: 'Misc',
+    meetingType: 'Update',
     expectedMonth: 'November',
+    status: 'Active',
     notes: 'End-of-year planning meeting to discuss tax planning opportunities and preparation for next year.'
+  },
+  {
+    id: 'am4',
+    meetingType: 'Update',
+    expectedMonth: 'June',
+    status: 'Lapsed',
+    notes: 'Previously held mid-year update in June. Discontinued from FY 2025 onwards as client preferred fewer, more comprehensive meetings.'
+  },
+  {
+    id: 'am5',
+    meetingType: 'Review',
+    expectedMonth: 'October',
+    status: 'Lapsed',
+    notes: 'Secondary annual review discontinued after FY 2024. Client found single annual review in March sufficient for their needs.'
   },
 ];
 
 export const meetingInstances: MeetingInstance[] = [
-  // 2024
+  // FY 2026 (Aug 2025 - Jul 2026) - Current year, realistic mix of statuses
   {
     id: 'mi1',
-    assignedMeetingId: 'am1',
-    meetingType: 'Annual Review',
-    year: 2024,
-    dateBookedFor: '12/03/2024',
-    hasBeenHeld: true,
-    dateActuallyHeld: '12/03/2024',
-    notes: 'Comprehensive review completed. Discussed pension consolidation and increased ISA contributions. Client happy with portfolio performance. Action: Research pension transfer values.'
+    assignedMeetingId: 'am2',
+    meetingType: 'Update',
+    year: 2026,
+    dateBookedFor: '17/09/2025',
+    status: 'Complete',
+    dateActuallyHeld: '17/09/2025',
+    notes: 'Completed September update. Reviewed portfolio performance and discussed market outlook. Client expressed satisfaction with returns.'
   },
   {
     id: 'mi2',
-    assignedMeetingId: 'am2',
-    meetingType: 'Additional Review',
-    year: 2024,
-    dateBookedFor: '15/09/2024',
-    hasBeenHeld: false,
-    dateActuallyHeld: undefined,
-    notes: 'Scheduled for mid-September. Agenda to include market volatility discussion and rebalancing considerations.'
+    assignedMeetingId: 'am3',
+    meetingType: 'Update',
+    year: 2026,
+    dateBookedFor: '20/11/2025',
+    status: 'Booked',
+    notes: 'Year-end planning session booked for November. Will discuss tax planning and pension contributions before year end.'
   },
-  // 2023
+  // Note: March 2026 Review will auto-populate as "Planned" (am1)
+
+  // FY 2025 (Aug 2024 - Jul 2025) - All complete (past year)
   {
     id: 'mi3',
     assignedMeetingId: 'am1',
-    meetingType: 'Annual Review',
-    year: 2023,
-    dateBookedFor: '10/03/2023',
-    hasBeenHeld: true,
-    dateActuallyHeld: '15/03/2023',
-    notes: 'Meeting rescheduled due to client illness. Discussed retirement planning and inheritance tax mitigation. Agreed to increase equity allocation by 10%.'
+    meetingType: 'Review',
+    year: 2025,
+    dateBookedFor: '12/03/2025',
+    status: 'Complete',
+    dateActuallyHeld: '12/03/2025',
+    notes: 'Annual review completed. Discussed pension consolidation and increased ISA contributions. Client happy with portfolio performance. Action: Research pension transfer values.'
   },
   {
     id: 'mi4',
     assignedMeetingId: 'am2',
-    meetingType: 'Additional Review',
-    year: 2023,
-    dateBookedFor: '12/09/2023',
-    hasBeenHeld: true,
-    dateActuallyHeld: '18/09/2023',
-    notes: 'Portfolio rebalancing completed as planned. Discussed upcoming changes to pension allowances. Client expressed concern about market conditions - provided reassurance.'
+    meetingType: 'Update',
+    year: 2025,
+    dateBookedFor: '15/09/2024',
+    status: 'Complete',
+    dateActuallyHeld: '15/09/2024',
+    notes: 'Mid-year update completed. Market volatility discussion and rebalancing considerations addressed. Client comfortable with strategy.'
   },
   {
     id: 'mi5',
     assignedMeetingId: 'am3',
-    meetingType: 'Misc',
-    year: 2023,
+    meetingType: 'Update',
+    year: 2025,
+    dateBookedFor: '18/11/2024',
+    status: 'Complete',
+    dateActuallyHeld: '18/11/2024',
+    notes: 'End of year planning completed. Maximized pension contributions and ISA allowance. Client to provide P60 in April.'
+  },
+
+  // FY 2024 (Aug 2023 - Jul 2024) - All complete (previous year)
+  {
+    id: 'mi6',
+    assignedMeetingId: 'am1',
+    meetingType: 'Review',
+    year: 2024,
+    dateBookedFor: '10/03/2024',
+    status: 'Complete',
+    dateActuallyHeld: '15/03/2024',
+    notes: 'Meeting rescheduled due to client illness. Discussed retirement planning and inheritance tax mitigation. Agreed to increase equity allocation by 10%.'
+  },
+  {
+    id: 'mi7',
+    assignedMeetingId: 'am4',
+    meetingType: 'Update',
+    year: 2024,
+    dateBookedFor: '18/06/2024',
+    status: 'Complete',
+    dateActuallyHeld: '18/06/2024',
+    notes: 'June update meeting - last one before this meeting type was discontinued. Client feedback led to streamlining meeting schedule.'
+  },
+  {
+    id: 'mi8',
+    assignedMeetingId: 'am2',
+    meetingType: 'Update',
+    year: 2024,
+    dateBookedFor: '12/09/2023',
+    status: 'Complete',
+    dateActuallyHeld: '18/09/2023',
+    notes: 'Portfolio rebalancing completed as planned. Discussed upcoming changes to pension allowances. Client expressed concern about market conditions - provided reassurance.'
+  },
+  {
+    id: 'mi9',
+    assignedMeetingId: 'am5',
+    meetingType: 'Review',
+    year: 2024,
+    dateBookedFor: '15/10/2023',
+    status: 'Complete',
+    dateActuallyHeld: '15/10/2023',
+    notes: 'October review - last instance before discontinuation. Client agreed that single annual review in March would be more efficient.'
+  },
+  {
+    id: 'mi10',
+    assignedMeetingId: 'am3',
+    meetingType: 'Update',
+    year: 2024,
     dateBookedFor: '14/11/2023',
-    hasBeenHeld: true,
+    status: 'Complete',
     dateActuallyHeld: '15/11/2023',
     notes: 'Tax planning session. Reviewed capital gains position and ISA usage. Recommended additional pension contributions before year end. Client to confirm by end of month.'
   },
@@ -748,8 +826,9 @@ export const clientManagementInfo = {
   dateOfClientDeclaration: '10/06/2020',
   dateOfPrivacyDeclaration: '10/06/2020',
   lastFeeAgreement: '01/04/2023',
-  feeAchieved: 0.95,
+  feeAchieved: 0.95, // Percentage fee charged
   fixedFee: 15600,
+  totalFUM: 1850000, // Total Funds Under Management
   nextReviewDate: '01/04/2025',
   clientSince: '15/06/2020',
   primaryAdvisor: 'John Anderson',

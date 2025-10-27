@@ -27,6 +27,7 @@ interface ClientManagementInfo {
   lastFeeAgreement: string;
   feeAchieved: number;
   fixedFee: number;
+  totalFUM: number;
   nextReviewDate: string;
 }
 
@@ -149,13 +150,13 @@ const BasicDetailsTab: React.FC<BasicDetailsTabProps> = ({
       case 'management':
         return (
           <div className="space-y-6">
+            <ClientManagementSection clientManagementInfo={clientManagementInfo} />
             <MeetingsSection
               assignedMeetings={assignedMeetings}
               meetingInstances={meetingInstances}
               onAssignedMeetingClick={onAssignedMeetingClick}
               onMeetingInstanceClick={onMeetingInstanceClick}
             />
-            <ClientManagementSection clientManagementInfo={clientManagementInfo} />
           </div>
         );
       default:

@@ -17,13 +17,13 @@ const RelationshipsSection: React.FC<RelationshipsSectionProps> = ({
 }) => {
   const [activeRelationshipTab, setActiveRelationshipTab] = useState<'personal' | 'professional'>('personal');
 
-  // Filter relationships based on active tab, then sort by status (Active first, Historical last)
+  // Filter relationships based on active tab, then sort by status (Active first, Lapsed last)
   const filteredRelationships = relationships
     .filter(rel => rel.type === activeRelationshipTab)
     .sort((a, b) => {
-      // Sort Active before Historical
-      if (a.status === 'Active' && b.status === 'Historical') return -1;
-      if (a.status === 'Historical' && b.status === 'Active') return 1;
+      // Sort Active before Lapsed
+      if (a.status === 'Active' && b.status === 'Lapsed') return -1;
+      if (a.status === 'Lapsed' && b.status === 'Active') return 1;
       return 0;
     });
 
@@ -90,7 +90,7 @@ const RelationshipsSection: React.FC<RelationshipsSectionProps> = ({
                 <tr
                   key={rel.id}
                   className={`hover:bg-gray-50 cursor-pointer transition-colors ${
-                    rel.status === 'Historical' ? 'opacity-60' : ''
+                    rel.status === 'Lapsed' ? 'opacity-60' : ''
                   }`}
                   onClick={() => onRelationshipClick(rel)}
                 >
@@ -101,7 +101,7 @@ const RelationshipsSection: React.FC<RelationshipsSectionProps> = ({
                   )}
                   <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">
                     <span className={`px-2 py-1 rounded-full text-sm font-medium ${
-                      rel.status === 'Historical'
+                      rel.status === 'Lapsed'
                         ? 'bg-gray-200 text-gray-900'
                         : rel.type === 'professional'
                         ? 'bg-purple-100 text-purple-800'

@@ -57,7 +57,7 @@ export interface SpecialRelationship {
   firmName?: string; // Only for professional relationships
   address?: string; // Address for the special relationship
   contactDetails: string;
-  status: 'Active' | 'Historical';
+  status: 'Active' | 'Lapsed';
   notes: string;
 }
 
@@ -68,7 +68,7 @@ export interface HealthItem {
   type: string;
   dateOfDiagnosis: string;
   medication: string[];
-  status: 'Active' | 'Historical';
+  status: 'Active' | 'Lapsed';
   dateRecorded: string;
   notes: string;
 }
@@ -79,27 +79,25 @@ export interface VulnerabilityItem {
   vulnerabilityDescription: string;
   adjustments: string;
   diagnosed: boolean; // Whether the condition is officially diagnosed
-  status: 'Active' | 'Historical';
+  status: 'Active' | 'Lapsed';
   dateRecorded: string;
   notes: string;
 }
 
 export interface Document {
   id: string;
-  type: 'Will' | 'Advance Directive' | 'LPOA';
-  name: string;
+  type: 'Will' | 'LPA H&W' | 'LPA P&F' | 'EPA' | 'Advance Directive' | 'General Power of Attorney' | 'Other';
   people: string[]; // Associated people from client group
-  status: 'Active' | 'Historical';
+  status: 'Active' | 'Lapsed';
+  date: string; // General date field for the document
   notes: string;
-  // Will fields
-  dateOfWill?: string;
-  dateOfAdvDirective?: string;
-  // LPOA fields
-  dateOfHWLPOA?: string;
+  // LPA H&W fields
   hwLpoaIsActive?: boolean;
+  // LPA P&F fields
   pfLpoaIsActive?: boolean;
-  dateOfEPA?: string;
+  // EPA fields
   epaIsRegistered?: boolean;
+  // Other fields
   other?: string;
 }
 
@@ -107,7 +105,8 @@ export interface RiskAssessment {
   id: string;
   personName: string;
   assessmentType: 'Finemetrica' | 'Manual';
-  status: 'Current' | 'Historical';
+  status: 'Current' | 'Lapsed';
+  rawResult?: number; // Raw result out of 100
   // Finemetrica fields
   riskScore?: number; // 1-7
   riskGroup?: string;
@@ -124,7 +123,7 @@ export interface CapacityToLoss {
   score: number;
   category: string;
   dateAssessed: string;
-  status: 'Active' | 'Historical';
+  status: 'Active' | 'Lapsed';
   notes: string;
 }
 
@@ -210,18 +209,19 @@ export interface Action {
 
 export interface AssignedMeeting {
   id: string;
-  meetingType: 'Annual Review' | 'Additional Review' | 'Misc';
+  meetingType: 'Update' | 'Review';
   expectedMonth: string; // e.g., "March" - when this meeting should happen each year
+  status: 'Active' | 'Lapsed';
   notes: string;
 }
 
 export interface MeetingInstance {
   id: string;
   assignedMeetingId: string; // Reference to the assigned meeting
-  meetingType: 'Annual Review' | 'Additional Review' | 'Misc';
+  meetingType: 'Update' | 'Review';
   year: number;
   dateBookedFor?: string; // e.g., "12/03/2024"
-  hasBeenHeld: boolean;
+  status: 'Planned' | 'Booked' | 'Complete' | 'Declined' | 'Moved';
   dateActuallyHeld?: string; // e.g., "15/03/2024"
   notes: string;
 }
