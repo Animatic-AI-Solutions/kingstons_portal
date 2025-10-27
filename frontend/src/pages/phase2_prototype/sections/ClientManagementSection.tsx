@@ -54,7 +54,7 @@ const ClientManagementSection: React.FC<ClientManagementSectionProps> = ({
 
   return (
     <div className="bg-white rounded-lg shadow p-3">
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-3">
         <h3 className="text-base font-semibold">Client & Fee Information</h3>
         <div className="flex items-center gap-2">
           {!isEditing ? (
@@ -85,147 +85,158 @@ const ClientManagementSection: React.FC<ClientManagementSectionProps> = ({
           )}
         </div>
       </div>
-      <div className="space-y-3">
-        {/* Row 1: Advisor, Client Type, Fee Achieved, Fee Value */}
-        <div className="grid grid-cols-4 gap-x-4">
-          <div>
-            <p className="text-sm font-bold text-blue-600">Advisor</p>
-            {isEditing ? (
-              <input
-                type="text"
-                value={editedInfo.leadAdvisor}
-                onChange={(e) => handleChange('leadAdvisor', e.target.value)}
-                className="w-full px-2 py-1 text-base font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            ) : (
-              <p className="text-base font-semibold text-gray-900">{editedInfo.leadAdvisor}</p>
-            )}
+
+      <div className="grid grid-cols-12 gap-3">
+        {/* Left Column - Client Info */}
+        <div className="col-span-7 space-y-3">
+          {/* Advisor and Client Type */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-gray-50 p-2 rounded border border-gray-200">
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Advisor</p>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editedInfo.leadAdvisor}
+                  onChange={(e) => handleChange('leadAdvisor', e.target.value)}
+                  className="w-full px-2 py-1 text-sm font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              ) : (
+                <p className="text-sm font-semibold text-gray-900">{editedInfo.leadAdvisor}</p>
+              )}
+            </div>
+            <div className="bg-gray-50 p-2 rounded border border-gray-200">
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Client Type</p>
+              {isEditing ? (
+                <select
+                  value={editedInfo.typeOfClient}
+                  onChange={(e) => handleChange('typeOfClient', e.target.value)}
+                  className="w-full px-2 py-1 text-sm font-medium border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Ongoing">Ongoing</option>
+                  <option value="One-Off">One-Off</option>
+                </select>
+              ) : (
+                <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  {editedInfo.typeOfClient}
+                </span>
+              )}
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-bold text-blue-600">Client Type</p>
-            {isEditing ? (
-              <select
-                value={editedInfo.typeOfClient}
-                onChange={(e) => handleChange('typeOfClient', e.target.value)}
-                className="w-full px-2 py-1 text-sm font-medium border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="Ongoing">Ongoing</option>
-                <option value="One-Off">One-Off</option>
-              </select>
-            ) : (
-              <span className="inline-block px-2 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                {editedInfo.typeOfClient}
-              </span>
-            )}
+
+          {/* Dates Section */}
+          <div className="bg-blue-50 p-2 rounded border border-blue-200">
+            <p className="text-xs font-bold text-blue-700 uppercase mb-2">Key Dates</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <p className="text-xs font-semibold text-gray-500">Client Dec</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedInfo.dateOfClientDeclaration}
+                    onChange={(e) => handleChange('dateOfClientDeclaration', e.target.value)}
+                    className="w-full px-2 py-0.5 text-sm font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="text-sm font-semibold text-gray-900">{editedInfo.dateOfClientDeclaration}</p>
+                )}
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-500">Privacy Dec</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedInfo.dateOfPrivacyDeclaration}
+                    onChange={(e) => handleChange('dateOfPrivacyDeclaration', e.target.value)}
+                    className="w-full px-2 py-0.5 text-sm font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="text-sm font-semibold text-gray-900">{editedInfo.dateOfPrivacyDeclaration}</p>
+                )}
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-500">Fee Agreement</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedInfo.lastFeeAgreement}
+                    onChange={(e) => handleChange('lastFeeAgreement', e.target.value)}
+                    className="w-full px-2 py-0.5 text-sm font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="text-sm font-semibold text-gray-900">{editedInfo.lastFeeAgreement}</p>
+                )}
+              </div>
+              {editedInfo.typeOfClient === 'Ongoing' && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500">Client Start</p>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editedInfo.ongoingClientStartDate}
+                      onChange={(e) => handleChange('ongoingClientStartDate', e.target.value)}
+                      className="w-full px-2 py-0.5 text-sm font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  ) : (
+                    <p className="text-sm font-semibold text-gray-900">{editedInfo.ongoingClientStartDate}</p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-bold text-blue-600">Fee Achieved</p>
+        </div>
+
+        {/* Right Column - Financial Metrics */}
+        <div className="col-span-5 space-y-3">
+          {/* Fee Metrics - Prominent Cards */}
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-3 rounded-lg border border-green-200">
+            <p className="text-xs font-semibold text-green-700 uppercase mb-1">Fee Achieved</p>
             {isEditing ? (
               <input
                 type="number"
                 step="0.01"
                 value={editedInfo.feeAchieved}
                 onChange={(e) => handleChange('feeAchieved', parseFloat(e.target.value))}
-                className="w-full px-2 py-1 text-base font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1 text-lg font-bold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             ) : (
-              <p className="text-base font-semibold text-gray-900">{editedInfo.feeAchieved}%</p>
+              <p className="text-2xl font-bold text-gray-900">{editedInfo.feeAchieved}%</p>
             )}
           </div>
-          <div>
-            <p className="text-sm font-bold text-blue-600">Fee Value</p>
-            <p className="text-base font-semibold text-gray-900">{formatMoney(feeValue)}</p>
-          </div>
-        </div>
 
-        {/* Row 2: Client Dec Date, Privacy Dec Date, Latest Fee Agreement Date, Ongoing Client Start Date */}
-        <div className="grid grid-cols-4 gap-x-4">
-          <div>
-            <p className="text-sm font-bold text-blue-600">Client Dec Date</p>
-            {isEditing ? (
-              <input
-                type="text"
-                value={editedInfo.dateOfClientDeclaration}
-                onChange={(e) => handleChange('dateOfClientDeclaration', e.target.value)}
-                className="w-full px-2 py-1 text-base font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            ) : (
-              <p className="text-base font-semibold text-gray-900">{editedInfo.dateOfClientDeclaration}</p>
-            )}
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-200">
+            <p className="text-xs font-semibold text-blue-700 uppercase mb-1">Total Fee Value</p>
+            <p className="text-2xl font-bold text-gray-900">{formatMoney(feeValue)}</p>
           </div>
-          <div>
-            <p className="text-sm font-bold text-blue-600">Privacy Dec Date</p>
-            {isEditing ? (
-              <input
-                type="text"
-                value={editedInfo.dateOfPrivacyDeclaration}
-                onChange={(e) => handleChange('dateOfPrivacyDeclaration', e.target.value)}
-                className="w-full px-2 py-1 text-base font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            ) : (
-              <p className="text-base font-semibold text-gray-900">{editedInfo.dateOfPrivacyDeclaration}</p>
-            )}
-          </div>
-          <div>
-            <p className="text-sm font-bold text-blue-600">Latest Fee Agreement Date</p>
-            {isEditing ? (
-              <input
-                type="text"
-                value={editedInfo.lastFeeAgreement}
-                onChange={(e) => handleChange('lastFeeAgreement', e.target.value)}
-                className="w-full px-2 py-1 text-base font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            ) : (
-              <p className="text-base font-semibold text-gray-900">{editedInfo.lastFeeAgreement}</p>
-            )}
-          </div>
-          {editedInfo.typeOfClient === 'Ongoing' && (
-            <div>
-              <p className="text-sm font-bold text-blue-600">Ongoing Client Start Date</p>
+
+          {/* Financial Details */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-gray-50 p-2 rounded border border-gray-200">
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Total FUM</p>
               {isEditing ? (
                 <input
-                  type="text"
-                  value={editedInfo.ongoingClientStartDate}
-                  onChange={(e) => handleChange('ongoingClientStartDate', e.target.value)}
-                  className="w-full px-2 py-1 text-base font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  type="number"
+                  value={editedInfo.totalFUM}
+                  onChange={(e) => handleChange('totalFUM', parseFloat(e.target.value))}
+                  className="w-full px-2 py-0.5 text-sm font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               ) : (
-                <p className="text-base font-semibold text-gray-900">{editedInfo.ongoingClientStartDate}</p>
+                <p className="text-sm font-bold text-gray-900">{formatMoney(editedInfo.totalFUM)}</p>
               )}
             </div>
-          )}
-        </div>
-
-        {/* Row 3: Total FUM and Fixed Fee in first two columns */}
-        <div className="grid grid-cols-4 gap-x-4">
-          <div>
-            <p className="text-sm font-bold text-blue-600">Total FUM</p>
-            {isEditing ? (
-              <input
-                type="number"
-                value={editedInfo.totalFUM}
-                onChange={(e) => handleChange('totalFUM', parseFloat(e.target.value))}
-                className="w-full px-2 py-1 text-base font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            ) : (
-              <p className="text-base font-semibold text-gray-900">{formatMoney(editedInfo.totalFUM)}</p>
-            )}
+            <div className="bg-gray-50 p-2 rounded border border-gray-200">
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Fixed Fee</p>
+              {isEditing ? (
+                <input
+                  type="number"
+                  value={editedInfo.fixedFee}
+                  onChange={(e) => handleChange('fixedFee', parseFloat(e.target.value))}
+                  className="w-full px-2 py-0.5 text-sm font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              ) : (
+                <p className="text-sm font-bold text-gray-900">{formatMoney(editedInfo.fixedFee)}</p>
+              )}
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-bold text-blue-600">Total Fixed Fee</p>
-            {isEditing ? (
-              <input
-                type="number"
-                value={editedInfo.fixedFee}
-                onChange={(e) => handleChange('fixedFee', parseFloat(e.target.value))}
-                className="w-full px-2 py-1 text-base font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            ) : (
-              <p className="text-base font-semibold text-gray-900">{formatMoney(editedInfo.fixedFee)}</p>
-            )}
-          </div>
-          <div></div>
-          <div></div>
         </div>
       </div>
     </div>

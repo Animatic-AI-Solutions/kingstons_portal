@@ -598,6 +598,15 @@ export const sampleObjectives: Objective[] = [
     status: 'Completed',
     notes: 'Completed September 2023. £35,000 accumulated in easy access savings account with Marcus by Goldman Sachs. Receiving 5.15% interest.'
   },
+  {
+    id: '5',
+    title: 'Maintain Financial Health',
+    description: 'Ongoing review and optimization of financial position',
+    targetDate: 'N/A',
+    priority: 'Medium',
+    status: 'Not Started',
+    notes: 'Continuous objective without specific target date. Regular reviews scheduled through annual meetings.'
+  },
 ];
 
 export const sampleActions: Action[] = [

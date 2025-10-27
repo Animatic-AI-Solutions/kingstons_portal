@@ -1,5 +1,5 @@
-import React from 'react';
-import { UserIcon } from '@heroicons/react/24/outline';
+import React, { useState } from 'react';
+import { ChevronRightIcon, ChevronUpIcon, ChevronDownIcon, PlusIcon, TrashIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { Objective, Action } from '../types';
 
 interface ObjectivesTabProps {
@@ -9,208 +9,435 @@ interface ObjectivesTabProps {
   onActionClick: (action: Action) => void;
 }
 
+type ObjectiveSortField = 'title' | 'targetDate' | 'priority' | 'status';
+type ActionSortField = 'title' | 'assignedTo' | 'dueDate' | 'priority' | 'status';
+type SortDirection = 'asc' | 'desc';
+
 const ObjectivesTab: React.FC<ObjectivesTabProps> = ({
   objectives,
   actions,
   onObjectiveClick,
   onActionClick
 }) => {
-  // Filter objectives
-  const activeObjectives = objectives.filter(obj => obj.status !== 'Completed');
-  const completedObjectives = objectives.filter(obj => obj.status === 'Completed');
+  // Sort state for objectives (default: priority)
+  const [objectiveSortField, setObjectiveSortField] = useState<ObjectiveSortField>('priority');
+  const [objectiveSortDirection, setObjectiveSortDirection] = useState<SortDirection>('asc');
 
-  // Filter actions
-  const activeActions = actions.filter(action => action.status !== 'Completed');
-  const completedActions = actions.filter(action => action.status === 'Completed');
+  // Sort state for actions (default: assignedTo)
+  const [actionSortField, setActionSortField] = useState<ActionSortField>('assignedTo');
+  const [actionSortDirection, setActionSortDirection] = useState<SortDirection>('asc');
+
+  // Priority ordering for sorting
+  const priorityOrder = { 'High': 1, 'Medium': 2, 'Low': 3 };
+
+  // Handle objective column sort
+  const handleObjectiveSort = (field: ObjectiveSortField) => {
+    if (objectiveSortField === field) {
+      setObjectiveSortDirection(objectiveSortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setObjectiveSortField(field);
+      setObjectiveSortDirection('asc');
+    }
+  };
+
+  // Handle action column sort
+  const handleActionSort = (field: ActionSortField) => {
+    if (actionSortField === field) {
+      setActionSortDirection(actionSortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setActionSortField(field);
+      setActionSortDirection('asc');
+    }
+  };
+
+  // Handle adding new objective
+  const handleAddObjective = () => {
+    console.log('Add new Aim & Objective');
+    // TODO: Open modal or form to add new objective
+  };
+
+  // Handle adding new action
+  const handleAddAction = () => {
+    console.log('Add new Action');
+    // TODO: Open modal or form to add new action
+  };
+
+  // Handle lapse objective
+  const handleLapseObjective = (objective: Objective) => {
+    console.log('Lapse objective:', objective);
+    // TODO: Implement lapse logic
+  };
+
+  // Handle delete objective
+  const handleDeleteObjective = (objective: Objective) => {
+    console.log('Delete objective:', objective);
+    // TODO: Implement delete logic
+  };
+
+  // Handle lapse action
+  const handleLapseAction = (action: Action) => {
+    console.log('Lapse action:', action);
+    // TODO: Implement lapse logic
+  };
+
+  // Handle delete action
+  const handleDeleteAction = (action: Action) => {
+    console.log('Delete action:', action);
+    // TODO: Implement delete logic
+  };
+
+  // Sort objectives based on current sort field and direction
+  // Always keep Completed objectives at the bottom
+  const sortedObjectives = [...objectives].sort((a, b) => {
+    // First, separate by status - Completed always goes to bottom
+    if (a.status === 'Completed' && b.status !== 'Completed') return 1;
+    if (a.status !== 'Completed' && b.status === 'Completed') return -1;
+
+    // If both have same completion status, sort by selected field
+    let comparison = 0;
+
+    switch (objectiveSortField) {
+      case 'title':
+        comparison = a.title.localeCompare(b.title);
+        break;
+      case 'targetDate':
+        comparison = a.targetDate.localeCompare(b.targetDate);
+        break;
+      case 'priority':
+        comparison = priorityOrder[a.priority] - priorityOrder[b.priority];
+        break;
+      case 'status':
+        comparison = a.status.localeCompare(b.status);
+        break;
+    }
+
+    return objectiveSortDirection === 'asc' ? comparison : -comparison;
+  });
+
+  // Sort actions based on current sort field and direction
+  // Always keep Completed actions at the bottom
+  const sortedActions = [...actions].sort((a, b) => {
+    // First, separate by status - Completed always goes to bottom
+    if (a.status === 'Completed' && b.status !== 'Completed') return 1;
+    if (a.status !== 'Completed' && b.status === 'Completed') return -1;
+
+    // If both have same completion status, sort by selected field
+    let comparison = 0;
+
+    switch (actionSortField) {
+      case 'title':
+        comparison = a.title.localeCompare(b.title);
+        break;
+      case 'assignedTo':
+        // Advisor before Client
+        comparison = a.assignedTo.localeCompare(b.assignedTo);
+        break;
+      case 'dueDate':
+        comparison = new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        break;
+      case 'priority':
+        comparison = priorityOrder[a.priority] - priorityOrder[b.priority];
+        break;
+      case 'status':
+        comparison = a.status.localeCompare(b.status);
+        break;
+    }
+
+    return actionSortDirection === 'asc' ? comparison : -comparison;
+  });
+
+  // Render sort icon for objectives
+  const renderObjectiveSortIcon = (field: ObjectiveSortField) => {
+    if (objectiveSortField !== field) {
+      return <ChevronUpIcon className="w-4 h-4 text-gray-400 opacity-50" />;
+    }
+    return objectiveSortDirection === 'asc' ? (
+      <ChevronUpIcon className="w-4 h-4 text-gray-700" />
+    ) : (
+      <ChevronDownIcon className="w-4 h-4 text-gray-700" />
+    );
+  };
+
+  // Render sort icon for actions
+  const renderActionSortIcon = (field: ActionSortField) => {
+    if (actionSortField !== field) {
+      return <ChevronUpIcon className="w-4 h-4 text-gray-400 opacity-50" />;
+    }
+    return actionSortDirection === 'asc' ? (
+      <ChevronUpIcon className="w-4 h-4 text-gray-700" />
+    ) : (
+      <ChevronDownIcon className="w-4 h-4 text-gray-700" />
+    );
+  };
 
   return (
     <div className="space-y-6">
-      {/* Aims & Objectives Section */}
-      <div>
-        <div className="mb-3">
-          <h3 className="text-xl font-semibold text-gray-900">Aims & Objectives</h3>
-          <p className="text-base text-gray-900">Long-term financial goals and targets</p>
-        </div>
-        <div className="grid grid-cols-1 gap-2">
-          {activeObjectives.map((obj) => (
-            <div
-              key={obj.id}
-              className="bg-white rounded-lg shadow p-3 hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => onObjectiveClick(obj)}
+      {/* Aims & Objectives Table */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="px-3 py-2 bg-gray-50 border-b">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-semibold">Aims & Objectives</h3>
+            <button
+              onClick={handleAddObjective}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 transition-colors"
             >
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="text-lg font-semibold text-gray-900">{obj.title}</h3>
-                <span className={`px-2 py-0.5 rounded-full text-sm font-medium ${
-                  obj.priority === 'High'
-                    ? 'bg-red-100 text-red-800'
-                    : obj.priority === 'Medium'
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-green-100 text-green-800'
-                }`}>
-                  {obj.priority} Priority
-                </span>
-              </div>
-              <p className="text-base text-gray-900 mb-2">{obj.description}</p>
-              <div className="flex justify-between items-center text-base">
-                <span className="text-gray-900">Target: {obj.targetDate}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Historical Aims and Objectives */}
-      {completedObjectives.length > 0 && (
-        <div className="opacity-60">
-          <div className="mb-3">
-            <h3 className="text-xl font-semibold text-gray-900">Historical Aims and Objectives</h3>
-            <p className="text-base text-gray-900">Completed long-term goals</p>
+              <PlusIcon className="w-4 h-4" />
+              Add Aim & Objective
+            </button>
           </div>
-          <div className="grid grid-cols-1 gap-2">
-            {completedObjectives.map((obj) => (
-              <div
+        </div>
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">
+                <button
+                  onClick={() => handleObjectiveSort('title')}
+                  className="flex items-center gap-1 hover:text-gray-700 transition-colors"
+                >
+                  Title
+                  {renderObjectiveSortIcon('title')}
+                </button>
+              </th>
+              <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">Description</th>
+              <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">
+                <button
+                  onClick={() => handleObjectiveSort('targetDate')}
+                  className="flex items-center gap-1 hover:text-gray-700 transition-colors"
+                >
+                  Target Date
+                  {renderObjectiveSortIcon('targetDate')}
+                </button>
+              </th>
+              <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">
+                <button
+                  onClick={() => handleObjectiveSort('priority')}
+                  className="flex items-center gap-1 hover:text-gray-700 transition-colors"
+                >
+                  Priority
+                  {renderObjectiveSortIcon('priority')}
+                </button>
+              </th>
+              <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">
+                <button
+                  onClick={() => handleObjectiveSort('status')}
+                  className="flex items-center gap-1 hover:text-gray-700 transition-colors"
+                >
+                  Status
+                  {renderObjectiveSortIcon('status')}
+                </button>
+              </th>
+              <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">Actions</th>
+              <th className="px-3 py-2"></th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {sortedObjectives.map((obj) => (
+              <tr
                 key={obj.id}
-                className="bg-gray-50 rounded-lg shadow p-3 hover:shadow-lg transition-shadow cursor-pointer"
+                className={`hover:bg-gray-50 cursor-pointer transition-colors ${
+                  obj.status === 'Completed' ? 'opacity-60' : ''
+                }`}
                 onClick={() => onObjectiveClick(obj)}
               >
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-lg font-semibold text-gray-900">{obj.title}</h3>
-                  <span className="px-2 py-0.5 rounded-full text-sm font-medium bg-gray-200 text-gray-900">
-                    {obj.priority} Priority
+                <td className="px-3 py-2 whitespace-nowrap text-base font-medium text-gray-900">{obj.title}</td>
+                <td className="px-3 py-2 text-base text-gray-900">{obj.description}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">{obj.targetDate}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-base">
+                  <span className={`px-2 py-1 rounded-full text-sm font-medium ${
+                    obj.priority === 'High'
+                      ? 'bg-red-100 text-red-800'
+                      : obj.priority === 'Medium'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : 'bg-green-100 text-green-800'
+                  }`}>
+                    {obj.priority}
                   </span>
-                </div>
-                <p className="text-base text-gray-900 mb-2">{obj.description}</p>
-                <div className="flex justify-between items-center text-base">
-                  <span className="text-gray-900">Target: {obj.targetDate}</span>
-                </div>
-              </div>
+                </td>
+                <td className="px-3 py-2 whitespace-nowrap text-base">
+                  <span className={`px-2 py-1 rounded-full text-sm font-medium ${
+                    obj.status === 'Completed'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {obj.status}
+                  </span>
+                </td>
+                <td className="px-3 py-2 whitespace-nowrap text-base">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleLapseObjective(obj);
+                      }}
+                      className="p-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded transition-colors"
+                      title="Lapse"
+                    >
+                      <XCircleIcon className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteObjective(obj);
+                      }}
+                      className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                      title="Delete"
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+                <td className="px-3 py-2 whitespace-nowrap text-right text-base">
+                  <ChevronRightIcon className="w-5 h-5 text-gray-900" />
+                </td>
+              </tr>
             ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Actions Table */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="px-3 py-2 bg-gray-50 border-b">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-semibold">Actions</h3>
+            <button
+              onClick={handleAddAction}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 transition-colors"
+            >
+              <PlusIcon className="w-4 h-4" />
+              Add Action
+            </button>
           </div>
         </div>
-      )}
-
-      {/* Actions Section */}
-      <div>
-        <div className="mb-4">
-          <h3 className="text-2xl font-semibold text-gray-900">Actions</h3>
-          <p className="text-base text-gray-900">Short-term to-do items for client and advisor</p>
-        </div>
-
-        <div className="space-y-4">
-          {/* Client Actions */}
-          <div>
-            <h4 className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
-              <UserIcon className="w-5 h-5 text-blue-600" />
-              Client Actions
-            </h4>
-            <div className="space-y-1.5">
-              {activeActions.filter(action => action.assignedTo === 'Client').map((action) => (
-                <div
-                  key={action.id}
-                  className="bg-white rounded-lg shadow p-3 hover:shadow-md transition-shadow cursor-pointer border-l-4 border-blue-500"
-                  onClick={() => onActionClick(action)}
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">
+                <button
+                  onClick={() => handleActionSort('title')}
+                  className="flex items-center gap-1 hover:text-gray-700 transition-colors"
                 >
-                  <div className="flex justify-between items-start mb-1.5">
-                    <div className="flex-1">
-                      <h5 className="text-base font-semibold text-gray-900">{action.title}</h5>
-                      <p className="text-base text-gray-900 mt-1">{action.description}</p>
-                    </div>
-                    <div className="flex items-center gap-1.5 ml-2">
-                      <span className={`px-1.5 py-0.5 rounded-full text-sm font-medium ${
-                        action.priority === 'High'
-                          ? 'bg-red-100 text-red-800'
-                          : action.priority === 'Medium'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-green-100 text-green-800'
-                      }`}>
-                        {action.priority}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center text-base mt-2">
-                    <span className="text-gray-900">Due: {new Date(action.dueDate).toLocaleDateString('en-GB')}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Advisor Actions */}
-          <div>
-            <h4 className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
-              <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              Advisor Actions
-            </h4>
-            <div className="space-y-1.5">
-              {activeActions.filter(action => action.assignedTo === 'Advisor').map((action) => (
-                <div
-                  key={action.id}
-                  className="bg-white rounded-lg shadow p-3 hover:shadow-md transition-shadow cursor-pointer border-l-4 border-primary-600"
-                  onClick={() => onActionClick(action)}
+                  Title
+                  {renderActionSortIcon('title')}
+                </button>
+              </th>
+              <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">Description</th>
+              <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">
+                <button
+                  onClick={() => handleActionSort('assignedTo')}
+                  className="flex items-center gap-1 hover:text-gray-700 transition-colors"
                 >
-                  <div className="flex justify-between items-start mb-1.5">
-                    <div className="flex-1">
-                      <h5 className="text-base font-semibold text-gray-900">{action.title}</h5>
-                      <p className="text-base text-gray-900 mt-1">{action.description}</p>
-                    </div>
-                    <div className="flex items-center gap-1.5 ml-2">
-                      <span className={`px-1.5 py-0.5 rounded-full text-sm font-medium ${
-                        action.priority === 'High'
-                          ? 'bg-red-100 text-red-800'
-                          : action.priority === 'Medium'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-green-100 text-green-800'
-                      }`}>
-                        {action.priority}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center text-base mt-2">
-                    <span className="text-gray-900">Due: {new Date(action.dueDate).toLocaleDateString('en-GB')}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Historical Actions */}
-          <div className="opacity-60">
-            <h4 className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
-              <svg className="w-5 h-5 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Historical Actions
-            </h4>
-            <div className="space-y-1.5">
-              {completedActions.map((action) => (
-                <div
-                  key={action.id}
-                  className="bg-gray-50 rounded-lg shadow p-3 hover:shadow-md transition-shadow cursor-pointer border-l-4 border-gray-400"
-                  onClick={() => onActionClick(action)}
+                  Assigned To
+                  {renderActionSortIcon('assignedTo')}
+                </button>
+              </th>
+              <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">
+                <button
+                  onClick={() => handleActionSort('dueDate')}
+                  className="flex items-center gap-1 hover:text-gray-700 transition-colors"
                 >
-                  <div className="flex justify-between items-start mb-1.5">
-                    <div className="flex-1">
-                      <h5 className="text-base font-semibold text-gray-900">{action.title}</h5>
-                      <p className="text-base text-gray-900 mt-1">{action.description}</p>
-                    </div>
-                    <div className="flex items-center gap-1.5 ml-2">
-                      <span className={`px-1.5 py-0.5 rounded-full text-sm font-medium ${
-                        action.assignedTo === 'Client' ? 'bg-gray-200 text-gray-900' : 'bg-gray-200 text-gray-900'
-                      }`}>
-                        {action.assignedTo}
-                      </span>
-                    </div>
+                  Due Date
+                  {renderActionSortIcon('dueDate')}
+                </button>
+              </th>
+              <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">
+                <button
+                  onClick={() => handleActionSort('priority')}
+                  className="flex items-center gap-1 hover:text-gray-700 transition-colors"
+                >
+                  Priority
+                  {renderActionSortIcon('priority')}
+                </button>
+              </th>
+              <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">
+                <button
+                  onClick={() => handleActionSort('status')}
+                  className="flex items-center gap-1 hover:text-gray-700 transition-colors"
+                >
+                  Status
+                  {renderActionSortIcon('status')}
+                </button>
+              </th>
+              <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">Actions</th>
+              <th className="px-3 py-2"></th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {sortedActions.map((action) => (
+              <tr
+                key={action.id}
+                className={`hover:bg-gray-50 cursor-pointer transition-colors ${
+                  action.status === 'Completed' ? 'opacity-60' : ''
+                }`}
+                onClick={() => onActionClick(action)}
+              >
+                <td className="px-3 py-2 whitespace-nowrap text-base font-medium text-gray-900">{action.title}</td>
+                <td className="px-3 py-2 text-base text-gray-900">{action.description}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-base">
+                  <span className={`px-2 py-1 rounded-full text-sm font-medium ${
+                    action.assignedTo === 'Client'
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-purple-100 text-purple-800'
+                  }`}>
+                    {action.assignedTo}
+                  </span>
+                </td>
+                <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">
+                  {new Date(action.dueDate).toLocaleDateString('en-GB')}
+                </td>
+                <td className="px-3 py-2 whitespace-nowrap text-base">
+                  <span className={`px-2 py-1 rounded-full text-sm font-medium ${
+                    action.priority === 'High'
+                      ? 'bg-red-100 text-red-800'
+                      : action.priority === 'Medium'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : 'bg-green-100 text-green-800'
+                  }`}>
+                    {action.priority}
+                  </span>
+                </td>
+                <td className="px-3 py-2 whitespace-nowrap text-base">
+                  <span className={`px-2 py-1 rounded-full text-sm font-medium ${
+                    action.status === 'Completed'
+                      ? 'bg-green-100 text-green-800'
+                      : action.status === 'In Progress'
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-gray-200 text-gray-900'
+                  }`}>
+                    {action.status}
+                  </span>
+                </td>
+                <td className="px-3 py-2 whitespace-nowrap text-base">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleLapseAction(action);
+                      }}
+                      className="p-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded transition-colors"
+                      title="Lapse"
+                    >
+                      <XCircleIcon className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteAction(action);
+                      }}
+                      className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                      title="Delete"
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
                   </div>
-                  <div className="flex justify-between items-center text-base mt-2">
-                    <span className="text-gray-900">Completed: {new Date(action.dueDate).toLocaleDateString('en-GB')}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+                </td>
+                <td className="px-3 py-2 whitespace-nowrap text-right text-base">
+                  <ChevronRightIcon className="w-5 h-5 text-gray-900" />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
