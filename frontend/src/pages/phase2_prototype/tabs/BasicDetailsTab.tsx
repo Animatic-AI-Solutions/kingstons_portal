@@ -122,6 +122,7 @@ const BasicDetailsTab: React.FC<BasicDetailsTabProps> = ({
           <HealthVulnerabilitySection
             people={people}
             clientOrder={clientOrder}
+            relationships={relationships}
             healthItems={healthItems}
             vulnerabilities={vulnerabilities}
             onItemClick={onHealthVulnerabilityClick}
@@ -145,6 +146,10 @@ const BasicDetailsTab: React.FC<BasicDetailsTabProps> = ({
             capacityToLoss={capacityToLoss}
             onRiskAssessmentClick={onRiskAssessmentClick}
             onCapacityToLossClick={onCapacityToLossClick}
+            onLapseRiskAssessment={handleLapse}
+            onDeleteRiskAssessment={handleDelete}
+            onLapseCapacityToLoss={handleLapse}
+            onDeleteCapacityToLoss={handleDelete}
           />
         );
       case 'management':

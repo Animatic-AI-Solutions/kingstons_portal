@@ -54,6 +54,7 @@ const MeetingsSection: React.FC<MeetingsSectionProps> = ({
         const placeholderInstance: MeetingInstance = {
           id: `placeholder-${assigned.id}-${year}`,
           assignedMeetingId: assigned.id,
+          name: assigned.name,
           meetingType: assigned.meetingType,
           year: year,
           status: status,
@@ -95,6 +96,7 @@ const MeetingsSection: React.FC<MeetingsSectionProps> = ({
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">Name</th>
                   <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">Meeting Type</th>
                   <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">Expected Month</th>
                   <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">Status</th>
@@ -117,7 +119,8 @@ const MeetingsSection: React.FC<MeetingsSectionProps> = ({
                       }`}
                       onClick={() => onAssignedMeetingClick(meeting)}
                     >
-                      <td className="px-3 py-2 whitespace-nowrap text-base font-medium text-gray-900">{meeting.meetingType}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-base font-medium text-gray-900">{meeting.name}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">{meeting.meetingType}</td>
                       <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">{meeting.expectedMonth}</td>
                       <td className="px-3 py-2 whitespace-nowrap text-base">
                         <span className={`px-2 py-1 rounded-full text-sm font-medium ${
@@ -157,6 +160,7 @@ const MeetingsSection: React.FC<MeetingsSectionProps> = ({
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
+                        <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">Name</th>
                         <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">Meeting Type</th>
                         <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">Date Booked For</th>
                         <th className="px-3 py-2 text-center text-sm font-bold text-gray-900 uppercase">Status</th>
@@ -167,7 +171,8 @@ const MeetingsSection: React.FC<MeetingsSectionProps> = ({
                     <tbody className="bg-white divide-y divide-gray-200">
                       {yearInstances.map((instance) => (
                         <tr key={instance.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => onMeetingInstanceClick(instance)}>
-                          <td className="px-3 py-2 whitespace-nowrap text-base font-medium text-gray-900">{instance.meetingType}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-base font-medium text-gray-900">{instance.name}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">{instance.meetingType}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">
                             {instance.dateBookedFor || <span className="text-gray-900 italic">Not booked</span>}
                           </td>

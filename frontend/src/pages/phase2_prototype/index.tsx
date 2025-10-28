@@ -493,10 +493,12 @@ const ClientGroupPhase2 = () => {
   // Render Generic Detail View - Compact table-like style
   const renderGenericDetail = () => {
     const entries = Object.entries(selectedItem);
-    const regularFields = entries.filter(([key]) => key !== 'id' && key !== 'notes');
+    const regularFields = entries.filter(([key]) => key !== 'id' && key !== 'notes' && key !== 'trustNotes');
     const notesField = entries.find(([key]) => key === 'notes');
+    const trustNotesField = entries.find(([key]) => key === 'trustNotes');
 
     const isSpecialRelationship = 'relationship' in selectedItem && 'dateOfBirth' in selectedItem && 'contactDetails' in selectedItem;
+    const isProduct = 'coverType' in selectedItem && 'termType' in selectedItem && 'investmentElement' in selectedItem;
     const peopleNames = samplePeople.map(p => `${p.title} ${p.forename} ${p.surname}`.trim());
 
     const handleTextareaResize = (e: React.FormEvent<HTMLTextAreaElement>) => {
@@ -550,6 +552,80 @@ const ClientGroupPhase2 = () => {
         }
       }
 
+      // Special handling for Product fields
+      if (isProduct) {
+        // Cover Type dropdown
+        if (key === 'coverType') {
+          return (
+            <div key={key} className="flex items-start py-1.5 px-2 hover:bg-gray-50 border-b border-gray-100">
+              <label className="text-sm font-bold text-gray-900 w-36 flex-shrink-0 pt-0.5">{capitalizedLabel}:</label>
+              <select
+                defaultValue={value}
+                className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+              >
+                <option value="Life Insurance">Life Insurance</option>
+                <option value="Critical Illness">Critical Illness</option>
+                <option value="Whole of Life">Whole of Life</option>
+                <option value="Income Protection">Income Protection</option>
+                <option value="Private Medical">Private Medical</option>
+                <option value="Pension">Pension</option>
+                <option value="Investment Bond">Investment Bond</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          );
+        }
+
+        // Term Type dropdown
+        if (key === 'termType') {
+          return (
+            <div key={key} className="flex items-start py-1.5 px-2 hover:bg-gray-50 border-b border-gray-100">
+              <label className="text-sm font-bold text-gray-900 w-36 flex-shrink-0 pt-0.5">{capitalizedLabel}:</label>
+              <select
+                defaultValue={value}
+                className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+              >
+                <option value="Level">Level</option>
+                <option value="Increasing">Increasing</option>
+                <option value="Decreasing">Decreasing</option>
+              </select>
+            </div>
+          );
+        }
+
+        // Investment Element dropdown (Yes/No)
+        if (key === 'investmentElement') {
+          return (
+            <div key={key} className="flex items-start py-1.5 px-2 hover:bg-gray-50 border-b border-gray-100">
+              <label className="text-sm font-bold text-gray-900 w-36 flex-shrink-0 pt-0.5">{capitalizedLabel}:</label>
+              <select
+                defaultValue={value ? 'true' : 'false'}
+                className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+              >
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+              </select>
+            </div>
+          );
+        }
+
+        // In Trust dropdown (Yes/No)
+        if (key === 'inTrust') {
+          return (
+            <div key={key} className="flex items-start py-1.5 px-2 hover:bg-gray-50 border-b border-gray-100">
+              <label className="text-sm font-bold text-gray-900 w-36 flex-shrink-0 pt-0.5">{capitalizedLabel}:</label>
+              <select
+                defaultValue={value ? 'true' : 'false'}
+                className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+              >
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+              </select>
+            </div>
+          );
+        }
+      }
+
       // Default rendering for other fields
       return (
         <div key={key} className="flex items-start py-1.5 px-2 hover:bg-gray-50 border-b border-gray-100">
@@ -588,6 +664,29 @@ const ClientGroupPhase2 = () => {
         <div className="grid grid-cols-2 divide-x divide-gray-200 border border-gray-200 rounded bg-white">
           {regularFields.map(([key, value]) => renderFieldInput(key, value))}
         </div>
+
+        {/* Trust Notes Section (only for Products where In Trust = Yes) */}
+        {isProduct && selectedItem.inTrust && trustNotesField && (
+          <div className="mt-2">
+            <h5 className="text-sm font-semibold text-gray-900 uppercase mb-2 flex items-center gap-1 bg-blue-100 px-2 py-1 rounded">
+              Trust Notes
+            </h5>
+            <div className="border border-gray-200 rounded bg-white p-2">
+              <textarea
+                defaultValue={String(trustNotesField[1])}
+                onInput={handleTextareaResize}
+                ref={(el) => {
+                  if (el) {
+                    el.style.height = 'auto';
+                    el.style.height = el.scrollHeight + 'px';
+                  }
+                }}
+                className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500 resize-none overflow-hidden min-h-[4rem]"
+                placeholder="Trust arrangement details, beneficiaries, type of trust..."
+              />
+            </div>
+          </div>
+        )}
 
         {/* Notes Section */}
         {notesField && (

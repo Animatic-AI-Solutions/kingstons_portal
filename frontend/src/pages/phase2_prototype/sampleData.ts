@@ -515,7 +515,7 @@ export const sampleProducts: Product[] = [
     provider: 'Legal & General',
     policyNumber: 'LG-2019-847261',
     coverType: 'Life Insurance',
-    termType: 'Level Term',
+    termType: 'Level',
     livesAssured: ['James Mitchell'],
     sumAssured: 500000,
     duration: '25 years',
@@ -523,15 +523,17 @@ export const sampleProducts: Product[] = [
     monthlyPayment: 45.50,
     endDate: '15/03/2044',
     investmentElement: false,
+    surrenderRelease: 'N/A',
     inTrust: true,
-    notes: 'Policy written in trust for Sarah and children. Covers mortgage and provides additional family security. Premium guaranteed for full term. Annual review scheduled for March.'
+    trustNotes: 'Policy written in trust for Sarah and children. Discretionary trust established with Sarah as primary beneficiary and children as contingent beneficiaries.',
+    notes: 'Covers mortgage and provides additional family security. Premium guaranteed for full term. Annual review scheduled for March.'
   },
   {
     id: '2',
     provider: 'Aviva',
     policyNumber: 'AV-2020-934712',
     coverType: 'Critical Illness',
-    termType: 'Decreasing Term',
+    termType: 'Decreasing',
     livesAssured: ['Sarah Mitchell'],
     sumAssured: 250000,
     duration: '20 years',
@@ -539,6 +541,7 @@ export const sampleProducts: Product[] = [
     monthlyPayment: 62.80,
     endDate: '01/06/2040',
     investmentElement: false,
+    surrenderRelease: 'N/A',
     inTrust: false,
     notes: 'Decreasing cover aligned with buy-to-let mortgage. Sum assured reduces annually. Covers major illnesses including cancer, heart attack, and stroke. Consider putting in trust.'
   },
@@ -547,7 +550,7 @@ export const sampleProducts: Product[] = [
     provider: 'Prudential',
     policyNumber: 'PRU-2018-562384',
     coverType: 'Whole of Life',
-    termType: 'Whole of Life',
+    termType: 'Level',
     livesAssured: ['James Mitchell', 'Sarah Mitchell'],
     sumAssured: 150000,
     duration: 'Whole of Life',
@@ -555,9 +558,10 @@ export const sampleProducts: Product[] = [
     monthlyPayment: 125.00,
     endDate: 'N/A',
     investmentElement: true,
-    surrenderValue: 18500,
+    surrenderRelease: '18500',
     inTrust: true,
-    notes: 'Joint life second death policy for IHT planning. Investment element currently valued at £18,500. Written in discretionary trust for children. Premiums reviewable every 10 years - next review September 2028.'
+    trustNotes: 'Written in discretionary trust for children. Joint life second death policy for IHT planning purposes.',
+    notes: 'Investment element currently valued at £18,500. Premiums reviewable every 10 years - next review September 2028.'
   }
 ];
 
@@ -685,6 +689,7 @@ export const sampleActions: Action[] = [
 export const assignedMeetings: AssignedMeeting[] = [
   {
     id: 'am1',
+    name: 'Review 1',
     meetingType: 'Review',
     expectedMonth: 'March',
     status: 'Active',
@@ -692,6 +697,7 @@ export const assignedMeetings: AssignedMeeting[] = [
   },
   {
     id: 'am2',
+    name: 'Update 1',
     meetingType: 'Update',
     expectedMonth: 'September',
     status: 'Active',
@@ -699,6 +705,7 @@ export const assignedMeetings: AssignedMeeting[] = [
   },
   {
     id: 'am3',
+    name: 'Update 2',
     meetingType: 'Update',
     expectedMonth: 'November',
     status: 'Active',
@@ -706,6 +713,7 @@ export const assignedMeetings: AssignedMeeting[] = [
   },
   {
     id: 'am4',
+    name: 'Update 3',
     meetingType: 'Update',
     expectedMonth: 'June',
     status: 'Lapsed',
@@ -713,6 +721,7 @@ export const assignedMeetings: AssignedMeeting[] = [
   },
   {
     id: 'am5',
+    name: 'Review 2',
     meetingType: 'Review',
     expectedMonth: 'October',
     status: 'Lapsed',
@@ -725,6 +734,7 @@ export const meetingInstances: MeetingInstance[] = [
   {
     id: 'mi1',
     assignedMeetingId: 'am2',
+    name: 'Update 1',
     meetingType: 'Update',
     year: 2026,
     dateBookedFor: '17/09/2025',
@@ -735,6 +745,7 @@ export const meetingInstances: MeetingInstance[] = [
   {
     id: 'mi2',
     assignedMeetingId: 'am3',
+    name: 'Update 2',
     meetingType: 'Update',
     year: 2026,
     dateBookedFor: '20/11/2025',
@@ -747,6 +758,7 @@ export const meetingInstances: MeetingInstance[] = [
   {
     id: 'mi3',
     assignedMeetingId: 'am1',
+    name: 'Review 1',
     meetingType: 'Review',
     year: 2025,
     dateBookedFor: '12/03/2025',
@@ -757,6 +769,7 @@ export const meetingInstances: MeetingInstance[] = [
   {
     id: 'mi4',
     assignedMeetingId: 'am2',
+    name: 'Update 1',
     meetingType: 'Update',
     year: 2025,
     dateBookedFor: '15/09/2024',
@@ -767,6 +780,7 @@ export const meetingInstances: MeetingInstance[] = [
   {
     id: 'mi5',
     assignedMeetingId: 'am3',
+    name: 'Update 2',
     meetingType: 'Update',
     year: 2025,
     dateBookedFor: '18/11/2024',
@@ -779,6 +793,7 @@ export const meetingInstances: MeetingInstance[] = [
   {
     id: 'mi6',
     assignedMeetingId: 'am1',
+    name: 'Review 1',
     meetingType: 'Review',
     year: 2024,
     dateBookedFor: '10/03/2024',
@@ -789,6 +804,7 @@ export const meetingInstances: MeetingInstance[] = [
   {
     id: 'mi7',
     assignedMeetingId: 'am4',
+    name: 'Update 3',
     meetingType: 'Update',
     year: 2024,
     dateBookedFor: '18/06/2024',
@@ -799,6 +815,7 @@ export const meetingInstances: MeetingInstance[] = [
   {
     id: 'mi8',
     assignedMeetingId: 'am2',
+    name: 'Update 1',
     meetingType: 'Update',
     year: 2024,
     dateBookedFor: '12/09/2023',
@@ -809,6 +826,7 @@ export const meetingInstances: MeetingInstance[] = [
   {
     id: 'mi9',
     assignedMeetingId: 'am5',
+    name: 'Review 2',
     meetingType: 'Review',
     year: 2024,
     dateBookedFor: '15/10/2023',
@@ -819,6 +837,7 @@ export const meetingInstances: MeetingInstance[] = [
   {
     id: 'mi10',
     assignedMeetingId: 'am3',
+    name: 'Update 2',
     meetingType: 'Update',
     year: 2024,
     dateBookedFor: '14/11/2023',

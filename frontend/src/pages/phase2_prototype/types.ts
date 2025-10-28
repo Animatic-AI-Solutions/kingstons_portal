@@ -63,7 +63,8 @@ export interface SpecialRelationship {
 
 export interface HealthItem {
   id: string;
-  personId: string;
+  personId?: string;
+  relationshipId?: string;
   name: string;
   type: string;
   dateOfDiagnosis: string;
@@ -75,7 +76,8 @@ export interface HealthItem {
 
 export interface VulnerabilityItem {
   id: string;
-  personId: string;
+  personId?: string;
+  relationshipId?: string;
   vulnerabilityDescription: string;
   adjustments: string;
   diagnosed: boolean; // Whether the condition is officially diagnosed
@@ -181,8 +183,9 @@ export interface Product {
   monthlyPayment: number;
   endDate: string;
   investmentElement: boolean;
-  surrenderValue?: number;
+  surrenderRelease: string;
   inTrust: boolean;
+  trustNotes?: string;
   notes: string;
 }
 
@@ -209,6 +212,7 @@ export interface Action {
 
 export interface AssignedMeeting {
   id: string;
+  name: string; // Generic name like "Update 1", "Update 2"
   meetingType: 'Update' | 'Review';
   expectedMonth: string; // e.g., "March" - when this meeting should happen each year
   status: 'Active' | 'Lapsed';
@@ -218,6 +222,7 @@ export interface AssignedMeeting {
 export interface MeetingInstance {
   id: string;
   assignedMeetingId: string; // Reference to the assigned meeting
+  name: string; // Generic name like "Update 1", "Update 2"
   meetingType: 'Update' | 'Review';
   year: number;
   dateBookedFor?: string; // e.g., "12/03/2024"

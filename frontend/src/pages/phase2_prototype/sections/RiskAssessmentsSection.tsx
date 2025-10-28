@@ -9,6 +9,8 @@ interface RiskAssessmentsSectionProps {
   onCapacityToLossClick: (capacity: CapacityToLoss) => void;
   onLapseRiskAssessment?: (assessment: RiskAssessment) => void;
   onDeleteRiskAssessment?: (assessment: RiskAssessment) => void;
+  onLapseCapacityToLoss?: (capacity: CapacityToLoss) => void;
+  onDeleteCapacityToLoss?: (capacity: CapacityToLoss) => void;
 }
 
 const RiskAssessmentsSection: React.FC<RiskAssessmentsSectionProps> = ({
@@ -17,7 +19,9 @@ const RiskAssessmentsSection: React.FC<RiskAssessmentsSectionProps> = ({
   onRiskAssessmentClick,
   onCapacityToLossClick,
   onLapseRiskAssessment,
-  onDeleteRiskAssessment
+  onDeleteRiskAssessment,
+  onLapseCapacityToLoss,
+  onDeleteCapacityToLoss
 }) => {
   // Helper function to get risk group label from score
   const getRiskGroupLabel = (riskScore: number): string => {
@@ -180,6 +184,7 @@ const RiskAssessmentsSection: React.FC<RiskAssessmentsSectionProps> = ({
               <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">Category</th>
               <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">Date Assessed</th>
               <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">Status</th>
+              <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">Actions</th>
               <th className="px-3 py-2"></th>
             </tr>
           </thead>
@@ -216,6 +221,34 @@ const RiskAssessmentsSection: React.FC<RiskAssessmentsSectionProps> = ({
                   }`}>
                     {capacity.status}
                   </span>
+                </td>
+                <td className="px-3 py-2 whitespace-nowrap text-base">
+                  <div className="flex items-center gap-2">
+                    {onLapseCapacityToLoss && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onLapseCapacityToLoss(capacity);
+                        }}
+                        className="p-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded transition-colors"
+                        title="Lapse"
+                      >
+                        <XCircleIcon className="w-4 h-4" />
+                      </button>
+                    )}
+                    {onDeleteCapacityToLoss && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteCapacityToLoss(capacity);
+                        }}
+                        className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                        title="Delete"
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-right text-base">
                   <ChevronRightIcon className="w-5 h-5 text-gray-900" />
