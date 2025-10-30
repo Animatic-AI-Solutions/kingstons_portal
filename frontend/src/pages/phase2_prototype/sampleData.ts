@@ -19,7 +19,9 @@ import {
   Action,
   AssignedMeeting,
   MeetingInstance,
-  OtherClientGroup
+  OtherClientGroup,
+  DefinedBenefitPension,
+  Trusteeship
 } from './types';
 
 // ============================================================================
@@ -934,6 +936,38 @@ export const sampleAssets: Asset[] = [
     ownershipType: 'sole',
     isProduct: false
   },
+
+  // Children's Assets - Emma Mitchell
+  {
+    id: 'child-1',
+    type: 'Junior ISA',
+    category: 'Cash ISAs',
+    description: 'Junior ISA - Nationwide',
+    value: 8500,
+    owner: 'Emma Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+  {
+    id: 'child-2',
+    type: 'Savings Account',
+    category: 'Cash Accounts',
+    description: 'Children\'s Savings Account',
+    value: 2400,
+    owner: 'Emma Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+  {
+    id: 'child-3',
+    type: 'Premium Bonds',
+    category: 'NS & I',
+    description: 'Premium Bonds',
+    value: 5000,
+    owner: 'Emma Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
 ];
 
 export const sampleLiabilities: Liability[] = [
@@ -1068,6 +1102,18 @@ export const sampleLiabilities: Liability[] = [
     amount: 18000,
     monthlyPayment: 0,
     owner: 'Sarah Mitchell',
+    ownershipType: 'sole'
+  },
+
+  // Children's Liabilities - Emma Mitchell
+  {
+    id: 'child-loan-1',
+    type: 'Personal Loan',
+    category: 'Other Liabilities',
+    description: 'University Expenses Loan',
+    amount: 3500,
+    monthlyPayment: 150,
+    owner: 'Emma Mitchell',
     ownershipType: 'sole'
   },
 ];
@@ -1273,6 +1319,126 @@ export const sampleBusinessLiabilities: Liability[] = [
     owner: 'Mitchell Consulting Ltd',
     ownershipType: 'sole'
   },
+];
+
+// ============================================================================
+// DEFINED BENEFIT PENSIONS - Family
+// ============================================================================
+
+export const sampleDefinedBenefitPensions: DefinedBenefitPension[] = [
+  {
+    id: 'db-1',
+    schemeName: 'NHS Pension Scheme',
+    provider: 'NHS Business Services Authority',
+    members: ['Sarah Mitchell'],
+    pensionType: 'Defined Benefit',
+    estimatedAnnualIncome: 18500,
+    retirementAge: 67,
+    notes: 'Based on 15 years service, career average scheme'
+  },
+  {
+    id: 'db-2',
+    schemeName: 'Local Government Pension Scheme',
+    provider: 'West Yorkshire Pension Fund',
+    members: ['James Mitchell'],
+    pensionType: 'Defined Benefit',
+    estimatedAnnualIncome: 12800,
+    retirementAge: 65,
+    notes: 'Deferred pension from previous employment, 8 years service'
+  },
+  {
+    id: 'db-3',
+    schemeName: 'Teachers\' Pension Scheme',
+    provider: 'Teachers\' Pensions',
+    members: ['Sarah Mitchell'],
+    pensionType: 'Hybrid',
+    estimatedAnnualIncome: 8400,
+    retirementAge: 67,
+    notes: 'Previous teaching role, 5 years service'
+  }
+];
+
+// ============================================================================
+// DEFINED BENEFIT PENSIONS - Business
+// ============================================================================
+
+export const sampleBusinessDefinedBenefitPensions: DefinedBenefitPension[] = [
+  {
+    id: 'biz-db-1',
+    schemeName: 'Mitchell Consulting Executive Pension',
+    provider: 'Aviva',
+    members: ['James Mitchell'],
+    pensionType: 'Hybrid',
+    estimatedAnnualIncome: 22000,
+    retirementAge: 65,
+    notes: 'Company executive pension scheme with DB and DC elements'
+  }
+];
+
+// ============================================================================
+// TRUSTEESHIPS - Family
+// ============================================================================
+
+export const sampleTrusteeships: Trusteeship[] = [
+  {
+    id: 'trust-1',
+    trustName: 'Mitchell Family Trust',
+    trustType: 'Discretionary Trust',
+    dateEstablished: '2015-03-15',
+    trustees: ['James Mitchell', 'Sarah Mitchell', 'Robert Wilson (Professional Trustee)'],
+    beneficiaries: {
+      'James Mitchell': 150000,
+      'Sarah Mitchell': 150000,
+      'Emma Mitchell': 200000
+    },
+    status: 'Active',
+    notes: 'Established for inheritance tax planning and providing for Emma\'s future'
+  },
+  {
+    id: 'trust-2',
+    trustName: 'Education Trust Fund',
+    trustType: 'Bare Trust',
+    dateEstablished: '2018-09-01',
+    trustees: ['James Mitchell', 'Sarah Mitchell'],
+    beneficiaries: {
+      'Emma Mitchell': 85000
+    },
+    status: 'Active',
+    notes: 'Set up for Emma\'s university education and early career support'
+  },
+  {
+    id: 'trust-3',
+    trustName: 'Life Insurance Trust',
+    trustType: 'Life Interest Trust',
+    dateEstablished: '2012-11-20',
+    trustees: ['James Mitchell', 'David Thompson (Professional Trustee)'],
+    beneficiaries: {
+      'Sarah Mitchell': 250000,
+      'Emma Mitchell': 150000
+    },
+    status: 'Active',
+    notes: 'Holds life insurance policies outside of estate for IHT purposes'
+  }
+];
+
+// ============================================================================
+// TRUSTEESHIPS - Business
+// ============================================================================
+
+export const sampleBusinessTrusteeships: Trusteeship[] = [
+  {
+    id: 'biz-trust-1',
+    trustName: 'Mitchell Consulting Employee Benefit Trust',
+    trustType: 'Employee Benefit Trust',
+    dateEstablished: '2019-06-01',
+    trustees: ['James Mitchell', 'Sarah Mitchell', 'John Davies (Professional Trustee)'],
+    beneficiaries: {
+      'James Mitchell': 180000,
+      'Sarah Mitchell': 120000
+    },
+    status: 'Active',
+    notes: 'Employee ownership trust for key management retention'
+  }
 ];
 
 export const sampleIncome: Income[] = [

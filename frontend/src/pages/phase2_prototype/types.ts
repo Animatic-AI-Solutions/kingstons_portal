@@ -191,6 +191,28 @@ export interface Product {
   notes: string;
 }
 
+export interface DefinedBenefitPension {
+  id: string;
+  schemeName: string;
+  provider: string;
+  members: string[]; // Array of person names who are members
+  pensionType: 'Defined Benefit' | 'Hybrid';
+  estimatedAnnualIncome: number;
+  retirementAge: number;
+  notes: string;
+}
+
+export interface Trusteeship {
+  id: string;
+  trustName: string;
+  trustType: string;
+  dateEstablished: string;
+  trustees: string[]; // Array of trustee names
+  beneficiaries: Record<string, number>; // { "James Mitchell": 50000, "Sarah Mitchell": 50000 }
+  status: 'Active' | 'Dissolved';
+  notes: string;
+}
+
 export interface Objective {
   id: string;
   title: string;
