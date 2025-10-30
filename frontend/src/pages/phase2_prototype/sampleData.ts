@@ -22,6 +22,35 @@ import {
   OtherClientGroup
 } from './types';
 
+// ============================================================================
+// ASSET CATEGORY ORDERING
+// ============================================================================
+
+// Define the order for asset category subsections
+export const ASSET_CATEGORY_ORDER = [
+  'Cash Accounts',
+  'Fixed Rate Bonds',
+  'NS & I',
+  'Cash ISAs',
+  'LISAs',
+  'S&S ISAs',
+  'Onshore Bonds',
+  'Offshore Bonds',
+  'VCT/EIS/Tax Efficient Products',
+  'Individual Equities',
+  'Pensions',
+  'Other Products',
+  'Other Assets',
+  'Property and Land',
+  'Business Interests'
+];
+
+// Define the order for liability category subsections
+export const LIABILITY_CATEGORY_ORDER = [
+  'Mortgages',
+  'Other Liabilities'
+];
+
 export const samplePeople: Person[] = [
   {
     id: '1',
@@ -425,19 +454,142 @@ export const sampleCapacityToLoss: CapacityToLoss[] = [
 ];
 
 export const sampleAssets: Asset[] = [
+  // Cash Accounts
   {
-    id: '1',
-    type: 'Property',
-    description: 'Primary Residence - Richmond',
-    value: 875000,
+    id: 'cash-1',
+    type: 'Current Account',
+    category: 'Cash Accounts',
+    description: 'Barclays Premier Current Account',
+    value: 12500,
+    owner: 'James Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+  {
+    id: 'cash-2',
+    type: 'Current Account',
+    category: 'Cash Accounts',
+    description: 'HSBC Advance Current Account',
+    value: 8750,
+    owner: 'Sarah Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+  {
+    id: 'cash-3',
+    type: 'Savings Account',
+    category: 'Cash Accounts',
+    description: 'Joint Savings Account - Emergency Fund',
+    value: 45000,
     owner: 'Joint',
     ownershipType: 'joint',
     isProduct: false
   },
   {
-    id: '2',
-    type: 'ISA',
-    description: 'Stocks & Shares ISA',
+    id: 'cash-4',
+    type: 'Savings Account',
+    category: 'Cash Accounts',
+    description: 'Marcus Savings Account',
+    value: 18500,
+    owner: 'Sarah Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+
+  // Fixed Rate Bonds
+  {
+    id: 'frb-1',
+    type: 'Fixed Rate Bond',
+    category: 'Fixed Rate Bonds',
+    description: '5 Year Fixed Rate Bond - Atom Bank',
+    value: 50000,
+    owner: 'James Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+  {
+    id: 'frb-2',
+    type: 'Fixed Rate Bond',
+    category: 'Fixed Rate Bonds',
+    description: '3 Year Fixed Rate Bond - Shawbrook Bank',
+    value: 30000,
+    owner: 'Sarah Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+
+  // NS & I
+  {
+    id: 'nsi-1',
+    type: 'Premium Bonds',
+    category: 'NS & I',
+    description: 'Premium Bonds',
+    value: 50000,
+    owner: 'James Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+  {
+    id: 'nsi-2',
+    type: 'Premium Bonds',
+    category: 'NS & I',
+    description: 'Premium Bonds',
+    value: 35000,
+    owner: 'Sarah Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+  {
+    id: 'nsi-3',
+    type: 'Index-Linked Savings',
+    category: 'NS & I',
+    description: 'Index-Linked Savings Certificates',
+    value: 25000,
+    owner: 'Joint',
+    ownershipType: 'joint',
+    isProduct: false
+  },
+
+  // Cash ISAs
+  {
+    id: 'cisa-1',
+    type: 'Cash ISA',
+    category: 'Cash ISAs',
+    description: 'Nationwide Cash ISA',
+    value: 20000,
+    owner: 'James Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+  {
+    id: 'cisa-2',
+    type: 'Cash ISA',
+    category: 'Cash ISAs',
+    description: 'Coventry Building Society Cash ISA',
+    value: 15000,
+    owner: 'Sarah Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+
+  // LISAs
+  {
+    id: 'lisa-1',
+    type: 'LISA',
+    category: 'LISAs',
+    description: 'Lifetime ISA - Moneybox',
+    value: 12000,
+    owner: 'Emma Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+
+  // S&S ISAs
+  {
+    id: 'sisa-1',
+    type: 'Stocks & Shares ISA',
+    category: 'S&S ISAs',
+    description: 'Vanguard S&S ISA - Global All Cap',
     value: 156000,
     owner: 'James Mitchell',
     ownershipType: 'sole',
@@ -445,9 +597,139 @@ export const sampleAssets: Asset[] = [
     productId: 'prod-123'
   },
   {
-    id: '3',
-    type: 'Pension',
-    description: 'Defined Contribution Pension',
+    id: 'sisa-2',
+    type: 'Stocks & Shares ISA',
+    category: 'S&S ISAs',
+    description: 'Fidelity S&S ISA - Sustainable Portfolio',
+    value: 98500,
+    owner: 'Sarah Mitchell',
+    ownershipType: 'sole',
+    isProduct: true,
+    productId: 'prod-789'
+  },
+  {
+    id: 'sisa-3',
+    type: 'Stocks & Shares ISA',
+    category: 'S&S ISAs',
+    description: 'AJ Bell S&S ISA - Dividend Growth',
+    value: 42000,
+    owner: 'James Mitchell',
+    ownershipType: 'sole',
+    isProduct: true,
+    productId: 'prod-790'
+  },
+
+  // Onshore Bonds
+  {
+    id: 'onb-1',
+    type: 'Investment Bond',
+    category: 'Onshore Bonds',
+    description: 'Prudential Investment Bond',
+    value: 125000,
+    owner: 'James Mitchell',
+    ownershipType: 'sole',
+    isProduct: true,
+    productId: 'prod-345'
+  },
+  {
+    id: 'onb-2',
+    type: 'Investment Bond',
+    category: 'Onshore Bonds',
+    description: 'Aviva Managed Portfolio Bond',
+    value: 85000,
+    owner: 'Sarah Mitchell',
+    ownershipType: 'sole',
+    isProduct: true,
+    productId: 'prod-346'
+  },
+
+  // Offshore Bonds
+  {
+    id: 'offb-1',
+    type: 'Offshore Bond',
+    category: 'Offshore Bonds',
+    description: 'RL360 International Portfolio Bond',
+    value: 175000,
+    owner: 'In Common',
+    ownershipType: 'in-common',
+    ownershipPercentages: {
+      'James Mitchell': 60,
+      'Sarah Mitchell': 40
+    },
+    isProduct: true,
+    productId: 'prod-567'
+  },
+
+  // VCT/EIS/Tax Efficient Products
+  {
+    id: 'vct-1',
+    type: 'VCT',
+    category: 'VCT/EIS/Tax Efficient Products',
+    description: 'Octopus Titan VCT',
+    value: 45000,
+    owner: 'James Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+  {
+    id: 'eis-1',
+    type: 'EIS',
+    category: 'VCT/EIS/Tax Efficient Products',
+    description: 'Pembroke EIS Portfolio',
+    value: 35000,
+    owner: 'Sarah Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+  {
+    id: 'eis-2',
+    type: 'EIS',
+    category: 'VCT/EIS/Tax Efficient Products',
+    description: 'Blackfinch Ventures EIS',
+    value: 28000,
+    owner: 'James Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+
+  // Individual Equities
+  {
+    id: 'eq-1',
+    type: 'Shares',
+    category: 'Individual Equities',
+    description: 'FTSE 100 Share Portfolio',
+    value: 68000,
+    owner: 'James Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+  {
+    id: 'eq-2',
+    type: 'Shares',
+    category: 'Individual Equities',
+    description: 'US Tech Stocks - Direct Holdings',
+    value: 52000,
+    owner: 'Sarah Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+  {
+    id: 'eq-3',
+    type: 'Shares',
+    category: 'Individual Equities',
+    description: 'Inherited Share Portfolio',
+    value: 34500,
+    owner: 'James Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+
+  // Pensions
+  {
+    id: 'pen-1',
+    type: 'SIPP',
+    category: 'Pensions',
+    description: 'AJ Bell SIPP',
     value: 425000,
     owner: 'James Mitchell',
     ownershipType: 'sole',
@@ -455,8 +737,141 @@ export const sampleAssets: Asset[] = [
     productId: 'prod-456'
   },
   {
-    id: '4',
-    type: 'Investment',
+    id: 'pen-2',
+    type: 'Workplace Pension',
+    category: 'Pensions',
+    description: 'Company Defined Contribution Pension',
+    value: 185000,
+    owner: 'James Mitchell',
+    ownershipType: 'sole',
+    isProduct: true,
+    productId: 'prod-457'
+  },
+  {
+    id: 'pen-3',
+    type: 'SIPP',
+    category: 'Pensions',
+    description: 'Hargreaves Lansdown SIPP',
+    value: 245000,
+    owner: 'Sarah Mitchell',
+    ownershipType: 'sole',
+    isProduct: true,
+    productId: 'prod-458'
+  },
+  {
+    id: 'pen-4',
+    type: 'Final Salary Pension',
+    category: 'Pensions',
+    description: 'DB Pension (Transfer Value)',
+    value: 380000,
+    owner: 'James Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+  {
+    id: 'pen-5',
+    type: 'Personal Pension',
+    category: 'Pensions',
+    description: 'Aviva Personal Pension',
+    value: 92000,
+    owner: 'Sarah Mitchell',
+    ownershipType: 'sole',
+    isProduct: true,
+    productId: 'prod-459'
+  },
+
+  // Other Products
+  {
+    id: 'oth-1',
+    type: 'GIA',
+    category: 'Other Products',
+    description: 'General Investment Account - Vanguard',
+    value: 145000,
+    owner: 'Joint',
+    ownershipType: 'joint',
+    isProduct: true,
+    productId: 'prod-678'
+  },
+  {
+    id: 'oth-2',
+    type: 'Unit Trust',
+    category: 'Other Products',
+    description: 'Fundsmith Equity Fund',
+    value: 78000,
+    owner: 'James Mitchell',
+    ownershipType: 'sole',
+    isProduct: true,
+    productId: 'prod-679'
+  },
+  {
+    id: 'oth-3',
+    type: 'OEIC',
+    category: 'Other Products',
+    description: 'Baillie Gifford Global Discovery',
+    value: 56000,
+    owner: 'Sarah Mitchell',
+    ownershipType: 'sole',
+    isProduct: true,
+    productId: 'prod-680'
+  },
+
+  // Other Assets
+  {
+    id: 'oas-1',
+    type: 'Collectibles',
+    category: 'Other Assets',
+    description: 'Art Collection',
+    value: 45000,
+    owner: 'Joint',
+    ownershipType: 'joint',
+    isProduct: false
+  },
+  {
+    id: 'oas-2',
+    type: 'Vehicle',
+    category: 'Other Assets',
+    description: 'BMW 5 Series',
+    value: 38000,
+    owner: 'James Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+  {
+    id: 'oas-3',
+    type: 'Vehicle',
+    category: 'Other Assets',
+    description: 'Audi Q5',
+    value: 32000,
+    owner: 'Sarah Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+  {
+    id: 'oas-4',
+    type: 'Jewelry',
+    category: 'Other Assets',
+    description: 'Jewelry & Watches',
+    value: 28000,
+    owner: 'Joint',
+    ownershipType: 'joint',
+    isProduct: false
+  },
+
+  // Property and Land
+  {
+    id: 'prop-1',
+    type: 'Primary Residence',
+    category: 'Property and Land',
+    description: 'Primary Residence - Richmond',
+    value: 875000,
+    owner: 'Joint',
+    ownershipType: 'joint',
+    isProduct: false
+  },
+  {
+    id: 'prop-2',
+    type: 'Buy-to-Let',
+    category: 'Property and Land',
     description: 'Buy-to-Let Property - Brighton',
     value: 450000,
     owner: 'In Common',
@@ -467,25 +882,395 @@ export const sampleAssets: Asset[] = [
     },
     isProduct: false
   },
+  {
+    id: 'prop-3',
+    type: 'Buy-to-Let',
+    category: 'Property and Land',
+    description: 'Buy-to-Let Apartment - Manchester',
+    value: 235000,
+    owner: 'James Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+  {
+    id: 'prop-4',
+    type: 'Holiday Home',
+    category: 'Property and Land',
+    description: 'Holiday Cottage - Cornwall',
+    value: 385000,
+    owner: 'Joint',
+    ownershipType: 'joint',
+    isProduct: false
+  },
+  {
+    id: 'prop-5',
+    type: 'Land',
+    category: 'Property and Land',
+    description: 'Agricultural Land - Yorkshire (5 acres)',
+    value: 125000,
+    owner: 'James Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+
+  // Business Interests
+  {
+    id: 'bus-1',
+    type: 'Limited Company',
+    category: 'Business Interests',
+    description: 'Mitchell Consulting Ltd (80% shareholding)',
+    value: 450000,
+    owner: 'Sarah Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+  {
+    id: 'bus-2',
+    type: 'Partnership',
+    category: 'Business Interests',
+    description: 'Richmond Business Partners LLP (40% share)',
+    value: 285000,
+    owner: 'James Mitchell',
+    ownershipType: 'sole',
+    isProduct: false
+  },
 ];
 
 export const sampleLiabilities: Liability[] = [
+  // Mortgages
   {
-    id: '1',
-    type: 'Mortgage',
-    description: 'Primary Residence Mortgage',
+    id: 'mort-1',
+    type: 'Residential Mortgage',
+    category: 'Mortgages',
+    description: 'Primary Residence Mortgage - Richmond',
     amount: 185000,
     monthlyPayment: 1250,
     owner: 'Joint',
     ownershipType: 'joint'
   },
   {
-    id: '2',
-    type: 'Loan',
-    description: 'Car Finance',
+    id: 'mort-2',
+    type: 'Buy-to-Let Mortgage',
+    category: 'Mortgages',
+    description: 'BTL Mortgage - Brighton Property',
+    amount: 225000,
+    monthlyPayment: 1050,
+    owner: 'In Common',
+    ownershipType: 'in-common',
+    ownershipPercentages: {
+      'James Mitchell': 60,
+      'Sarah Mitchell': 40
+    }
+  },
+  {
+    id: 'mort-3',
+    type: 'Buy-to-Let Mortgage',
+    category: 'Mortgages',
+    description: 'BTL Mortgage - Manchester Apartment',
+    amount: 118000,
+    monthlyPayment: 625,
+    owner: 'James Mitchell',
+    ownershipType: 'sole'
+  },
+  {
+    id: 'mort-4',
+    type: 'Second Home Mortgage',
+    category: 'Mortgages',
+    description: 'Holiday Cottage Mortgage - Cornwall',
+    amount: 95000,
+    monthlyPayment: 685,
+    owner: 'Joint',
+    ownershipType: 'joint'
+  },
+
+  // Other Liabilities - Car Finance
+  {
+    id: 'car-1',
+    type: 'Car Finance',
+    category: 'Other Liabilities',
+    description: 'BMW 5 Series Finance',
     amount: 15000,
+    monthlyPayment: 425,
+    owner: 'James Mitchell',
+    ownershipType: 'sole'
+  },
+  {
+    id: 'car-2',
+    type: 'Car Finance',
+    category: 'Other Liabilities',
+    description: 'Audi Q5 Finance',
+    amount: 12500,
+    monthlyPayment: 385,
+    owner: 'Sarah Mitchell',
+    ownershipType: 'sole'
+  },
+
+  // Other Liabilities - Personal Loans
+  {
+    id: 'loan-1',
+    type: 'Personal Loan',
+    category: 'Other Liabilities',
+    description: 'Home Improvement Loan',
+    amount: 22000,
+    monthlyPayment: 450,
+    owner: 'Joint',
+    ownershipType: 'joint'
+  },
+  {
+    id: 'loan-2',
+    type: 'Business Loan',
+    category: 'Other Liabilities',
+    description: 'Business Development Loan',
+    amount: 45000,
+    monthlyPayment: 950,
+    owner: 'Sarah Mitchell',
+    ownershipType: 'sole'
+  },
+
+  // Other Liabilities - Credit Cards
+  {
+    id: 'cc-1',
+    type: 'Credit Card',
+    category: 'Other Liabilities',
+    description: 'American Express Platinum',
+    amount: 3500,
     monthlyPayment: 350,
     owner: 'James Mitchell',
+    ownershipType: 'sole'
+  },
+  {
+    id: 'cc-2',
+    type: 'Credit Card',
+    category: 'Other Liabilities',
+    description: 'John Lewis Partnership Card',
+    amount: 2200,
+    monthlyPayment: 220,
+    owner: 'Sarah Mitchell',
+    ownershipType: 'sole'
+  },
+  {
+    id: 'cc-3',
+    type: 'Credit Card',
+    category: 'Other Liabilities',
+    description: 'Joint Barclaycard',
+    amount: 1800,
+    monthlyPayment: 180,
+    owner: 'Joint',
+    ownershipType: 'joint'
+  },
+
+  // Other Liabilities - Director's Loan Account
+  {
+    id: 'dla-1',
+    type: 'Director\'s Loan',
+    category: 'Other Liabilities',
+    description: 'Director\'s Loan Account - Mitchell Consulting Ltd',
+    amount: 18000,
+    monthlyPayment: 0,
+    owner: 'Sarah Mitchell',
+    ownershipType: 'sole'
+  },
+];
+
+// ============================================================================
+// BUSINESS CLIENT GROUP - ASSETS & LIABILITIES
+// ============================================================================
+
+// Business Assets - Mitchell Consulting Ltd
+export const sampleBusinessAssets: Asset[] = [
+  // Cash Accounts
+  {
+    id: 'biz-cash-1',
+    type: 'Business Current Account',
+    category: 'Cash Accounts',
+    description: 'Barclays Business Current Account',
+    value: 85000,
+    owner: 'Mitchell Consulting Ltd',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+  {
+    id: 'biz-cash-2',
+    type: 'Business Savings Account',
+    category: 'Cash Accounts',
+    description: 'Business Reserve Account',
+    value: 42000,
+    owner: 'Mitchell Consulting Ltd',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+
+  // Other Assets
+  {
+    id: 'biz-asset-1',
+    type: 'Equipment',
+    category: 'Other Assets',
+    description: 'Office Equipment & IT Hardware',
+    value: 18500,
+    owner: 'Mitchell Consulting Ltd',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+  {
+    id: 'biz-asset-2',
+    type: 'Furniture & Fixtures',
+    category: 'Other Assets',
+    description: 'Office Furniture & Fixtures',
+    value: 12000,
+    owner: 'Mitchell Consulting Ltd',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+  {
+    id: 'biz-asset-3',
+    type: 'Vehicles',
+    category: 'Other Assets',
+    description: 'Company Vehicle - Mercedes Sprinter Van',
+    value: 28000,
+    owner: 'Mitchell Consulting Ltd',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+  {
+    id: 'biz-asset-4',
+    type: 'Accounts Receivable',
+    category: 'Other Assets',
+    description: 'Outstanding Client Invoices',
+    value: 65000,
+    owner: 'Mitchell Consulting Ltd',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+  {
+    id: 'biz-asset-5',
+    type: 'Inventory',
+    category: 'Other Assets',
+    description: 'Stock & Materials',
+    value: 8500,
+    owner: 'Mitchell Consulting Ltd',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+
+  // Property and Land
+  {
+    id: 'biz-prop-1',
+    type: 'Commercial Property',
+    category: 'Property and Land',
+    description: 'Office Premises - Richmond Business Park',
+    value: 385000,
+    owner: 'Mitchell Consulting Ltd',
+    ownershipType: 'sole',
+    isProduct: false
+  },
+
+  // Business Interests (if the business owns shares in other companies)
+  {
+    id: 'biz-invest-1',
+    type: 'Investment',
+    category: 'Other Products',
+    description: 'Business Investment Account',
+    value: 25000,
+    owner: 'Mitchell Consulting Ltd',
+    ownershipType: 'sole',
+    isProduct: true,
+    productId: 'prod-biz-001'
+  },
+];
+
+// Business Liabilities - Mitchell Consulting Ltd
+export const sampleBusinessLiabilities: Liability[] = [
+  // Mortgages
+  {
+    id: 'biz-mort-1',
+    type: 'Commercial Mortgage',
+    category: 'Mortgages',
+    description: 'Office Premises Mortgage',
+    amount: 195000,
+    monthlyPayment: 1450,
+    owner: 'Mitchell Consulting Ltd',
+    ownershipType: 'sole'
+  },
+
+  // Other Liabilities
+  {
+    id: 'biz-loan-1',
+    type: 'Business Loan',
+    category: 'Other Liabilities',
+    description: 'Business Development Loan',
+    amount: 75000,
+    monthlyPayment: 1250,
+    owner: 'Mitchell Consulting Ltd',
+    ownershipType: 'sole'
+  },
+  {
+    id: 'biz-loan-2',
+    type: 'Equipment Finance',
+    category: 'Other Liabilities',
+    description: 'IT Equipment Finance Agreement',
+    amount: 8500,
+    monthlyPayment: 285,
+    owner: 'Mitchell Consulting Ltd',
+    ownershipType: 'sole'
+  },
+  {
+    id: 'biz-loan-3',
+    type: 'Vehicle Finance',
+    category: 'Other Liabilities',
+    description: 'Company Vehicle Finance',
+    amount: 12000,
+    monthlyPayment: 350,
+    owner: 'Mitchell Consulting Ltd',
+    ownershipType: 'sole'
+  },
+  {
+    id: 'biz-overdraft-1',
+    type: 'Overdraft',
+    category: 'Other Liabilities',
+    description: 'Business Overdraft Facility (utilized)',
+    amount: 15000,
+    monthlyPayment: 0,
+    owner: 'Mitchell Consulting Ltd',
+    ownershipType: 'sole'
+  },
+  {
+    id: 'biz-cc-1',
+    type: 'Business Credit Card',
+    category: 'Other Liabilities',
+    description: 'American Express Business Gold',
+    amount: 4500,
+    monthlyPayment: 450,
+    owner: 'Mitchell Consulting Ltd',
+    ownershipType: 'sole'
+  },
+  {
+    id: 'biz-payable-1',
+    type: 'Accounts Payable',
+    category: 'Other Liabilities',
+    description: 'Outstanding Supplier Invoices',
+    amount: 28000,
+    monthlyPayment: 0,
+    owner: 'Mitchell Consulting Ltd',
+    ownershipType: 'sole'
+  },
+  {
+    id: 'biz-tax-1',
+    type: 'Tax Liability',
+    category: 'Other Liabilities',
+    description: 'Corporation Tax Provision',
+    amount: 32000,
+    monthlyPayment: 0,
+    owner: 'Mitchell Consulting Ltd',
+    ownershipType: 'sole'
+  },
+  {
+    id: 'biz-vat-1',
+    type: 'VAT Liability',
+    category: 'Other Liabilities',
+    description: 'VAT Payable',
+    amount: 18000,
+    monthlyPayment: 0,
+    owner: 'Mitchell Consulting Ltd',
     ownershipType: 'sole'
   },
 ];

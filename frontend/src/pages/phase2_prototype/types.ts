@@ -132,6 +132,7 @@ export interface CapacityToLoss {
 export interface Asset {
   id: string;
   type: string;
+  category: string; // Asset subsection category for grouping (Cash Accounts, Pensions, etc.)
   description: string;
   value: number;
   owner: string;
@@ -144,6 +145,7 @@ export interface Asset {
 export interface Liability {
   id: string;
   type: string;
+  category: string; // Liability subsection category for grouping (Mortgages, Other Liabilities)
   description: string;
   amount: number;
   monthlyPayment: number;

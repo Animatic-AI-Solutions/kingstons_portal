@@ -139,6 +139,7 @@ interface CapacityToLoss {
 interface Asset {
   id: string;
   type: string;
+  category: string; // Asset subsection category for grouping
   description: string;
   value: number;
   owner: string;
@@ -553,6 +554,7 @@ const sampleAssets: Asset[] = [
   {
     id: '1',
     type: 'Property',
+    category: 'Property and Land',
     description: 'Primary Residence - Richmond',
     value: 875000,
     owner: 'Joint',
@@ -562,6 +564,7 @@ const sampleAssets: Asset[] = [
   {
     id: '2',
     type: 'ISA',
+    category: 'S&S ISAs',
     description: 'Stocks & Shares ISA',
     value: 156000,
     owner: 'James Mitchell',
@@ -572,6 +575,7 @@ const sampleAssets: Asset[] = [
   {
     id: '3',
     type: 'Pension',
+    category: 'Pensions',
     description: 'Defined Contribution Pension',
     value: 425000,
     owner: 'James Mitchell',
@@ -582,6 +586,7 @@ const sampleAssets: Asset[] = [
   {
     id: '4',
     type: 'Investment',
+    category: 'Property and Land',
     description: 'Buy-to-Let Property - Brighton',
     value: 450000,
     owner: 'In Common',
@@ -994,6 +999,29 @@ const otherClientGroups: OtherClientGroup[] = [
     ],
     liabilities: []
   }
+];
+
+// ============================================================================
+// ASSET CATEGORY ORDERING
+// ============================================================================
+
+// Define the order for asset category subsections
+const ASSET_CATEGORY_ORDER = [
+  'Cash Accounts',
+  'Fixed Rate Bonds',
+  'NS & I',
+  'Cash ISAs',
+  'LISAs',
+  'S&S ISAs',
+  'Onshore Bonds',
+  'Offshore Bonds',
+  'VCT/EIS/Tax Efficient Products',
+  'Individual Equities',
+  'Pensions',
+  'Other Products',
+  'Other Assets',
+  'Property and Land',
+  'Business Interests'
 ];
 
 // ============================================================================
@@ -2457,25 +2485,14 @@ const ClientGroupPhase2: React.FC = () => {
       return item.ownershipType === 'joint' ? value : 0;
     };
 
-    // Combine assets and liabilities into rows
-    const rows = [
-      // Assets first
-      ...sampleAssets.map(asset => ({
-        id: asset.id,
-        type: 'asset' as const,
-        name: asset.description,
-        item: asset,
-        isTotal: false
-      })),
-      // Liabilities second
-      ...sampleLiabilities.map(liability => ({
-        id: liability.id,
-        type: 'liability' as const,
-        name: liability.description,
-        item: liability,
-        isTotal: false
-      }))
-    ];
+    // Group assets by category in the specified order
+    const groupedAssets = ASSET_CATEGORY_ORDER.reduce((acc, category) => {
+      const categoryAssets = sampleAssets.filter(asset => asset.category === category);
+      if (categoryAssets.length > 0) {
+        acc[category] = categoryAssets;
+      }
+      return acc;
+    }, {} as Record<string, Asset[]>);
 
     // Calculate totals per person (only for displayed people)
     const personTotals = displayedPeople.map(person => {
@@ -2567,35 +2584,67 @@ const ClientGroupPhase2: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {/* Asset Rows */}
-                {sampleAssets.map((asset, index) => (
-                  <tr key={asset.id} className={`hover:bg-gray-50 cursor-pointer ${index === 0 ? 'border-t-2 border-gray-300' : ''}`} onClick={() => handleItemClick(asset)}>
-                    <td className="px-3 py-2 text-base font-medium text-gray-900">
-                      <div className="flex items-center gap-2">
-                        <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
-                        {asset.description}
-                      </div>
-                    </td>
-                    {displayedPeople.map((person) => {
-                      const personName = `${person.forename} ${person.surname}`;
-                      const amount = getPersonOwnership(asset, personName);
-                      return (
-                        <td key={person.id} className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
-                          {amount > 0 ? formatCurrency(amount) : '-'}
+                {/* Asset Subsections - Grouped by Category */}
+                {Object.entries(groupedAssets).map(([category, categoryAssets], categoryIndex) => (
+                  <React.Fragment key={category}>
+                    {/* Subsection Header */}
+                    <tr className={`bg-primary-100 ${categoryIndex === 0 ? 'border-t-2 border-gray-300' : ''}`}>
+                      <td colSpan={displayedPeople.length + 3} className="px-3 py-2 text-sm font-bold text-primary-900 uppercase">
+                        {category}
+                      </td>
+                    </tr>
+
+                    {/* Assets in this category */}
+                    {categoryAssets.map((asset) => (
+                      <tr key={asset.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleItemClick(asset)}>
+                        <td className="px-3 py-2 text-base font-medium text-gray-900">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+                            {asset.description}
+                          </div>
                         </td>
-                      );
-                    })}
-                    <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
-                      {getJointOwnership(asset) > 0 ? formatCurrency(getJointOwnership(asset)) : '-'}
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right font-semibold">
-                      {formatCurrency(asset.value)}
-                    </td>
-                  </tr>
+                        {displayedPeople.map((person) => {
+                          const personName = `${person.forename} ${person.surname}`;
+                          const amount = getPersonOwnership(asset, personName);
+                          return (
+                            <td key={person.id} className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
+                              {amount > 0 ? formatCurrency(amount) : '-'}
+                            </td>
+                          );
+                        })}
+                        <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
+                          {getJointOwnership(asset) > 0 ? formatCurrency(getJointOwnership(asset)) : '-'}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right font-semibold">
+                          {formatCurrency(asset.value)}
+                        </td>
+                      </tr>
+                    ))}
+
+                    {/* Subsection Total Row */}
+                    <tr className="bg-primary-50 font-semibold">
+                      <td className="px-3 py-2 text-sm text-gray-900 italic">Total {category}</td>
+                      {displayedPeople.map((person) => {
+                        const personName = `${person.forename} ${person.surname}`;
+                        const total = categoryAssets.reduce((sum, asset) => sum + getPersonOwnership(asset, personName), 0);
+                        return (
+                          <td key={person.id} className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
+                            {total > 0 ? formatCurrency(total) : '-'}
+                          </td>
+                        );
+                      })}
+                      <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
+                        {formatCurrency(categoryAssets.reduce((sum, asset) => sum + getJointOwnership(asset), 0))}
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right">
+                        {formatCurrency(categoryAssets.reduce((sum, asset) => sum + asset.value, 0))}
+                      </td>
+                    </tr>
+                  </React.Fragment>
                 ))}
 
-                {/* Assets Total Row */}
-                <tr className="bg-green-50 font-bold">
+                {/* Grand Total Assets Row */}
+                <tr className="bg-green-50 font-bold border-t-2 border-gray-400">
                   <td className="px-3 py-2 text-base text-gray-900">Total Assets</td>
                   {displayedPeople.map((person) => {
                     const personName = `${person.forename} ${person.surname}`;
