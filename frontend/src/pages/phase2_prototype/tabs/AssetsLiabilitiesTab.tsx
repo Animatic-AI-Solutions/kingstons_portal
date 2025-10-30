@@ -61,9 +61,16 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
     return item.ownershipType === 'joint' ? value : 0;
   };
 
+  // Identify children in the client group
+  const children = people.filter(person =>
+    ['Son', 'Daughter', 'Child'].some(term => person.relationship.includes(term))
+  );
+
   // Filter people based on selection and sort by client order
+  // Exclude children from main table display
   const displayedPeople = people
     .filter(p => includedPeople.has(p.id))
+    .filter(p => !children.some(child => child.id === p.id))
     .sort((a, b) => {
       const indexA = clientOrder.indexOf(a.id);
       const indexB = clientOrder.indexOf(b.id);
@@ -88,10 +95,28 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
     return false;
   };
 
+  // Helper to check if an asset/liability is owned by any child
+  const isOwnedByChildren = (item: Asset | Liability): boolean => {
+    const childNames = children.map(c => `${c.forename} ${c.surname}`);
+    if (item.ownershipType === 'sole') {
+      return childNames.some(name => item.owner.includes(name));
+    }
+    // For joint/in-common, check if any child has ownership
+    if (item.ownershipPercentages) {
+      return childNames.some(name => (item.ownershipPercentages?.[name] || 0) > 0);
+    }
+    return childNames.some(name => item.owner.includes(name));
+  };
+
   // Filter assets and liabilities to only show those owned by displayed people
   // For business view, show all assets/liabilities (no people-based filtering)
-  const filteredAssets = clientType === 'business' ? currentAssets : currentAssets.filter(isOwnedByDisplayedPeople);
-  const filteredLiabilities = clientType === 'business' ? currentLiabilities : currentLiabilities.filter(isOwnedByDisplayedPeople);
+  // For family view, exclude assets/liabilities owned by children
+  const filteredAssets = clientType === 'business'
+    ? currentAssets
+    : currentAssets.filter(asset => isOwnedByDisplayedPeople(asset) && !isOwnedByChildren(asset));
+  const filteredLiabilities = clientType === 'business'
+    ? currentLiabilities
+    : currentLiabilities.filter(liability => isOwnedByDisplayedPeople(liability) && !isOwnedByChildren(liability));
 
   // Group assets by category in the specified order
   const groupedAssets = ASSET_CATEGORY_ORDER.reduce((acc, category) => {
@@ -144,20 +169,15 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
     return indexA - indexB;
   });
 
-  // Identify children in the client group
-  const children = people.filter(person =>
-    ['Son', 'Daughter', 'Child'].some(term => person.relationship.includes(term))
-  );
-
-  // Filter assets and liabilities owned by children
-  const childrenAssets = filteredAssets.filter(asset => {
+  // Filter assets and liabilities owned by children (from current assets, not filtered assets)
+  const childrenAssets = currentAssets.filter(asset => {
     return children.some(child => {
       const childName = `${child.forename} ${child.surname}`;
       return asset.owner.includes(childName);
     });
   });
 
-  const childrenLiabilities = filteredLiabilities.filter(liability => {
+  const childrenLiabilities = currentLiabilities.filter(liability => {
     return children.some(child => {
       const childName = `${child.forename} ${child.surname}`;
       return liability.owner.includes(childName);
@@ -261,18 +281,18 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-2 py-1 text-left text-xs font-bold text-gray-900 uppercase">Asset / Liability</th>
+                <th className="px-2 py-1 text-left text-xs font-bold text-gray-900 uppercase w-96">Asset / Liability</th>
                 {/* Only show person columns in family mode */}
                 {clientType === 'family' && displayedPeople.map((person) => (
-                  <th key={person.id} className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase">
+                  <th key={person.id} className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase w-32">
                     {person.forename}
                   </th>
                 ))}
                 {/* Only show Joint column if more than one person is displayed and in family mode */}
                 {clientType === 'family' && displayedPeople.length > 1 && (
-                  <th className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase">Joint</th>
+                  <th className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase w-32">Joint</th>
                 )}
-                <th className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase">Total</th>
+                <th className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase w-32">Total</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -494,19 +514,24 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-2 py-1 text-left text-xs font-bold text-gray-900 uppercase">Scheme Name</th>
+                <th className="px-2 py-1 text-left text-xs font-bold text-gray-900 uppercase w-96">Scheme Name</th>
                 {/* Only show person columns in family mode */}
                 {clientType === 'family' && displayedPeople.map((person) => (
-                  <th key={person.id} className="px-2 py-1 text-center text-xs font-bold text-gray-900 uppercase">
+                  <th key={person.id} className="px-2 py-1 text-center text-xs font-bold text-gray-900 uppercase w-32">
                     {person.forename}
                   </th>
                 ))}
+                {/* Add spacer columns for Joint and Total to maintain alignment */}
+                {clientType === 'family' && displayedPeople.length > 1 && (
+                  <th className="px-2 py-1 w-32"></th>
+                )}
+                <th className="px-2 py-1 w-32"></th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {currentDefinedBenefitPensions.length === 0 ? (
                 <tr>
-                  <td colSpan={clientType === 'business' ? 1 : 1 + displayedPeople.length} className="px-2 py-4 text-center text-sm text-gray-500 italic">
+                  <td colSpan={clientType === 'business' ? 1 : displayedPeople.length + (displayedPeople.length > 1 ? 3 : 2)} className="px-2 py-4 text-center text-sm text-gray-500 italic">
                     No defined benefit or hybrid pensions recorded
                   </td>
                 </tr>
@@ -528,6 +553,11 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
                         </td>
                       );
                     })}
+                    {/* Add spacer cells for Joint and Total columns */}
+                    {clientType === 'family' && displayedPeople.length > 1 && (
+                      <td className="px-2 py-1"></td>
+                    )}
+                    <td className="px-2 py-1"></td>
                   </tr>
                 ))
               )}
@@ -546,13 +576,13 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-2 py-1 text-left text-xs font-bold text-gray-900 uppercase">Asset / Liability</th>
+                  <th className="px-2 py-1 text-left text-xs font-bold text-gray-900 uppercase w-96">Asset / Liability</th>
                   {children.map((child) => (
-                    <th key={child.id} className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase">
+                    <th key={child.id} className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase w-32">
                       {child.forename}
                     </th>
                   ))}
-                  <th className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase">Total</th>
+                  <th className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase w-32">Total</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -656,20 +686,23 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-2 py-1 text-left text-xs font-bold text-gray-900 uppercase">Trust Name</th>
+                <th className="px-2 py-1 text-left text-xs font-bold text-gray-900 uppercase w-96">Trust Name</th>
                 {/* Only show person columns in family mode */}
                 {clientType === 'family' && displayedPeople.map((person) => (
-                  <th key={person.id} className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase">
+                  <th key={person.id} className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase w-32">
                     {person.forename}
                   </th>
                 ))}
-                <th className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase">Total</th>
+                {clientType === 'family' && displayedPeople.length > 1 && (
+                  <th className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase w-32">Joint</th>
+                )}
+                <th className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase w-32">Total</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {currentTrusteeships.length === 0 ? (
                 <tr>
-                  <td colSpan={clientType === 'business' ? 2 : 2 + displayedPeople.length} className="px-2 py-4 text-center text-sm text-gray-500 italic">
+                  <td colSpan={clientType === 'business' ? 2 : displayedPeople.length + (displayedPeople.length > 1 ? 3 : 2)} className="px-2 py-4 text-center text-sm text-gray-500 italic">
                     No trusteeships recorded
                   </td>
                 </tr>
@@ -691,6 +724,9 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
                           </td>
                         );
                       })}
+                      {clientType === 'family' && displayedPeople.length > 1 && (
+                        <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
+                      )}
                       <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
                         {formatMoney(totalValue)}
                       </td>
