@@ -519,6 +519,11 @@ const ClientGroupPhase2 = () => {
         capitalizedLabel = 'Condition';
       }
 
+      // For professional special relationships, change "Dependency" to "Relationship With"
+      if (key === 'dependency' && 'firmName' in selectedItem) {
+        capitalizedLabel = 'Relationship With';
+      }
+
       // Special handling for Objective status dropdown
       if (key === 'status' && isObjective) {
         return (

@@ -93,7 +93,7 @@ const RiskAssessmentsSection: React.FC<RiskAssessmentsSectionProps> = ({
                   <span className={`px-2 py-1 rounded-full text-sm font-medium ${
                     assessment.status === 'Lapsed'
                       ? 'bg-gray-200 text-gray-900'
-                      : assessment.assessmentType === 'Finemetrica'
+                      : assessment.assessmentType === 'FinaMetrica'
                       ? 'bg-purple-100 text-purple-800'
                       : 'bg-blue-100 text-blue-800'
                   }`}>
@@ -104,7 +104,7 @@ const RiskAssessmentsSection: React.FC<RiskAssessmentsSectionProps> = ({
                   {assessment.rawResult ? `${assessment.rawResult}/100` : '-'}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">
-                  {assessment.assessmentType === 'Finemetrica'
+                  {assessment.assessmentType === 'FinaMetrica'
                     ? `${assessment.riskScore}/7`
                     : `${assessment.manualRiskScore}/7`
                   }
@@ -113,7 +113,7 @@ const RiskAssessmentsSection: React.FC<RiskAssessmentsSectionProps> = ({
                   <span className={`px-2 py-1 rounded-full text-sm font-medium ${
                     assessment.status === 'Lapsed'
                       ? 'bg-gray-200 text-gray-900'
-                      : assessment.assessmentType === 'Finemetrica'
+                      : assessment.assessmentType === 'FinaMetrica'
                       ? (assessment.riskScore && assessment.riskScore <= 3
                           ? 'bg-green-100 text-green-800'
                           : assessment.riskScore && assessment.riskScore <= 5
@@ -125,7 +125,7 @@ const RiskAssessmentsSection: React.FC<RiskAssessmentsSectionProps> = ({
                           ? 'bg-blue-100 text-blue-800'
                           : 'bg-orange-100 text-orange-800')
                   }`}>
-                    {assessment.assessmentType === 'Finemetrica'
+                    {assessment.assessmentType === 'FinaMetrica'
                       ? getRiskGroupLabel(assessment.riskScore || 0)
                       : getRiskGroupLabel(assessment.manualRiskScore || 0)
                     }

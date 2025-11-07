@@ -47,17 +47,19 @@ export interface SpecialRelationship {
   id: string;
   type: 'professional' | 'personal'; // Type of special relationship
   name: string;
-  dateOfBirth: string;
+  dateOfBirth?: string; // For personal relationships only
   age?: number; // For personal relationships
   relationship: string;
   // Personal relationship fields
   isDependency?: boolean; // For personal relationships - yes/no
   associatedPerson?: string[]; // For personal relationships - which people in client group
+  contactDetails?: string; // For personal relationships
   // Professional relationship fields
   dependency?: string[]; // For professional relationships - Array of person names in the client group
   firmName?: string; // Only for professional relationships
+  phoneNumber?: string; // For professional relationships
+  email?: string; // For professional relationships
   address?: string; // Address for the special relationship
-  contactDetails: string;
   status: 'Active' | 'Lapsed' | 'Deceased';
   notes: string;
 }
@@ -109,10 +111,10 @@ export interface Document {
 export interface RiskAssessment {
   id: string;
   personName: string;
-  assessmentType: 'Finemetrica' | 'Manual';
+  assessmentType: 'FinaMetrica' | 'Manual';
   status: 'Current' | 'Lapsed';
   rawResult?: number; // Raw result out of 100
-  // Finemetrica fields
+  // FinaMetrica fields
   riskScore?: number; // 1-7
   riskGroup?: string;
   // Manual fields
@@ -172,7 +174,6 @@ export interface Expenditure {
   description: string;
   amount: number;
   frequency: string;
-  essential: boolean;
 }
 
 export interface Product {

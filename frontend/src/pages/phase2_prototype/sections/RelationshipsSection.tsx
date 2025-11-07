@@ -72,18 +72,28 @@ const RelationshipsSection: React.FC<RelationshipsSectionProps> = ({
           <thead className="bg-gray-50">
             <tr>
               <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Name</th>
-              <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Date of Birth</th>
               {activeRelationshipTab === 'personal' && (
-                <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Age</th>
+                <>
+                  <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Date of Birth</th>
+                  <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Age</th>
+                </>
               )}
               <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Relationship</th>
               {activeRelationshipTab === 'personal' && (
                 <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Dependency</th>
               )}
-              <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Associated Person(s)</th>
-              <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Contact Details</th>
+              <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">
+                {activeRelationshipTab === 'professional' ? 'Relationship With' : 'Associated Person(s)'}
+              </th>
+              {activeRelationshipTab === 'personal' && (
+                <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Contact Details</th>
+              )}
               {activeRelationshipTab === 'professional' && (
-                <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Firm Name</th>
+                <>
+                  <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Phone Number</th>
+                  <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Email</th>
+                  <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Firm Name</th>
+                </>
               )}
               <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Status</th>
               <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">Actions</th>
@@ -103,9 +113,11 @@ const RelationshipsSection: React.FC<RelationshipsSectionProps> = ({
                   onClick={() => onRelationshipClick(rel)}
                 >
                   <td className="px-3 py-2 whitespace-nowrap text-base font-medium text-gray-900">{rel.name}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">{rel.dateOfBirth}</td>
                   {activeRelationshipTab === 'personal' && (
-                    <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">{rel.age || '-'}</td>
+                    <>
+                      <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">{rel.dateOfBirth}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">{rel.age || '-'}</td>
+                    </>
                   )}
                   <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">
                     <span className={`px-2 py-1 rounded-full text-sm font-medium ${
@@ -144,11 +156,17 @@ const RelationshipsSection: React.FC<RelationshipsSectionProps> = ({
                       ) : '-'
                     )}
                   </td>
-                  <td className="px-3 py-2 text-base text-gray-900">{rel.contactDetails}</td>
+                  {activeRelationshipTab === 'personal' && (
+                    <td className="px-3 py-2 text-base text-gray-900">{rel.contactDetails || '-'}</td>
+                  )}
                   {activeRelationshipTab === 'professional' && (
-                    <td className="px-3 py-2 text-base text-gray-900">
-                      <span className="font-medium text-gray-900">{rel.firmName}</span>
-                    </td>
+                    <>
+                      <td className="px-3 py-2 text-base text-gray-900">{rel.phoneNumber || '-'}</td>
+                      <td className="px-3 py-2 text-base text-gray-900">{rel.email || '-'}</td>
+                      <td className="px-3 py-2 text-base text-gray-900">
+                        <span className="font-medium text-gray-900">{rel.firmName || '-'}</span>
+                      </td>
+                    </>
                   )}
                   <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">
                     <span className={`px-2 py-1 rounded-full text-sm font-medium ${

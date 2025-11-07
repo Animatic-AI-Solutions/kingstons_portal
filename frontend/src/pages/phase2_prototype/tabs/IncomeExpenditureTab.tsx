@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
+import { ChevronRightIcon, ChevronDownIcon, PencilSquareIcon, XMarkIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { formatMoney } from '../../../utils/formatMoney';
 import { Income, Expenditure } from '../types';
 
@@ -19,6 +19,12 @@ const IncomeExpenditureTab: React.FC<IncomeExpenditureTabProps> = ({
   // Track which expenditure categories are expanded
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
+  // Track bulk edit modal
+  const [isBulkEditOpen, setIsBulkEditOpen] = useState(false);
+  const [bulkIncomeAmounts, setBulkIncomeAmounts] = useState<Record<string, number>>({});
+  const [bulkExpenditureAmounts, setBulkExpenditureAmounts] = useState<Record<string, number>>({});
+  const [searchTerm, setSearchTerm] = useState('');
+
   // Toggle category expansion
   const toggleCategory = (category: string) => {
     const newExpanded = new Set(expandedCategories);
@@ -28,6 +34,64 @@ const IncomeExpenditureTab: React.FC<IncomeExpenditureTabProps> = ({
       newExpanded.add(category);
     }
     setExpandedCategories(newExpanded);
+  };
+
+  // Open bulk edit modal and initialize amounts
+  const openBulkEdit = () => {
+    const incomeAmounts: Record<string, number> = {};
+    income.forEach(inc => {
+      incomeAmounts[inc.id] = inc.amount;
+    });
+
+    const expenditureAmounts: Record<string, number> = {};
+    expenditure.forEach(exp => {
+      expenditureAmounts[exp.id] = exp.amount;
+    });
+
+    setBulkIncomeAmounts(incomeAmounts);
+    setBulkExpenditureAmounts(expenditureAmounts);
+    setSearchTerm('');
+    setIsBulkEditOpen(true);
+  };
+
+  // Filter income based on search term
+  const filteredIncome = income.filter(inc => {
+    if (!searchTerm) return true;
+    const search = searchTerm.toLowerCase();
+    return (
+      inc.source.toLowerCase().includes(search) ||
+      inc.type.toLowerCase().includes(search) ||
+      inc.owner.toLowerCase().includes(search)
+    );
+  });
+
+  // Filter expenditure based on search term
+  const filteredExpenditure = expenditure.filter(exp => {
+    if (!searchTerm) return true;
+    const search = searchTerm.toLowerCase();
+    return (
+      exp.description.toLowerCase().includes(search) ||
+      exp.type.toLowerCase().includes(search)
+    );
+  });
+
+  // Update amount for income item
+  const updateIncomeAmount = (id: string, value: string) => {
+    const numValue = parseFloat(value) || 0;
+    setBulkIncomeAmounts(prev => ({ ...prev, [id]: numValue }));
+  };
+
+  // Update amount for expenditure item
+  const updateExpenditureAmount = (id: string, value: string) => {
+    const numValue = parseFloat(value) || 0;
+    setBulkExpenditureAmounts(prev => ({ ...prev, [id]: numValue }));
+  };
+
+  // Save bulk edit changes
+  const saveBulkEdit = () => {
+    console.log('Saving bulk edit:', { bulkIncomeAmounts, bulkExpenditureAmounts });
+    // TODO: Implement save logic
+    setIsBulkEditOpen(false);
   };
 
   // Group expenditure by category and calculate totals
@@ -69,6 +133,17 @@ const IncomeExpenditureTab: React.FC<IncomeExpenditureTabProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Bulk Edit Button */}
+      <div className="flex justify-end">
+        <button
+          onClick={openBulkEdit}
+          className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-base font-medium rounded-md hover:bg-primary-700 transition-colors"
+        >
+          <PencilSquareIcon className="w-5 h-5" />
+          Bulk Edit Amounts
+        </button>
+      </div>
+
       {/* Income Section */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="px-3 py-2 bg-gray-50 border-b">
@@ -125,7 +200,6 @@ const IncomeExpenditureTab: React.FC<IncomeExpenditureTabProps> = ({
               <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">Category</th>
               <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">Description</th>
               <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">Frequency</th>
-              <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">Essential</th>
               <th className="px-3 py-2 text-right text-sm font-bold text-gray-900 uppercase">Amount</th>
               <th className="px-3 py-2"></th>
             </tr>
@@ -158,7 +232,6 @@ const IncomeExpenditureTab: React.FC<IncomeExpenditureTabProps> = ({
                       {categoryData.items.length} item{categoryData.items.length !== 1 ? 's' : ''}
                     </td>
                     <td className="px-3 py-2"></td>
-                    <td className="px-3 py-2"></td>
                     <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right font-bold">
                       {formatMoney(categoryData.total)} <span className="text-sm text-gray-600">/ year</span>
                     </td>
@@ -180,15 +253,6 @@ const IncomeExpenditureTab: React.FC<IncomeExpenditureTabProps> = ({
                       </td>
                       <td className="px-3 py-2 text-base font-medium text-gray-900">{exp.description}</td>
                       <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">{exp.frequency}</td>
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        <span className={`px-2 py-1 rounded-full text-sm font-medium ${
-                          exp.essential
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-gray-100 text-gray-900'
-                        }`}>
-                          {exp.essential ? 'Yes' : 'No'}
-                        </span>
-                      </td>
                       <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900 text-right font-semibold">
                         {formatMoney(exp.amount)} <span className="text-sm text-gray-600">/ {exp.frequency.toLowerCase()}</span>
                       </td>
@@ -213,6 +277,131 @@ const IncomeExpenditureTab: React.FC<IncomeExpenditureTabProps> = ({
           </tbody>
         </table>
       </div>
+
+      {/* Bulk Edit Modal */}
+      {isBulkEditOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">Bulk Edit Income & Expenditure Amounts</h2>
+                <button
+                  onClick={() => setIsBulkEditOpen(false)}
+                  className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
+                >
+                  <XMarkIcon className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Search Input */}
+              <div className="relative">
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search income or expenditure items..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* Income Section */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                  Income {searchTerm && <span className="text-sm font-normal text-gray-600">({filteredIncome.length} of {income.length})</span>}
+                </h3>
+                {filteredIncome.length > 0 ? (
+                  <div className="space-y-3">
+                    {filteredIncome.map((inc) => (
+                      <div key={inc.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900">{inc.source}</div>
+                          <div className="text-sm text-gray-600">{inc.type} • {inc.owner}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-600">{inc.frequency}:</span>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">£</span>
+                            <input
+                              type="number"
+                              value={bulkIncomeAmounts[inc.id] || 0}
+                              onChange={(e) => updateIncomeAmount(inc.id, e.target.value)}
+                              className="w-32 pl-7 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                              step="0.01"
+                              min="0"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-gray-500 text-sm">
+                    No income items match your search
+                  </div>
+                )}
+              </div>
+
+              {/* Expenditure Section */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                  Expenditure {searchTerm && <span className="text-sm font-normal text-gray-600">({filteredExpenditure.length} of {expenditure.length})</span>}
+                </h3>
+                {filteredExpenditure.length > 0 ? (
+                  <div className="space-y-3">
+                    {filteredExpenditure.map((exp) => (
+                      <div key={exp.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900">{exp.description}</div>
+                          <div className="text-sm text-gray-600">{exp.type}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-600">{exp.frequency}:</span>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">£</span>
+                            <input
+                              type="number"
+                              value={bulkExpenditureAmounts[exp.id] || 0}
+                              onChange={(e) => updateExpenditureAmount(exp.id, e.target.value)}
+                              className="w-32 pl-7 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                              step="0.01"
+                              min="0"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-gray-500 text-sm">
+                    No expenditure items match your search
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-3">
+              <button
+                onClick={() => setIsBulkEditOpen(false)}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveBulkEdit}
+                className="px-4 py-2 text-white bg-primary-600 rounded-md hover:bg-primary-700 transition-colors"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
