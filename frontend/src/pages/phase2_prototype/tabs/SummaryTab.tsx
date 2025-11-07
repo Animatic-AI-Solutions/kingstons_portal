@@ -59,7 +59,8 @@ const SummaryTab: React.FC<SummaryTabProps> = ({
                 <div className="mb-4">
                   <h5 className="text-base font-semibold text-gray-900 uppercase mb-2">Personal Details</h5>
                   <div className="space-y-2">
-                    <div className="grid grid-cols-2 gap-x-3 text-base">
+                    {/* Section 1: Basic Info */}
+                    <div className="grid grid-cols-2 gap-x-3 text-base pb-3 border-b border-gray-200">
                       <div className="space-y-1">
                         <div>
                           <span className="font-bold text-blue-600">Gender: </span>
@@ -72,18 +73,6 @@ const SummaryTab: React.FC<SummaryTabProps> = ({
                         <div>
                           <span className="font-bold text-blue-600">Age: </span>
                           <span className="font-medium text-gray-900">{person.age}</span>
-                        </div>
-                        <div className="pt-2">
-                          <p className="text-base font-bold text-blue-600 mb-0.5">Address</p>
-                          <div className="text-base font-medium text-gray-900 leading-relaxed">
-                            {person.addressLine1 && <div>{person.addressLine1}</div>}
-                            {person.addressLine2 && <div>{person.addressLine2}</div>}
-                            {person.addressLine3 && <div>{person.addressLine3}</div>}
-                            {person.addressLine4 && <div>{person.addressLine4}</div>}
-                            {person.addressLine5 && <div>{person.addressLine5}</div>}
-                            {person.postcode && <div>{person.postcode}</div>}
-                          </div>
-                          <p className="text-base text-gray-900 mt-1"><span className="font-bold text-blue-600">Moved in:</span> {person.dateMovedIn}</p>
                         </div>
                       </div>
                       <div className="space-y-1">
@@ -99,21 +88,39 @@ const SummaryTab: React.FC<SummaryTabProps> = ({
                           <span className="font-bold text-blue-600">Place of Birth: </span>
                           <span className="font-medium text-gray-900">{person.placeOfBirth}</span>
                         </div>
-                        <div className="pt-2 space-y-1">
+                      </div>
+                    </div>
+
+                    {/* Section 2: Address & Contact Details */}
+                    <div className="grid grid-cols-2 gap-x-3 text-base pt-3 pb-3 border-b border-gray-200">
+                      <div>
+                        <p className="text-base font-bold text-blue-600 mb-0.5">Address</p>
+                        <div className="text-base font-medium text-gray-900 leading-relaxed">
+                          {person.addressLine1 && <div>{person.addressLine1}</div>}
+                          {person.addressLine2 && <div>{person.addressLine2}</div>}
+                          {person.addressLine3 && <div>{person.addressLine3}</div>}
+                          {person.addressLine4 && <div>{person.addressLine4}</div>}
+                          {person.addressLine5 && <div>{person.addressLine5}</div>}
+                          {person.postcode && <div>{person.postcode}</div>}
+                        </div>
+                        <p className="text-base text-gray-900 mt-1"><span className="font-bold text-blue-600">Moved in:</span> {person.dateMovedIn}</p>
+                      </div>
+                      <div>
+                        <div className="space-y-1">
                           <div>
-                            <span className="font-bold text-blue-600">Primary Email: </span>
+                            <span className="font-bold text-blue-600">Email 1: </span>
                             <span className="font-medium text-gray-900">{person.primaryEmail}</span>
                           </div>
                           <div>
-                            <span className="font-bold text-blue-600">Secondary Email: </span>
+                            <span className="font-bold text-blue-600">Email 2: </span>
                             <span className="font-medium text-gray-900">{person.secondaryEmail}</span>
                           </div>
                           <div>
-                            <span className="font-bold text-blue-600">Primary Phone: </span>
+                            <span className="font-bold text-blue-600">Phone 1: </span>
                             <span className="font-medium text-gray-900">{person.primaryPhone}</span>
                           </div>
                           <div>
-                            <span className="font-bold text-blue-600">Secondary Phone: </span>
+                            <span className="font-bold text-blue-600">Phone 2: </span>
                             <span className="font-medium text-gray-900">{person.secondaryPhone}</span>
                           </div>
                         </div>
@@ -130,6 +137,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({
                       </div>
                     </div>
 
+                    {/* Section 3: Employment & Documents */}
                     <div className="grid grid-cols-2 gap-x-3 text-base pt-3">
                       <div className="space-y-1">
                         <div>

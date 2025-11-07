@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRightIcon, ChevronUpIcon, ChevronDownIcon, PlusIcon, TrashIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { ChevronRightIcon, ChevronUpIcon, ChevronDownIcon, PlusIcon, TrashIcon, XCircleIcon, ArrowPathIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { Objective, Action } from '../types';
 
 interface ObjectivesTabProps {
@@ -9,7 +9,7 @@ interface ObjectivesTabProps {
   onActionClick: (action: Action) => void;
 }
 
-type ObjectiveSortField = 'title' | 'targetDate' | 'priority' | 'status';
+type ObjectiveSortField = 'title' | 'targetDate' | 'focus' | 'status';
 type ActionSortField = 'title' | 'assignedTo' | 'dueDate' | 'priority' | 'status';
 type SortDirection = 'asc' | 'desc';
 
@@ -19,13 +19,16 @@ const ObjectivesTab: React.FC<ObjectivesTabProps> = ({
   onObjectiveClick,
   onActionClick
 }) => {
-  // Sort state for objectives (default: priority)
-  const [objectiveSortField, setObjectiveSortField] = useState<ObjectiveSortField>('priority');
+  // Sort state for objectives (default: focus)
+  const [objectiveSortField, setObjectiveSortField] = useState<ObjectiveSortField>('focus');
   const [objectiveSortDirection, setObjectiveSortDirection] = useState<SortDirection>('asc');
 
   // Sort state for actions (default: assignedTo)
   const [actionSortField, setActionSortField] = useState<ActionSortField>('assignedTo');
   const [actionSortDirection, setActionSortDirection] = useState<SortDirection>('asc');
+
+  // Focus ordering for sorting
+  const focusOrder = { 'Current': 1, 'Ongoing': 2, 'Future': 3 };
 
   // Priority ordering for sorting
   const priorityOrder = { 'High': 1, 'Medium': 2, 'Low': 3 };
@@ -68,6 +71,18 @@ const ObjectivesTab: React.FC<ObjectivesTabProps> = ({
     // TODO: Implement lapse logic
   };
 
+  // Handle complete objective
+  const handleCompleteObjective = (objective: Objective) => {
+    console.log('Complete objective:', objective);
+    // TODO: Implement complete logic - set status to 'Completed'
+  };
+
+  // Handle reactivate objective
+  const handleReactivateObjective = (objective: Objective) => {
+    console.log('Reactivate objective:', objective);
+    // TODO: Implement reactivate logic - set status to 'Not Started'
+  };
+
   // Handle delete objective
   const handleDeleteObjective = (objective: Objective) => {
     console.log('Delete objective:', objective);
@@ -80,6 +95,18 @@ const ObjectivesTab: React.FC<ObjectivesTabProps> = ({
     // TODO: Implement lapse logic
   };
 
+  // Handle complete action
+  const handleCompleteAction = (action: Action) => {
+    console.log('Complete action:', action);
+    // TODO: Implement complete logic - set status to 'Completed'
+  };
+
+  // Handle reactivate action
+  const handleReactivateAction = (action: Action) => {
+    console.log('Reactivate action:', action);
+    // TODO: Implement reactivate logic - set status to 'Pending'
+  };
+
   // Handle delete action
   const handleDeleteAction = (action: Action) => {
     console.log('Delete action:', action);
@@ -87,11 +114,13 @@ const ObjectivesTab: React.FC<ObjectivesTabProps> = ({
   };
 
   // Sort objectives based on current sort field and direction
-  // Always keep Completed objectives at the bottom
+  // Always keep Completed and No Longer Applicable objectives at the bottom
   const sortedObjectives = [...objectives].sort((a, b) => {
-    // First, separate by status - Completed always goes to bottom
-    if (a.status === 'Completed' && b.status !== 'Completed') return 1;
-    if (a.status !== 'Completed' && b.status === 'Completed') return -1;
+    // First, separate by status - Completed and No Longer Applicable go to bottom
+    const aIsInactive = a.status === 'Completed' || a.status === 'No Longer Applicable';
+    const bIsInactive = b.status === 'Completed' || b.status === 'No Longer Applicable';
+    if (aIsInactive && !bIsInactive) return 1;
+    if (!aIsInactive && bIsInactive) return -1;
 
     // If both have same completion status, sort by selected field
     let comparison = 0;
@@ -103,8 +132,8 @@ const ObjectivesTab: React.FC<ObjectivesTabProps> = ({
       case 'targetDate':
         comparison = a.targetDate.localeCompare(b.targetDate);
         break;
-      case 'priority':
-        comparison = priorityOrder[a.priority] - priorityOrder[b.priority];
+      case 'focus':
+        comparison = focusOrder[a.focus] - focusOrder[b.focus];
         break;
       case 'status':
         comparison = a.status.localeCompare(b.status);
@@ -115,11 +144,13 @@ const ObjectivesTab: React.FC<ObjectivesTabProps> = ({
   });
 
   // Sort actions based on current sort field and direction
-  // Always keep Completed actions at the bottom
+  // Always keep Completed and Lapsed actions at the bottom
   const sortedActions = [...actions].sort((a, b) => {
-    // First, separate by status - Completed always goes to bottom
-    if (a.status === 'Completed' && b.status !== 'Completed') return 1;
-    if (a.status !== 'Completed' && b.status === 'Completed') return -1;
+    // First, separate by status - Completed and Lapsed go to bottom
+    const aIsInactive = a.status === 'Completed' || a.status === 'Lapsed';
+    const bIsInactive = b.status === 'Completed' || b.status === 'Lapsed';
+    if (aIsInactive && !bIsInactive) return 1;
+    if (!aIsInactive && bIsInactive) return -1;
 
     // If both have same completion status, sort by selected field
     let comparison = 0;
@@ -210,11 +241,11 @@ const ObjectivesTab: React.FC<ObjectivesTabProps> = ({
               </th>
               <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">
                 <button
-                  onClick={() => handleObjectiveSort('priority')}
+                  onClick={() => handleObjectiveSort('focus')}
                   className="flex items-center gap-1 hover:text-gray-700 transition-colors"
                 >
-                  Priority
-                  {renderObjectiveSortIcon('priority')}
+                  Focus
+                  {renderObjectiveSortIcon('focus')}
                 </button>
               </th>
               <th className="px-3 py-2 text-left text-sm font-bold text-gray-900 uppercase">
@@ -235,7 +266,7 @@ const ObjectivesTab: React.FC<ObjectivesTabProps> = ({
               <tr
                 key={obj.id}
                 className={`hover:bg-gray-50 cursor-pointer transition-colors ${
-                  obj.status === 'Completed' ? 'opacity-60' : ''
+                  obj.status === 'Completed' || obj.status === 'No Longer Applicable' ? 'opacity-60' : ''
                 }`}
                 onClick={() => onObjectiveClick(obj)}
               >
@@ -244,46 +275,89 @@ const ObjectivesTab: React.FC<ObjectivesTabProps> = ({
                 <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">{obj.targetDate}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-base">
                   <span className={`px-2 py-1 rounded-full text-sm font-medium ${
-                    obj.priority === 'High'
+                    obj.focus === 'Current'
                       ? 'bg-red-100 text-red-800'
-                      : obj.priority === 'Medium'
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : 'bg-green-100 text-green-800'
+                      : obj.focus === 'Ongoing'
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-green-100 text-green-800' // Future
                   }`}>
-                    {obj.priority}
+                    {obj.focus}
                   </span>
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-base">
                   <span className={`px-2 py-1 rounded-full text-sm font-medium ${
                     obj.status === 'Completed'
                       ? 'bg-green-100 text-green-800'
-                      : 'bg-blue-100 text-blue-800'
+                      : obj.status === 'In Progress'
+                      ? 'bg-blue-100 text-blue-800'
+                      : obj.status === 'Revised'
+                      ? 'bg-purple-100 text-purple-800'
+                      : obj.status === 'No Longer Applicable'
+                      ? 'bg-gray-300 text-gray-900'
+                      : 'bg-gray-200 text-gray-900' // Not Started
                   }`}>
                     {obj.status}
                   </span>
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-base">
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleLapseObjective(obj);
-                      }}
-                      className="p-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded transition-colors"
-                      title="Lapse"
-                    >
-                      <XCircleIcon className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteObjective(obj);
-                      }}
-                      className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                      title="Delete"
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </button>
+                    {obj.status === 'Completed' || obj.status === 'No Longer Applicable' ? (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleReactivateObjective(obj);
+                          }}
+                          className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                          title="Reactivate"
+                        >
+                          <ArrowPathIcon className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteObjective(obj);
+                          }}
+                          className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                          title="Delete"
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCompleteObjective(obj);
+                          }}
+                          className="p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded transition-colors"
+                          title="Complete"
+                        >
+                          <CheckCircleIcon className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleLapseObjective(obj);
+                          }}
+                          className="p-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded transition-colors"
+                          title="Lapse"
+                        >
+                          <XCircleIcon className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteObjective(obj);
+                          }}
+                          className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                          title="Delete"
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-right text-base">
@@ -367,7 +441,7 @@ const ObjectivesTab: React.FC<ObjectivesTabProps> = ({
               <tr
                 key={action.id}
                 className={`hover:bg-gray-50 cursor-pointer transition-colors ${
-                  action.status === 'Completed' ? 'opacity-60' : ''
+                  action.status === 'Completed' || action.status === 'Lapsed' ? 'opacity-60' : ''
                 }`}
                 onClick={() => onActionClick(action)}
               >
@@ -402,33 +476,74 @@ const ObjectivesTab: React.FC<ObjectivesTabProps> = ({
                       ? 'bg-green-100 text-green-800'
                       : action.status === 'In Progress'
                       ? 'bg-blue-100 text-blue-800'
-                      : 'bg-gray-200 text-gray-900'
+                      : action.status === 'Paused'
+                      ? 'bg-orange-100 text-orange-800'
+                      : action.status === 'Lapsed'
+                      ? 'bg-gray-300 text-gray-900'
+                      : 'bg-gray-200 text-gray-900' // Pending
                   }`}>
                     {action.status}
                   </span>
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-base">
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleLapseAction(action);
-                      }}
-                      className="p-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded transition-colors"
-                      title="Lapse"
-                    >
-                      <XCircleIcon className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteAction(action);
-                      }}
-                      className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                      title="Delete"
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </button>
+                    {action.status === 'Completed' || action.status === 'Lapsed' || action.status === 'Paused' ? (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleReactivateAction(action);
+                          }}
+                          className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                          title="Reactivate"
+                        >
+                          <ArrowPathIcon className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteAction(action);
+                          }}
+                          className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                          title="Delete"
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCompleteAction(action);
+                          }}
+                          className="p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded transition-colors"
+                          title="Complete"
+                        >
+                          <CheckCircleIcon className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleLapseAction(action);
+                          }}
+                          className="p-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded transition-colors"
+                          title="Lapse"
+                        >
+                          <XCircleIcon className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteAction(action);
+                          }}
+                          className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                          title="Delete"
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-right text-base">

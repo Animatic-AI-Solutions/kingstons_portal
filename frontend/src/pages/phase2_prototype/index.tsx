@@ -362,7 +362,7 @@ const ClientGroupPhase2 = () => {
             {/* Contact Section */}
             <div className="pt-1 space-y-2 text-sm">
               <div>
-                <label className="block font-bold text-blue-600 mb-0.5">Primary Email</label>
+                <label className="block font-bold text-blue-600 mb-0.5">Email 1</label>
                 <input
                   type="email"
                   defaultValue={person.primaryEmail}
@@ -370,7 +370,7 @@ const ClientGroupPhase2 = () => {
                 />
               </div>
               <div>
-                <label className="block font-bold text-blue-600 mb-0.5">Secondary Email</label>
+                <label className="block font-bold text-blue-600 mb-0.5">Email 2</label>
                 <input
                   type="email"
                   defaultValue={person.secondaryEmail}
@@ -378,7 +378,7 @@ const ClientGroupPhase2 = () => {
                 />
               </div>
               <div>
-                <label className="block font-bold text-blue-600 mb-0.5">Primary Phone</label>
+                <label className="block font-bold text-blue-600 mb-0.5">Phone 1</label>
                 <input
                   type="tel"
                   defaultValue={person.primaryPhone}
@@ -386,7 +386,7 @@ const ClientGroupPhase2 = () => {
                 />
               </div>
               <div>
-                <label className="block font-bold text-blue-600 mb-0.5">Secondary Phone</label>
+                <label className="block font-bold text-blue-600 mb-0.5">Phone 2</label>
                 <input
                   type="tel"
                   defaultValue={person.secondaryPhone}
@@ -500,6 +500,8 @@ const ClientGroupPhase2 = () => {
 
     const isSpecialRelationship = 'relationship' in selectedItem && 'dateOfBirth' in selectedItem && 'contactDetails' in selectedItem;
     const isProduct = 'coverType' in selectedItem && 'termType' in selectedItem && 'investmentElement' in selectedItem;
+    const isObjective = 'focus' in selectedItem && 'targetDate' in selectedItem && !('assignedTo' in selectedItem);
+    const isAction = 'assignedTo' in selectedItem && 'dueDate' in selectedItem && 'priority' in selectedItem;
     const peopleNames = samplePeople.map(p => `${p.title} ${p.forename} ${p.surname}`.trim());
 
     const handleTextareaResize = (e: React.FormEvent<HTMLTextAreaElement>) => {
@@ -510,7 +512,50 @@ const ClientGroupPhase2 = () => {
 
     const renderFieldInput = (key: string, value: any) => {
       const label = key.replace(/([A-Z])/g, ' $1').trim();
-      const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+      let capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+
+      // For health items, change "Type" to "Condition"
+      if (key === 'type' && 'medication' in selectedItem) {
+        capitalizedLabel = 'Condition';
+      }
+
+      // Special handling for Objective status dropdown
+      if (key === 'status' && isObjective) {
+        return (
+          <div key={key} className="flex items-start py-1.5 px-2 hover:bg-gray-50 border-b border-gray-100">
+            <label className="text-sm font-bold text-gray-900 w-36 flex-shrink-0 pt-0.5">{capitalizedLabel}:</label>
+            <select
+              defaultValue={value}
+              className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+            >
+              <option value="Not Started">Not Started</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+              <option value="Revised">Revised</option>
+              <option value="No Longer Applicable">No Longer Applicable</option>
+            </select>
+          </div>
+        );
+      }
+
+      // Special handling for Action status dropdown
+      if (key === 'status' && isAction) {
+        return (
+          <div key={key} className="flex items-start py-1.5 px-2 hover:bg-gray-50 border-b border-gray-100">
+            <label className="text-sm font-bold text-gray-900 w-36 flex-shrink-0 pt-0.5">{capitalizedLabel}:</label>
+            <select
+              defaultValue={value}
+              className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+            >
+              <option value="Pending">Pending</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+              <option value="Paused">Paused</option>
+              <option value="Lapsed">Lapsed</option>
+            </select>
+          </div>
+        );
+      }
 
       // Special handling for special relationship fields
       if (isSpecialRelationship) {
@@ -823,8 +868,10 @@ const ClientGroupPhase2 = () => {
     if (!selectedItem) return null;
 
     const isPersonDetail = isPerson(selectedItem);
-    const showDeactivateButton = canBeDeactivated(selectedItem);
-    const showReactivateButton = canBeReactivated(selectedItem);
+    const isHealthItem = 'medication' in selectedItem;
+    const isVulnerabilityItem = 'vulnerabilityDescription' in selectedItem;
+    const showDeactivateButton = canBeDeactivated(selectedItem) && !isHealthItem && !isVulnerabilityItem;
+    const showReactivateButton = canBeReactivated(selectedItem) && !isHealthItem && !isVulnerabilityItem;
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">

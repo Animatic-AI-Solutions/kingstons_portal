@@ -221,8 +221,8 @@ export interface Objective {
   title: string;
   description: string;
   targetDate: string;
-  priority: 'High' | 'Medium' | 'Low';
-  status: 'Completed' | 'Not Started';
+  focus: 'Current' | 'Ongoing' | 'Future';
+  status: 'Not Started' | 'In Progress' | 'Completed' | 'Revised' | 'No Longer Applicable';
   notes: string;
 }
 
@@ -232,7 +232,7 @@ export interface Action {
   description: string;
   assignedTo: 'Client' | 'Advisor';
   dueDate: string;
-  status: 'Pending' | 'In Progress' | 'Completed';
+  status: 'Pending' | 'In Progress' | 'Completed' | 'Paused' | 'Lapsed';
   priority: 'High' | 'Medium' | 'Low';
   notes: string;
 }

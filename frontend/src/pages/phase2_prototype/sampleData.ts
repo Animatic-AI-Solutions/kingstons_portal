@@ -1593,8 +1593,8 @@ export const sampleObjectives: Objective[] = [
     title: 'Retirement Planning',
     description: 'Build sufficient pension pot for retirement at age 65',
     targetDate: '2040',
-    priority: 'High',
-    status: 'Not Started',
+    focus: 'Ongoing',
+    status: 'In Progress',
     notes: 'Current projections show on track to meet target. Reviewed contribution levels in March 2024. Consider increasing contributions if salary increases as expected.'
   },
   {
@@ -1602,8 +1602,8 @@ export const sampleObjectives: Objective[] = [
     title: 'University Funding',
     description: 'Fund Emma\'s university education',
     targetDate: '2026',
-    priority: 'High',
-    status: 'Not Started',
+    focus: 'Current',
+    status: 'In Progress',
     notes: 'JISA and savings accounts set up. Currently £45,000 accumulated. Need approximately £60,000 for 3-year course. On track to meet target.'
   },
   {
@@ -1611,7 +1611,7 @@ export const sampleObjectives: Objective[] = [
     title: 'Mortgage Free',
     description: 'Pay off primary residence mortgage',
     targetDate: '2035',
-    priority: 'Medium',
+    focus: 'Future',
     status: 'Not Started',
     notes: 'Standard repayment schedule in place. Consider overpayments when bonuses received. Current outstanding balance £285,000.'
   },
@@ -1620,7 +1620,7 @@ export const sampleObjectives: Objective[] = [
     title: 'Emergency Fund',
     description: 'Build 6 months living expenses emergency fund',
     targetDate: '2023',
-    priority: 'High',
+    focus: 'Current',
     status: 'Completed',
     notes: 'Completed September 2023. £35,000 accumulated in easy access savings account with Marcus by Goldman Sachs. Receiving 5.15% interest.'
   },
@@ -1629,9 +1629,18 @@ export const sampleObjectives: Objective[] = [
     title: 'Maintain Financial Health',
     description: 'Ongoing review and optimization of financial position',
     targetDate: 'N/A',
-    priority: 'Medium',
-    status: 'Not Started',
-    notes: 'Continuous objective without specific target date. Regular reviews scheduled through annual meetings.'
+    focus: 'Ongoing',
+    status: 'Revised',
+    notes: 'Revised approach to focus on pension maximization. Regular reviews scheduled through annual meetings.'
+  },
+  {
+    id: '6',
+    title: 'Buy Holiday Home in France',
+    description: 'Purchase property in southern France for holidays',
+    targetDate: '2025',
+    focus: 'Future',
+    status: 'No Longer Applicable',
+    notes: 'Client decided against this after reassessing priorities in 2024. Funds redirected to pension contributions instead.'
   },
 ];
 
@@ -1672,9 +1681,9 @@ export const sampleActions: Action[] = [
     description: 'Schedule meeting with solicitor to update will following property purchase',
     assignedTo: 'Client',
     dueDate: '2024-12-01',
-    status: 'Pending',
+    status: 'Paused',
     priority: 'Medium',
-    notes: 'New property completion 01/09/2024. Client intends to leave this property to Emma. Solicitor contact: Thompson & Partners.'
+    notes: 'Client requested to postpone until after Christmas period. Will resume in January 2025.'
   },
   {
     id: '5',
@@ -1706,16 +1715,36 @@ export const sampleActions: Action[] = [
     priority: 'Medium',
     notes: 'Received 28/10/2024. Documents filed in client folder. Tax calculations updated to reflect actual income.'
   },
+  {
+    id: '8',
+    title: 'Research buy-to-let property investment',
+    description: 'Investigate buy-to-let opportunities in Manchester area',
+    assignedTo: 'Advisor',
+    dueDate: '2024-09-30',
+    status: 'Lapsed',
+    priority: 'Low',
+    notes: 'Action lapsed as client decided against property investment after discussion of tax implications and maintenance concerns.'
+  },
+  {
+    id: '9',
+    title: 'Review offshore trust structure',
+    description: 'Evaluate offshore trust for estate planning',
+    assignedTo: 'Client',
+    dueDate: '2024-08-15',
+    status: 'Paused',
+    priority: 'Medium',
+    notes: 'Paused pending changes to trust legislation. Will revisit in Q2 2025 after Finance Act updates.'
+  },
 ];
 
 export const assignedMeetings: AssignedMeeting[] = [
   {
     id: 'am1',
     name: 'Review 1',
-    meetingType: 'Review',
+    meetingType: 'Annual Review',
     expectedMonth: 'March',
     status: 'Active',
-    notes: 'Annual portfolio review and financial planning session. Typically covers investment performance, goal progress, and any necessary adjustments to strategy.'
+    notes: ''
   },
   {
     id: 'am2',
@@ -1723,7 +1752,7 @@ export const assignedMeetings: AssignedMeeting[] = [
     meetingType: 'Update',
     expectedMonth: 'September',
     status: 'Active',
-    notes: 'Mid-year check-in to review portfolio performance and address any questions or concerns. Shorter format than annual review.'
+    notes: ''
   },
   {
     id: 'am3',
@@ -1731,7 +1760,7 @@ export const assignedMeetings: AssignedMeeting[] = [
     meetingType: 'Update',
     expectedMonth: 'November',
     status: 'Active',
-    notes: 'End-of-year planning meeting to discuss tax planning opportunities and preparation for next year.'
+    notes: ''
   },
   {
     id: 'am4',
@@ -1739,15 +1768,15 @@ export const assignedMeetings: AssignedMeeting[] = [
     meetingType: 'Update',
     expectedMonth: 'June',
     status: 'Lapsed',
-    notes: 'Previously held mid-year update in June. Discontinued from FY 2025 onwards as client preferred fewer, more comprehensive meetings.'
+    notes: 'Discontinued from FY 2025 onwards as client preferred fewer, more comprehensive meetings.'
   },
   {
     id: 'am5',
-    name: 'Review 2',
-    meetingType: 'Review',
+    name: 'Update 4',
+    meetingType: 'Update',
     expectedMonth: 'October',
     status: 'Lapsed',
-    notes: 'Secondary annual review discontinued after FY 2024. Client found single annual review in March sufficient for their needs.'
+    notes: 'Discontinued after FY 2024. Client preferred streamlined meeting schedule.'
   },
 ];
 
@@ -1762,7 +1791,7 @@ export const meetingInstances: MeetingInstance[] = [
     dateBookedFor: '17/09/2025',
     status: 'Complete',
     dateActuallyHeld: '17/09/2025',
-    notes: 'Completed September update. Reviewed portfolio performance and discussed market outlook. Client expressed satisfaction with returns.'
+    notes: ''
   },
   {
     id: 'mi2',
@@ -1772,7 +1801,7 @@ export const meetingInstances: MeetingInstance[] = [
     year: 2026,
     dateBookedFor: '20/11/2025',
     status: 'Booked',
-    notes: 'Year-end planning session booked for November. Will discuss tax planning and pension contributions before year end.'
+    notes: ''
   },
   // Note: March 2026 Review will auto-populate as "Planned" (am1)
 
@@ -1781,12 +1810,12 @@ export const meetingInstances: MeetingInstance[] = [
     id: 'mi3',
     assignedMeetingId: 'am1',
     name: 'Review 1',
-    meetingType: 'Review',
+    meetingType: 'Annual Review',
     year: 2025,
     dateBookedFor: '12/03/2025',
     status: 'Complete',
     dateActuallyHeld: '12/03/2025',
-    notes: 'Annual review completed. Discussed pension consolidation and increased ISA contributions. Client happy with portfolio performance. Action: Research pension transfer values.'
+    notes: 'Discussed pension consolidation and increased ISA contributions. Action: Research pension transfer values.'
   },
   {
     id: 'mi4',
@@ -1797,7 +1826,7 @@ export const meetingInstances: MeetingInstance[] = [
     dateBookedFor: '15/09/2024',
     status: 'Complete',
     dateActuallyHeld: '15/09/2024',
-    notes: 'Mid-year update completed. Market volatility discussion and rebalancing considerations addressed. Client comfortable with strategy.'
+    notes: ''
   },
   {
     id: 'mi5',
@@ -1808,7 +1837,7 @@ export const meetingInstances: MeetingInstance[] = [
     dateBookedFor: '18/11/2024',
     status: 'Complete',
     dateActuallyHeld: '18/11/2024',
-    notes: 'End of year planning completed. Maximized pension contributions and ISA allowance. Client to provide P60 in April.'
+    notes: ''
   },
 
   // FY 2024 (Aug 2023 - Jul 2024) - All complete (previous year)
@@ -1816,12 +1845,12 @@ export const meetingInstances: MeetingInstance[] = [
     id: 'mi6',
     assignedMeetingId: 'am1',
     name: 'Review 1',
-    meetingType: 'Review',
+    meetingType: 'Annual Review',
     year: 2024,
     dateBookedFor: '10/03/2024',
     status: 'Complete',
     dateActuallyHeld: '15/03/2024',
-    notes: 'Meeting rescheduled due to client illness. Discussed retirement planning and inheritance tax mitigation. Agreed to increase equity allocation by 10%.'
+    notes: 'Meeting rescheduled due to client illness. Agreed to increase equity allocation by 10%.'
   },
   {
     id: 'mi7',
@@ -1832,7 +1861,7 @@ export const meetingInstances: MeetingInstance[] = [
     dateBookedFor: '18/06/2024',
     status: 'Complete',
     dateActuallyHeld: '18/06/2024',
-    notes: 'June update meeting - last one before this meeting type was discontinued. Client feedback led to streamlining meeting schedule.'
+    notes: ''
   },
   {
     id: 'mi8',
@@ -1843,18 +1872,18 @@ export const meetingInstances: MeetingInstance[] = [
     dateBookedFor: '12/09/2023',
     status: 'Complete',
     dateActuallyHeld: '18/09/2023',
-    notes: 'Portfolio rebalancing completed as planned. Discussed upcoming changes to pension allowances. Client expressed concern about market conditions - provided reassurance.'
+    notes: ''
   },
   {
     id: 'mi9',
     assignedMeetingId: 'am5',
-    name: 'Review 2',
-    meetingType: 'Review',
+    name: 'Update 4',
+    meetingType: 'Update',
     year: 2024,
     dateBookedFor: '15/10/2023',
     status: 'Complete',
     dateActuallyHeld: '15/10/2023',
-    notes: 'October review - last instance before discontinuation. Client agreed that single annual review in March would be more efficient.'
+    notes: ''
   },
   {
     id: 'mi10',
@@ -1865,7 +1894,7 @@ export const meetingInstances: MeetingInstance[] = [
     dateBookedFor: '14/11/2023',
     status: 'Complete',
     dateActuallyHeld: '15/11/2023',
-    notes: 'Tax planning session. Reviewed capital gains position and ISA usage. Recommended additional pension contributions before year end. Client to confirm by end of month.'
+    notes: ''
   },
 ];
 
