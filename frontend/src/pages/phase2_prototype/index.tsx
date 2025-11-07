@@ -55,7 +55,7 @@ const ClientGroupPhase2 = () => {
   // Main tabs configuration
   const mainTabs = [
     { id: 'summary', label: 'Summary', icon: UserIcon },
-    { id: 'objectives', label: 'Aims & Objectives', icon: FlagIcon },
+    { id: 'objectives', label: 'Aims & Actions', icon: FlagIcon },
     { id: 'basic', label: 'Basic Details', icon: DocumentTextIcon },
     { id: 'assets', label: 'Assets & Liabilities', icon: CurrencyPoundIcon },
     { id: 'income', label: 'Income & Expenditure', icon: BanknotesIcon },

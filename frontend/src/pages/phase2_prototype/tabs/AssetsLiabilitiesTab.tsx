@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PlusIcon, XMarkIcon, ChevronLeftIcon, ChevronRightIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, XMarkIcon, ChevronLeftIcon, ChevronRightIcon, CheckIcon, Bars3Icon } from '@heroicons/react/24/outline';
 import { formatMoney } from '../../../utils/formatMoney';
 import { Person, Asset, Liability, OtherClientGroup, DefinedBenefitPension, Trusteeship } from '../types';
 import { ASSET_CATEGORY_ORDER, LIABILITY_CATEGORY_ORDER, sampleBusinessAssets, sampleBusinessLiabilities, sampleDefinedBenefitPensions, sampleBusinessDefinedBenefitPensions, sampleTrusteeships, sampleBusinessTrusteeships } from '../sampleData';
@@ -30,6 +30,10 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
 
   // State for client type toggle (Family vs Business)
   const [clientType, setClientType] = useState<'family' | 'business'>('family');
+
+  // State for drag and drop reordering
+  const [draggedItem, setDraggedItem] = useState<{ type: 'asset' | 'liability', item: Asset | Liability, category: string } | null>(null);
+  const [customOrder, setCustomOrder] = useState<Record<string, string[]>>({});
 
   // Use family or business data based on client type
   const currentAssets = clientType === 'family' ? assets : sampleBusinessAssets;
@@ -145,6 +149,74 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
       newIncluded.add(personId);
     }
     setIncludedPeople(newIncluded);
+  };
+
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, type: 'asset' | 'liability', item: Asset | Liability, category: string) => {
+    setDraggedItem({ type, item, category });
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, targetItem: Asset | Liability, category: string) => {
+    e.preventDefault();
+
+    if (!draggedItem || draggedItem.category !== category) {
+      setDraggedItem(null);
+      return;
+    }
+
+    const items = draggedItem.type === 'asset'
+      ? groupedAssets[category] || []
+      : groupedLiabilities[category] || [];
+
+    const draggedIndex = items.findIndex(i => i.id === draggedItem.item.id);
+    const targetIndex = items.findIndex(i => i.id === targetItem.id);
+
+    if (draggedIndex === -1 || targetIndex === -1 || draggedIndex === targetIndex) {
+      setDraggedItem(null);
+      return;
+    }
+
+    // Create new order for this category
+    const newOrder = [...items];
+    const [removed] = newOrder.splice(draggedIndex, 1);
+    newOrder.splice(targetIndex, 0, removed);
+
+    // Update custom order state
+    const categoryKey = `${draggedItem.type}-${category}`;
+    setCustomOrder({
+      ...customOrder,
+      [categoryKey]: newOrder.map(i => i.id)
+    });
+
+    setDraggedItem(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItem(null);
+  };
+
+  // Helper to sort items by custom order
+  const sortByCustomOrder = (items: (Asset | Liability)[], type: 'asset' | 'liability', category: string) => {
+    const categoryKey = `${type}-${category}`;
+    const order = customOrder[categoryKey];
+
+    if (!order) return items;
+
+    return [...items].sort((a, b) => {
+      const indexA = order.indexOf(a.id);
+      const indexB = order.indexOf(b.id);
+
+      if (indexA === -1) return 1;
+      if (indexB === -1) return -1;
+
+      return indexA - indexB;
+    });
   };
 
   // Calculate totals per person (only for displayed people and filtered assets/liabilities)
@@ -307,12 +379,23 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
                   </tr>
 
                   {/* Assets in this category */}
-                  {categoryAssets.map((asset) => (
-                    <tr key={asset.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => onAssetClick(asset)}>
+                  {sortByCustomOrder(categoryAssets, 'asset', category).map((asset) => (
+                    <tr
+                      key={asset.id}
+                      className="hover:bg-gray-50 cursor-move group"
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, 'asset', asset, category)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, asset, category)}
+                      onDragEnd={handleDragEnd}
+                    >
                       <td className="px-2 py-1 text-sm font-medium text-gray-900">
                         <div className="flex items-center gap-1.5">
+                          <Bars3Icon className="w-4 h-4 text-gray-400 group-hover:text-gray-600 cursor-grab active:cursor-grabbing" />
                           <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                          {asset.description}
+                          <span onClick={(e) => { e.stopPropagation(); onAssetClick(asset); }} className="cursor-pointer">
+                            {asset.description}
+                          </span>
                         </div>
                       </td>
                       {/* Only show person columns in family mode */}
@@ -343,7 +426,8 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
                     {/* Only show person columns in family mode */}
                     {clientType === 'family' && displayedPeople.map((person) => {
                       const personName = `${person.forename} ${person.surname}`;
-                      const total = categoryAssets.reduce((sum, asset) => sum + getPersonOwnership(asset, personName), 0);
+                      const orderedAssets = sortByCustomOrder(categoryAssets, 'asset', category);
+                      const total = orderedAssets.reduce((sum, asset) => sum + getPersonOwnership(asset, personName), 0);
                       return (
                         <td key={person.id} className="px-2 py-0.5 whitespace-nowrap text-sm text-gray-900 text-right">
                           {total > 0 ? formatMoney(total) : '-'}
@@ -398,12 +482,23 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
                   </tr>
 
                   {/* Liabilities in this category */}
-                  {categoryLiabilities.map((liability) => (
-                    <tr key={liability.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => onLiabilityClick(liability)}>
+                  {sortByCustomOrder(categoryLiabilities, 'liability', category).map((liability) => (
+                    <tr
+                      key={liability.id}
+                      className="hover:bg-gray-50 cursor-move group"
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, 'liability', liability, category)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, liability, category)}
+                      onDragEnd={handleDragEnd}
+                    >
                       <td className="px-2 py-1 text-sm font-medium text-gray-900">
                         <div className="flex items-center gap-1.5">
+                          <Bars3Icon className="w-4 h-4 text-gray-400 group-hover:text-gray-600 cursor-grab active:cursor-grabbing" />
                           <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                          {liability.description}
+                          <span onClick={(e) => { e.stopPropagation(); onLiabilityClick(liability); }} className="cursor-pointer">
+                            {liability.description}
+                          </span>
                         </div>
                       </td>
                       {/* Only show person columns in family mode */}
@@ -434,7 +529,8 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
                     {/* Only show person columns in family mode */}
                     {clientType === 'family' && displayedPeople.map((person) => {
                       const personName = `${person.forename} ${person.surname}`;
-                      const total = categoryLiabilities.reduce((sum, liability) => sum + getPersonOwnership(liability, personName), 0);
+                      const orderedLiabilities = sortByCustomOrder(categoryLiabilities, 'liability', category);
+                      const total = orderedLiabilities.reduce((sum, liability) => sum + getPersonOwnership(liability, personName), 0);
                       return (
                         <td key={person.id} className="px-2 py-0.5 whitespace-nowrap text-sm text-gray-900 text-right">
                           {total > 0 ? formatMoney(total) : '-'}
@@ -444,11 +540,17 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
                     {/* Only show Joint column if more than one person is displayed and in family mode */}
                     {clientType === 'family' && displayedPeople.length > 1 && (
                       <td className="px-2 py-0.5 whitespace-nowrap text-sm text-gray-900 text-right">
-                        {formatMoney(categoryLiabilities.reduce((sum, liability) => sum + getJointOwnership(liability), 0))}
+                        {(() => {
+                          const orderedLiabilities = sortByCustomOrder(categoryLiabilities, 'liability', category);
+                          return formatMoney(orderedLiabilities.reduce((sum, liability) => sum + getJointOwnership(liability), 0));
+                        })()}
                       </td>
                     )}
                     <td className="px-2 py-0.5 whitespace-nowrap text-sm text-gray-900 text-right">
-                      {formatMoney(categoryLiabilities.reduce((sum, liability) => sum + liability.amount, 0))}
+                      {(() => {
+                        const orderedLiabilities = sortByCustomOrder(categoryLiabilities, 'liability', category);
+                        return formatMoney(orderedLiabilities.reduce((sum, liability) => sum + liability.amount, 0));
+                      })()}
                     </td>
                   </tr>
                 </React.Fragment>

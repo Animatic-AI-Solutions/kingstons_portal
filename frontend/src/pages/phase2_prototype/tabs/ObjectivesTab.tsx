@@ -52,7 +52,7 @@ const ObjectivesTab: React.FC<ObjectivesTabProps> = ({
 
   // Handle adding new objective
   const handleAddObjective = () => {
-    console.log('Add new Aim & Objective');
+    console.log('Add new Aim');
     // TODO: Open modal or form to add new objective
   };
 
@@ -172,17 +172,17 @@ const ObjectivesTab: React.FC<ObjectivesTabProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Aims & Objectives Table */}
+      {/* Aims Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="px-3 py-2 bg-gray-50 border-b">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-semibold">Aims & Objectives</h3>
+            <h3 className="text-xl font-semibold">Aims</h3>
             <button
               onClick={handleAddObjective}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 transition-colors"
             >
               <PlusIcon className="w-4 h-4" />
-              Add Aim & Objective
+              Add Aim
             </button>
           </div>
         </div>
