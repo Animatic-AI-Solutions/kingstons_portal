@@ -358,7 +358,7 @@ export const sampleDocuments: Document[] = [
     id: '1',
     type: 'Will',
     people: ['James Mitchell'],
-    status: 'Active',
+    status: 'Signed',
     date: '15/01/2023',
     notes: 'Updated will following birth of grandchildren. Original held at solicitors office. Copy provided to executor.'
   },
@@ -366,7 +366,7 @@ export const sampleDocuments: Document[] = [
     id: '2',
     type: 'Will',
     people: ['Sarah Mitchell'],
-    status: 'Active',
+    status: 'Signed',
     date: '15/01/2023',
     notes: 'Mirror will to James. Emma appointed as executor with backup executor specified.'
   },
@@ -374,7 +374,7 @@ export const sampleDocuments: Document[] = [
     id: '3',
     type: 'Advance Directive',
     people: ['James Mitchell', 'Sarah Mitchell'],
-    status: 'Active',
+    status: 'Signed',
     date: '15/01/2023',
     notes: 'Both clients have specified healthcare preferences. GP and family members have been notified.'
   },
@@ -382,19 +382,17 @@ export const sampleDocuments: Document[] = [
     id: '4',
     type: 'LPA H&W',
     people: ['James Mitchell', 'Sarah Mitchell'],
-    status: 'Active',
+    status: 'Registered',
     date: '20/03/2023',
-    notes: 'Both James and Sarah have appointed each other as primary attorney with children as replacement attorneys. Documents registered with OPG.',
-    hwLpoaIsActive: true
+    notes: 'Both James and Sarah have appointed each other as primary attorney with children as replacement attorneys. Documents registered with OPG.'
   },
   {
     id: '5',
     type: 'LPA P&F',
     people: ['James Mitchell', 'Sarah Mitchell'],
-    status: 'Active',
+    status: 'Registered',
     date: '20/03/2023',
-    notes: 'Both James and Sarah have appointed each other as primary attorney for property and financial affairs. Documents registered with OPG.',
-    pfLpoaIsActive: true
+    notes: 'Both James and Sarah have appointed each other as primary attorney for property and financial affairs. Documents registered with OPG.'
   },
   {
     id: '6',
@@ -402,8 +400,7 @@ export const sampleDocuments: Document[] = [
     people: ['James Mitchell'],
     status: 'Lapsed',
     date: '18/02/2015',
-    notes: 'Previous EPA superseded by LPA documents in 2023. Retained for records.',
-    epaIsRegistered: true
+    notes: 'Previous EPA superseded by LPA documents in 2023. Retained for records.'
   },
   {
     id: '7',
@@ -412,6 +409,23 @@ export const sampleDocuments: Document[] = [
     status: 'Lapsed',
     date: '10/05/2020',
     notes: 'Previous will superseded by 2023 version. Retained for records.'
+  },
+  {
+    id: '8',
+    type: 'General Power of Attorney',
+    people: ['Sarah Mitchell'],
+    status: 'Signed',
+    date: '05/06/2024',
+    notes: 'Temporary GPOA granted to James Mitchell for property sale while Sarah is abroad. Valid for 6 months.'
+  },
+  {
+    id: '9',
+    type: 'Other',
+    people: ['James Mitchell', 'Sarah Mitchell'],
+    status: 'Signed',
+    date: '12/09/2023',
+    notes: 'Deed of Variation - Estate planning document to redirect inheritance from late parent. Approved by all beneficiaries.',
+    other: 'Deed of Variation'
   },
 ];
 

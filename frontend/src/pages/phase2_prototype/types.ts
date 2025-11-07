@@ -90,15 +90,17 @@ export interface Document {
   id: string;
   type: 'Will' | 'LPA H&W' | 'LPA P&F' | 'EPA' | 'Advance Directive' | 'General Power of Attorney' | 'Other';
   people: string[]; // Associated people from client group
-  status: 'Active' | 'Lapsed';
+  status: 'Signed' | 'Pending' | 'Unknown' | 'Lapsed' | 'Pending Reg' | 'Registered' | 'In Use';
+  // Status usage by document type:
+  // - Will: Signed, Pending, Unknown, Lapsed
+  // - Advance Directive: Signed, Pending, Lapsed, Unknown
+  // - General Power of Attorney: Signed, Lapsed, Unknown
+  // - LPA H&W: Pending Reg, Registered, In Use, Lapsed, Unknown
+  // - LPA P&F: Pending Reg, Registered, In Use, Lapsed, Unknown
+  // - EPA: Signed, In Use, Lapsed, Unknown
+  // - Other: In Use, Lapsed, Signed, Unknown
   date: string; // General date field for the document
   notes: string;
-  // LPA H&W fields
-  hwLpoaIsActive?: boolean;
-  // LPA P&F fields
-  pfLpoaIsActive?: boolean;
-  // EPA fields
-  epaIsRegistered?: boolean;
   // Other fields
   other?: string;
 }

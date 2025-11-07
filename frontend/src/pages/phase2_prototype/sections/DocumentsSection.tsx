@@ -19,12 +19,14 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
   onDelete,
   onLapse
 }) => {
-  // Sort documents: Active before Lapsed, then by client order
+  // Sort documents: Signed/Pending/Unknown before Lapsed, then by client order
   // For documents with multiple people, use the earliest person in client order
   const sortedDocuments = [...documents].sort((a, b) => {
-    // First sort by status (Active before Lapsed)
-    if (a.status === 'Active' && b.status === 'Lapsed') return -1;
-    if (a.status === 'Lapsed' && b.status === 'Active') return 1;
+    // First sort by status (Signed/Pending/Unknown before Lapsed)
+    const isALapsed = a.status === 'Lapsed';
+    const isBLapsed = b.status === 'Lapsed';
+    if (!isALapsed && isBLapsed) return -1;
+    if (isALapsed && !isBLapsed) return 1;
 
     // Then get the highest priority person (earliest in client order) for each document
     const getHighestPriorityIndex = (doc: Document) => {
@@ -91,7 +93,19 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
                 <td className="px-3 py-2 text-base text-gray-900">{doc.date}</td>
                 <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">
                   <span className={`px-2 py-1 rounded-full text-sm font-medium ${
-                    doc.status === 'Active'
+                    doc.status === 'Signed'
+                      ? 'bg-green-100 text-green-800'
+                      : doc.status === 'Pending'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : doc.status === 'Unknown'
+                      ? 'bg-gray-100 text-gray-800'
+                      : doc.status === 'Lapsed'
+                      ? 'bg-gray-200 text-gray-900'
+                      : doc.status === 'Pending Reg'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : doc.status === 'Registered'
+                      ? 'bg-blue-100 text-blue-800'
+                      : doc.status === 'In Use'
                       ? 'bg-green-100 text-green-800'
                       : 'bg-gray-200 text-gray-900'
                   }`}>
