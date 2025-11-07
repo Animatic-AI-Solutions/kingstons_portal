@@ -1,30 +1,36 @@
 import React, { useState } from 'react';
-import { ChevronRightIcon, TrashIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { ChevronRightIcon, TrashIcon, XCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { SpecialRelationship } from '../types';
+import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 
 interface RelationshipsSectionProps {
   relationships: SpecialRelationship[];
   onRelationshipClick: (relationship: SpecialRelationship) => void;
   onDelete?: (relationship: SpecialRelationship) => void;
   onLapse?: (relationship: SpecialRelationship) => void;
+  onReactivate?: (relationship: SpecialRelationship) => void;
 }
 
 const RelationshipsSection: React.FC<RelationshipsSectionProps> = ({
   relationships,
   onRelationshipClick,
   onDelete,
-  onLapse
+  onLapse,
+  onReactivate
 }) => {
   const [activeRelationshipTab, setActiveRelationshipTab] = useState<'personal' | 'professional'>('personal');
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [relationshipToDelete, setRelationshipToDelete] = useState<SpecialRelationship | null>(null);
 
-  // Filter relationships based on active tab, then sort by status (Active first, Lapsed last)
+  // Filter relationships based on active tab, then sort by status (Active first, Lapsed, then Deceased)
   const filteredRelationships = relationships
     .filter(rel => rel.type === activeRelationshipTab)
     .sort((a, b) => {
-      // Sort Active before Lapsed
-      if (a.status === 'Active' && b.status === 'Lapsed') return -1;
-      if (a.status === 'Lapsed' && b.status === 'Active') return 1;
-      return 0;
+      // Sort Active before Lapsed before Deceased
+      const statusOrder = { 'Active': 0, 'Lapsed': 1, 'Deceased': 2 };
+      const statusA = statusOrder[a.status] || 0;
+      const statusB = statusOrder[b.status] || 0;
+      return statusA - statusB;
     });
 
   return (
@@ -86,11 +92,13 @@ const RelationshipsSection: React.FC<RelationshipsSectionProps> = ({
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredRelationships.length > 0 ? (
-              filteredRelationships.map((rel) => (
+              filteredRelationships.map((rel) => {
+                const isInactive = rel.status === 'Lapsed' || rel.status === 'Deceased';
+                return (
                 <tr
                   key={rel.id}
                   className={`hover:bg-gray-50 cursor-pointer transition-colors ${
-                    rel.status === 'Lapsed' ? 'opacity-60' : ''
+                    isInactive ? 'opacity-60' : ''
                   }`}
                   onClick={() => onRelationshipClick(rel)}
                 >
@@ -101,7 +109,7 @@ const RelationshipsSection: React.FC<RelationshipsSectionProps> = ({
                   )}
                   <td className="px-3 py-2 whitespace-nowrap text-base text-gray-900">
                     <span className={`px-2 py-1 rounded-full text-sm font-medium ${
-                      rel.status === 'Lapsed'
+                      isInactive
                         ? 'bg-gray-200 text-gray-900'
                         : rel.type === 'professional'
                         ? 'bg-purple-100 text-purple-800'
@@ -146,6 +154,8 @@ const RelationshipsSection: React.FC<RelationshipsSectionProps> = ({
                     <span className={`px-2 py-1 rounded-full text-sm font-medium ${
                       rel.status === 'Active'
                         ? 'bg-green-100 text-green-800'
+                        : rel.status === 'Deceased'
+                        ? 'bg-gray-300 text-gray-900'
                         : 'bg-gray-200 text-gray-900'
                     }`}>
                       {rel.status}
@@ -153,29 +163,49 @@ const RelationshipsSection: React.FC<RelationshipsSectionProps> = ({
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap text-base">
                     <div className="flex items-center gap-2">
-                      {onLapse && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onLapse(rel);
-                          }}
-                          className="p-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded transition-colors"
-                          title="Lapse"
-                        >
-                          <XCircleIcon className="w-4 h-4" />
-                        </button>
-                      )}
-                      {onDelete && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete(rel);
-                          }}
-                          className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                          title="Delete"
-                        >
-                          <TrashIcon className="w-4 h-4" />
-                        </button>
+                      {isInactive ? (
+                        <>
+                          {onReactivate && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onReactivate(rel);
+                              }}
+                              className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                              title="Reactivate"
+                            >
+                              <ArrowPathIcon className="w-4 h-4" />
+                            </button>
+                          )}
+                          {onDelete && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRelationshipToDelete(rel);
+                                setDeleteModalOpen(true);
+                              }}
+                              className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                              title="Delete"
+                            >
+                              <TrashIcon className="w-4 h-4" />
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {onLapse && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onLapse(rel);
+                              }}
+                              className="p-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded transition-colors"
+                              title="Lapse"
+                            >
+                              <XCircleIcon className="w-4 h-4" />
+                            </button>
+                          )}
+                        </>
                       )}
                     </div>
                   </td>
@@ -183,7 +213,8 @@ const RelationshipsSection: React.FC<RelationshipsSectionProps> = ({
                     <ChevronRightIcon className="w-5 h-5 text-gray-900" />
                   </td>
                 </tr>
-              ))
+              );
+              })
             ) : (
               <tr>
                 <td colSpan={activeRelationshipTab === 'professional' ? 9 : 10} className="px-3 py-8 text-center text-base text-gray-900">
@@ -194,6 +225,23 @@ const RelationshipsSection: React.FC<RelationshipsSectionProps> = ({
           </tbody>
         </table>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setRelationshipToDelete(null);
+        }}
+        onConfirm={() => {
+          if (relationshipToDelete && onDelete) {
+            onDelete(relationshipToDelete);
+            setRelationshipToDelete(null);
+          }
+        }}
+        itemName={relationshipToDelete?.name || ''}
+        itemType="Special Relationship"
+      />
     </div>
   );
 };

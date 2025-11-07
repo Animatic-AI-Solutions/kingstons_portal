@@ -73,6 +73,18 @@ const SummaryTab: React.FC<SummaryTabProps> = ({
                           <span className="font-bold text-blue-600">Age: </span>
                           <span className="font-medium text-gray-900">{person.age}</span>
                         </div>
+                        <div className="pt-2">
+                          <p className="text-base font-bold text-blue-600 mb-0.5">Address</p>
+                          <div className="text-base font-medium text-gray-900 leading-relaxed">
+                            {person.addressLine1 && <div>{person.addressLine1}</div>}
+                            {person.addressLine2 && <div>{person.addressLine2}</div>}
+                            {person.addressLine3 && <div>{person.addressLine3}</div>}
+                            {person.addressLine4 && <div>{person.addressLine4}</div>}
+                            {person.addressLine5 && <div>{person.addressLine5}</div>}
+                            {person.postcode && <div>{person.postcode}</div>}
+                          </div>
+                          <p className="text-base text-gray-900 mt-1"><span className="font-bold text-blue-600">Moved in:</span> {person.dateMovedIn}</p>
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <div>
@@ -87,58 +99,25 @@ const SummaryTab: React.FC<SummaryTabProps> = ({
                           <span className="font-bold text-blue-600">Place of Birth: </span>
                           <span className="font-medium text-gray-900">{person.placeOfBirth}</span>
                         </div>
-                      </div>
-                    </div>
-
-                    <div className="pt-1">
-                      <p className="text-base font-bold text-blue-600 mb-0.5">Address</p>
-                      <div className="text-base font-medium text-gray-900 leading-relaxed">
-                        {person.addressLine1 && <div>{person.addressLine1}</div>}
-                        {person.addressLine2 && <div>{person.addressLine2}</div>}
-                        {person.addressLine3 && <div>{person.addressLine3}</div>}
-                        {person.addressLine4 && <div>{person.addressLine4}</div>}
-                        {person.addressLine5 && <div>{person.addressLine5}</div>}
-                        {person.postcode && <div>{person.postcode}</div>}
-                      </div>
-                      <p className="text-base text-gray-900 mt-1"><span className="font-bold text-blue-600">Moved in:</span> {person.dateMovedIn}</p>
-                    </div>
-
-                    <div className="pt-1 space-y-1 text-base">
-                      <div>
-                        <span className="font-bold text-blue-600">Primary Email: </span>
-                        <span className="font-medium text-gray-900">{person.primaryEmail}</span>
-                      </div>
-                      <div>
-                        <span className="font-bold text-blue-600">Secondary Email: </span>
-                        <span className="font-medium text-gray-900">{person.secondaryEmail}</span>
-                      </div>
-                      <div>
-                        <span className="font-bold text-blue-600">Primary Phone: </span>
-                        <span className="font-medium text-gray-900">{person.primaryPhone}</span>
-                      </div>
-                      <div>
-                        <span className="font-bold text-blue-600">Secondary Phone: </span>
-                        <span className="font-medium text-gray-900">{person.secondaryPhone}</span>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-x-3 text-base pt-3">
-                      <div>
-                        <div className="space-y-1">
+                        <div className="pt-2 space-y-1">
                           <div>
-                            <span className="font-bold text-blue-600">Employment Status: </span>
-                            <span className="font-medium text-gray-900">{person.employmentStatus}</span>
+                            <span className="font-bold text-blue-600">Primary Email: </span>
+                            <span className="font-medium text-gray-900">{person.primaryEmail}</span>
                           </div>
                           <div>
-                            <span className="font-bold text-blue-600">Occupation: </span>
-                            <span className="font-medium text-gray-900">{person.occupation}</span>
+                            <span className="font-bold text-blue-600">Secondary Email: </span>
+                            <span className="font-medium text-gray-900">{person.secondaryEmail}</span>
                           </div>
                           <div>
-                            <span className="font-bold text-blue-600">NI Number: </span>
-                            <span className="font-medium text-gray-900">{person.niNumber}</span>
+                            <span className="font-bold text-blue-600">Primary Phone: </span>
+                            <span className="font-medium text-gray-900">{person.primaryPhone}</span>
+                          </div>
+                          <div>
+                            <span className="font-bold text-blue-600">Secondary Phone: </span>
+                            <span className="font-medium text-gray-900">{person.secondaryPhone}</span>
                           </div>
                         </div>
-                        <div className="space-y-1 mt-3">
+                        <div className="pt-2 space-y-1">
                           <div>
                             <span className="font-bold text-blue-600">3 words: </span>
                             <span className="font-medium text-primary-700">{person.safeWords.join(', ')}</span>
@@ -147,6 +126,23 @@ const SummaryTab: React.FC<SummaryTabProps> = ({
                             <span className="font-bold text-blue-600">Share Data With: </span>
                             <span className="font-medium text-gray-900">{person.shareDataWith}</span>
                           </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-x-3 text-base pt-3">
+                      <div className="space-y-1">
+                        <div>
+                          <span className="font-bold text-blue-600">Employment Status: </span>
+                          <span className="font-medium text-gray-900">{person.employmentStatus}</span>
+                        </div>
+                        <div>
+                          <span className="font-bold text-blue-600">Occupation: </span>
+                          <span className="font-medium text-gray-900">{person.occupation}</span>
+                        </div>
+                        <div>
+                          <span className="font-bold text-blue-600">NI Number: </span>
+                          <span className="font-medium text-gray-900">{person.niNumber}</span>
                         </div>
                       </div>
                       <div className="space-y-1">

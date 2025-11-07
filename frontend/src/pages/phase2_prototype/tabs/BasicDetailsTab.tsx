@@ -90,6 +90,11 @@ const BasicDetailsTab: React.FC<BasicDetailsTabProps> = ({
     // TODO: Implement lapse logic
   };
 
+  const handleReactivate = (item: any) => {
+    console.log('Reactivate:', item);
+    // TODO: Implement reactivate logic
+  };
+
   const basicDetailsTabs = [
     { id: 'people', label: 'People' },
     { id: 'relationships', label: 'Special Relationships' },
@@ -109,6 +114,7 @@ const BasicDetailsTab: React.FC<BasicDetailsTabProps> = ({
             onPersonClick={onPersonClick}
             onDelete={handleDelete}
             onLapse={handleLapse}
+            onReactivate={handleReactivate}
           />
         );
       case 'relationships':
@@ -118,6 +124,7 @@ const BasicDetailsTab: React.FC<BasicDetailsTabProps> = ({
             onRelationshipClick={onRelationshipClick}
             onDelete={handleDelete}
             onLapse={handleLapse}
+            onReactivate={handleReactivate}
           />
         );
       case 'health':
@@ -129,6 +136,9 @@ const BasicDetailsTab: React.FC<BasicDetailsTabProps> = ({
             healthItems={healthItems}
             vulnerabilities={vulnerabilities}
             onItemClick={onHealthVulnerabilityClick}
+            onReactivate={handleReactivate}
+            onDelete={handleDelete}
+            onLapse={handleLapse}
           />
         );
       case 'documents':
@@ -140,6 +150,7 @@ const BasicDetailsTab: React.FC<BasicDetailsTabProps> = ({
             onDocumentClick={onDocumentClick}
             onDelete={handleDelete}
             onLapse={handleLapse}
+            onReactivate={handleReactivate}
           />
         );
       case 'risk':
@@ -151,8 +162,10 @@ const BasicDetailsTab: React.FC<BasicDetailsTabProps> = ({
             onCapacityToLossClick={onCapacityToLossClick}
             onLapseRiskAssessment={handleLapse}
             onDeleteRiskAssessment={handleDelete}
+            onReactivateRiskAssessment={handleReactivate}
             onLapseCapacityToLoss={handleLapse}
             onDeleteCapacityToLoss={handleDelete}
+            onReactivateCapacityToLoss={handleReactivate}
           />
         );
       case 'management':

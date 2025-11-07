@@ -1,6 +1,7 @@
-import React from 'react';
-import { ChevronRightIcon, XCircleIcon, TrashIcon } from '@heroicons/react/24/outline';
+import React, { useState } from 'react';
+import { ChevronRightIcon, XCircleIcon, TrashIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { RiskAssessment, CapacityToLoss } from '../types';
+import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 
 interface RiskAssessmentsSectionProps {
   riskAssessments: RiskAssessment[];
@@ -9,8 +10,10 @@ interface RiskAssessmentsSectionProps {
   onCapacityToLossClick: (capacity: CapacityToLoss) => void;
   onLapseRiskAssessment?: (assessment: RiskAssessment) => void;
   onDeleteRiskAssessment?: (assessment: RiskAssessment) => void;
+  onReactivateRiskAssessment?: (assessment: RiskAssessment) => void;
   onLapseCapacityToLoss?: (capacity: CapacityToLoss) => void;
   onDeleteCapacityToLoss?: (capacity: CapacityToLoss) => void;
+  onReactivateCapacityToLoss?: (capacity: CapacityToLoss) => void;
 }
 
 const RiskAssessmentsSection: React.FC<RiskAssessmentsSectionProps> = ({
@@ -20,9 +23,13 @@ const RiskAssessmentsSection: React.FC<RiskAssessmentsSectionProps> = ({
   onCapacityToLossClick,
   onLapseRiskAssessment,
   onDeleteRiskAssessment,
+  onReactivateRiskAssessment,
   onLapseCapacityToLoss,
-  onDeleteCapacityToLoss
+  onDeleteCapacityToLoss,
+  onReactivateCapacityToLoss
 }) => {
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<{item: RiskAssessment | CapacityToLoss, type: 'risk' | 'capacity'} | null>(null);
   // Helper function to get risk group label from score
   const getRiskGroupLabel = (riskScore: number): string => {
     const riskGroups: Record<number, string> = {
@@ -136,29 +143,49 @@ const RiskAssessmentsSection: React.FC<RiskAssessmentsSectionProps> = ({
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-base">
                   <div className="flex items-center gap-2">
-                    {onLapseRiskAssessment && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onLapseRiskAssessment(assessment);
-                        }}
-                        className="p-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded transition-colors"
-                        title="Lapse"
-                      >
-                        <XCircleIcon className="w-4 h-4" />
-                      </button>
-                    )}
-                    {onDeleteRiskAssessment && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteRiskAssessment(assessment);
-                        }}
-                        className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                        title="Delete"
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
+                    {assessment.status === 'Lapsed' ? (
+                      <>
+                        {onReactivateRiskAssessment && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onReactivateRiskAssessment(assessment);
+                            }}
+                            className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                            title="Reactivate"
+                          >
+                            <ArrowPathIcon className="w-4 h-4" />
+                          </button>
+                        )}
+                        {onDeleteRiskAssessment && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setItemToDelete({item: assessment, type: 'risk'});
+                              setDeleteModalOpen(true);
+                            }}
+                            className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                            title="Delete"
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {onLapseRiskAssessment && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onLapseRiskAssessment(assessment);
+                            }}
+                            className="p-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded transition-colors"
+                            title="Lapse"
+                          >
+                            <XCircleIcon className="w-4 h-4" />
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </td>
@@ -224,29 +251,49 @@ const RiskAssessmentsSection: React.FC<RiskAssessmentsSectionProps> = ({
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-base">
                   <div className="flex items-center gap-2">
-                    {onLapseCapacityToLoss && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onLapseCapacityToLoss(capacity);
-                        }}
-                        className="p-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded transition-colors"
-                        title="Lapse"
-                      >
-                        <XCircleIcon className="w-4 h-4" />
-                      </button>
-                    )}
-                    {onDeleteCapacityToLoss && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteCapacityToLoss(capacity);
-                        }}
-                        className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                        title="Delete"
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
+                    {capacity.status === 'Lapsed' ? (
+                      <>
+                        {onReactivateCapacityToLoss && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onReactivateCapacityToLoss(capacity);
+                            }}
+                            className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                            title="Reactivate"
+                          >
+                            <ArrowPathIcon className="w-4 h-4" />
+                          </button>
+                        )}
+                        {onDeleteCapacityToLoss && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setItemToDelete({item: capacity, type: 'capacity'});
+                              setDeleteModalOpen(true);
+                            }}
+                            className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                            title="Delete"
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {onLapseCapacityToLoss && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onLapseCapacityToLoss(capacity);
+                            }}
+                            className="p-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded transition-colors"
+                            title="Lapse"
+                          >
+                            <XCircleIcon className="w-4 h-4" />
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </td>
@@ -258,6 +305,32 @@ const RiskAssessmentsSection: React.FC<RiskAssessmentsSectionProps> = ({
           </tbody>
         </table>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setItemToDelete(null);
+        }}
+        onConfirm={() => {
+          if (itemToDelete) {
+            if (itemToDelete.type === 'risk' && onDeleteRiskAssessment) {
+              onDeleteRiskAssessment(itemToDelete.item as RiskAssessment);
+            } else if (itemToDelete.type === 'capacity' && onDeleteCapacityToLoss) {
+              onDeleteCapacityToLoss(itemToDelete.item as CapacityToLoss);
+            }
+            setItemToDelete(null);
+          }
+        }}
+        itemName={itemToDelete
+          ? itemToDelete.type === 'risk'
+            ? `Risk Assessment for ${(itemToDelete.item as RiskAssessment).personName}`
+            : `Capacity for Loss for ${(itemToDelete.item as CapacityToLoss).personName}`
+          : ''
+        }
+        itemType={itemToDelete?.type === 'risk' ? 'Risk Assessment' : 'Capacity for Loss'}
+      />
     </div>
   );
 };

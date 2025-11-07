@@ -1,6 +1,7 @@
-import React from 'react';
-import { ChevronRightIcon, TrashIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import React, { useState } from 'react';
+import { ChevronRightIcon, TrashIcon, XCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { Document, Person } from '../types';
+import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 
 interface DocumentsSectionProps {
   documents: Document[];
@@ -9,6 +10,7 @@ interface DocumentsSectionProps {
   onDocumentClick: (document: Document) => void;
   onDelete?: (document: Document) => void;
   onLapse?: (document: Document) => void;
+  onReactivate?: (document: Document) => void;
 }
 
 const DocumentsSection: React.FC<DocumentsSectionProps> = ({
@@ -17,8 +19,11 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
   clientOrder,
   onDocumentClick,
   onDelete,
-  onLapse
+  onLapse,
+  onReactivate
 }) => {
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
   // Sort documents: Signed/Pending/Unknown before Lapsed, then by client order
   // For documents with multiple people, use the earliest person in client order
   const sortedDocuments = [...documents].sort((a, b) => {
@@ -114,29 +119,49 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-base">
                   <div className="flex items-center gap-2">
-                    {onLapse && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onLapse(doc);
-                        }}
-                        className="p-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded transition-colors"
-                        title="Lapse"
-                      >
-                        <XCircleIcon className="w-4 h-4" />
-                      </button>
-                    )}
-                    {onDelete && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDelete(doc);
-                        }}
-                        className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                        title="Delete"
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
+                    {doc.status === 'Lapsed' ? (
+                      <>
+                        {onReactivate && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onReactivate(doc);
+                            }}
+                            className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                            title="Reactivate"
+                          >
+                            <ArrowPathIcon className="w-4 h-4" />
+                          </button>
+                        )}
+                        {onDelete && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDocumentToDelete(doc);
+                              setDeleteModalOpen(true);
+                            }}
+                            className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                            title="Delete"
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {onLapse && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onLapse(doc);
+                            }}
+                            className="p-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded transition-colors"
+                            title="Lapse"
+                          >
+                            <XCircleIcon className="w-4 h-4" />
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </td>
@@ -148,6 +173,23 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
           </tbody>
         </table>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setDocumentToDelete(null);
+        }}
+        onConfirm={() => {
+          if (documentToDelete && onDelete) {
+            onDelete(documentToDelete);
+            setDocumentToDelete(null);
+          }
+        }}
+        itemName={documentToDelete ? `${documentToDelete.type} for ${documentToDelete.people.join(', ')}` : ''}
+        itemType="Legal Document"
+      />
     </div>
   );
 };

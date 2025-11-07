@@ -40,6 +40,7 @@ export interface Person {
   notes: string;
   // For display
   relationship: string; // Relationship to client group (Husband, Wife, etc.)
+  status?: 'Active' | 'Lapsed' | 'Deceased'; // Status of the person in the client group
 }
 
 export interface SpecialRelationship {
@@ -57,7 +58,7 @@ export interface SpecialRelationship {
   firmName?: string; // Only for professional relationships
   address?: string; // Address for the special relationship
   contactDetails: string;
-  status: 'Active' | 'Lapsed';
+  status: 'Active' | 'Lapsed' | 'Deceased';
   notes: string;
 }
 
