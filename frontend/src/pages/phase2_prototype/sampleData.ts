@@ -21,7 +21,8 @@ import {
   MeetingInstance,
   OtherClientGroup,
   DefinedBenefitPension,
-  Trusteeship
+  Trusteeship,
+  ClientGroupFees
 } from './types';
 
 // ============================================================================
@@ -1907,5 +1908,52 @@ export const otherClientGroups: OtherClientGroup[] = [
       }
     ],
     liabilities: []
+  }
+];
+
+// ============================================================================
+// CLIENT GROUP FEES
+// ============================================================================
+
+export const clientGroupFees: ClientGroupFees[] = [
+  {
+    clientGroupId: 'main',
+    clientGroupName: 'Mitchell Family',
+    fixedFeeDirect: 15600,
+    fixedFeeFacilitated: 0,
+    percentageFee: 17575, // 0.95% of £1,850,000
+    totalRevenue: 33175
+  },
+  {
+    clientGroupId: 'trust-1',
+    clientGroupName: 'Mitchell Family Trust',
+    fixedFeeDirect: 0,
+    fixedFeeFacilitated: 2400,
+    percentageFee: 0,
+    totalRevenue: 2400
+  },
+  {
+    clientGroupId: 'trust-2',
+    clientGroupName: 'Education Trust Fund',
+    fixedFeeDirect: 0,
+    fixedFeeFacilitated: 1200,
+    percentageFee: 0,
+    totalRevenue: 1200
+  },
+  {
+    clientGroupId: 'trust-3',
+    clientGroupName: 'Life Insurance Trust',
+    fixedFeeDirect: 0,
+    fixedFeeFacilitated: 800,
+    percentageFee: 0,
+    totalRevenue: 800
+  },
+  {
+    clientGroupId: 'business-1',
+    clientGroupName: 'Mitchell Consulting Ltd',
+    fixedFeeDirect: 5000,
+    fixedFeeFacilitated: 0,
+    percentageFee: 0,
+    totalRevenue: 5000
   }
 ];

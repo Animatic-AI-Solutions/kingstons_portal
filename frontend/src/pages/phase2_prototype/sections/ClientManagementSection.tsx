@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { formatMoney } from '../../../utils/formatMoney';
+import { ClientGroupFees } from '../types';
 
 interface ClientManagementInfo {
   leadAdvisor: string;
@@ -17,17 +18,15 @@ interface ClientManagementInfo {
 
 interface ClientManagementSectionProps {
   clientManagementInfo: ClientManagementInfo;
+  clientGroupFees: ClientGroupFees[];
 }
 
 const ClientManagementSection: React.FC<ClientManagementSectionProps> = ({
-  clientManagementInfo
+  clientManagementInfo,
+  clientGroupFees
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedInfo, setEditedInfo] = useState(clientManagementInfo);
-
-  // Calculate fee value: fixed fee + (percentage fee * FUM)
-  const percentageFee = (editedInfo.feeAchieved / 100) * editedInfo.totalFUM;
-  const feeValue = editedInfo.fixedFee + percentageFee;
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -51,6 +50,12 @@ const ClientManagementSection: React.FC<ClientManagementSectionProps> = ({
       [field]: value
     }));
   };
+
+  // Calculate totals for the fees table
+  const totalFixedFeeDirect = clientGroupFees.reduce((sum, fee) => sum + fee.fixedFeeDirect, 0);
+  const totalFixedFeeFacilitated = clientGroupFees.reduce((sum, fee) => sum + fee.fixedFeeFacilitated, 0);
+  const totalPercentageFee = clientGroupFees.reduce((sum, fee) => sum + fee.percentageFee, 0);
+  const totalRevenue = clientGroupFees.reduce((sum, fee) => sum + fee.totalRevenue, 0);
 
   return (
     <div className="bg-white rounded-lg shadow p-3">
@@ -86,158 +91,156 @@ const ClientManagementSection: React.FC<ClientManagementSectionProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-3">
-        {/* Left Column - Client Info */}
-        <div className="col-span-7 space-y-3">
-          {/* Advisor and Client Type */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-gray-50 p-2 rounded border border-gray-200">
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Advisor</p>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={editedInfo.leadAdvisor}
-                  onChange={(e) => handleChange('leadAdvisor', e.target.value)}
-                  className="w-full px-2 py-1 text-sm font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              ) : (
-                <p className="text-sm font-semibold text-gray-900">{editedInfo.leadAdvisor}</p>
-              )}
-            </div>
-            <div className="bg-gray-50 p-2 rounded border border-gray-200">
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Client Type</p>
-              {isEditing ? (
-                <select
-                  value={editedInfo.typeOfClient}
-                  onChange={(e) => handleChange('typeOfClient', e.target.value)}
-                  className="w-full px-2 py-1 text-sm font-medium border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="Ongoing">Ongoing</option>
-                  <option value="One-Off">One-Off</option>
-                </select>
-              ) : (
-                <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  {editedInfo.typeOfClient}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Dates Section */}
-          <div className="bg-blue-50 p-2 rounded border border-blue-200">
-            <p className="text-xs font-bold text-blue-700 uppercase mb-2">Key Dates</p>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <p className="text-xs font-semibold text-gray-500">Client Dec</p>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={editedInfo.dateOfClientDeclaration}
-                    onChange={(e) => handleChange('dateOfClientDeclaration', e.target.value)}
-                    className="w-full px-2 py-0.5 text-sm font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  <p className="text-sm font-semibold text-gray-900">{editedInfo.dateOfClientDeclaration}</p>
-                )}
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-500">Privacy Dec</p>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={editedInfo.dateOfPrivacyDeclaration}
-                    onChange={(e) => handleChange('dateOfPrivacyDeclaration', e.target.value)}
-                    className="w-full px-2 py-0.5 text-sm font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  <p className="text-sm font-semibold text-gray-900">{editedInfo.dateOfPrivacyDeclaration}</p>
-                )}
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-500">Fee Agreement</p>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={editedInfo.lastFeeAgreement}
-                    onChange={(e) => handleChange('lastFeeAgreement', e.target.value)}
-                    className="w-full px-2 py-0.5 text-sm font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  <p className="text-sm font-semibold text-gray-900">{editedInfo.lastFeeAgreement}</p>
-                )}
-              </div>
-              {editedInfo.typeOfClient === 'Ongoing' && (
-                <div>
-                  <p className="text-xs font-semibold text-gray-500">Client Start</p>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={editedInfo.ongoingClientStartDate}
-                      onChange={(e) => handleChange('ongoingClientStartDate', e.target.value)}
-                      className="w-full px-2 py-0.5 text-sm font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  ) : (
-                    <p className="text-sm font-semibold text-gray-900">{editedInfo.ongoingClientStartDate}</p>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column - Financial Metrics */}
-        <div className="col-span-5 space-y-3">
-          {/* Fee Metrics - Prominent Cards */}
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-3 rounded-lg border border-green-200">
-            <p className="text-xs font-semibold text-green-700 uppercase mb-1">Fee Achieved</p>
+      {/* Top Row - Advisor, Client Type, and Dates */}
+      <div className="bg-gray-50 p-2 rounded border border-gray-200 mb-3">
+        <div className="flex items-center gap-4 flex-wrap">
+          {/* Advisor */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-gray-500 uppercase">Advisor:</span>
             {isEditing ? (
               <input
-                type="number"
-                step="0.01"
-                value={editedInfo.feeAchieved}
-                onChange={(e) => handleChange('feeAchieved', parseFloat(e.target.value))}
-                className="w-full px-2 py-1 text-lg font-bold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                type="text"
+                value={editedInfo.leadAdvisor}
+                onChange={(e) => handleChange('leadAdvisor', e.target.value)}
+                className="px-2 py-0.5 text-sm font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             ) : (
-              <p className="text-2xl font-bold text-gray-900">{editedInfo.feeAchieved}%</p>
+              <span className="text-sm font-semibold text-gray-900">{editedInfo.leadAdvisor}</span>
             )}
           </div>
 
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-200">
-            <p className="text-xs font-semibold text-blue-700 uppercase mb-1">Total Fee Value</p>
-            <p className="text-2xl font-bold text-gray-900">{formatMoney(feeValue)}</p>
+          {/* Divider */}
+          <div className="h-4 w-px bg-gray-300"></div>
+
+          {/* Client Type */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-gray-500 uppercase">Client Type:</span>
+            {isEditing ? (
+              <select
+                value={editedInfo.typeOfClient}
+                onChange={(e) => handleChange('typeOfClient', e.target.value)}
+                className="px-2 py-0.5 text-sm font-medium border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="Ongoing">Ongoing</option>
+                <option value="One-Off">One-Off</option>
+              </select>
+            ) : (
+              <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                {editedInfo.typeOfClient}
+              </span>
+            )}
           </div>
 
-          {/* Financial Details */}
-          <div className="grid grid-cols-2 gap-2">
-            <div className="bg-gray-50 p-2 rounded border border-gray-200">
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Total FUM</p>
-              {isEditing ? (
-                <input
-                  type="number"
-                  value={editedInfo.totalFUM}
-                  onChange={(e) => handleChange('totalFUM', parseFloat(e.target.value))}
-                  className="w-full px-2 py-0.5 text-sm font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              ) : (
-                <p className="text-sm font-bold text-gray-900">{formatMoney(editedInfo.totalFUM)}</p>
-              )}
-            </div>
-            <div className="bg-gray-50 p-2 rounded border border-gray-200">
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Fixed Fee</p>
-              {isEditing ? (
-                <input
-                  type="number"
-                  value={editedInfo.fixedFee}
-                  onChange={(e) => handleChange('fixedFee', parseFloat(e.target.value))}
-                  className="w-full px-2 py-0.5 text-sm font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              ) : (
-                <p className="text-sm font-bold text-gray-900">{formatMoney(editedInfo.fixedFee)}</p>
-              )}
-            </div>
+          {/* Divider */}
+          <div className="h-4 w-px bg-gray-300"></div>
+
+          {/* Client Declaration Date */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-gray-500 uppercase">Client Dec:</span>
+            {isEditing ? (
+              <input
+                type="text"
+                value={editedInfo.dateOfClientDeclaration}
+                onChange={(e) => handleChange('dateOfClientDeclaration', e.target.value)}
+                className="px-2 py-0.5 text-sm font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            ) : (
+              <span className="text-sm font-semibold text-gray-900">{editedInfo.dateOfClientDeclaration}</span>
+            )}
           </div>
+
+          {/* Divider */}
+          <div className="h-4 w-px bg-gray-300"></div>
+
+          {/* Privacy Declaration Date */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-gray-500 uppercase">Privacy Dec:</span>
+            {isEditing ? (
+              <input
+                type="text"
+                value={editedInfo.dateOfPrivacyDeclaration}
+                onChange={(e) => handleChange('dateOfPrivacyDeclaration', e.target.value)}
+                className="px-2 py-0.5 text-sm font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            ) : (
+              <span className="text-sm font-semibold text-gray-900">{editedInfo.dateOfPrivacyDeclaration}</span>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div className="h-4 w-px bg-gray-300"></div>
+
+          {/* Fee Agreement Date */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-gray-500 uppercase">Fee Agreement:</span>
+            {isEditing ? (
+              <input
+                type="text"
+                value={editedInfo.lastFeeAgreement}
+                onChange={(e) => handleChange('lastFeeAgreement', e.target.value)}
+                className="px-2 py-0.5 text-sm font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            ) : (
+              <span className="text-sm font-semibold text-gray-900">{editedInfo.lastFeeAgreement}</span>
+            )}
+          </div>
+
+          {/* Client Start Date (if Ongoing) */}
+          {editedInfo.typeOfClient === 'Ongoing' && (
+            <>
+              {/* Divider */}
+              <div className="h-4 w-px bg-gray-300"></div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-gray-500 uppercase">Client Start:</span>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedInfo.ongoingClientStartDate}
+                    onChange={(e) => handleChange('ongoingClientStartDate', e.target.value)}
+                    className="px-2 py-0.5 text-sm font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <span className="text-sm font-semibold text-gray-900">{editedInfo.ongoingClientStartDate}</span>
+                )}
+              </div>
+            </>
+          )}
         </div>
+      </div>
+
+      {/* Fees Table */}
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200 border border-gray-200 rounded">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-2 py-1 text-left text-xs font-bold text-gray-900 uppercase">Client Group</th>
+              <th className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase">Fixed Fee Direct</th>
+              <th className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase">Fixed Fee Facilitated</th>
+              <th className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase">Percentage Fee</th>
+              <th className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase">Total Revenue</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {clientGroupFees.map((fee) => (
+              <tr key={fee.clientGroupId} className="hover:bg-gray-50">
+                <td className="px-2 py-1 text-sm font-medium text-gray-900">{fee.clientGroupName}</td>
+                <td className="px-2 py-1 text-sm text-gray-900 text-right">{formatMoney(fee.fixedFeeDirect)}</td>
+                <td className="px-2 py-1 text-sm text-gray-900 text-right">{formatMoney(fee.fixedFeeFacilitated)}</td>
+                <td className="px-2 py-1 text-sm text-gray-900 text-right">{formatMoney(fee.percentageFee)}</td>
+                <td className="px-2 py-1 text-sm font-semibold text-gray-900 text-right">{formatMoney(fee.totalRevenue)}</td>
+              </tr>
+            ))}
+            {/* Total Row */}
+            <tr className="bg-blue-50 font-bold border-t-2 border-gray-400">
+              <td className="px-2 py-1 text-sm text-gray-900">Total</td>
+              <td className="px-2 py-1 text-sm text-gray-900 text-right">{formatMoney(totalFixedFeeDirect)}</td>
+              <td className="px-2 py-1 text-sm text-gray-900 text-right">{formatMoney(totalFixedFeeFacilitated)}</td>
+              <td className="px-2 py-1 text-sm text-gray-900 text-right">{formatMoney(totalPercentageFee)}</td>
+              <td className="px-2 py-1 text-sm text-gray-900 text-right">{formatMoney(totalRevenue)}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   );

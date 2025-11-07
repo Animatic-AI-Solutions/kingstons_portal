@@ -34,7 +34,8 @@ import {
   sampleExpenditure,
   sampleProducts,
   sampleObjectives,
-  sampleActions
+  sampleActions,
+  clientGroupFees
 } from './sampleData';
 
 const ClientGroupPhase2 = () => {
@@ -901,6 +902,7 @@ const ClientGroupPhase2 = () => {
             assignedMeetings={assignedMeetings}
             meetingInstances={meetingInstances}
             clientManagementInfo={clientManagementInfo}
+            clientGroupFees={clientGroupFees}
             onPersonClick={handleItemClick}
             onRelationshipClick={handleItemClick}
             onHealthVulnerabilityClick={handleItemClick}

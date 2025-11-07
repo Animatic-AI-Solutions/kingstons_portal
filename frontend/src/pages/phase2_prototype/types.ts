@@ -262,3 +262,12 @@ export interface OtherClientGroup {
   assets: Asset[];
   liabilities: Liability[];
 }
+
+export interface ClientGroupFees {
+  clientGroupId: string;
+  clientGroupName: string;
+  fixedFeeDirect: number;
+  fixedFeeFacilitated: number;
+  percentageFee: number;
+  totalRevenue: number;
+}

@@ -15,7 +15,8 @@ import {
   RiskAssessment,
   CapacityToLoss,
   AssignedMeeting,
-  MeetingInstance
+  MeetingInstance,
+  ClientGroupFees
 } from '../types';
 
 interface ClientManagementInfo {
@@ -43,6 +44,7 @@ interface BasicDetailsTabProps {
   assignedMeetings: AssignedMeeting[];
   meetingInstances: MeetingInstance[];
   clientManagementInfo: ClientManagementInfo;
+  clientGroupFees: ClientGroupFees[];
   onPersonClick: (person: Person) => void;
   onRelationshipClick: (relationship: SpecialRelationship) => void;
   onHealthVulnerabilityClick: (item: HealthItem | VulnerabilityItem) => void;
@@ -65,6 +67,7 @@ const BasicDetailsTab: React.FC<BasicDetailsTabProps> = ({
   assignedMeetings,
   meetingInstances,
   clientManagementInfo,
+  clientGroupFees,
   onPersonClick,
   onRelationshipClick,
   onHealthVulnerabilityClick,
@@ -155,7 +158,7 @@ const BasicDetailsTab: React.FC<BasicDetailsTabProps> = ({
       case 'management':
         return (
           <div className="space-y-6">
-            <ClientManagementSection clientManagementInfo={clientManagementInfo} />
+            <ClientManagementSection clientManagementInfo={clientManagementInfo} clientGroupFees={clientGroupFees} />
             <MeetingsSection
               assignedMeetings={assignedMeetings}
               meetingInstances={meetingInstances}
