@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import DynamicPageContainer from '../components/DynamicPageContainer';
 import { useReportStateManager } from '../hooks/report/useReportStateManager';
@@ -384,11 +384,12 @@ const IRRDateSelectionGrid: React.FC<IRRDateSelectionGridProps> = ({
 const ReportGenerator: React.FC = () => {
   const { api } = useAuth();
   const navigate = useNavigate();
-  
+  const location = useLocation();
+
   // Get state manager actions to sync checkbox state
-  const { 
+  const {
     state: { customTitles },
-    actions: stateManagerActions 
+    actions: stateManagerActions
   } = useReportStateManager();
   
   // Initialize optimized services
@@ -662,7 +663,27 @@ const ReportGenerator: React.FC = () => {
   useEffect(() => {
     fetchInitialData();
   }, [fetchInitialData]);
-  
+
+  // Handle pre-selected client group from navigation state
+  useEffect(() => {
+    const state = location.state as { preSelectedClientGroupId?: string | number; preSelectedClientGroupName?: string } | null;
+
+    if (state?.preSelectedClientGroupId && clientGroups.length > 0) {
+      // Check if the client group exists in the loaded data
+      const clientGroupExists = clientGroups.some(
+        cg => cg.id === Number(state.preSelectedClientGroupId)
+      );
+
+      if (clientGroupExists && !selectedClientGroupIds.includes(state.preSelectedClientGroupId)) {
+        // Pre-populate the client group selection
+        setSelectedClientGroupIds([state.preSelectedClientGroupId]);
+
+        // Clear the navigation state to prevent re-selection on subsequent renders
+        navigate(location.pathname, { replace: true, state: {} });
+      }
+    }
+  }, [clientGroups, location.state, selectedClientGroupIds, navigate, location.pathname]);
+
   // Product owner data is now handled through client-product relationships
 
   // PHASE 2.1: Create debounced updateRelatedProducts function

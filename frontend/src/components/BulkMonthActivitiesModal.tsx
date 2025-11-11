@@ -130,18 +130,11 @@ const modalStyles = `
   }
   
   .bulk-activity-modal .bulk-activity-modal-totals-row {
-    background-color: rgb(254 242 242) !important;
-    border-top: 2px solid rgb(252 165 165) !important;
     font-weight: 600 !important;
     transition: background-color 0.15s ease-in-out !important;
   }
-  
-  .bulk-activity-modal .bulk-activity-modal-totals-row:hover {
-    background-color: rgb(254 226 226) !important;
-  }
-  
+
   .bulk-activity-modal .bulk-activity-modal-totals-td {
-    border-top: 2px solid rgb(252 165 165) !important;
     padding: 8px 12px !important;
     font-size: 11px !important;
     font-weight: 600 !important;
@@ -632,36 +625,77 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
   // Check if switch activities are balanced
   const getSwitchBalanceWarning = (): { hasWarning: boolean; message: string } => {
     const warnings: string[] = [];
-    
+
     // Check Fund Switch balance
     const hasFundSwitchIn = selectedActivities.has('FundSwitchIn');
     const hasFundSwitchOut = selectedActivities.has('FundSwitchOut');
-    
+
     if (hasFundSwitchIn && hasFundSwitchOut) {
       const fundSwitchOutTotal = calculateActivityTotal('FundSwitchOut');
       const fundSwitchInTotal = calculateActivityTotal('FundSwitchIn');
-      
+
       // Use tolerance-based comparison to handle floating-point precision issues
       // 0.01 tolerance (1 penny) is appropriate for financial calculations
       const tolerance = 0.01;
       const difference = Math.abs(fundSwitchOutTotal - fundSwitchInTotal);
-      
+
       // Only show warning if both have values and they don't match within tolerance
       if ((fundSwitchOutTotal > 0 || fundSwitchInTotal > 0) && difference > tolerance) {
         warnings.push(`Fund Switch activities are unbalanced. Difference: ${formatCurrency(difference)}`);
       }
     }
-    
+
     // Portfolio balance validation logic
-    
+
     if (warnings.length > 0) {
       return {
         hasWarning: true,
         message: warnings.join(' | ')
       };
     }
-    
+
     return { hasWarning: false, message: '' };
+  };
+
+  // Check if totals row should show green (balanced transfers)
+  const shouldShowGreenTotals = (): boolean => {
+    // Only check if exactly 2 activities are selected
+    if (selectedActivities.size !== 2) {
+      return false;
+    }
+
+    const activitiesArray = Array.from(selectedActivities);
+    const tolerance = 0.01;
+
+    // Check if it's ProductSwitchIn and ProductSwitchOut
+    const hasProductSwitchPair =
+      activitiesArray.includes('ProductSwitchIn') &&
+      activitiesArray.includes('ProductSwitchOut');
+
+    if (hasProductSwitchPair) {
+      const productSwitchInTotal = calculateActivityTotal('ProductSwitchIn');
+      const productSwitchOutTotal = calculateActivityTotal('ProductSwitchOut');
+      const difference = Math.abs(productSwitchInTotal - productSwitchOutTotal);
+
+      // Return true if both have values and they match within tolerance
+      return (productSwitchInTotal > 0 || productSwitchOutTotal > 0) && difference <= tolerance;
+    }
+
+    // Check if it's FundSwitchIn and FundSwitchOut
+    const hasFundSwitchPair =
+      activitiesArray.includes('FundSwitchIn') &&
+      activitiesArray.includes('FundSwitchOut');
+
+    if (hasFundSwitchPair) {
+      const fundSwitchInTotal = calculateActivityTotal('FundSwitchIn');
+      const fundSwitchOutTotal = calculateActivityTotal('FundSwitchOut');
+      const difference = Math.abs(fundSwitchInTotal - fundSwitchOutTotal);
+
+      // Return true if both have values and they match within tolerance
+      return (fundSwitchInTotal > 0 || fundSwitchOutTotal > 0) && difference <= tolerance;
+    }
+
+    return false;
   };
 
   // Handle activity selection
@@ -848,8 +882,16 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
                             ))}
                             
                             {/* Totals row */}
-                          <tr className="bulk-activity-modal-totals-row bg-red-50 border-t-2 border-red-200 font-semibold hover:bg-red-100 transition-colors duration-150">
-                            <td className="bulk-activity-modal-totals-td px-4 py-2 text-xs font-bold text-red-700 border-t-2 border-red-200">
+                          <tr className={`bulk-activity-modal-totals-row border-t-2 font-semibold transition-colors duration-150 ${
+                            shouldShowGreenTotals()
+                              ? 'bg-green-50 border-green-200 hover:bg-green-100'
+                              : 'bg-red-50 border-red-200 hover:bg-red-100'
+                          }`}>
+                            <td className={`bulk-activity-modal-totals-td px-4 py-2 text-xs font-bold border-t-2 ${
+                              shouldShowGreenTotals()
+                                ? 'text-green-700 border-green-200'
+                                : 'text-red-700 border-red-200'
+                            }`}>
                                 TOTALS
                               </td>
                               {getDisplayedActivities().map(activityType => {
@@ -862,19 +904,21 @@ const BulkMonthActivitiesModal: React.FC<BulkMonthActivitiesModalProps> = ({
                                 return (
                                   <td
                                     key={`total-${activityType}`}
-                                  className={`bulk-activity-modal-totals-td px-3 py-2 text-center text-xs font-semibold border-t-2 border-red-200 ${
-                                      isSwitchActivity 
+                                  className={`bulk-activity-modal-totals-td px-3 py-2 text-center text-xs font-semibold border-t-2 ${
+                                      shouldShowGreenTotals() ? 'border-green-200' : 'border-red-200'
+                                    } ${
+                                      isSwitchActivity
                                       ? 'text-orange-600' // Switch activities shown in orange (neutral movements)
-                                        : isCurrentValue 
+                                        : isCurrentValue
                                         ? 'text-blue-700' // Current value/valuation in blue
                                         : isWithdrawal
                                           ? 'text-red-700' // Withdrawals in red (outflows)
                                           : isInvestment
                                             ? 'text-green-700' // Investments in green (inflows)
-                                          : total === 0 
+                                          : total === 0
                                               ? 'text-gray-500' // Zero values in gray
-                                            : total > 0 
-                                              ? 'text-green-700' 
+                                            : total > 0
+                                              ? 'text-green-700'
                                               : 'text-red-700'
                                     }`}
                                   >
