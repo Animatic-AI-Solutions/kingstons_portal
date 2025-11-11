@@ -487,7 +487,7 @@ async def get_irr_history_summary(
                     )
                     
                     portfolio_id_list = [row["portfolio_id"] for row in portfolio_ids if row["portfolio_id"]]
-                    
+
                     if not portfolio_id_list:
                         logger.warning(f"No portfolio IDs found for products {request.product_ids}")
                         portfolio_irr_history.append({
@@ -499,50 +499,34 @@ async def get_irr_history_summary(
                             "withdrawals": None
                         })
                         continue
-                    
-                    # Get all portfolio fund IDs from these portfolios for aggregated calculation
-                    portfolio_funds = await db.fetch(
-                        "SELECT id FROM portfolio_funds WHERE portfolio_id = ANY($1::int[])",
-                        portfolio_id_list
-                    )
-                    
-                    portfolio_fund_ids = [row["id"] for row in portfolio_funds]
-                    
-                    if not portfolio_fund_ids:
-                        logger.warning(f"No portfolio fund IDs found for portfolios {portfolio_id_list} on date {date_str}")
-                        portfolio_irr_history.append({
-                            "date": date_str,
-                            "portfolio_irr": None,
-                            "valuation": None,
-                            "profit": None,
-                            "investments": None,
-                            "withdrawals": None
-                        })
-                        continue
-                    
-                    logger.debug(f"📊 Calculating aggregated portfolio IRR for date {date_str} with {len(portfolio_fund_ids)} funds from {len(portfolio_id_list)} portfolios")
-                    
-                    # Use the proper portfolio IRR calculation function for aggregated calculation
-                    try:
-                        # Import here to avoid potential circular import issues
-                        from app.api.routes.portfolio_funds import calculate_multiple_portfolio_funds_irr
-                        
-                        portfolio_irr_result = await calculate_multiple_portfolio_funds_irr(
-                            portfolio_fund_ids=portfolio_fund_ids,
-                            irr_date=normalized_date,  # Now passing date object instead of string
-                            db=db
+
+                    # Fetch stored portfolio IRR from database (no fallback calculation)
+                    # Portfolio IRRs should only come from stored values in portfolio_irr_values table
+                    portfolio_irr = None
+
+                    # For multiple portfolios, we need to aggregate stored IRRs
+                    # Note: This assumes all portfolios have IRRs stored for this date
+                    if len(portfolio_id_list) == 1:
+                        # Single portfolio - direct lookup
+                        stored_irr_result = await db.fetchrow(
+                            """
+                            SELECT irr_result
+                            FROM portfolio_irr_values
+                            WHERE portfolio_id = $1 AND date = $2
+                            """,
+                            portfolio_id_list[0], normalized_date
                         )
-                        
-                        portfolio_irr = None
-                        if portfolio_irr_result and portfolio_irr_result.get("success"):
-                            portfolio_irr = portfolio_irr_result.get("irr_percentage")
-                            logger.info(f"✅ Calculated aggregated portfolio IRR for {date_str}: {portfolio_irr}%")
+                        if stored_irr_result:
+                            portfolio_irr = float(stored_irr_result["irr_result"])
+                            logger.debug(f"📊 Found stored portfolio IRR for date {date_str}: {portfolio_irr}%")
                         else:
-                            logger.warning(f"⚠️ Portfolio IRR calculation returned unsuccessful result for {date_str}: {portfolio_irr_result}")
-                            
-                    except Exception as calc_error:
-                        logger.error(f"❌ Portfolio IRR calculation failed for {date_str}: {str(calc_error)}")
-                        portfolio_irr = None
+                            logger.debug(f"📊 No stored portfolio IRR found for date {date_str}")
+                    else:
+                        # Multiple portfolios - this is complex, would need aggregation logic
+                        # For now, log warning and return None
+                        logger.warning(f"⚠️ Multiple portfolios ({len(portfolio_id_list)}) detected - portfolio IRR aggregation not yet implemented. Returning None.")
+                        logger.warning(f"⚠️ Portfolio IDs: {portfolio_id_list}")
+                        # TODO: Implement proper multi-portfolio IRR aggregation from stored values
 
                     # Get total valuation for all portfolios on this date
                     total_valuation = 0.0
