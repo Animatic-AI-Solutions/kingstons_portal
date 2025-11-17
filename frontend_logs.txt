@@ -1,774 +1,504 @@
-2025-10-24 12:34:15,423 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-10-24 12:34:15,424 - app.api.routes.portfolio_funds - INFO - Monthly IRR: 100.0000%
-2025-10-24 12:34:15,424 - app.api.routes.portfolio_funds - INFO - Annualized IRR: 1200.0000%
-2025-10-24 12:34:15,424 - app.api.routes.portfolio_funds - INFO - Months in period: 3
-2025-10-24 12:34:15,425 - app.api.routes.portfolio_funds - INFO - Array size used: 3
-2025-10-24 12:34:15,425 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: 1200.0% over 59 days (2 cash flow periods)   
-2025-10-24 12:34:15,445 - app.api.routes.portfolio_funds - INFO - ✅ Inserted portfolio IRR for portfolio 410, date 2025-02-01: 1200.0%
-2025-10-24 12:34:15,450 - app.api.routes.portfolio_funds - INFO - ✅ Successfully calculated aggregate IRR for 2 portfolio funds: 1200.0%
-2025-10-24 12:34:16,580 - app.api.routes.client_products - INFO - Fetching complete product details for product ID: 397
-INFO:     connection closed
-2025-10-24 12:34:16,675 - app.api.routes.client_products - INFO - Found product: Investment Bond (ID: 397)
-2025-10-24 12:34:16,772 - app.api.routes.presence - WARNING - Failed to send message to user 3: received 1000 (OK) Component unmounting; then sent 1000 (OK) Component unmounting
-2025-10-24 12:34:16,820 - app.api.routes.portfolios - INFO - 🔍 DEBUG: get_complete_portfolio for portfolio 410
-2025-10-24 12:34:16,820 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Found 3 portfolio funds:
-2025-10-24 12:34:16,821 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 1: ID=1981, AvailableFundID=5, Status=active
-2025-10-24 12:34:16,822 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 2: ID=1982, AvailableFundID=59, Status=active
-2025-10-24 12:34:16,824 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 3: ID=1983, AvailableFundID=98, Status=active
-2025-10-24 12:34:16,848 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Final response contains 3 portfolio_funds:
-2025-10-24 12:34:16,849 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 1: ID=1981, Name=Cash, Status=active
-2025-10-24 12:34:16,850 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 2: ID=1982, Name=Artemis Income, Status=active
-2025-10-24 12:34:16,851 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 3: ID=1983, Name=Aviva Life Mixed Investments (40-85%) S4, Status=active
-INFO:     ('127.0.0.1', 60263) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-397" [accepted]
-INFO:     connection open
-2025-10-24 12:34:20,064 - app.api.routes.portfolios - INFO - 🔍 DEBUG: get_complete_portfolio for portfolio 410
-2025-10-24 12:34:20,074 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Found 3 portfolio funds:
-2025-10-24 12:34:20,075 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 1: ID=1981, AvailableFundID=5, Status=active
-2025-10-24 12:34:20,075 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 2: ID=1982, AvailableFundID=59, Status=active
-2025-10-24 12:34:20,076 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 3: ID=1983, AvailableFundID=98, Status=active
-2025-10-24 12:34:20,084 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Final response contains 3 portfolio_funds:
-2025-10-24 12:34:20,084 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 1: ID=1981, Name=Cash, Status=active
-2025-10-24 12:34:20,085 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 2: ID=1982, Name=Artemis Income, Status=active
-2025-10-24 12:34:20,085 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 3: ID=1983, Name=Aviva Life Mixed Investments (40-85%) S4, Status=active
-INFO:     ('127.0.0.1', 55483) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-397" [accepted]
-INFO:     connection open
-2025-10-24 12:34:28,734 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION ENTRY: ===== FUND VALUATION CREATE ENDPOINT HIT =====
-2025-10-24 12:34:28,735 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION ENTRY: create_fund_valuation called for fund 1982, date 2025-03-01 00:00:00, value 120.00
-2025-10-24 12:34:28,736 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION ENTRY: Checking if portfolio fund 1982 exists...
-2025-10-24 12:34:28,739 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION ENTRY: Portfolio fund 1982 exists ✅
-2025-10-24 12:34:28,740 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION ENTRY: Parsed valuation amount: 120.0
-2025-10-24 12:34:28,741 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION ENTRY: Checking for existing valuation for fund 1982 on date 2025-03-01T00:00:00
-2025-10-24 12:34:28,745 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION ENTRY: ===== NO EXISTING VALUATION FOUND - TAKING CREATE PATH =====
-2025-10-24 12:34:28,746 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION ENTRY: Creating new valuation for fund 1982, date 2025-03-01T00:00:00, value 120.0
-2025-10-24 12:34:28,747 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION ENTRY: Fund valuation data to insert: portfolio_fund_id=1982, valuation_date=2025-03-01T00:00:00, valuation=120.0
-2025-10-24 12:34:28,762 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION ENTRY: Successfully created fund valuation with ID 7806
-2025-10-24 12:34:28,782 - app.api.routes.fund_valuations - INFO - 📈 [IRR CASCADE INTEGRATION] Triggering IRR calculation for new valuation creation
-2025-10-24 12:34:28,782 - app.api.routes.fund_valuations - INFO - 📈 [IRR CASCADE] Using cascade service for fund 1982, date 2025-03-01     
-2025-10-24 12:34:28,783 - app.services.irr_cascade_service - INFO - 📈 [IRR CASCADE] ==================== VALUATION CREATION/EDIT FLOW ====================
-2025-10-24 12:34:28,783 - app.services.irr_cascade_service - INFO - 📈 [IRR CASCADE] Starting valuation creation/edit flow for fund 1982, date 2025-03-01
-2025-10-24 12:34:28,786 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] ========== CALCULATING FUND IRR ==========
-2025-10-24 12:34:28,786 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund ID: 1982, Date: 2025-03-01
-2025-10-24 12:34:28,787 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Converted date to date_obj: 2025-03-01
-2025-10-24 12:34:28,787 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calling calculate_single_portfolio_fund_irr with bypass_cache=True
-2025-10-24 12:34:28,788 - app.api.routes.portfolio_funds - INFO - 🔍 IRR CALC ENTRY: calculate_single_portfolio_fund_irr called for fund 1982, date 2025-03-01  (BYPASSING CACHE)
-2025-10-24 12:34:28,788 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh single fund calculation as requested
-2025-10-24 12:34:28,793 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2025-03-01
-2025-10-24 12:34:28,795 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Fund valuation: £120.0
-2025-10-24 12:34:28,798 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Found 1 activities for fund 1982 up to 2025-03-01 (using end-of-day filter: 2025-03-01 23:59:59.999999)
-2025-10-24 12:34:28,799 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Added final valuation of £120.0 to next month (2025-04-01) to separate from activities in 2025-03-01
-2025-10-24 12:34:28,800 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Aggregated cash flows: 3 flows from 2025-01-01 to 2025-04-01    
-2025-10-24 12:34:28,804 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Total valuation: £120.0
-2025-10-24 12:34:28,805 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-10-24 12:34:28,806 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: 1.2894284851066646
-2025-10-24 12:34:28,809 - app.api.routes.portfolio_funds - WARNING - Extreme IRR value detected: 1.2894284851066646. This may indicate incorrect cash flow data.
-2025-10-24 12:34:28,810 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): 15.473141821279976
-2025-10-24 12:34:28,811 - app.api.routes.portfolio_funds - INFO - Days in period: 90
-2025-10-24 12:34:28,811 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-10-24 12:34:28,812 - app.api.routes.portfolio_funds - INFO - Monthly IRR: 128.9428%
-2025-10-24 12:34:28,813 - app.api.routes.portfolio_funds - INFO - Annualized IRR: 1547.3142%
-2025-10-24 12:34:28,813 - app.api.routes.portfolio_funds - INFO - Months in period: 4
-2025-10-24 12:34:28,814 - app.api.routes.portfolio_funds - INFO - Array size used: 4
-2025-10-24 12:34:28,814 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Final IRR calculation - Decimal: 15.473141821279976, Percentage: 1547.3%
-2025-10-24 12:34:28,816 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: IRR calculation completed: 1547.3% for fund 1982 on 2025-03-01  
-2025-10-24 12:34:28,818 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: ✅ IRR calculation completed successfully for fund 1982: {'success': True, 'irr_percentage': 1547.3, 'irr_decimal': 15.473141821279976, 'calculation_date': '2025-03-01', 'portfolio_fund_id': 1982, 'valuation_amount': 120.0, 'cash_flows_count': 3, 'period_start': '2025-01-01', 'period_end': '2025-04-01', 'days_in_period': 90}
-2025-10-24 12:34:28,820 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] IRR calculation returned: {'success': True, 'irr_percentage': 1547.3, 'irr_decimal': 15.473141821279976, 'calculation_date': '2025-03-01', 'portfolio_fund_id': 1982, 'valuation_amount': 120.0, 'cash_flows_count': 3, 'period_start': '2025-01-01', 'period_end': '2025-04-01', 'days_in_period': 90}
-2025-10-24 12:34:28,821 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calculated IRR percentage: 1547.3%
-2025-10-24 12:34:28,822 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Looking for fund valuation with fund_id=1982, date=2025-03-01
-2025-10-24 12:34:28,825 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund valuation ID: 7806
-2025-10-24 12:34:28,825 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Checking for existing IRR record with fund_id=1982, date=2025-03-01
-2025-10-24 12:34:28,827 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] No existing IRR record found - will create new one   
-2025-10-24 12:34:28,828 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Creating new IRR record: fund_id=1982, irr=1547.3%, date=2025-03-01, valuation_id=7806
-2025-10-24 12:34:28,837 - app.services.irr_cascade_service - INFO - 📊 ✅ Created fund IRR for fund 1982 on 2025-03-01: 1547.3%
-2025-10-24 12:34:28,838 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [1982]
-2025-10-24 12:34:28,841 - app.services.irr_cascade_service - INFO - 📊 Portfolio 410 completeness for 2025-03-01: 1/3 = False
-2025-10-24 12:34:28,843 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] Portfolio 410 has 1 total IRR records
-2025-10-24 12:34:28,843 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] All records - ID 1416: IRR=1200.0000%, Date='2025-02-01'
-2025-10-24 12:34:28,846 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] Targeting date '2025-03-01': found 0 exact matches
-2025-10-24 12:34:28,848 - app.services.irr_cascade_service - INFO - 🗑️ Deleted 0 portfolio IRR records for portfolio 410 on '2025-03-01'    
-2025-10-24 12:34:28,850 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] After deletion, portfolio 410 has 1 total IRR records remaining
-2025-10-24 12:34:28,852 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] Remaining record ID 1416: IRR=1200.0000%, Date='2025-02-01'
-2025-10-24 12:34:28,854 - app.services.irr_cascade_service - INFO - 📈 [IRR CASCADE] ✅ Valuation flow completed: {'success': True, 'portfolio_fund_id': 1982, 'portfolio_id': 410, 'valuation_date': '2025-03-01', 'fund_irr_calculated': True, 'portfolio_complete': False, 'portfolio_irr_calculated': False, 'portfolio_irr_deleted': False}
-2025-10-24 12:34:28,855 - app.api.routes.fund_valuations - INFO - 📈 [IRR CASCADE] ✅ IRR calculation completed: {'success': True, 'portfolio_fund_id': 1982, 'portfolio_id': 410, 'valuation_date': '2025-03-01', 'fund_irr_calculated': True, 'portfolio_complete': False, 'portfolio_irr_calculated': False, 'portfolio_irr_deleted': False}
-2025-10-24 12:34:28,856 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION EXIT: ===== CREATE PATH COMPLETE =====
-2025-10-24 12:34:28,857 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION EXIT: create_fund_valuation completed successfully for fund 1982
-2025-10-24 12:34:28,858 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION EXIT: Final created_valuation data: {'id': 7806, 'portfolio_fund_id': 1982, 'valuation_date': datetime.date(2025, 3, 1), 'valuation': Decimal('120.00'), 'created_at': datetime.datetime(2025, 10, 24, 11, 34, 28, 749600, tzinfo=datetime.timezone.utc)}
-2025-10-24 12:34:28,873 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION ENTRY: ===== FUND VALUATION CREATE ENDPOINT HIT =====
-2025-10-24 12:34:28,875 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION ENTRY: create_fund_valuation called for fund 1983, date 2025-03-01 00:00:00, value 50.00
-2025-10-24 12:34:28,880 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION ENTRY: Checking if portfolio fund 1983 exists...
-2025-10-24 12:34:28,882 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION ENTRY: Portfolio fund 1983 exists ✅
-2025-10-24 12:34:28,882 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION ENTRY: Parsed valuation amount: 50.0
-2025-10-24 12:34:28,882 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION ENTRY: Checking for existing valuation for fund 1983 on date 2025-03-01T00:00:00
-2025-10-24 12:34:28,884 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION ENTRY: ===== NO EXISTING VALUATION FOUND - TAKING CREATE PATH =====
-2025-10-24 12:34:28,885 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION ENTRY: Creating new valuation for fund 1983, date 2025-03-01T00:00:00, value 50.0
-2025-10-24 12:34:28,885 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION ENTRY: Fund valuation data to insert: portfolio_fund_id=1983, valuation_date=2025-03-01T00:00:00, valuation=50.0
-2025-10-24 12:34:28,888 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION ENTRY: Successfully created fund valuation with ID 7807      
-2025-10-24 12:34:28,888 - app.api.routes.fund_valuations - INFO - 📈 [IRR CASCADE INTEGRATION] Triggering IRR calculation for new valuation creation
-2025-10-24 12:34:28,888 - app.api.routes.fund_valuations - INFO - 📈 [IRR CASCADE] Using cascade service for fund 1983, date 2025-03-01     
-2025-10-24 12:34:28,889 - app.services.irr_cascade_service - INFO - 📈 [IRR CASCADE] ==================== VALUATION CREATION/EDIT FLOW ====================
-2025-10-24 12:34:28,889 - app.services.irr_cascade_service - INFO - 📈 [IRR CASCADE] Starting valuation creation/edit flow for fund 1983, date 2025-03-01
-2025-10-24 12:34:28,891 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] ========== CALCULATING FUND IRR ==========
-2025-10-24 12:34:28,891 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund ID: 1983, Date: 2025-03-01
-2025-10-24 12:34:28,891 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Converted date to date_obj: 2025-03-01
-2025-10-24 12:34:28,891 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calling calculate_single_portfolio_fund_irr with bypass_cache=True
-2025-10-24 12:34:28,892 - app.api.routes.portfolio_funds - INFO - 🔍 IRR CALC ENTRY: calculate_single_portfolio_fund_irr called for fund 1983, date 2025-03-01  (BYPASSING CACHE)
-2025-10-24 12:34:28,892 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh single fund calculation as requested
-2025-10-24 12:34:28,896 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2025-03-01
-2025-10-24 12:34:28,898 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Fund valuation: £50.0
-2025-10-24 12:34:28,900 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Found 1 activities for fund 1983 up to 2025-03-01 (using end-of-day filter: 2025-03-01 23:59:59.999999)
-2025-10-24 12:34:28,900 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Added final valuation of £50.0 to next month (2025-04-01) to separate from activities in 2025-03-01
-2025-10-24 12:34:28,900 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Aggregated cash flows: 3 flows from 2025-01-01 to 2025-04-01    
-2025-10-24 12:34:28,902 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Total valuation: £50.0
-2025-10-24 12:34:28,902 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-10-24 12:34:28,903 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: 0.7099759466766966
-2025-10-24 12:34:28,903 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): 8.51971136012036
-2025-10-24 12:34:28,904 - app.api.routes.portfolio_funds - INFO - Days in period: 90
-2025-10-24 12:34:28,904 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-10-24 12:34:28,904 - app.api.routes.portfolio_funds - INFO - Monthly IRR: 70.9976%
-2025-10-24 12:34:28,904 - app.api.routes.portfolio_funds - INFO - Annualized IRR: 851.9711%
-2025-10-24 12:34:28,905 - app.api.routes.portfolio_funds - INFO - Months in period: 4
-2025-10-24 12:34:28,905 - app.api.routes.portfolio_funds - INFO - Array size used: 4
-2025-10-24 12:34:28,905 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Final IRR calculation - Decimal: 8.51971136012036, Percentage: 852.0%
-2025-10-24 12:34:28,906 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: IRR calculation completed: 852.0% for fund 1983 on 2025-03-01   
-2025-10-24 12:34:28,906 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: ✅ IRR calculation completed successfully for fund 1983: {'success': True, 'irr_percentage': 852.0, 'irr_decimal': 8.51971136012036, 'calculation_date': '2025-03-01', 'portfolio_fund_id': 1983, 'valuation_amount': 50.0, 'cash_flows_count': 3, 'period_start': '2025-01-01', 'period_end': '2025-04-01', 'days_in_period': 90}
-2025-10-24 12:34:28,906 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] IRR calculation returned: {'success': True, 'irr_percentage': 852.0, 'irr_decimal': 8.51971136012036, 'calculation_date': '2025-03-01', 'portfolio_fund_id': 1983, 'valuation_amount': 50.0, 'cash_flows_count': 3, 'period_start': '2025-01-01', 'period_end': '2025-04-01', 'days_in_period': 90}
-2025-10-24 12:34:28,907 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calculated IRR percentage: 852.0%
-2025-10-24 12:34:28,907 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Looking for fund valuation with fund_id=1983, date=2025-03-01
-2025-10-24 12:34:28,909 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund valuation ID: 7807
-2025-10-24 12:34:28,909 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Checking for existing IRR record with fund_id=1983, date=2025-03-01
-2025-10-24 12:34:28,911 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] No existing IRR record found - will create new one   
-2025-10-24 12:34:28,911 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Creating new IRR record: fund_id=1983, irr=852.0%, date=2025-03-01, valuation_id=7807
-2025-10-24 12:34:28,915 - app.services.irr_cascade_service - INFO - 📊 ✅ Created fund IRR for fund 1983 on 2025-03-01: 852.0%
-2025-10-24 12:34:28,915 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [1983]
-2025-10-24 12:34:28,918 - app.services.irr_cascade_service - INFO - 📊 Portfolio 410 completeness for 2025-03-01: 2/3 = False
-2025-10-24 12:34:28,920 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] Portfolio 410 has 1 total IRR records
-2025-10-24 12:34:28,921 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] All records - ID 1416: IRR=1200.0000%, Date='2025-02-01'
-2025-10-24 12:34:28,922 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] Targeting date '2025-03-01': found 0 exact matches
-2025-10-24 12:34:28,924 - app.services.irr_cascade_service - INFO - 🗑️ Deleted 0 portfolio IRR records for portfolio 410 on '2025-03-01'    
-2025-10-24 12:34:28,926 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] After deletion, portfolio 410 has 1 total IRR records remaining
-2025-10-24 12:34:28,926 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] Remaining record ID 1416: IRR=1200.0000%, Date='2025-02-01'
-2025-10-24 12:34:28,927 - app.services.irr_cascade_service - INFO - 📈 [IRR CASCADE] ✅ Valuation flow completed: {'success': True, 'portfolio_fund_id': 1983, 'portfolio_id': 410, 'valuation_date': '2025-03-01', 'fund_irr_calculated': True, 'portfolio_complete': False, 'portfolio_irr_calculated': False, 'portfolio_irr_deleted': False}
-2025-10-24 12:34:28,927 - app.api.routes.fund_valuations - INFO - 📈 [IRR CASCADE] ✅ IRR calculation completed: {'success': True, 'portfolio_fund_id': 1983, 'portfolio_id': 410, 'valuation_date': '2025-03-01', 'fund_irr_calculated': True, 'portfolio_complete': False, 'portfolio_irr_calculated': False, 'portfolio_irr_deleted': False}
-2025-10-24 12:34:28,927 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION EXIT: ===== CREATE PATH COMPLETE =====
-2025-10-24 12:34:28,927 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION EXIT: create_fund_valuation completed successfully for fund 1983
-2025-10-24 12:34:28,928 - app.api.routes.fund_valuations - INFO - 🔍 VALUATION EXIT: Final created_valuation data: {'id': 7807, 'portfolio_fund_id': 1983, 'valuation_date': datetime.date(2025, 3, 1), 'valuation': Decimal('50.00'), 'created_at': datetime.datetime(2025, 10, 24, 11, 34, 28, 886652, tzinfo=datetime.timezone.utc)}
-2025-10-24 12:34:28,940 - app.api.routes.portfolio_funds - INFO - Recalculating IRR after activity change for portfolio_fund_id: 1982, activity_date: 2025-03-01
-2025-10-24 12:34:28,941 - app.api.routes.holding_activity_logs - INFO - ⚡ [OPTIMIZED] Targeted IRR recalculation for portfolio_fund 1982 on date 2025-03-01
-2025-10-24 12:34:28,943 - app.services.irr_cascade_service - INFO - 🔄 [IRR CASCADE] Starting batch IRR recalculation for portfolio 410, activity dates: ['2025-03-01']
-2025-10-24 12:34:28,943 - app.services.irr_cascade_service - INFO - 🔄 [IRR CASCADE] Activity dates: ['2025-03-01'], earliest: 2025-03-01   
-2025-10-24 12:34:28,946 - app.services.irr_cascade_service - INFO - 🔍 Found 1 unique valuation dates for portfolio 410 from 2025-03-01: ['2025-03-01']
-2025-10-24 12:34:28,947 - app.services.irr_cascade_service - INFO - 🔄 [IRR CASCADE] Found 1 valuation dates to recalculate: ['2025-03-01'] 
-2025-10-24 12:34:28,947 - app.services.irr_cascade_service - INFO - 🔄 [IRR CASCADE] Processing valuation date 2025-03-01
-2025-10-24 12:34:28,971 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] ========== RECALCULATING ALL FUND IRRs FOR DATE ==========
-2025-10-24 12:34:28,972 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Portfolio ID: 410, Date: 2025-03-01
-2025-10-24 12:34:28,972 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Converted date to date_obj: 2025-03-01
-2025-10-24 12:34:28,976 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Found 142 funds with valuations on 2025-03-01       
-2025-10-24 12:34:28,978 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Portfolio 410 has 3 total funds
-2025-10-24 12:34:28,978 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Funds with valuations on 2025-03-01: [1747, 1748, 1749, 1750, 1751, 1752, 1753, 1754, 1174, 1175, 1176, 1177, 1178, 1179, 1180, 1181, 1182, 1183, 1139, 1140, 1632, 1633, 1323, 1324, 1325, 1326, 1327, 1328, 1329, 1330, 1331, 1332, 1333, 1636, 1637, 1638, 1639, 1640, 1641, 1642, 1643, 1634, 1635, 1334, 1335, 1336, 1337, 1358, 1359, 1360, 1361, 1362, 1363, 1364, 1365, 1366, 1367, 1368, 1369, 1370, 1371, 1389, 1390, 1391, 1392, 1393, 1394, 1395, 1396, 1397, 1357, 1356, 1609, 1610, 1611, 1612, 1613, 1614, 1615, 1616, 1617, 1618, 1619, 1620, 1933, 1934, 1935, 1936, 1621, 1622, 1623, 1624, 1625, 1626, 1627, 1628, 1629, 1630, 1631, 1755, 1756, 1832, 1833, 1842, 1843, 1982, 1983, 1902, 1903, 1904, 1905, 1906, 1907, 1908, 1909, 1910, 1911, 1912, 1660, 1661, 1662, 1663, 1664, 1665, 1668, 1667, 1659, 1913, 1914, 1915, 1916, 1917, 1918, 1919, 1920, 1921, 1922, 1923, 1927, 1928, 1929, 1932]   
-2025-10-24 12:34:28,979 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Portfolio fund IDs: [1981, 1982, 1983]
-2025-10-24 12:34:28,981 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Relevant fund IDs for IRR calculation: [1982, 1983] 
-2025-10-24 12:34:28,981 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Expected 8 funds, got 2 funds
-2025-10-24 12:34:28,982 - app.services.irr_cascade_service - WARNING - 🔍 [BATCH IRR CALC] ⚠️ Cash fund (1536) is MISSING from relevant_fundd_ids!
-2025-10-24 12:34:28,983 - app.services.irr_cascade_service - WARNING - 🔍 [BATCH IRR CALC] ⚠️ Checking if 1536 has valuation on 2025-03-01....
-2025-10-24 12:34:28,987 - app.services.irr_cascade_service - WARNING - 🔍 [BATCH IRR CALC] ⚠️ Cash valuation check result: []
-2025-10-24 12:34:28,988 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Processing fund 1982 for date 2025-03-01
-2025-10-24 12:34:28,988 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] ========== CALCULATING FUND IRR ==========
-2025-10-24 12:34:28,989 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund ID: 1982, Date: 2025-03-01
-2025-10-24 12:34:28,990 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Converted date to date_obj: 2025-03-01
-2025-10-24 12:34:28,990 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calling calculate_single_portfolio_fund_irr with bypass_cache=True
-2025-10-24 12:34:28,991 - app.api.routes.portfolio_funds - INFO - 🔍 IRR CALC ENTRY: calculate_single_portfolio_fund_irr called for fund 1982, date 2025-03-01  (BYPASSING CACHE)
-2025-10-24 12:34:28,992 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh single fund calculation as requested
-2025-10-24 12:34:29,004 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2025-03-01
-2025-10-24 12:34:29,013 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Fund valuation: £120.0
-2025-10-24 12:34:29,020 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Found 1 activities for fund 1982 up to 2025-03-01 (using end-of-day filter: 2025-03-01 23:59:59.999999)
-2025-10-24 12:34:29,021 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Added final valuation of £120.0 to next month (2025-04-01) to separate from activities in 2025-03-01
-2025-10-24 12:34:29,023 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Aggregated cash flows: 3 flows from 2025-01-01 to 2025-04-01    
-2025-10-24 12:34:29,023 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Total valuation: £120.0
-2025-10-24 12:34:29,027 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-10-24 12:34:29,033 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: 1.2894284851066646
-2025-10-24 12:34:29,037 - app.api.routes.portfolio_funds - WARNING - Extreme IRR value detected: 1.2894284851066646. This may indicate incorrect cash flow data.
-2025-10-24 12:34:29,049 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): 15.473141821279976
-2025-10-24 12:34:29,053 - app.api.routes.portfolio_funds - INFO - Days in period: 90
-2025-10-24 12:34:29,054 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-10-24 12:34:29,054 - app.api.routes.portfolio_funds - INFO - Monthly IRR: 128.9428%
-2025-10-24 12:34:29,055 - app.api.routes.portfolio_funds - INFO - Annualized IRR: 1547.3142%
-2025-10-24 12:34:29,055 - app.api.routes.portfolio_funds - INFO - Months in period: 4
-2025-10-24 12:34:29,055 - app.api.routes.portfolio_funds - INFO - Array size used: 4
-2025-10-24 12:34:29,055 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Final IRR calculation - Decimal: 15.473141821279976, Percentage: 1547.3%
-2025-10-24 12:34:29,056 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: IRR calculation completed: 1547.3% for fund 1982 on 2025-03-01  
-2025-10-24 12:34:29,056 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: ✅ IRR calculation completed successfully for fund 1982: {'success': True, 'irr_percentage': 1547.3, 'irr_decimal': 15.473141821279976, 'calculation_date': '2025-03-01', 'portfolio_fund_id': 1982, 'valuation_amount': 120.0, 'cash_flows_count': 3, 'period_start': '2025-01-01', 'period_end': '2025-04-01', 'days_in_period': 90}
-2025-10-24 12:34:29,056 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] IRR calculation returned: {'success': True, 'irr_percentage': 1547.3, 'irr_decimal': 15.473141821279976, 'calculation_date': '2025-03-01', 'portfolio_fund_id': 1982, 'valuation_amount': 120.0, 'cash_flows_count': 3, 'period_start': '2025-01-01', 'period_end': '2025-04-01', 'days_in_period': 90}
-2025-10-24 12:34:29,080 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calculated IRR percentage: 1547.3%
-2025-10-24 12:34:29,082 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Looking for fund valuation with fund_id=1982, date=2025-03-01
-2025-10-24 12:34:29,084 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund valuation ID: 7806
-2025-10-24 12:34:29,084 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Checking for existing IRR record with fund_id=1982, date=2025-03-01
-2025-10-24 12:34:29,086 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Found existing IRR record with ID: 8338
-2025-10-24 12:34:29,086 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Updating existing IRR ID 8338 with value 1547.3%     
-2025-10-24 12:34:29,089 - app.services.irr_cascade_service - INFO - 📊 ✅ Updated fund IRR for fund 1982 on 2025-03-01: 1547.3%
-2025-10-24 12:34:29,090 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [1982]
-2025-10-24 12:34:29,090 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] ✅ Successfully calculated IRR for fund 1982        
-2025-10-24 12:34:29,091 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Processing fund 1983 for date 2025-03-01
-2025-10-24 12:34:29,091 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] ========== CALCULATING FUND IRR ==========
-2025-10-24 12:34:29,091 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund ID: 1983, Date: 2025-03-01
-2025-10-24 12:34:29,092 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Converted date to date_obj: 2025-03-01
-2025-10-24 12:34:29,092 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calling calculate_single_portfolio_fund_irr with bypass_cache=True
-2025-10-24 12:34:29,092 - app.api.routes.portfolio_funds - INFO - 🔍 IRR CALC ENTRY: calculate_single_portfolio_fund_irr called for fund 1983, date 2025-03-01  (BYPASSING CACHE)
-2025-10-24 12:34:29,092 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh single fund calculation as requested
-2025-10-24 12:34:29,096 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2025-03-01
-2025-10-24 12:34:29,098 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Fund valuation: £50.0
-2025-10-24 12:34:29,101 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Found 1 activities for fund 1983 up to 2025-03-01 (using end-of-day filter: 2025-03-01 23:59:59.999999)
-2025-10-24 12:34:29,101 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Added final valuation of £50.0 to next month (2025-04-01) to separate from activities in 2025-03-01
-2025-10-24 12:34:29,102 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Aggregated cash flows: 3 flows from 2025-01-01 to 2025-04-01    
-2025-10-24 12:34:29,102 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Total valuation: £50.0
-2025-10-24 12:34:29,104 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-10-24 12:34:29,105 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: 0.7099759466766966
-2025-10-24 12:34:29,106 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): 8.51971136012036
-2025-10-24 12:34:29,106 - app.api.routes.portfolio_funds - INFO - Days in period: 90
-2025-10-24 12:34:29,107 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-10-24 12:34:29,107 - app.api.routes.portfolio_funds - INFO - Monthly IRR: 70.9976%
-2025-10-24 12:34:29,108 - app.api.routes.portfolio_funds - INFO - Annualized IRR: 851.9711%
-2025-10-24 12:34:29,108 - app.api.routes.portfolio_funds - INFO - Months in period: 4
-2025-10-24 12:34:29,109 - app.api.routes.portfolio_funds - INFO - Array size used: 4
-2025-10-24 12:34:29,109 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Final IRR calculation - Decimal: 8.51971136012036, Percentage: 852.0%
-2025-10-24 12:34:29,110 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: IRR calculation completed: 852.0% for fund 1983 on 2025-03-01   
-2025-10-24 12:34:29,111 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: ✅ IRR calculation completed successfully for fund 1983: {'success': True, 'irr_percentage': 852.0, 'irr_decimal': 8.51971136012036, 'calculation_date': '2025-03-01', 'portfolio_fund_id': 1983, 'valuation_amount': 50.0, 'cash_flows_count': 3, 'period_start': '2025-01-01', 'period_end': '2025-04-01', 'days_in_period': 90}
-2025-10-24 12:34:29,111 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] IRR calculation returned: {'success': True, 'irr_percentage': 852.0, 'irr_decimal': 8.51971136012036, 'calculation_date': '2025-03-01', 'portfolio_fund_id': 1983, 'valuation_amount': 50.0, 'cash_flows_count': 3, 'period_start': '2025-01-01', 'period_end': '2025-04-01', 'days_in_period': 90}
-2025-10-24 12:34:29,112 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calculated IRR percentage: 852.0%
-2025-10-24 12:34:29,112 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Looking for fund valuation with fund_id=1983, date=2025-03-01
-2025-10-24 12:34:29,114 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund valuation ID: 7807
-2025-10-24 12:34:29,115 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Checking for existing IRR record with fund_id=1983, date=2025-03-01
-2025-10-24 12:34:29,117 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Found existing IRR record with ID: 8339
-2025-10-24 12:34:29,117 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Updating existing IRR ID 8339 with value 852.0%      
-2025-10-24 12:34:29,121 - app.services.irr_cascade_service - INFO - 📊 ✅ Updated fund IRR for fund 1983 on 2025-03-01: 852.0%
-2025-10-24 12:34:29,122 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [1983]
-2025-10-24 12:34:29,122 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] ✅ Successfully calculated IRR for fund 1983        
-2025-10-24 12:34:29,123 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [1982, 1983]      
-2025-10-24 12:34:29,124 - app.services.irr_cascade_service - INFO - 🗑️ Invalidated 0 IRR cache entries for 2 recalculated funds
-2025-10-24 12:34:29,124 - app.services.irr_cascade_service - INFO - 📊 Recalculated 2 fund IRRs for portfolio 410 on 2025-03-01
-2025-10-24 12:34:29,129 - app.services.irr_cascade_service - INFO - 📊 Portfolio 410 completeness for 2025-03-01: 2/3 = False
-2025-10-24 12:34:29,131 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] Portfolio 410 has 1 total IRR records
-2025-10-24 12:34:29,131 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] All records - ID 1416: IRR=1200.0000%, Date='2025-02-01'
-2025-10-24 12:34:29,133 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] Targeting date '2025-03-01': found 0 exact matches
-2025-10-24 12:34:29,135 - app.services.irr_cascade_service - INFO - 🗑️ Deleted 0 portfolio IRR records for portfolio 410 on '2025-03-01'    
-2025-10-24 12:34:29,137 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] After deletion, portfolio 410 has 1 total IRR records remaining
-2025-10-24 12:34:29,138 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] Remaining record ID 1416: IRR=1200.0000%, Date='2025-02-01'
-2025-10-24 12:34:29,138 - app.services.irr_cascade_service - INFO - 📊 Portfolio 410 not complete on 2025-03-01, portfolio IRR deleted      
-2025-10-24 12:34:29,138 - app.services.irr_cascade_service - INFO - 🔄 [IRR CASCADE] ✅ Batch recalculation completed: {'success': True, 'portfolio_id': 410, 'dates_processed': 1, 'fund_irrs_recalculated': 2, 'portfolio_irrs_recalculated': 0, 'processed_dates': ['2025-03-01'], 'activity_dates': ['2025-03-01'], 'earliest_activity_date': '2025-03-01'}
-2025-10-24 12:34:29,140 - app.api.routes.holding_activity_logs - INFO - ✅ [ACTIVITY WRAPPER] Targeted IRR cascade completed successfully: {'success': True, 'portfolio_id': 410, 'dates_processed': 1, 'fund_irrs_recalculated': 2, 'portfolio_irrs_recalculated': 0, 'processed_dates': ['2025-03-01'], 'activity_dates': ['2025-03-01'], 'earliest_activity_date': '2025-03-01'}
-2025-10-24 12:34:29,173 - app.api.routes.portfolio_funds - INFO - Recalculating IRR after activity change for portfolio_fund_id: 1983, activity_date: 2025-03-01
-2025-10-24 12:34:29,174 - app.api.routes.holding_activity_logs - INFO - ⚡ [OPTIMIZED] Targeted IRR recalculation for portfolio_fund 1983 on date 2025-03-01
-2025-10-24 12:34:29,176 - app.services.irr_cascade_service - INFO - 🔄 [IRR CASCADE] Starting batch IRR recalculation for portfolio 410, activity dates: ['2025-03-01']
-2025-10-24 12:34:29,176 - app.services.irr_cascade_service - INFO - 🔄 [IRR CASCADE] Activity dates: ['2025-03-01'], earliest: 2025-03-01   
-2025-10-24 12:34:29,180 - app.services.irr_cascade_service - INFO - 🔍 Found 1 unique valuation dates for portfolio 410 from 2025-03-01: ['2025-03-01']
-2025-10-24 12:34:29,181 - app.services.irr_cascade_service - INFO - 🔄 [IRR CASCADE] Found 1 valuation dates to recalculate: ['2025-03-01'] 
-2025-10-24 12:34:29,185 - app.services.irr_cascade_service - INFO - 🔄 [IRR CASCADE] Processing valuation date 2025-03-01
-2025-10-24 12:34:29,186 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] ========== RECALCULATING ALL FUND IRRs FOR DATE ==========
-2025-10-24 12:34:29,186 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Portfolio ID: 410, Date: 2025-03-01
-2025-10-24 12:34:29,186 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Converted date to date_obj: 2025-03-01
-2025-10-24 12:34:29,189 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Found 142 funds with valuations on 2025-03-01       
-2025-10-24 12:34:29,190 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Portfolio 410 has 3 total funds
-2025-10-24 12:34:29,191 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Funds with valuations on 2025-03-01: [1747, 1748, 1749, 1750, 1751, 1752, 1753, 1754, 1174, 1175, 1176, 1177, 1178, 1179, 1180, 1181, 1182, 1183, 1139, 1140, 1632, 1633, 1323, 1324, 1325, 1326, 1327, 1328, 1329, 1330, 1331, 1332, 1333, 1636, 1637, 1638, 1639, 1640, 1641, 1642, 1643, 1634, 1635, 1334, 1335, 1336, 1337, 1358, 1359, 1360, 1361, 1362, 1363, 1364, 1365, 1366, 1367, 1368, 1369, 1370, 1371, 1389, 1390, 1391, 1392, 1393, 1394, 1395, 1396, 1397, 1357, 1356, 1609, 1610, 1611, 1612, 1613, 1614, 1615, 1616, 1617, 1618, 1619, 1620, 1933, 1934, 1935, 1936, 1621, 1622, 1623, 1624, 1625, 1626, 1627, 1628, 1629, 1630, 1631, 1755, 1756, 1832, 1833, 1842, 1843, 1982, 1983, 1902, 1903, 1904, 1905, 1906, 1907, 1908, 1909, 1910, 1911, 1912, 1660, 1661, 1662, 1663, 1664, 1665, 1668, 1667, 1659, 1913, 1914, 1915, 1916, 1917, 1918, 1919, 1920, 1921, 1922, 1923, 1927, 1928, 1929, 1932]   
-2025-10-24 12:34:29,192 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Portfolio fund IDs: [1981, 1982, 1983]
-2025-10-24 12:34:29,195 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Relevant fund IDs for IRR calculation: [1982, 1983]
-2025-10-24 12:34:29,198 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Expected 8 funds, got 2 funds
-2025-10-24 12:34:29,200 - app.services.irr_cascade_service - WARNING - 🔍 [BATCH IRR CALC] ⚠️ Cash fund (1536) is MISSING from relevant_fundd_ids!
-2025-10-24 12:34:29,200 - app.services.irr_cascade_service - WARNING - 🔍 [BATCH IRR CALC] ⚠️ Checking if 1536 has valuation on 2025-03-01....
-2025-10-24 12:34:29,202 - app.services.irr_cascade_service - WARNING - 🔍 [BATCH IRR CALC] ⚠️ Cash valuation check result: []
-2025-10-24 12:34:29,203 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Processing fund 1982 for date 2025-03-01
-2025-10-24 12:34:29,205 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] ========== CALCULATING FUND IRR ==========
-2025-10-24 12:34:29,207 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund ID: 1982, Date: 2025-03-01
-2025-10-24 12:34:29,208 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Converted date to date_obj: 2025-03-01
-2025-10-24 12:34:29,209 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calling calculate_single_portfolio_fund_irr with bypass_cache=True
-2025-10-24 12:34:29,210 - app.api.routes.portfolio_funds - INFO - 🔍 IRR CALC ENTRY: calculate_single_portfolio_fund_irr called for fund 1982, date 2025-03-01  (BYPASSING CACHE)
-2025-10-24 12:34:29,210 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh single fund calculation as requested
-2025-10-24 12:34:29,216 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2025-03-01
-2025-10-24 12:34:29,221 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Fund valuation: £120.0
-2025-10-24 12:34:29,223 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Found 1 activities for fund 1982 up to 2025-03-01 (using end-of-day filter: 2025-03-01 23:59:59.999999)
-2025-10-24 12:34:29,224 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Added final valuation of £120.0 to next month (2025-04-01) to separate from activities in 2025-03-01
-2025-10-24 12:34:29,224 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Aggregated cash flows: 3 flows from 2025-01-01 to 2025-04-01    
-2025-10-24 12:34:29,225 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Total valuation: £120.0
-2025-10-24 12:34:29,233 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-10-24 12:34:29,235 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: 1.2894284851066646
-2025-10-24 12:34:29,236 - app.api.routes.portfolio_funds - WARNING - Extreme IRR value detected: 1.2894284851066646. This may indicate incorrect cash flow data.
-2025-10-24 12:34:29,236 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): 15.473141821279976
-2025-10-24 12:34:29,237 - app.api.routes.portfolio_funds - INFO - Days in period: 90
-2025-10-24 12:34:29,238 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-10-24 12:34:29,238 - app.api.routes.portfolio_funds - INFO - Monthly IRR: 128.9428%
-2025-10-24 12:34:29,240 - app.api.routes.portfolio_funds - INFO - Annualized IRR: 1547.3142%
-2025-10-24 12:34:29,241 - app.api.routes.portfolio_funds - INFO - Months in period: 4
-2025-10-24 12:34:29,243 - app.api.routes.portfolio_funds - INFO - Array size used: 4
-2025-10-24 12:34:29,248 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Final IRR calculation - Decimal: 15.473141821279976, Percentage: 1547.3%
-2025-10-24 12:34:29,251 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: IRR calculation completed: 1547.3% for fund 1982 on 2025-03-01  
-2025-10-24 12:34:29,253 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: ✅ IRR calculation completed successfully for fund 1982: {'success': True, 'irr_percentage': 1547.3, 'irr_decimal': 15.473141821279976, 'calculation_date': '2025-03-01', 'portfolio_fund_id': 1982, 'valuation_amount': 120.0, 'cash_flows_count': 3, 'period_start': '2025-01-01', 'period_end': '2025-04-01', 'days_in_period': 90}
-2025-10-24 12:34:29,254 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] IRR calculation returned: {'success': True, 'irr_percentage': 1547.3, 'irr_decimal': 15.473141821279976, 'calculation_date': '2025-03-01', 'portfolio_fund_id': 1982, 'valuation_amount': 120.0, 'cash_flows_count': 3, 'period_start': '2025-01-01', 'period_end': '2025-04-01', 'days_in_period': 90}
-2025-10-24 12:34:29,255 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calculated IRR percentage: 1547.3%
-2025-10-24 12:34:29,256 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Looking for fund valuation with fund_id=1982, date=2025-03-01
-2025-10-24 12:34:29,259 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund valuation ID: 7806
-2025-10-24 12:34:29,262 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Checking for existing IRR record with fund_id=1982, date=2025-03-01
-2025-10-24 12:34:29,277 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Found existing IRR record with ID: 8338
-2025-10-24 12:34:29,277 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Updating existing IRR ID 8338 with value 1547.3%     
-2025-10-24 12:34:29,285 - app.services.irr_cascade_service - INFO - 📊 ✅ Updated fund IRR for fund 1982 on 2025-03-01: 1547.3%
-2025-10-24 12:34:29,287 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [1982]
-2025-10-24 12:34:29,287 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] ✅ Successfully calculated IRR for fund 1982
-2025-10-24 12:34:29,288 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Processing fund 1983 for date 2025-03-01
-2025-10-24 12:34:29,288 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] ========== CALCULATING FUND IRR ==========
-2025-10-24 12:34:29,289 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund ID: 1983, Date: 2025-03-01
-2025-10-24 12:34:29,289 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Converted date to date_obj: 2025-03-01
-2025-10-24 12:34:29,290 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calling calculate_single_portfolio_fund_irr with bypass_cache=True
-2025-10-24 12:34:29,290 - app.api.routes.portfolio_funds - INFO - 🔍 IRR CALC ENTRY: calculate_single_portfolio_fund_irr called for fund 1983, date 2025-03-01  (BYPASSING CACHE)
-2025-10-24 12:34:29,291 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh single fund calculation as requested
-2025-10-24 12:34:29,295 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2025-03-01
-2025-10-24 12:34:29,296 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Fund valuation: £50.0
-2025-10-24 12:34:29,298 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Found 1 activities for fund 1983 up to 2025-03-01 (using end-of-day filter: 2025-03-01 23:59:59.999999)
-2025-10-24 12:34:29,298 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Added final valuation of £50.0 to next month (2025-04-01) to separate from activities in 2025-03-01
-2025-10-24 12:34:29,299 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Aggregated cash flows: 3 flows from 2025-01-01 to 2025-04-01    
-2025-10-24 12:34:29,299 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Total valuation: £50.0
-2025-10-24 12:34:29,300 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-10-24 12:34:29,300 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: 0.7099759466766966
-2025-10-24 12:34:29,301 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): 8.51971136012036
-2025-10-24 12:34:29,301 - app.api.routes.portfolio_funds - INFO - Days in period: 90
-2025-10-24 12:34:29,301 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-10-24 12:34:29,301 - app.api.routes.portfolio_funds - INFO - Monthly IRR: 70.9976%
-2025-10-24 12:34:29,302 - app.api.routes.portfolio_funds - INFO - Annualized IRR: 851.9711%
-2025-10-24 12:34:29,302 - app.api.routes.portfolio_funds - INFO - Months in period: 4
-2025-10-24 12:34:29,302 - app.api.routes.portfolio_funds - INFO - Array size used: 4
-2025-10-24 12:34:29,302 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Final IRR calculation - Decimal: 8.51971136012036, Percentage: 852.0%
-2025-10-24 12:34:29,303 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: IRR calculation completed: 852.0% for fund 1983 on 2025-03-01   
-2025-10-24 12:34:29,303 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: ✅ IRR calculation completed successfully for fund 1983: {'success': True, 'irr_percentage': 852.0, 'irr_decimal': 8.51971136012036, 'calculation_date': '2025-03-01', 'portfolio_fund_id': 1983, 'valuation_amount': 50.0, 'cash_flows_count': 3, 'period_start': '2025-01-01', 'period_end': '2025-04-01', 'days_in_period': 90}
-2025-10-24 12:34:29,303 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] IRR calculation returned: {'success': True, 'irr_percentage': 852.0, 'irr_decimal': 8.51971136012036, 'calculation_date': '2025-03-01', 'portfolio_fund_id': 1983, 'valuation_amount': 50.0, 'cash_flows_count': 3, 'period_start': '2025-01-01', 'period_end': '2025-04-01', 'days_in_period': 90}
-2025-10-24 12:34:29,304 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calculated IRR percentage: 852.0%
-2025-10-24 12:34:29,304 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Looking for fund valuation with fund_id=1983, date=2025-03-01
-2025-10-24 12:34:29,305 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund valuation ID: 7807
-2025-10-24 12:34:29,306 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Checking for existing IRR record with fund_id=1983, date=2025-03-01
-2025-10-24 12:34:29,306 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Found existing IRR record with ID: 8339
-2025-10-24 12:34:29,306 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Updating existing IRR ID 8339 with value 852.0%      
-2025-10-24 12:34:29,310 - app.services.irr_cascade_service - INFO - 📊 ✅ Updated fund IRR for fund 1983 on 2025-03-01: 852.0%
-2025-10-24 12:34:29,313 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [1983]
-2025-10-24 12:34:29,313 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] ✅ Successfully calculated IRR for fund 1983        
-2025-10-24 12:34:29,313 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [1982, 1983]      
-2025-10-24 12:34:29,313 - app.services.irr_cascade_service - INFO - 🗑️ Invalidated 0 IRR cache entries for 2 recalculated funds
-2025-10-24 12:34:29,313 - app.services.irr_cascade_service - INFO - 📊 Recalculated 2 fund IRRs for portfolio 410 on 2025-03-01
-2025-10-24 12:34:29,317 - app.services.irr_cascade_service - INFO - 📊 Portfolio 410 completeness for 2025-03-01: 2/3 = False
-2025-10-24 12:34:29,319 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] Portfolio 410 has 1 total IRR records
-2025-10-24 12:34:29,319 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] All records - ID 1416: IRR=1200.0000%, Date='2025-02-01'
-2025-10-24 12:34:29,321 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] Targeting date '2025-03-01': found 0 exact matches
-2025-10-24 12:34:29,322 - app.services.irr_cascade_service - INFO - 🗑️ Deleted 0 portfolio IRR records for portfolio 410 on '2025-03-01'
-2025-10-24 12:34:29,324 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] After deletion, portfolio 410 has 1 total IRR records remaining
-2025-10-24 12:34:29,324 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] Remaining record ID 1416: IRR=1200.0000%, Date='2025-02-01'
-2025-10-24 12:34:29,324 - app.services.irr_cascade_service - INFO - 📊 Portfolio 410 not complete on 2025-03-01, portfolio IRR deleted      
-2025-10-24 12:34:29,324 - app.services.irr_cascade_service - INFO - 🔄 [IRR CASCADE] ✅ Batch recalculation completed: {'success': True, 'portfolio_id': 410, 'dates_processed': 1, 'fund_irrs_recalculated': 2, 'portfolio_irrs_recalculated': 0, 'processed_dates': ['2025-03-01'], 'activity_dates': ['2025-03-01'], 'earliest_activity_date': '2025-03-01'}
-2025-10-24 12:34:29,326 - app.api.routes.holding_activity_logs - INFO - ✅ [ACTIVITY WRAPPER] Targeted IRR cascade completed successfully: {'success': True, 'portfolio_id': 410, 'dates_processed': 1, 'fund_irrs_recalculated': 2, 'portfolio_irrs_recalculated': 0, 'processed_dates': ['2025-03-01'], 'activity_dates': ['2025-03-01'], 'earliest_activity_date': '2025-03-01'}
-2025-10-24 12:34:29,337 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 3 portfolio funds
-2025-10-24 12:34:29,339 - app.api.routes.portfolio_funds - INFO - No IRR date provided, finding latest valuation date
-2025-10-24 12:34:29,341 - app.api.routes.portfolio_funds - INFO - Using latest valuation date: 2025-03-01
-2025-10-24 12:34:29,343 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2025-03-01
-2025-10-24 12:34:29,343 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 3 funds (eliminates 3 individual requests)
-2025-10-24 12:34:29,345 - app.api.routes.portfolio_funds - WARNING - No valuation found for fund 1981 as of 2025-03-01
-2025-10-24 12:34:29,345 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {1982: 120.0, 1983: 50.0, 1981: None}
-2025-10-24 12:34:29,346 - app.api.routes.portfolio_funds - WARNING - 💰 DEBUG: ⚠️ Excluding 1 funds without valuations from IRR calculation:: [1981]
-2025-10-24 12:34:29,346 - app.api.routes.portfolio_funds - WARNING - 💰 DEBUG: ✅ Including 2 funds with valuations: [1982, 1983]
-2025-10-24 12:34:29,350 - app.api.routes.portfolio_funds - INFO - 📊 Processing 2 activities across 2 funds
-2025-10-24 12:34:29,350 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-10-24 12:34:29,351 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: 1.040827550958674
-2025-10-24 12:34:29,369 - app.api.routes.portfolio_funds - WARNING - Extreme IRR value detected: 1.040827550958674. This may indicate incorrect cash flow data.
-2025-10-24 12:34:29,370 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): 12.489930611504088
-2025-10-24 12:34:29,375 - app.api.routes.portfolio_funds - INFO - Days in period: 90
-2025-10-24 12:34:29,377 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-10-24 12:34:29,377 - app.api.routes.portfolio_funds - INFO - Monthly IRR: 104.0828%
-2025-10-24 12:34:29,378 - app.api.routes.portfolio_funds - INFO - Annualized IRR: 1248.9931%
-2025-10-24 12:34:29,378 - app.api.routes.portfolio_funds - INFO - Months in period: 4
-2025-10-24 12:34:29,379 - app.api.routes.portfolio_funds - INFO - Array size used: 4
-2025-10-24 12:34:29,380 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: 1249.0% over 90 days (2 cash flow periods)   
-2025-10-24 12:34:29,388 - app.api.routes.portfolio_funds - INFO - ✅ Inserted portfolio IRR for portfolio 410, date 2025-03-01: 1249.0%
-2025-10-24 12:34:29,394 - app.api.routes.portfolio_funds - INFO - ✅ Successfully calculated aggregate IRR for 2 portfolio funds: 1249.0%   
-2025-10-24 12:34:30,482 - app.api.routes.client_products - INFO - Fetching complete product details for product ID: 397
-2025-10-24 12:34:30,487 - app.api.routes.client_products - INFO - Found product: Investment Bond (ID: 397)
-INFO:     connection closed
-2025-10-24 12:34:30,500 - app.api.routes.presence - WARNING - Failed to send message to user 3: received 1000 (OK) Component unmounting; then sent 1000 (OK) Component unmounting
-2025-10-24 12:34:30,641 - app.api.routes.portfolios - INFO - 🔍 DEBUG: get_complete_portfolio for portfolio 410
-2025-10-24 12:34:30,642 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Found 3 portfolio funds:
-2025-10-24 12:34:30,642 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 1: ID=1981, AvailableFundID=5, Status=active
-2025-10-24 12:34:30,642 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 2: ID=1982, AvailableFundID=59, Status=active
-2025-10-24 12:34:30,642 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 3: ID=1983, AvailableFundID=98, Status=active
-2025-10-24 12:34:30,648 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Final response contains 3 portfolio_funds:
-2025-10-24 12:34:30,649 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 1: ID=1981, Name=Cash, Status=active
-2025-10-24 12:34:30,649 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 2: ID=1982, Name=Artemis Income, Status=active
-2025-10-24 12:34:30,649 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 3: ID=1983, Name=Aviva Life Mixed Investments (40-85%) S4, Status=active
-INFO:     ('127.0.0.1', 64708) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-397" [accepted]
-INFO:     connection open
-2025-10-24 12:34:33,719 - app.api.routes.portfolios - INFO - 🔍 DEBUG: get_complete_portfolio for portfolio 410
-2025-10-24 12:34:33,720 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Found 3 portfolio funds:
-2025-10-24 12:34:33,721 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 1: ID=1981, AvailableFundID=5, Status=active
-2025-10-24 12:34:33,722 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 2: ID=1982, AvailableFundID=59, Status=active
-2025-10-24 12:34:33,723 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 3: ID=1983, AvailableFundID=98, Status=active
-2025-10-24 12:34:33,730 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Final response contains 3 portfolio_funds:
-2025-10-24 12:34:33,731 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 1: ID=1981, Name=Cash, Status=active
-2025-10-24 12:34:33,732 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 2: ID=1982, Name=Artemis Income, Status=active
-2025-10-24 12:34:33,733 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 3: ID=1983, Name=Aviva Life Mixed Investments (40-85%) S4, Status=active
-INFO:     ('127.0.0.1', 54666) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-397" [accepted]
-INFO:     connection open
-2025-10-24 12:34:34,188 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
-2025-10-24 12:34:34,191 - app.api.routes.presence - WARNING - Failed to send message to user 3: received 1000 (OK) Component unmounting; then sent 1000 (OK) Component unmounting
-2025-10-24 12:34:34,192 - app.api.routes.presence - WARNING - Failed to send message to user 3: received 1000 (OK) Component unmounting; then sent 1000 (OK) Component unmounting
-INFO:     connection closed
-INFO:     connection closed
-2025-10-24 12:34:34,196 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
-2025-10-24 12:34:34,198 - app.api.routes.client_products - INFO - Fetching complete product details for product ID: 397
-2025-10-24 12:34:34,203 - app.api.routes.client_products - INFO - Found product: Investment Bond (ID: 397)
-2025-10-24 12:34:34,242 - app.api.routes.client_products - INFO - Fetching complete product details for product ID: 397
-2025-10-24 12:34:34,244 - app.api.routes.client_products - INFO - Found product: Investment Bond (ID: 397)
-2025-10-24 12:34:34,378 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 397 (limit: 1000)
-2025-10-24 12:34:34,437 - app.api.routes.historical_irr - INFO - Found 4 fund IRR records for product 397
-2025-10-24 12:34:34,477 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 397 (limit: 1000)
-2025-10-24 12:34:34,515 - app.api.routes.historical_irr - INFO - Found 4 fund IRR records for product 397
-2025-10-24 12:34:34,551 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 397 (limit: 1000)
-2025-10-24 12:34:34,586 - app.api.routes.historical_irr - INFO - Found 4 fund IRR records for product 397
-2025-10-24 12:34:34,600 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 397 (limit: 1000)
-2025-10-24 12:34:34,603 - app.api.routes.historical_irr - INFO - Fetching stored portfolio IRR values for portfolio 410
-2025-10-24 12:34:34,607 - app.api.routes.historical_irr - INFO - Found 2 stored portfolio IRR values for portfolio 410
-2025-10-24 12:34:34,636 - app.api.routes.historical_irr - INFO - Found 4 fund IRR records for product 397
-2025-10-24 12:34:34,676 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 397 (limit: 1000)
-2025-10-24 12:34:34,687 - app.api.routes.historical_irr - INFO - Fetching stored portfolio IRR values for portfolio 410
-2025-10-24 12:34:34,694 - app.api.routes.historical_irr - INFO - Found 2 stored portfolio IRR values for portfolio 410
-2025-10-24 12:34:34,710 - app.api.routes.historical_irr - INFO - Found 4 fund IRR records for product 397
-2025-10-24 12:34:34,747 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 397 (limit: 1000)
-2025-10-24 12:34:34,778 - app.api.routes.historical_irr - INFO - Found 4 fund IRR records for product 397
-2025-10-24 12:34:38,764 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
-2025-10-24 12:34:38,766 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
-2025-10-24 12:34:38,768 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
-2025-10-24 12:34:38,771 - app.api.routes.client_products - INFO - Fetching complete product details for product ID: 397
-2025-10-24 12:34:38,773 - app.api.routes.client_products - INFO - Found product: Investment Bond (ID: 397)
-2025-10-24 12:34:38,782 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
-2025-10-24 12:34:38,786 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
-2025-10-24 12:34:38,886 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
-2025-10-24 12:34:38,889 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
-2025-10-24 12:34:38,931 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
-2025-10-24 12:34:38,933 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
-2025-10-24 12:34:38,942 - app.api.routes.client_products - INFO - Fetching complete product details for product ID: 397
-2025-10-24 12:34:38,944 - app.api.routes.client_products - INFO - Found product: Investment Bond (ID: 397)
-2025-10-24 12:34:38,962 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
-2025-10-24 12:34:38,981 - app.api.routes.portfolios - INFO - 🔍 DEBUG: get_complete_portfolio for portfolio 410
-2025-10-24 12:34:38,981 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Found 3 portfolio funds:
-2025-10-24 12:34:38,982 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 1: ID=1981, AvailableFundID=5, Status=active
-2025-10-24 12:34:38,982 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 2: ID=1982, AvailableFundID=59, Status=active
-2025-10-24 12:34:38,982 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 3: ID=1983, AvailableFundID=98, Status=active
-2025-10-24 12:34:38,988 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Final response contains 3 portfolio_funds:
-2025-10-24 12:34:38,988 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 1: ID=1981, Name=Cash, Status=active
-2025-10-24 12:34:38,989 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 2: ID=1982, Name=Artemis Income, Status=active
-2025-10-24 12:34:38,989 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 3: ID=1983, Name=Aviva Life Mixed Investments (40-85%) S4, Status=active
-2025-10-24 12:34:39,020 - app.api.routes.portfolios - INFO - 🔍 DEBUG: get_complete_portfolio for portfolio 410
-2025-10-24 12:34:39,020 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Found 3 portfolio funds:
-2025-10-24 12:34:39,020 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 1: ID=1981, AvailableFundID=5, Status=active
-2025-10-24 12:34:39,021 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 2: ID=1982, AvailableFundID=59, Status=active
-2025-10-24 12:34:39,023 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 3: ID=1983, AvailableFundID=98, Status=active
-2025-10-24 12:34:39,043 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Final response contains 3 portfolio_funds:
-2025-10-24 12:34:39,045 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 1: ID=1981, Name=Cash, Status=active
-2025-10-24 12:34:39,046 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 2: ID=1982, Name=Artemis Income, Status=active
-2025-10-24 12:34:39,047 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 3: ID=1983, Name=Aviva Life Mixed Investments (40-85%) S4, Status=active
-INFO:     ('127.0.0.1', 49606) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-397" [accepted]
-INFO:     connection open
-INFO:     ('127.0.0.1', 61863) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-397" [accepted]
-INFO:     connection open
-INFO:     ('127.0.0.1', 50140) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-397" [accepted]
-INFO:     connection open
-INFO:     ('127.0.0.1', 60962) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-397" [accepted]
-INFO:     connection open
-2025-10-24 12:34:45,729 - app.models.holding_activity_log - INFO - 🔍 DATE VALIDATOR (BASE): Input value=2025-02-01, Type=<class 'str'>, Repr='2025-02-01'
-2025-10-24 12:34:45,730 - app.models.holding_activity_log - INFO - 🔍 DATE VALIDATOR (BASE): Parsed string '2025-02-01' to date 2025-02-01
-2025-10-24 12:34:45,730 - app.api.routes.holding_activity_logs - INFO - 🚀 BULK: Creating 1 activity logs with sequence reservation
-2025-10-24 12:34:45,734 - app.api.routes.holding_activity_logs - INFO - VALIDATION PASSED: Activity date 2025-02-01 is valid for product 'Investment Bond' (start: 2024-10-24)
-2025-10-24 12:34:45,736 - app.api.routes.holding_activity_logs - INFO - 🔒 BULK: Using SequenceManager for bulk insert with sequence reservation
-2025-10-24 12:34:45,736 - app.utils.sequence_manager - INFO - 🚀 BULK INSERT: Starting bulk insert of 1 records into holding_activity_log   
-2025-10-24 12:34:45,736 - app.utils.sequence_manager - INFO - 🔒 SEQUENCE: Reserving 1 IDs from holding_activity_log_id_seq
-2025-10-24 12:34:45,741 - app.utils.sequence_manager - INFO - ✅ SEQUENCE: Reserved range holding_activity_log_id_seq: 12449-12449 (1 IDs)  
-2025-10-24 12:34:45,742 - app.utils.sequence_manager - INFO - 🔧 BULK INSERT: Executing 1 insertions with query:
-                INSERT INTO holding_activity_log (portfolio_fund_id, product_id, activity_type, act...
-2025-10-24 12:34:45,768 - app.utils.sequence_manager - INFO - ✅ BULK INSERT: Successfully inserted 1/1 records into holding_activity_log
-2025-10-24 12:34:45,776 - app.api.routes.holding_activity_logs - INFO - ✅ BULK: Successfully created 1/1 activities
-2025-10-24 12:34:45,778 - app.api.routes.holding_activity_logs - INFO - ⏭️ BULK: Skipping IRR recalculation (skip_irr_calculation=True)     
-2025-10-24 12:34:45,778 - app.api.routes.holding_activity_logs - INFO - 🎉 BULK: Bulk activity creation completed - 1 activities created    
-2025-10-24 12:34:45,853 - app.api.routes.portfolio_funds - INFO - Recalculating IRR after activity change for portfolio_fund_id: 1982, activity_date: 2025-02-01
-2025-10-24 12:34:45,855 - app.api.routes.holding_activity_logs - INFO - ⚡ [OPTIMIZED] Targeted IRR recalculation for portfolio_fund 1982 on date 2025-02-01
-2025-10-24 12:34:45,860 - app.services.irr_cascade_service - INFO - 🔄 [IRR CASCADE] Starting batch IRR recalculation for portfolio 410, activity dates: ['2025-02-01']
-2025-10-24 12:34:45,861 - app.services.irr_cascade_service - INFO - 🔄 [IRR CASCADE] Activity dates: ['2025-02-01'], earliest: 2025-02-01   
-2025-10-24 12:34:45,867 - app.services.irr_cascade_service - INFO - 🔍 Found 2 unique valuation dates for portfolio 410 from 2025-02-01: ['2025-02-01', '2025-03-01']
-2025-10-24 12:34:45,867 - app.services.irr_cascade_service - INFO - 🔄 [IRR CASCADE] Found 2 valuation dates to recalculate: ['2025-02-01', '2025-03-01']
-2025-10-24 12:34:45,868 - app.services.irr_cascade_service - INFO - 🔄 [IRR CASCADE] Processing valuation date 2025-02-01
-2025-10-24 12:34:45,868 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] ========== RECALCULATING ALL FUND IRRs FOR DATE ==========
-2025-10-24 12:34:45,869 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Portfolio ID: 410, Date: 2025-02-01
-2025-10-24 12:34:45,869 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Converted date to date_obj: 2025-02-01
-2025-10-24 12:34:45,872 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Found 149 funds with valuations on 2025-02-01       
-2025-10-24 12:34:45,874 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Portfolio 410 has 3 total funds
-2025-10-24 12:34:45,874 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Funds with valuations on 2025-02-01: [1154, 1155, 1166, 1168, 1169, 1170, 1171, 1172, 1128, 1129, 1130, 1131, 1133, 1134, 1135, 1136, 1137, 1152, 1153, 1156, 1157, 1158, 1159, 1160, 1161, 1162, 1173, 1010, 1011, 1012, 1013, 1014, 1015, 1017, 1018, 1019, 1020, 1021, 1024, 1025, 1026, 1027, 1028, 1029, 1030, 1031, 1032, 1033, 1049, 1048, 1036, 1037, 1038, 1039, 1040, 1041, 1042, 1043, 1044, 1045, 1046, 1047, 1058, 1059, 1060, 1061, 1062, 1063, 1064, 1065, 1091, 1092, 1399, 1093, 1094, 1095, 1096, 1097, 1098, 1099, 1100, 1101, 1102, 1103, 1104, 1112, 1122, 1445, 1446, 1447, 1448, 1449, 1450, 1451, 1452, 1437, 1438, 1439, 1440, 1441, 1442, 1443, 1444, 1453, 1454, 1457, 1458, 1980, 1461, 1462, 1463, 1464, 1465, 1466, 1467, 1468, 1469, 1470, 1471, 1472, 1938, 1937, 1982, 1983, 1830, 1831, 1889, 1890, 1891, 1523, 1524, 1525, 1526, 1527, 1528, 1529, 1530, 1536, 1537, 1538, 1539, 1540, 1541, 1542, 1543, 1924, 1926, 1930, 1931]
-2025-10-24 12:34:45,875 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Portfolio fund IDs: [1981, 1982, 1983]
-2025-10-24 12:34:45,875 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Relevant fund IDs for IRR calculation: [1982, 1983] 
-2025-10-24 12:34:45,876 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Expected 8 funds, got 2 funds
-2025-10-24 12:34:45,876 - app.services.irr_cascade_service - WARNING - 🔍 [BATCH IRR CALC] ⚠️ Cash fund (1536) is MISSING from relevant_fundd_ids!
-2025-10-24 12:34:45,876 - app.services.irr_cascade_service - WARNING - 🔍 [BATCH IRR CALC] ⚠️ Checking if 1536 has valuation on 2025-02-01....
-2025-10-24 12:34:45,879 - app.services.irr_cascade_service - WARNING - 🔍 [BATCH IRR CALC] ⚠️ Cash valuation check result: [<Record id=7214  valuation=Decimal('0.00')>]
-2025-10-24 12:34:45,880 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Processing fund 1982 for date 2025-02-01
-2025-10-24 12:34:45,880 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] ========== CALCULATING FUND IRR ==========
-2025-10-24 12:34:45,880 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund ID: 1982, Date: 2025-02-01
-2025-10-24 12:34:45,881 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Converted date to date_obj: 2025-02-01
-2025-10-24 12:34:45,881 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calling calculate_single_portfolio_fund_irr with bypass_cache=True
-2025-10-24 12:34:45,881 - app.api.routes.portfolio_funds - INFO - 🔍 IRR CALC ENTRY: calculate_single_portfolio_fund_irr called for fund 1982, date 2025-02-01  (BYPASSING CACHE)
-2025-10-24 12:34:45,881 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh single fund calculation as requested
-2025-10-24 12:34:45,888 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2025-02-01
-2025-10-24 12:34:45,892 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Fund valuation: £40.0
-2025-10-24 12:34:45,896 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Found 2 activities for fund 1982 up to 2025-02-01 (using end-of-day filter: 2025-02-01 23:59:59.999999)
-2025-10-24 12:34:45,897 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Added final valuation of £40.0 to next month (2025-03-01) to separate from activities in 2025-02-01
-2025-10-24 12:34:45,897 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Aggregated cash flows: 3 flows from 2025-01-01 to 2025-03-01    
-2025-10-24 12:34:45,897 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Total valuation: £40.0
-2025-10-24 12:34:45,898 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-10-24 12:34:45,900 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: 0.5615528128088303
-2025-10-24 12:34:45,900 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): 6.7386337537059635
-2025-10-24 12:34:45,900 - app.api.routes.portfolio_funds - INFO - Days in period: 59
-2025-10-24 12:34:45,900 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-10-24 12:34:45,902 - app.api.routes.portfolio_funds - INFO - Monthly IRR: 56.1553%
-2025-10-24 12:34:45,903 - app.api.routes.portfolio_funds - INFO - Annualized IRR: 673.8634%
-2025-10-24 12:34:45,903 - app.api.routes.portfolio_funds - INFO - Months in period: 3
-2025-10-24 12:34:45,905 - app.api.routes.portfolio_funds - INFO - Array size used: 3
-2025-10-24 12:34:45,906 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Final IRR calculation - Decimal: 6.7386337537059635, Percentage: 673.9%
-2025-10-24 12:34:45,907 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: IRR calculation completed: 673.9% for fund 1982 on 2025-02-01   
-2025-10-24 12:34:45,907 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: ✅ IRR calculation completed successfully for fund 1982: {'success': True, 'irr_percentage': 673.9, 'irr_decimal': 6.7386337537059635, 'calculation_date': '2025-02-01', 'portfolio_fund_id': 1982, 'valuation_amount': 40.0, 'cash_flows_count': 3, 'period_start': '2025-01-01', 'period_end': '2025-03-01', 'days_in_period': 59}
-2025-10-24 12:34:45,908 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] IRR calculation returned: {'success': True, 'irr_percentage': 673.9, 'irr_decimal': 6.7386337537059635, 'calculation_date': '2025-02-01', 'portfolio_fund_id': 1982, 'valuation_amount': 40.0, 'cash_flows_count': 3, 'period_start': '2025-01-01', 'period_end': '2025-03-01', 'days_in_period': 59}
-2025-10-24 12:34:45,909 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calculated IRR percentage: 673.9%
-2025-10-24 12:34:45,910 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Looking for fund valuation with fund_id=1982, date=2025-02-01
-2025-10-24 12:34:45,914 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund valuation ID: 7802
-2025-10-24 12:34:45,915 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Checking for existing IRR record with fund_id=1982, date=2025-02-01
-2025-10-24 12:34:45,918 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Found existing IRR record with ID: 8334
-2025-10-24 12:34:45,918 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Updating existing IRR ID 8334 with value 673.9%      
-2025-10-24 12:34:45,923 - app.services.irr_cascade_service - INFO - 📊 ✅ Updated fund IRR for fund 1982 on 2025-02-01: 673.9%
-2025-10-24 12:34:45,923 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [1982]
-2025-10-24 12:34:45,924 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] ✅ Successfully calculated IRR for fund 1982        
-2025-10-24 12:34:45,924 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Processing fund 1983 for date 2025-02-01
-2025-10-24 12:34:45,925 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] ========== CALCULATING FUND IRR ==========
-2025-10-24 12:34:45,926 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund ID: 1983, Date: 2025-02-01
-2025-10-24 12:34:45,926 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Converted date to date_obj: 2025-02-01
-2025-10-24 12:34:45,927 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calling calculate_single_portfolio_fund_irr with bypass_cache=True
-2025-10-24 12:34:45,927 - app.api.routes.portfolio_funds - INFO - 🔍 IRR CALC ENTRY: calculate_single_portfolio_fund_irr called for fund 1983, date 2025-02-01  (BYPASSING CACHE)
-2025-10-24 12:34:45,927 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh single fund calculation as requested
-2025-10-24 12:34:45,932 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2025-02-01
-2025-10-24 12:34:45,934 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Fund valuation: £40.0
-2025-10-24 12:34:45,936 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Found 1 activities for fund 1983 up to 2025-02-01 (using end-of-day filter: 2025-02-01 23:59:59.999999)
-2025-10-24 12:34:45,955 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Added final valuation of £40.0 to next month (2025-03-01) to separate from activities in 2025-02-01
-2025-10-24 12:34:45,956 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Aggregated cash flows: 3 flows from 2025-01-01 to 2025-03-01    
-2025-10-24 12:34:45,956 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Total valuation: £40.0
-2025-10-24 12:34:45,957 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-10-24 12:34:45,958 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: 1.0000000000000004
-2025-10-24 12:34:45,958 - app.api.routes.portfolio_funds - WARNING - Extreme IRR value detected: 1.0000000000000004. This may indicate incorrect cash flow data.
-2025-10-24 12:34:45,961 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): 12.000000000000005
-2025-10-24 12:34:45,962 - app.api.routes.portfolio_funds - INFO - Days in period: 59
-2025-10-24 12:34:45,963 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-10-24 12:34:45,963 - app.api.routes.portfolio_funds - INFO - Monthly IRR: 100.0000%
-2025-10-24 12:34:45,966 - app.api.routes.portfolio_funds - INFO - Annualized IRR: 1200.0000%
-2025-10-24 12:34:45,967 - app.api.routes.portfolio_funds - INFO - Months in period: 3
-2025-10-24 12:34:45,969 - app.api.routes.portfolio_funds - INFO - Array size used: 3
-2025-10-24 12:34:45,972 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Final IRR calculation - Decimal: 12.000000000000005, Percentage: 1200.0%
-2025-10-24 12:34:45,974 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: IRR calculation completed: 1200.0% for fund 1983 on 2025-02-01  
-2025-10-24 12:34:45,975 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: ✅ IRR calculation completed successfully for fund 1983: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 12.000000000000005, 'calculation_date': '2025-02-01', 'portfolio_fund_id': 1983, 'valuation_amount': 40.0, 'cash_flows_count': 3, 'period_start': '2025-01-01', 'period_end': '2025-03-01', 'days_in_period': 59}
-2025-10-24 12:34:45,977 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] IRR calculation returned: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 12.000000000000005, 'calculation_date': '2025-02-01', 'portfolio_fund_id': 1983, 'valuation_amount': 40.0, 'cash_flows_count': 3, 'period_start': '2025-01-01', 'period_end': '2025-03-01', 'days_in_period': 59}
-2025-10-24 12:34:45,977 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calculated IRR percentage: 1200.0%
-2025-10-24 12:34:45,978 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Looking for fund valuation with fund_id=1983, date=2025-02-01
-2025-10-24 12:34:45,981 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund valuation ID: 7803
-2025-10-24 12:34:45,981 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Checking for existing IRR record with fund_id=1983, date=2025-02-01
-2025-10-24 12:34:45,984 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Found existing IRR record with ID: 8335
-2025-10-24 12:34:45,984 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Updating existing IRR ID 8335 with value 1200.0%     
-2025-10-24 12:34:45,988 - app.services.irr_cascade_service - INFO - 📊 ✅ Updated fund IRR for fund 1983 on 2025-02-01: 1200.0%
-2025-10-24 12:34:45,990 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [1983]
-2025-10-24 12:34:45,992 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] ✅ Successfully calculated IRR for fund 1983        
-2025-10-24 12:34:45,993 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [1982, 1983]      
-2025-10-24 12:34:45,993 - app.services.irr_cascade_service - INFO - 🗑️ Invalidated 0 IRR cache entries for 2 recalculated funds
-2025-10-24 12:34:45,996 - app.services.irr_cascade_service - INFO - 📊 Recalculated 2 fund IRRs for portfolio 410 on 2025-02-01
-2025-10-24 12:34:46,005 - app.services.irr_cascade_service - INFO - 📊 Portfolio 410 completeness for 2025-02-01: 2/3 = False
-2025-10-24 12:34:46,009 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] Portfolio 410 has 2 total IRR records
-2025-10-24 12:34:46,009 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] All records - ID 1416: IRR=1200.0000%, Date='2025-02-01'
-2025-10-24 12:34:46,010 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] All records - ID 1417: IRR=1249.0000%, Date='2025-03-01'
-2025-10-24 12:34:46,014 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] Targeting date '2025-02-01': found 1 exact matches
-2025-10-24 12:34:46,014 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] Target match - ID 1416: IRR=1200.0000%, Date='2025-02-01'
-2025-10-24 12:34:46,019 - app.services.irr_cascade_service - INFO - 🗑️ Deleted 1 portfolio IRR records for portfolio 410 on '2025-02-01'
-2025-10-24 12:34:46,023 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] After deletion, portfolio 410 has 1 total IRR records remaining
-2025-10-24 12:34:46,024 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] Remaining record ID 1417: IRR=1249.0000%, Date='2025-03-01'
-2025-10-24 12:34:46,027 - app.services.irr_cascade_service - INFO - 📊 Portfolio 410 not complete on 2025-02-01, portfolio IRR deleted      
-2025-10-24 12:34:46,027 - app.services.irr_cascade_service - INFO - 🔄 [IRR CASCADE] Processing valuation date 2025-03-01
-2025-10-24 12:34:46,030 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] ========== RECALCULATING ALL FUND IRRs FOR DATE ==========
-2025-10-24 12:34:46,032 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Portfolio ID: 410, Date: 2025-03-01
-2025-10-24 12:34:46,033 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Converted date to date_obj: 2025-03-01
-2025-10-24 12:34:46,036 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Found 142 funds with valuations on 2025-03-01
-2025-10-24 12:34:46,038 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Portfolio 410 has 3 total funds
-2025-10-24 12:34:46,038 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Funds with valuations on 2025-03-01: [1747, 1748, 1749, 1750, 1751, 1752, 1753, 1754, 1174, 1175, 1176, 1177, 1178, 1179, 1180, 1181, 1182, 1183, 1139, 1140, 1632, 1633, 1323, 1324, 1325, 1326, 1327, 1328, 1329, 1330, 1331, 1332, 1333, 1636, 1637, 1638, 1639, 1640, 1641, 1642, 1643, 1634, 1635, 1334, 1335, 1336, 1337, 1358, 1359, 1360, 1361, 1362, 1363, 1364, 1365, 1366, 1367, 1368, 1369, 1370, 1371, 1389, 1390, 1391, 1392, 1393, 1394, 1395, 1396, 1397, 1357, 1356, 1609, 1610, 1611, 1612, 1613, 1614, 1615, 1616, 1617, 1618, 1619, 1620, 1933, 1934, 1935, 1936, 1621, 1622, 1623, 1624, 1625, 1626, 1627, 1628, 1629, 1630, 1631, 1755, 1756, 1832, 1833, 1842, 1843, 1982, 1983, 1902, 1903, 1904, 1905, 1906, 1907, 1908, 1909, 1910, 1911, 1912, 1660, 1661, 1662, 1663, 1664, 1665, 1668, 1667, 1659, 1913, 1914, 1915, 1916, 1917, 1918, 1919, 1920, 1921, 1922, 1923, 1927, 1928, 1929, 1932]   
-2025-10-24 12:34:46,038 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Portfolio fund IDs: [1981, 1982, 1983]
-2025-10-24 12:34:46,039 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Relevant fund IDs for IRR calculation: [1982, 1983] 
-2025-10-24 12:34:46,039 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Expected 8 funds, got 2 funds
-2025-10-24 12:34:46,039 - app.services.irr_cascade_service - WARNING - 🔍 [BATCH IRR CALC] ⚠️ Cash fund (1536) is MISSING from relevant_fundd_ids!
-2025-10-24 12:34:46,039 - app.services.irr_cascade_service - WARNING - 🔍 [BATCH IRR CALC] ⚠️ Checking if 1536 has valuation on 2025-03-01....
-2025-10-24 12:34:46,041 - app.services.irr_cascade_service - WARNING - 🔍 [BATCH IRR CALC] ⚠️ Cash valuation check result: []
-2025-10-24 12:34:46,041 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Processing fund 1982 for date 2025-03-01
-2025-10-24 12:34:46,041 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] ========== CALCULATING FUND IRR ==========
-2025-10-24 12:34:46,042 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund ID: 1982, Date: 2025-03-01
-2025-10-24 12:34:46,042 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Converted date to date_obj: 2025-03-01
-2025-10-24 12:34:46,042 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calling calculate_single_portfolio_fund_irr with bypass_cache=True
-2025-10-24 12:34:46,042 - app.api.routes.portfolio_funds - INFO - 🔍 IRR CALC ENTRY: calculate_single_portfolio_fund_irr called for fund 1982, date 2025-03-01  (BYPASSING CACHE)
-2025-10-24 12:34:46,043 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh single fund calculation as requested
-2025-10-24 12:34:46,047 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2025-03-01
-2025-10-24 12:34:46,049 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Fund valuation: £120.0
-2025-10-24 12:34:46,051 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Found 2 activities for fund 1982 up to 2025-03-01 (using end-of-day filter: 2025-03-01 23:59:59.999999)
-2025-10-24 12:34:46,051 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Added final valuation of £120.0 to next month (2025-04-01) to separate from activities in 2025-03-01
-2025-10-24 12:34:46,051 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Aggregated cash flows: 4 flows from 2025-01-01 to 2025-04-01    
-2025-10-24 12:34:46,051 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Total valuation: £120.0
-2025-10-24 12:34:46,052 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-10-24 12:34:46,052 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: 0.9999999999999991
-2025-10-24 12:34:46,053 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): 11.99999999999999
-2025-10-24 12:34:46,053 - app.api.routes.portfolio_funds - INFO - Days in period: 90
-2025-10-24 12:34:46,054 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-10-24 12:34:46,054 - app.api.routes.portfolio_funds - INFO - Monthly IRR: 100.0000%
-2025-10-24 12:34:46,054 - app.api.routes.portfolio_funds - INFO - Annualized IRR: 1200.0000%
-2025-10-24 12:34:46,054 - app.api.routes.portfolio_funds - INFO - Months in period: 4
-2025-10-24 12:34:46,054 - app.api.routes.portfolio_funds - INFO - Array size used: 4
-2025-10-24 12:34:46,055 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Final IRR calculation - Decimal: 11.99999999999999, Percentage: 1200.0%
-2025-10-24 12:34:46,055 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: IRR calculation completed: 1200.0% for fund 1982 on 2025-03-01  
-2025-10-24 12:34:46,055 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: ✅ IRR calculation completed successfully for fund 1982: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 11.99999999999999, 'calculation_date': '2025-03-01', 'portfolio_fund_id': 1982, 'valuation_amount': 120.0, 'cash_flows_count': 4, 'period_start': '2025-01-01', 'period_end': '2025-04-01', 'days_in_period': 90}
-2025-10-24 12:34:46,055 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] IRR calculation returned: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 11.99999999999999, 'calculation_date': '2025-03-01', 'portfolio_fund_id': 1982, 'valuation_amount': 120.0, 'cash_flows_count': 4, 'period_start': '2025-01-01', 'period_end': '2025-04-01', 'days_in_period': 90}
-2025-10-24 12:34:46,055 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calculated IRR percentage: 1200.0%
-2025-10-24 12:34:46,057 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Looking for fund valuation with fund_id=1982, date=2025-03-01
-2025-10-24 12:34:46,058 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund valuation ID: 7806
-2025-10-24 12:34:46,060 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Checking for existing IRR record with fund_id=1982, date=2025-03-01
-2025-10-24 12:34:46,062 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Found existing IRR record with ID: 8338
-2025-10-24 12:34:46,062 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Updating existing IRR ID 8338 with value 1200.0%     
-2025-10-24 12:34:46,066 - app.services.irr_cascade_service - INFO - 📊 ✅ Updated fund IRR for fund 1982 on 2025-03-01: 1200.0%
-2025-10-24 12:34:46,066 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [1982]
-2025-10-24 12:34:46,066 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] ✅ Successfully calculated IRR for fund 1982        
-2025-10-24 12:34:46,066 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Processing fund 1983 for date 2025-03-01
-2025-10-24 12:34:46,066 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] ========== CALCULATING FUND IRR ==========
-2025-10-24 12:34:46,066 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund ID: 1983, Date: 2025-03-01
-2025-10-24 12:34:46,068 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Converted date to date_obj: 2025-03-01
-2025-10-24 12:34:46,068 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calling calculate_single_portfolio_fund_irr with bypass_cache=True
-2025-10-24 12:34:46,068 - app.api.routes.portfolio_funds - INFO - 🔍 IRR CALC ENTRY: calculate_single_portfolio_fund_irr called for fund 1983, date 2025-03-01  (BYPASSING CACHE)
-2025-10-24 12:34:46,070 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh single fund calculation as requested
-2025-10-24 12:34:46,076 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2025-03-01
-2025-10-24 12:34:46,078 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Fund valuation: £50.0
-2025-10-24 12:34:46,080 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Found 1 activities for fund 1983 up to 2025-03-01 (using end-of-day filter: 2025-03-01 23:59:59.999999)
-2025-10-24 12:34:46,080 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Added final valuation of £50.0 to next month (2025-04-01) to separate from activities in 2025-03-01
-2025-10-24 12:34:46,082 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Aggregated cash flows: 3 flows from 2025-01-01 to 2025-04-01    
-2025-10-24 12:34:46,082 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Total valuation: £50.0
-2025-10-24 12:34:46,084 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-10-24 12:34:46,084 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: 0.7099759466766966
-2025-10-24 12:34:46,086 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): 8.51971136012036
-2025-10-24 12:34:46,086 - app.api.routes.portfolio_funds - INFO - Days in period: 90
-2025-10-24 12:34:46,086 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-10-24 12:34:46,086 - app.api.routes.portfolio_funds - INFO - Monthly IRR: 70.9976%
-2025-10-24 12:34:46,088 - app.api.routes.portfolio_funds - INFO - Annualized IRR: 851.9711%
-2025-10-24 12:34:46,088 - app.api.routes.portfolio_funds - INFO - Months in period: 4
-2025-10-24 12:34:46,088 - app.api.routes.portfolio_funds - INFO - Array size used: 4
-2025-10-24 12:34:46,089 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Final IRR calculation - Decimal: 8.51971136012036, Percentage: 852.0%
-2025-10-24 12:34:46,089 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: IRR calculation completed: 852.0% for fund 1983 on 2025-03-01   
-2025-10-24 12:34:46,091 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: ✅ IRR calculation completed successfully for fund 1983: {'success': True, 'irr_percentage': 852.0, 'irr_decimal': 8.51971136012036, 'calculation_date': '2025-03-01', 'portfolio_fund_id': 1983, 'valuation_amount': 50.0, 'cash_flows_count': 3, 'period_start': '2025-01-01', 'period_end': '2025-04-01', 'days_in_period': 90}
-2025-10-24 12:34:46,092 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] IRR calculation returned: {'success': True, 'irr_percentage': 852.0, 'irr_decimal': 8.51971136012036, 'calculation_date': '2025-03-01', 'portfolio_fund_id': 1983, 'valuation_amount': 50.0, 'cash_flows_count': 3, 'period_start': '2025-01-01', 'period_end': '2025-04-01', 'days_in_period': 90}
-2025-10-24 12:34:46,092 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calculated IRR percentage: 852.0%
-2025-10-24 12:34:46,092 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Looking for fund valuation with fund_id=1983, date=2025-03-01
-2025-10-24 12:34:46,094 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund valuation ID: 7807
-2025-10-24 12:34:46,095 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Checking for existing IRR record with fund_id=1983, date=2025-03-01
-2025-10-24 12:34:46,097 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Found existing IRR record with ID: 8339
-2025-10-24 12:34:46,097 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Updating existing IRR ID 8339 with value 852.0%      
-2025-10-24 12:34:46,101 - app.services.irr_cascade_service - INFO - 📊 ✅ Updated fund IRR for fund 1983 on 2025-03-01: 852.0%
-2025-10-24 12:34:46,101 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [1983]
-2025-10-24 12:34:46,102 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] ✅ Successfully calculated IRR for fund 1983        
-2025-10-24 12:34:46,102 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [1982, 1983]      
-2025-10-24 12:34:46,102 - app.services.irr_cascade_service - INFO - 🗑️ Invalidated 0 IRR cache entries for 2 recalculated funds
-2025-10-24 12:34:46,103 - app.services.irr_cascade_service - INFO - 📊 Recalculated 2 fund IRRs for portfolio 410 on 2025-03-01
-2025-10-24 12:34:46,126 - app.services.irr_cascade_service - INFO - 📊 Portfolio 410 completeness for 2025-03-01: 2/3 = False
-2025-10-24 12:34:46,128 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] Portfolio 410 has 1 total IRR records
-2025-10-24 12:34:46,130 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] All records - ID 1417: IRR=1249.0000%, Date='2025-03-01'
-2025-10-24 12:34:46,134 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] Targeting date '2025-03-01': found 1 exact matches
-2025-10-24 12:34:46,135 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] Target match - ID 1417: IRR=1249.0000%, Date='2025-03-01'
-2025-10-24 12:34:46,139 - app.services.irr_cascade_service - INFO - 🗑️ Deleted 1 portfolio IRR records for portfolio 410 on '2025-03-01'    
-2025-10-24 12:34:46,142 - app.services.irr_cascade_service - INFO - 🔍 [PORTFOLIO IRR DELETE] After deletion, portfolio 410 has 0 total IRR records remaining
-2025-10-24 12:34:46,145 - app.services.irr_cascade_service - INFO - 📊 Portfolio 410 not complete on 2025-03-01, portfolio IRR deleted      
-2025-10-24 12:34:46,146 - app.services.irr_cascade_service - INFO - 🔄 [IRR CASCADE] ✅ Batch recalculation completed: {'success': True, 'portfolio_id': 410, 'dates_processed': 2, 'fund_irrs_recalculated': 4, 'portfolio_irrs_recalculated': 0, 'processed_dates': ['2025-02-01', '2025-03-01'], 'activity_dates': ['2025-02-01'], 'earliest_activity_date': '2025-02-01'}
-2025-10-24 12:34:46,149 - app.api.routes.holding_activity_logs - INFO - ✅ [ACTIVITY WRAPPER] Targeted IRR cascade completed successfully: {'success': True, 'portfolio_id': 410, 'dates_processed': 2, 'fund_irrs_recalculated': 4, 'portfolio_irrs_recalculated': 0, 'processed_dates': ['2025-02-01', '2025-03-01'], 'activity_dates': ['2025-02-01'], 'earliest_activity_date': '2025-02-01'}
-2025-10-24 12:34:46,184 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 3 portfolio funds
-2025-10-24 12:34:46,200 - app.api.routes.portfolio_funds - INFO - No IRR date provided, finding latest valuation date
-2025-10-24 12:34:46,205 - app.api.routes.portfolio_funds - INFO - Using latest valuation date: 2025-03-01
-2025-10-24 12:34:46,205 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2025-03-01
-2025-10-24 12:34:46,205 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 3 funds (eliminates 3 individual requests)
-2025-10-24 12:34:46,209 - app.api.routes.portfolio_funds - WARNING - No valuation found for fund 1981 as of 2025-03-01
-2025-10-24 12:34:46,209 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {1982: 120.0, 1983: 50.0, 1981: None}
-2025-10-24 12:34:46,209 - app.api.routes.portfolio_funds - WARNING - 💰 DEBUG: ⚠️ Excluding 1 funds without valuations from IRR calculation:: [1981]
-2025-10-24 12:34:46,210 - app.api.routes.portfolio_funds - WARNING - 💰 DEBUG: ✅ Including 2 funds with valuations: [1982, 1983]
-2025-10-24 12:34:46,215 - app.api.routes.portfolio_funds - INFO - 📊 Processing 3 activities across 2 funds
-2025-10-24 12:34:46,215 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-10-24 12:34:46,216 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: 0.8870353551153458
-2025-10-24 12:34:46,216 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): 10.644424261384149
-2025-10-24 12:34:46,217 - app.api.routes.portfolio_funds - INFO - Days in period: 90
-2025-10-24 12:34:46,217 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-10-24 12:34:46,217 - app.api.routes.portfolio_funds - INFO - Monthly IRR: 88.7035%
-2025-10-24 12:34:46,217 - app.api.routes.portfolio_funds - INFO - Annualized IRR: 1064.4424%
-2025-10-24 12:34:46,218 - app.api.routes.portfolio_funds - INFO - Months in period: 4
-2025-10-24 12:34:46,218 - app.api.routes.portfolio_funds - INFO - Array size used: 4
-2025-10-24 12:34:46,218 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: 1064.4% over 90 days (3 cash flow periods)   
-2025-10-24 12:34:46,229 - app.api.routes.portfolio_funds - INFO - ✅ Inserted portfolio IRR for portfolio 410, date 2025-03-01: 1064.4%
-2025-10-24 12:34:46,233 - app.api.routes.portfolio_funds - INFO - ✅ Successfully calculated aggregate IRR for 2 portfolio funds: 1064.4%   
-2025-10-24 12:34:47,277 - app.api.routes.client_products - INFO - Fetching complete product details for product ID: 397
-2025-10-24 12:34:47,283 - app.api.routes.client_products - INFO - Found product: Investment Bond (ID: 397)
-INFO:     connection closed
-2025-10-24 12:34:47,299 - app.api.routes.presence - WARNING - Failed to send message to user 3: received 1000 (OK) Component unmounting; then sent 1000 (OK) Component unmounting
-2025-10-24 12:34:47,446 - app.api.routes.portfolios - INFO - 🔍 DEBUG: get_complete_portfolio for portfolio 410
-2025-10-24 12:34:47,447 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Found 3 portfolio funds:
-2025-10-24 12:34:47,448 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 1: ID=1981, AvailableFundID=5, Status=active
-2025-10-24 12:34:47,448 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 2: ID=1982, AvailableFundID=59, Status=active
-2025-10-24 12:34:47,448 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 3: ID=1983, AvailableFundID=98, Status=active
-2025-10-24 12:34:47,453 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Final response contains 3 portfolio_funds:
-2025-10-24 12:34:47,454 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 1: ID=1981, Name=Cash, Status=active
-2025-10-24 12:34:47,454 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 2: ID=1982, Name=Artemis Income, Status=active
-2025-10-24 12:34:47,455 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 3: ID=1983, Name=Aviva Life Mixed Investments (40-85%) S4, Status=active
-INFO:     ('127.0.0.1', 50941) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-397" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     connection closed
-2025-10-24 12:34:49,104 - app.api.routes.presence - WARNING - Failed to send message to user 3: received 1000 (OK) Component unmounting; then sent 1000 (OK) Component unmounting
-2025-10-24 12:34:49,105 - app.api.routes.presence - WARNING - Failed to send message to user 3: received 1000 (OK) Component unmounting; then sent 1000 (OK) Component unmounting
-2025-10-24 12:34:49,111 - app.api.routes.client_products - INFO - Fetching complete product details for product ID: 397
-2025-10-24 12:34:49,114 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
-2025-10-24 12:34:49,116 - app.api.routes.client_products - INFO - Found product: Investment Bond (ID: 397)
-2025-10-24 12:34:49,230 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
-2025-10-24 12:34:49,277 - app.api.routes.client_products - INFO - Fetching complete product details for product ID: 397
-2025-10-24 12:34:49,281 - app.api.routes.client_products - INFO - Found product: Investment Bond (ID: 397)
-2025-10-24 12:34:49,365 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 397 (limit: 1000)
-2025-10-24 12:34:49,411 - app.api.routes.historical_irr - INFO - Found 4 fund IRR records for product 397
-2025-10-24 12:34:49,446 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 397 (limit: 1000)
-2025-10-24 12:34:49,484 - app.api.routes.historical_irr - INFO - Found 4 fund IRR records for product 397
-2025-10-24 12:34:49,496 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 397 (limit: 1000)
-2025-10-24 12:34:49,521 - app.api.routes.historical_irr - INFO - Found 4 fund IRR records for product 397
-2025-10-24 12:34:49,556 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 397 (limit: 1000)
-2025-10-24 12:34:49,582 - app.api.routes.historical_irr - INFO - Fetching stored portfolio IRR values for portfolio 410
-2025-10-24 12:34:49,586 - app.api.routes.historical_irr - INFO - Found 1 stored portfolio IRR values for portfolio 410
-2025-10-24 12:34:49,605 - app.api.routes.historical_irr - INFO - Found 4 fund IRR records for product 397
-2025-10-24 12:34:49,635 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 397 (limit: 1000)
-2025-10-24 12:34:49,640 - app.api.routes.historical_irr - INFO - Fetching stored portfolio IRR values for portfolio 410
-2025-10-24 12:34:49,642 - app.api.routes.historical_irr - INFO - Found 1 stored portfolio IRR values for portfolio 410
-2025-10-24 12:34:49,669 - app.api.routes.historical_irr - INFO - Found 4 fund IRR records for product 397
-2025-10-24 12:34:49,681 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 397 (limit: 1000)
-2025-10-24 12:34:49,717 - app.api.routes.historical_irr - INFO - Found 4 fund IRR records for product 397
-2025-10-24 12:34:50,562 - app.api.routes.portfolios - INFO - 🔍 DEBUG: get_complete_portfolio for portfolio 410
-2025-10-24 12:34:50,563 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Found 3 portfolio funds:
-2025-10-24 12:34:50,564 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 1: ID=1981, AvailableFundID=5, Status=active
-2025-10-24 12:34:50,564 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 2: ID=1982, AvailableFundID=59, Status=active
-2025-10-24 12:34:50,565 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Fund 3: ID=1983, AvailableFundID=98, Status=active
-2025-10-24 12:34:50,573 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Final response contains 3 portfolio_funds:
-2025-10-24 12:34:50,574 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 1: ID=1981, Name=Cash, Status=active
-2025-10-24 12:34:50,575 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 2: ID=1982, Name=Artemis Income, Status=active
-2025-10-24 12:34:50,575 - app.api.routes.portfolios - INFO - 🔍 DEBUG: Response Fund 3: ID=1983, Name=Aviva Life Mixed Investments (40-85%) S4, Status=active
-INFO:     ('127.0.0.1', 64678) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-397" [accepted]
-INFO:     connection open
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
+ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
+ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:2565 🔄 [ACTIVITIES UPDATED] onActivitiesUpdated callback triggered {affectedFundIds: undefined}
+ProductIRRCalculation.tsx:2576 📊 [ACTIVITIES UPDATED] Triggering portfolio IRR recalculation...
+ProductIRRCalculation.tsx:1334 🚀 [PORTFOLIO IRR] triggerPortfolioIRRRecalculation CALLED
+ProductIRRCalculation.tsx:1346 ✅ [PORTFOLIO IRR] Starting calculation for portfolio 443
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:1350 📋 [PORTFOLIO IRR] Active holdings count: 2 (2) [{…}, {…}]
+ProductIRRCalculation.tsx:1372 📊 [PORTFOLIO IRR] Portfolio IRR Calculation Summary:
+ProductIRRCalculation.tsx:1373    - Total active holdings: 2
+ProductIRRCalculation.tsx:1374    - Cash funds (will be included if they have valuations): 1
+ProductIRRCalculation.tsx:1378    💵 Cash fund Cash (ID: 2142): Has valuation (2025-06-01, £0.00)
+ProductIRRCalculation.tsx:1381    - All funds to include: 2
+ProductIRRCalculation.tsx:1382    - Fund IDs: [2142, 2143]
+ProductIRRCalculation.tsx:1389 🔄 [PORTFOLIO IRR] Calling calculateStandardizedMultipleFundsIRR with 2 funds...
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
+ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
+ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
+ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
+ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
+ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
+ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
+ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
+ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
+ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
+ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:1395 ✅ [PORTFOLIO IRR] Calculation successful! {success: true, irr_percentage: 4.8, irr_decimal: 0.04796882300504368, calculation_date: '2025-06-01', portfolio_fund_ids: Array(2), …}
+ProductIRRCalculation.tsx:2578 ✅ [ACTIVITIES UPDATED] Portfolio IRR recalculation complete
+ProductIRRCalculation.tsx:2581 🔄 [ACTIVITIES UPDATED] Refreshing data...
+ProductIRRCalculation.tsx:2583 ✅ [ACTIVITIES UPDATED] Data refresh complete
+ProductIRRCalculation.tsx:2587 🗑️ [CACHE INVALIDATION] ==================== STARTING CACHE INVALIDATION ====================
+ProductIRRCalculation.tsx:2588 🗑️ [CACHE INVALIDATION] Account ID: 430
+ProductIRRCalculation.tsx:2589 🗑️ [CACHE INVALIDATION] Client Group ID: undefined
+ProductIRRCalculation.tsx:2593 🗑️ [CACHE INVALIDATION] Current cached product data: undefined
+ProductIRRCalculation.tsx:2596 🗑️ [CACHE INVALIDATION] Invalidating product-details cache with key: (2) ['product-details', '430']
+ProductIRRCalculation.tsx:2598 ✅ [CACHE INVALIDATION] Product details cache invalidated
+ProductIRRCalculation.tsx:2609 🗑️ [CACHE INVALIDATION] Invalidating client list cache with key: ['clients']
+ProductIRRCalculation.tsx:2611 ✅ [CACHE INVALIDATION] Client list cache invalidated
+ProductIRRCalculation.tsx:2615 🗑️ [CACHE INVALIDATION] Cached product data after invalidation: undefined
+ProductIRRCalculation.tsx:2617 ✅ [CACHE INVALIDATION] ==================== CACHE INVALIDATION COMPLETE ====================
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
+ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
+ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:1093 ProductIRRCalculation: Starting optimized data fetch for account ID: 430
+ProductIRRCalculation.tsx:1097 ProductIRRCalculation: Account/product data received: {id: 430, client_id: 130, product_name: 'Retirement Account', product_type: 'Pension', status: 'active', …}
+ProductIRRCalculation.tsx:1101 ProductIRRCalculation: Using portfolio ID: 443
+ProductIRRCalculation.tsx:1128 ProductIRRCalculation: Fetching complete portfolio data with new optimized endpoint
+ProductIRRCalculation.tsx:1138 ProductIRRCalculation: Complete portfolio data received: {portfolio: {…}, template_info: null, portfolio_funds: Array(2), valuations_map: {…}, irr_map: {…}}
+ProductIRRCalculation.tsx:1139 ProductIRRCalculation: Complete activity logs received: {activity_logs: Array(27), summary: {…}}
+ProductIRRCalculation.tsx:188 Filtering inactive holdings from: 2 holdings
+ProductIRRCalculation.tsx:191 All holdings status values: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:206 Holding ID 2142 (Cash): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
+ProductIRRCalculation.tsx:206 Holding ID 2143 (PruFund Growth Series E): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
+ProductIRRCalculation.tsx:219 Found inactive holdings: []
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:245 🔍 Valuation Date Detection Debug: {totalHoldings: 2, allActiveHoldings: 2, activeHoldingsExcludingCash: 1, excludedCashFunds: 1, holdingsData: Array(1)}
+ProductIRRCalculation.tsx:275 🔍 All unique valuation dates found: ['2025-06-01']
+ProductIRRCalculation.tsx:301 🔍 Date 2025-06-01 completeness: {totalActiveFunds: 1, fundsWithThisDate: 1, fundsWithoutThisDate: 0, missingFunds: Array(0)}
+ProductIRRCalculation.tsx:322 🔍 Date completeness analysis: {completeDates: 1, incompleteDates: 0, incompleteDetails: Array(0)}
+ProductIRRCalculation.tsx:385 🔍 All valuation dates are complete across all funds
+ProductIRRCalculation.tsx:386 ✅ [VALUATION CHECK] PASSED - Common dates found: ['2025-06-01']
+ProductIRRCalculation.tsx:387 ✅ [VALUATION CHECK] Portfolio IRR can be calculated for these dates: ['2025-06-01']
+ProductIRRCalculation.tsx:188 Filtering inactive holdings from: 2 holdings
+ProductIRRCalculation.tsx:191 All holdings status values: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:206 Holding ID 2142 (Cash): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
+ProductIRRCalculation.tsx:206 Holding ID 2143 (PruFund Growth Series E): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
+ProductIRRCalculation.tsx:219 Found inactive holdings: []
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:245 🔍 Valuation Date Detection Debug: {totalHoldings: 2, allActiveHoldings: 2, activeHoldingsExcludingCash: 1, excludedCashFunds: 1, holdingsData: Array(1)}
+ProductIRRCalculation.tsx:275 🔍 All unique valuation dates found: ['2025-06-01']
+ProductIRRCalculation.tsx:301 🔍 Date 2025-06-01 completeness: {totalActiveFunds: 1, fundsWithThisDate: 1, fundsWithoutThisDate: 0, missingFunds: Array(0)}
+ProductIRRCalculation.tsx:322 🔍 Date completeness analysis: {completeDates: 1, incompleteDates: 0, incompleteDetails: Array(0)}
+ProductIRRCalculation.tsx:385 🔍 All valuation dates are complete across all funds
+ProductIRRCalculation.tsx:386 ✅ [VALUATION CHECK] PASSED - Common dates found: ['2025-06-01']
+ProductIRRCalculation.tsx:387 ✅ [VALUATION CHECK] Portfolio IRR can be calculated for these dates: ['2025-06-01']
+ProductIRRCalculation.tsx:1017 Mapping IRR values from holdings data for 2 funds
+ProductIRRCalculation.tsx:1033 Mapped IRR for fund 2142 (Cash): {irr: 0, date: '2025-06-01'}
+ProductIRRCalculation.tsx:1033 Mapped IRR for fund 2143 (PruFund Growth Series E): {irr: 4.8, date: '2025-06-01'}
+ProductIRRCalculation.tsx:1657 Provider switches loaded: []
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
+ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
+ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+usePresence.ts:138 WebSocket connection to 'ws://localhost:8001/api/ws/presence/irr-calculation:product-430' failed: WebSocket is closed before the connection is established.
+(anonymous) @ usePresence.ts:138
+safelyCallDestroy @ chunk-QYFCA5BS.js?v=68f90eaa:16796
+commitHookEffectListUnmount @ chunk-QYFCA5BS.js?v=68f90eaa:16923
+invokePassiveEffectUnmountInDEV @ chunk-QYFCA5BS.js?v=68f90eaa:18413
+invokeEffectsInDev @ chunk-QYFCA5BS.js?v=68f90eaa:19754
+commitDoubleInvokeEffectsInDEV @ chunk-QYFCA5BS.js?v=68f90eaa:19735
+flushPassiveEffectsImpl @ chunk-QYFCA5BS.js?v=68f90eaa:19556
+flushPassiveEffects @ chunk-QYFCA5BS.js?v=68f90eaa:19500
+(anonymous) @ chunk-QYFCA5BS.js?v=68f90eaa:19381
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+usePresence.ts:115 ❌ usePresence: WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ usePresence.ts:115
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
+ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
+ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
+ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
+ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:188 Filtering inactive holdings from: 2 holdings
+ProductIRRCalculation.tsx:191 All holdings status values: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:206 Holding ID 2142 (Cash): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
+ProductIRRCalculation.tsx:206 Holding ID 2143 (PruFund Growth Series E): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
+ProductIRRCalculation.tsx:219 Found inactive holdings: []
+ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ Active holdings after filtering: (2) [{…}, {…}]
+ 🔍 Valuation Date Detection Debug: {totalHoldings: 2, allActiveHoldings: 2, activeHoldingsExcludingCash: 1, excludedCashFunds: 1, holdingsData: Array(1)}
+ 🔍 All unique valuation dates found: ['2025-06-01']
+ 🔍 Date 2025-06-01 completeness: {totalActiveFunds: 1, fundsWithThisDate: 1, fundsWithoutThisDate: 0, missingFunds: Array(0)}
+ 🔍 Date completeness analysis: {completeDates: 1, incompleteDates: 0, incompleteDetails: Array(0)}
+ 🔍 All valuation dates are complete across all funds
+ ✅ [VALUATION CHECK] PASSED - Common dates found: ['2025-06-01']
+ ✅ [VALUATION CHECK] Portfolio IRR can be calculated for these dates: ['2025-06-01']
+ All holdings before filtering: (2) [{…}, {…}]
+ Active holdings after filtering: (2) [{…}, {…}]
+ Creating Previous Funds entry with 0 inactive holdings
+ No inactive holdings found, not creating Previous Funds entry
+ Calculating total investments...
+ Investments only for holding 2142 (Cash): 0
+ Investments only for holding 2143 (PruFund Growth Series E): 0
+ Total investments (Investment type only): 0
+ Calculating total investments...
+ Investments only for holding 2142 (Cash): 0
+ Investments only for holding 2143 (PruFund Growth Series E): 0
+ Total investments (Investment type only): 0
+ All holdings before filtering: (2) [{…}, {…}]
+ Active holdings after filtering: (2) [{…}, {…}]
+ Filtering inactive holdings from: 2 holdings
+ All holdings status values: (2) [{…}, {…}]
+ Holding ID 2142 (Cash): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
+ Holding ID 2143 (PruFund Growth Series E): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
+ Found inactive holdings: []
+ All holdings before filtering: (2) [{…}, {…}]
+ Active holdings after filtering: (2) [{…}, {…}]
+ 🔍 Valuation Date Detection Debug: {totalHoldings: 2, allActiveHoldings: 2, activeHoldingsExcludingCash: 1, excludedCashFunds: 1, holdingsData: Array(1)}
+ 🔍 All unique valuation dates found: ['2025-06-01']
+ 🔍 Date 2025-06-01 completeness: {totalActiveFunds: 1, fundsWithThisDate: 1, fundsWithoutThisDate: 0, missingFunds: Array(0)}
+ 🔍 Date completeness analysis: {completeDates: 1, incompleteDates: 0, incompleteDetails: Array(0)}
+ 🔍 All valuation dates are complete across all funds
+ ✅ [VALUATION CHECK] PASSED - Common dates found: ['2025-06-01']
+ ✅ [VALUATION CHECK] Portfolio IRR can be calculated for these dates: ['2025-06-01']
+ All holdings before filtering: (2) [{…}, {…}]
+ Active holdings after filtering: (2) [{…}, {…}]
+ Creating Previous Funds entry with 0 inactive holdings
+ No inactive holdings found, not creating Previous Funds entry
+ Calculating total investments...
+ Investments only for holding 2142 (Cash): 0
+ Investments only for holding 2143 (PruFund Growth Series E): 0
+ Total investments (Investment type only): 0
+ Calculating total investments...
+ Investments only for holding 2142 (Cash): 0
+ Investments only for holding 2143 (PruFund Growth Series E): 0
+ Total investments (Investment type only): 0
+ All holdings before filtering: (2) [{…}, {…}]
+ Active holdings after filtering: (2) [{…}, {…}]
+ Mapping IRR values from holdings data for 2 funds
+ Mapped IRR for fund 2142 (Cash): {irr: 0, date: '2025-06-01'}
+ Mapped IRR for fund 2143 (PruFund Growth Series E): {irr: 4.8, date: '2025-06-01'}
+ All holdings before filtering: (2) [{…}, {…}]
+ Active holdings after filtering: (2) [{…}, {…}]
+ Creating Previous Funds entry with 0 inactive holdings
+ No inactive holdings found, not creating Previous Funds entry
+ Calculating total investments...
+ Investments only for holding 2142 (Cash): 0
+ Investments only for holding 2143 (PruFund Growth Series E): 0
+ Total investments (Investment type only): 0
+ Calculating total investments...
+ Investments only for holding 2142 (Cash): 0
+ Investments only for holding 2143 (PruFund Growth Series E): 0
+ Total investments (Investment type only): 0
+ All holdings before filtering: (2) [{…}, {…}]
+ Active holdings after filtering: (2) [{…}, {…}]
+ All holdings before filtering: (2) [{…}, {…}]
+ Active holdings after filtering: (2) [{…}, {…}]
+ Creating Previous Funds entry with 0 inactive holdings
+ No inactive holdings found, not creating Previous Funds entry
+ Calculating total investments...
+ Investments only for holding 2142 (Cash): 0
+ Investments only for holding 2143 (PruFund Growth Series E): 0
+ Total investments (Investment type only): 0
+ Calculating total investments...
+ Investments only for holding 2142 (Cash): 0
+ Investments only for holding 2143 (PruFund Growth Series E): 0
+ Total investments (Investment type only): 0
+ All holdings before filtering: (2) [{…}, {…}]
+ Active holdings after filtering: (2) [{…}, {…}]
+ All holdings before filtering: (2) [{…}, {…}]
+ Active holdings after filtering: (2) [{…}, {…}]
+ Creating Previous Funds entry with 0 inactive holdings
+ No inactive holdings found, not creating Previous Funds entry
+ Calculating total investments...
+ Investments only for holding 2142 (Cash): 0
+ Investments only for holding 2143 (PruFund Growth Series E): 0
+ Total investments (Investment type only): 0
+ Calculating total investments...
+ Investments only for holding 2142 (Cash): 0
+ Investments only for holding 2143 (PruFund Growth Series E): 0
+ Total investments (Investment type only): 0
+ All holdings before filtering: (2) [{…}, {…}]
+ Active holdings after filtering: (2) [{…}, {…}]
+ All holdings before filtering: (2) [{…}, {…}]
+ Active holdings after filtering: (2) [{…}, {…}]
+ Creating Previous Funds entry with 0 inactive holdings
+ No inactive holdings found, not creating Previous Funds entry
+ Calculating total investments...
+ Investments only for holding 2142 (Cash): 0
+ Investments only for holding 2143 (PruFund Growth Series E): 0
+ Total investments (Investment type only): 0
+ Calculating total investments...
+ Investments only for holding 2142 (Cash): 0
+ Investments only for holding 2143 (PruFund Growth Series E): 0
+ Total investments (Investment type only): 0
+ All holdings before filtering: (2) [{…}, {…}]
+ Active holdings after filtering: (2) [{…}, {…}]
+ All holdings before filtering: (2) [{…}, {…}]
+ Active holdings after filtering: (2) [{…}, {…}]
+ Creating Previous Funds entry with 0 inactive holdings
+ No inactive holdings found, not creating Previous Funds entry
+ Calculating total investments...
+ Investments only for holding 2142 (Cash): 0
+ Investments only for holding 2143 (PruFund Growth Series E): 0
+ Total investments (Investment type only): 0
+ Calculating total investments...
+ Investments only for holding 2142 (Cash): 0
+ Investments only for holding 2143 (PruFund Growth Series E): 0
+ Total investments (Investment type only): 0
+ All holdings before filtering: (2) [{…}, {…}]
+ Active holdings after filtering: (2) [{…}, {…}]
+ All holdings before filtering: (2) [{…}, {…}]
+ Active holdings after filtering: (2) [{…}, {…}]
+ Creating Previous Funds entry with 0 inactive holdings
+ No inactive holdings found, not creating Previous Funds entry
+ Calculating total investments...
+ Investments only for holding 2142 (Cash): 0
+ Investments only for holding 2143 (PruFund Growth Series E): 0
+ Total investments (Investment type only): 0
+ Calculating total investments...
+ Investments only for holding 2142 (Cash): 0
+ Investments only for holding 2143 (PruFund Growth Series E): 0
+ Total investments (Investment type only): 0
+ All holdings before filtering: (2) [{…}, {…}]
+ Active holdings after filtering: (2) [{…}, {…}]

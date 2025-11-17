@@ -46,11 +46,18 @@ export const useProductDetails = (productId: string | number | undefined) => {
   const query = useQuery({
     queryKey: ['product-details', productId],
     queryFn: async () => {
+      console.log('🔍 [PRODUCT DETAILS HOOK] ==================== FETCHING PRODUCT DATA ====================');
+      console.log('🔍 [PRODUCT DETAILS HOOK] Product ID:', productId);
+
       if (!productId) {
         throw new Error('Product ID is required');
       }
 
       const response = await getPortfolioFundsByProduct(Number(productId));
+
+      console.log('🔍 [PRODUCT DETAILS HOOK] Fetched product data from API:', response.data);
+      console.log('🔍 [PRODUCT DETAILS HOOK] Product IRR from API:', response.data?.irr);
+      console.log('🔍 [PRODUCT DETAILS HOOK] ==================== FETCH COMPLETE ====================');
 
       return response.data;
     },
@@ -59,6 +66,16 @@ export const useProductDetails = (productId: string | number | undefined) => {
     gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+  });
+
+  // Log when data is served from cache vs fetched fresh
+  console.log('🔍 [PRODUCT DETAILS HOOK] Query status:', {
+    productId,
+    isFetching: query.isFetching,
+    isLoading: query.isLoading,
+    dataUpdatedAt: new Date(query.dataUpdatedAt).toISOString(),
+    isStale: query.isStale,
+    irr: query.data?.irr
   });
 
   // Utility function to invalidate this product's cache

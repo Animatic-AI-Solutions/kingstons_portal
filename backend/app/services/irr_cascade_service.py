@@ -846,6 +846,14 @@ class IRRCascadeService:
     async def _calculate_and_store_portfolio_irr(self, portfolio_id: int, date: str) -> bool:
         """Calculate and store portfolio IRR for specific date"""
         try:
+            import traceback
+            logger.info(f"🚨 [IRR CASCADE OVERWRITE DEBUG] ==================== CASCADE SERVICE WRITING IRR ====================")
+            logger.info(f"🚨 [IRR CASCADE OVERWRITE DEBUG] Portfolio ID: {portfolio_id}, Date: {date}")
+            logger.info(f"🚨 [IRR CASCADE OVERWRITE DEBUG] Call stack:")
+            for line in traceback.format_stack()[:-1]:
+                logger.info(f"🚨 [IRR CASCADE OVERWRITE DEBUG]   {line.strip()}")
+            logger.info(f"🚨 [IRR CASCADE OVERWRITE DEBUG] ============================================================================")
+
             # Convert string date to date object for PostgreSQL comparison
             from datetime import datetime
             if isinstance(date, str):

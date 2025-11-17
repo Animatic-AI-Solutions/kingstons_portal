@@ -706,7 +706,14 @@ async def calculate_portfolio_irr(
         4. Returns a summary of the calculation results
     Expected output: A JSON object with the calculation results summary
     """
-    logger.info(f"🔍 DEBUG: calculate_portfolio_irr CALLED for portfolio {portfolio_id}")
+    import traceback
+    logger.info(f"🚨 [IRR OVERWRITE DEBUG] ==================== CALCULATE-IRR ENDPOINT CALLED ====================")
+    logger.info(f"🚨 [IRR OVERWRITE DEBUG] Portfolio ID: {portfolio_id}")
+    logger.info(f"🚨 [IRR OVERWRITE DEBUG] Call stack:")
+    for line in traceback.format_stack()[:-1]:
+        logger.info(f"🚨 [IRR OVERWRITE DEBUG]   {line.strip()}")
+    logger.info(f"🚨 [IRR OVERWRITE DEBUG] ============================================================================")
+
     try:
         # Check if portfolio exists
         portfolio_result = await db.fetchrow("SELECT * FROM portfolios WHERE id = $1", portfolio_id)
@@ -1543,12 +1550,24 @@ async def get_latest_portfolio_irr(portfolio_id: int, db = Depends(get_db)):
     This eliminates the need to recalculate IRR when the stored value is sufficient.
     """
     try:
+        logger.info(f"🔍 [IRR FETCH DEBUG] ==================== FETCHING LATEST IRR ====================")
+        logger.info(f"🔍 [IRR FETCH DEBUG] Portfolio ID: {portfolio_id}")
+
         # Query the latest_portfolio_irr_values view
         result = await db.fetchrow(
             "SELECT portfolio_id, irr_result, date FROM latest_portfolio_irr_values WHERE portfolio_id = $1",
             portfolio_id
         )
-        
+
+        logger.info(f"🔍 [IRR FETCH DEBUG] View query result: {result}")
+
+        # Also check the raw table to see what's actually stored
+        raw_result = await db.fetchrow(
+            "SELECT portfolio_id, irr_result, date FROM portfolio_irr_values WHERE portfolio_id = $1 ORDER BY date DESC LIMIT 1",
+            portfolio_id
+        )
+        logger.info(f"🔍 [IRR FETCH DEBUG] Raw table query result: {raw_result}")
+
         if result:
             # Convert IRR result to float for frontend compatibility
             irr_value = None

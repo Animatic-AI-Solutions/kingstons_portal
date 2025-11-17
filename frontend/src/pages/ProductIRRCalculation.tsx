@@ -1,5 +1,6 @@
 import React, { useState, useEffect, Fragment, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import EditableMonthlyActivitiesTable from '../components/EditableMonthlyActivitiesTable';
 import IRRCalculationModal from '../components/IRRCalculationModal';
@@ -838,6 +839,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
   const accountId = propAccountId || paramAccountId;
   const navigate = useNavigate();
   const { api } = useAuth();
+  const queryClient = useQueryClient();
   const [account, setAccount] = useState<Account | null>(null);
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
@@ -2580,11 +2582,54 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
                 await refreshData();
                 console.log('✅ [ACTIVITIES UPDATED] Data refresh complete');
 
+                // CRITICAL: Invalidate React Query cache to ensure fresh data on navigation
+                // This fixes the issue where navigating away and back shows stale cached IRR values
+                console.log('🗑️ [CACHE INVALIDATION] ==================== STARTING CACHE INVALIDATION ====================');
+                console.log('🗑️ [CACHE INVALIDATION] Account ID:', accountId);
+                console.log('🗑️ [CACHE INVALIDATION] Client Group ID:', account?.client_group_id);
+
+                // Get current cache state BEFORE invalidation
+                const cachedProductData = queryClient.getQueryData(['product-details', accountId]);
+                console.log('🗑️ [CACHE INVALIDATION] Current cached product data:', cachedProductData);
+
+                // Invalidate product details cache (useProductDetails hook)
+                console.log('🗑️ [CACHE INVALIDATION] Invalidating product-details cache with key:', ['product-details', accountId]);
+                await queryClient.invalidateQueries({ queryKey: ['product-details', accountId] });
+                console.log('✅ [CACHE INVALIDATION] Product details cache invalidated');
+
+                // Invalidate client details cache if we have the client group ID
+                if (account?.client_group_id) {
+                  const clientKey = ['clients', account.client_group_id.toString()];
+                  console.log('🗑️ [CACHE INVALIDATION] Invalidating client details cache with key:', clientKey);
+                  await queryClient.invalidateQueries({ queryKey: clientKey });
+                  console.log('✅ [CACHE INVALIDATION] Client details cache invalidated');
+                }
+
+                // Invalidate client list cache to refresh dashboard/list views
+                console.log('🗑️ [CACHE INVALIDATION] Invalidating client list cache with key:', ['clients']);
+                await queryClient.invalidateQueries({ queryKey: ['clients'] });
+                console.log('✅ [CACHE INVALIDATION] Client list cache invalidated');
+
+                // Verify cache state AFTER invalidation
+                const cachedProductDataAfter = queryClient.getQueryData(['product-details', accountId]);
+                console.log('🗑️ [CACHE INVALIDATION] Cached product data after invalidation:', cachedProductDataAfter);
+
+                console.log('✅ [CACHE INVALIDATION] ==================== CACHE INVALIDATION COMPLETE ====================');
+
               } catch (error) {
                 console.error('❌ [ACTIVITIES UPDATED] Error in onActivitiesUpdated callback:', error);
-                // Still try to refresh data even if IRR recalculation fails
+                // Still try to refresh data and invalidate cache even if IRR recalculation fails
                 try {
                   await refreshData();
+
+                  // Invalidate cache even on error to ensure consistency
+                  console.log('🗑️ [CACHE INVALIDATION ERROR PATH] Invalidating caches after error...');
+                  await queryClient.invalidateQueries({ queryKey: ['product-details', accountId] });
+                  if (account?.client_group_id) {
+                    await queryClient.invalidateQueries({ queryKey: ['clients', account.client_group_id.toString()] });
+                  }
+                  await queryClient.invalidateQueries({ queryKey: ['clients'] });
+                  console.log('✅ [CACHE INVALIDATION ERROR PATH] Cache invalidation complete');
                 } catch (refreshError) {
                   console.error('❌ [ACTIVITIES UPDATED] refreshData() also failed:', refreshError);
                 }

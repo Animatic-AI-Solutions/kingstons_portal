@@ -316,6 +316,15 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   const [portfolioIRR, setPortfolioIRR] = useState<number | null>(null);
   const [portfolioTotalValue, setPortfolioTotalValue] = useState<number | null>(null);
   const [isLoadingPortfolioSummary, setIsLoadingPortfolioSummary] = useState(false);
+
+  // Debug: Log whenever portfolioIRR state changes
+  useEffect(() => {
+    console.log('🎯 [PRODUCT OVERVIEW STATE] portfolioIRR state changed:', {
+      newValue: portfolioIRR,
+      timestamp: new Date().toISOString(),
+      accountId: accountId
+    });
+  }, [portfolioIRR, accountId]);
   
   // Edit mode state and form data
   const [isEditMode, setIsEditMode] = useState(false);
@@ -700,28 +709,34 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       // Fetch portfolio IRR from stored values (using latest_portfolio_irr_values view)
       if (completeData.portfolio_id) {
         try {
-          console.log('🚀 Fetching stored portfolio IRR for portfolio:', completeData.portfolio_id);
-          
+          console.log('📊 [PRODUCT OVERVIEW] ==================== FETCHING PORTFOLIO IRR ====================');
+          console.log('📊 [PRODUCT OVERVIEW] Portfolio ID:', completeData.portfolio_id);
+          console.log('📊 [PRODUCT OVERVIEW] Product ID:', accountId);
+          console.log('📊 [PRODUCT OVERVIEW] Timestamp:', new Date().toISOString());
+
           // Use the optimized endpoint to get stored IRR from latest_portfolio_irr_values view
           const irrResponse = await api.get(`/api/portfolios/${completeData.portfolio_id}/latest-irr`);
-          
-          console.log('✅ Stored IRR response:', irrResponse.data);
-          
-                     if (irrResponse.data && irrResponse.data.irr_result !== null) {
-             // IRR is stored as percentage in database (e.g., -0.33 for -0.33%), use directly
-             const irrPercentage = irrResponse.data.irr_result;
-             setPortfolioIRR(irrPercentage);
-             console.log(`✅ Portfolio IRR loaded from database: ${irrPercentage.toFixed(2)}%`);
-           } else {
-            console.warn('⚠️ No stored IRR found for portfolio:', completeData.portfolio_id);
+
+          console.log('📊 [PRODUCT OVERVIEW] Full IRR response:', irrResponse.data);
+
+          if (irrResponse.data && irrResponse.data.irr_result !== null) {
+            // IRR is stored as percentage in database (e.g., -0.33 for -0.33%), use directly
+            const irrPercentage = irrResponse.data.irr_result;
+            console.log('📊 [PRODUCT OVERVIEW] Setting portfolio IRR state to:', irrPercentage);
+            console.log('📊 [PRODUCT OVERVIEW] IRR Date:', irrResponse.data.irr_date);
+            setPortfolioIRR(irrPercentage);
+            console.log(`✅ [PRODUCT OVERVIEW] Portfolio IRR loaded from database: ${irrPercentage.toFixed(2)}%`);
+          } else {
+            console.warn('⚠️ [PRODUCT OVERVIEW] No stored IRR found for portfolio:', completeData.portfolio_id);
             setPortfolioIRR(null);
           }
+          console.log('📊 [PRODUCT OVERVIEW] ==================== PORTFOLIO IRR FETCH COMPLETE ====================');
         } catch (irrErr) {
-          console.error('❌ Error fetching stored portfolio IRR:', irrErr);
+          console.error('❌ [PRODUCT OVERVIEW] Error fetching stored portfolio IRR:', irrErr);
           setPortfolioIRR(null);
         }
       } else {
-        console.warn('⚠️ No portfolio_id available for IRR lookup');
+        console.warn('⚠️ [PRODUCT OVERVIEW] No portfolio_id available for IRR lookup');
         setPortfolioIRR(null);
       }
       
@@ -2560,12 +2575,20 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           </div>
                           <div className={`text-lg font-bold mt-1 ${
                             portfolioIRR !== null
-                              ? portfolioIRR >= 0 
-                                ? 'text-green-900' 
+                              ? portfolioIRR >= 0
+                                ? 'text-green-900'
                                 : 'text-red-600'
                               : 'text-gray-500'
                           }`}>
-                            {portfolioIRR !== null ? formatPercentage(portfolioIRR) : 'N/A'}
+                            {(() => {
+                              const displayValue = portfolioIRR !== null ? formatPercentage(portfolioIRR) : 'N/A';
+                              console.log('🖥️ [PRODUCT OVERVIEW RENDER] Displaying Total Product IRR:', {
+                                rawValue: portfolioIRR,
+                                formattedValue: displayValue,
+                                timestamp: new Date().toISOString()
+                              });
+                              return displayValue;
+                            })()}
                           </div>
                         </div>
                       </div>
