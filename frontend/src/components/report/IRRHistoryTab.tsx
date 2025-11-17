@@ -9,6 +9,7 @@
  * - Fund comparison tools
  */
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import IRRHistorySummaryTable from './IRRHistorySummaryTable';
 import {
   LineChart,
@@ -22,9 +23,9 @@ import {
   AreaChart,
   Area
 } from 'recharts';
-import { 
-  ChartBarIcon, 
-  TableCellsIcon, 
+import {
+  ChartBarIcon,
+  TableCellsIcon,
   ArrowDownTrayIcon,
   EyeIcon,
   EyeSlashIcon
@@ -60,6 +61,8 @@ interface IRRHistoryTabProps {
 type ViewMode = 'table' | 'chart';
 type ChartType = 'line' | 'area';
 export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
+  const navigate = useNavigate();
+
   const {
     state: {
       irrHistoryData,
@@ -71,6 +74,19 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
       portfolioIrrValues
     }
   } = useReportStateManager();
+
+  // Navigate to product overview page with breadcrumb preservation
+  const handleProductClick = (productId: number, productName: string) => {
+    // Navigate to product overview with state to preserve navigation context
+    // The breadcrumb will use browser history to navigate back to the report
+    navigate(`/products/${productId}/overview`, {
+      state: {
+        from: 'report-display',
+        productName: productName
+      }
+    });
+  };
+
   // Track calculated Previous Funds IRR values for each product and date
   const [previousFundsIRRData, setPreviousFundsIRRData] = useState<Map<string, Map<string, number | null>>>(new Map());
   const [previousFundsCalculationComplete, setPreviousFundsCalculationComplete] = useState<Set<number>>(new Set());
@@ -1205,9 +1221,10 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
               });
             }
             return (
-              <div 
-                key={index} 
-                className={`mb-4 bg-white shadow-sm rounded-lg border border-gray-200 w-full product-card print-clean history-product-card ${product?.status === 'inactive' ? 'opacity-60 bg-gray-50' : ''}`}
+              <div
+                key={index}
+                onClick={() => handleProductClick(productHistory.product_id, productHistory.product_name)}
+                className={`mb-4 bg-white shadow-sm rounded-lg border border-gray-200 w-full product-card print-clean history-product-card cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary-300 print:cursor-default print:hover:shadow-sm print:hover:border-gray-200 ${product?.status === 'inactive' ? 'opacity-60 bg-gray-50' : ''}`}
                 style={{
                   borderLeft: product?.provider_theme_color ? `4px solid ${product.provider_theme_color}` : '4px solid #e5e7eb',
                   borderTop: product?.provider_theme_color ? `1px solid ${product.provider_theme_color}` : undefined,
