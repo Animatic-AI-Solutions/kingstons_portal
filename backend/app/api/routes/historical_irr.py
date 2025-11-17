@@ -500,33 +500,49 @@ async def get_irr_history_summary(
                         })
                         continue
 
-                    # Fetch stored portfolio IRR from database (no fallback calculation)
-                    # Portfolio IRRs should only come from stored values in portfolio_irr_values table
+                    # Calculate proper portfolio total IRR by aggregating all cash flows
+                    # This uses the same multi-portfolio IRR calculation logic as the IRR calculation page
                     portfolio_irr = None
 
-                    # For multiple portfolios, we need to aggregate stored IRRs
-                    # Note: This assumes all portfolios have IRRs stored for this date
-                    if len(portfolio_id_list) == 1:
-                        # Single portfolio - direct lookup
-                        stored_irr_result = await db.fetchrow(
-                            """
-                            SELECT irr_result
-                            FROM portfolio_irr_values
-                            WHERE portfolio_id = $1 AND date = $2
-                            """,
-                            portfolio_id_list[0], normalized_date
-                        )
-                        if stored_irr_result:
-                            portfolio_irr = float(stored_irr_result["irr_result"])
-                            logger.debug(f"📊 Found stored portfolio IRR for date {date_str}: {portfolio_irr}%")
-                        else:
-                            logger.debug(f"📊 No stored portfolio IRR found for date {date_str}")
+                    # Get all portfolio fund IDs for all products in the report
+                    all_portfolio_fund_ids = await db.fetch(
+                        """
+                        SELECT pf.id
+                        FROM portfolio_funds pf
+                        WHERE pf.portfolio_id = ANY($1::int[])
+                        """,
+                        portfolio_id_list
+                    )
+
+                    if all_portfolio_fund_ids:
+                        fund_ids_list = [int(row["id"]) for row in all_portfolio_fund_ids]
+                        logger.debug(f"📊 Found {len(fund_ids_list)} portfolio funds across {len(portfolio_id_list)} portfolios for IRR calculation")
+
+                        try:
+                            # Import the multi-portfolio IRR calculation function
+                            from app.api.routes.portfolio_funds import calculate_multiple_portfolio_funds_irr
+
+                            # Calculate aggregated IRR for all funds on this specific date
+                            # This properly aggregates all cash flows and calculates the true portfolio IRR
+                            irr_result = await calculate_multiple_portfolio_funds_irr(
+                                portfolio_fund_ids=fund_ids_list,
+                                irr_date=normalized_date.strftime('%Y-%m-%d'),
+                                bypass_cache=True,  # Force fresh calculation
+                                db=db
+                            )
+
+                            if irr_result.get("success") and irr_result.get("irr_percentage") is not None:
+                                portfolio_irr = float(irr_result["irr_percentage"])
+                                logger.debug(f"📊 Calculated aggregated portfolio IRR for date {date_str}: {portfolio_irr}%")
+                                logger.debug(f"📊 IRR calculation details: {irr_result.get('message', 'N/A')}")
+                            else:
+                                logger.debug(f"📊 Portfolio IRR calculation returned no result for date {date_str}: {irr_result.get('message', 'N/A')}")
+
+                        except Exception as calc_error:
+                            logger.error(f"Error calculating aggregated portfolio IRR for date {date_str}: {str(calc_error)}")
+                            portfolio_irr = None
                     else:
-                        # Multiple portfolios - this is complex, would need aggregation logic
-                        # For now, log warning and return None
-                        logger.warning(f"⚠️ Multiple portfolios ({len(portfolio_id_list)}) detected - portfolio IRR aggregation not yet implemented. Returning None.")
-                        logger.warning(f"⚠️ Portfolio IDs: {portfolio_id_list}")
-                        # TODO: Implement proper multi-portfolio IRR aggregation from stored values
+                        logger.warning(f"No portfolio funds found for portfolios {portfolio_id_list} on date {date_str}")
 
                     # Get total valuation for all portfolios on this date
                     total_valuation = 0.0
