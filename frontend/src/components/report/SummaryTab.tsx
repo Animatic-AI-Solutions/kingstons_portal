@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useReportStateManager } from '../../hooks/report/useReportStateManager';
 import { useReportFormatter } from '../../hooks/report/useReportFormatter';
 import type { ReportData, ProductPeriodSummary } from '../../types/reportTypes';
@@ -30,6 +31,7 @@ interface SummaryTabProps {
 }
 
 const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) => {
+  const navigate = useNavigate();
   const [isCalculating, setIsCalculating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [productExpansion, setProductExpansion] = useState<{ [key: string]: boolean }>({});
@@ -157,6 +159,19 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
         className: ''
       };
     }
+  };
+
+  // Navigate to product overview page with breadcrumb preservation
+  const handleProductClick = (productId: number, productName: string) => {
+    // Navigate to product overview with state to preserve navigation context
+    // The breadcrumb will use browser history to navigate back to the report
+    navigate(`/products/${productId}/overview`, {
+      state: {
+        from: 'report-display',
+        productName: productName,
+        useHistoryBack: true // Signal to use browser back instead of path navigation
+      }
+    });
   };
 
   return (
@@ -601,7 +616,8 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ reportData, className = '' }) =
             return (
               <div
                 key={`${product.id}-${index}`}
-                className={`mb-4 bg-white shadow-sm rounded-lg border border-gray-200 w-full product-card print-clean summary-product-card ${isInactive ? 'opacity-60 bg-gray-50' : ''}`}
+                onClick={() => handleProductClick(product.id, product.product_name)}
+                className={`mb-4 bg-white shadow-sm rounded-lg border border-gray-200 w-full product-card print-clean summary-product-card cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary-300 print:cursor-default print:hover:shadow-sm print:hover:border-gray-200 ${isInactive ? 'opacity-60 bg-gray-50' : ''}`}
                 style={{
                   borderLeft: product.provider_theme_color ? `4px solid ${product.provider_theme_color}` : '4px solid #e5e7eb',
                   borderTop: product.provider_theme_color ? `1px solid ${product.provider_theme_color}` : undefined,
