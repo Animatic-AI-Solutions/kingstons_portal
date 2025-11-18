@@ -24,6 +24,7 @@ const ReportDisplayPage: React.FC = () => {
   // Local state for data loading
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [clientGroups, setClientGroups] = useState<Array<{ id: number; name: string }>>([]);
   
   // Create IRR data service instance
   const irrDataService = useMemo(() => createIRRDataService(api), []);
@@ -77,7 +78,27 @@ const ReportDisplayPage: React.FC = () => {
       const data = location.state.reportData as ReportData;
       const clientGroupIds = location.state.clientGroupIds as (string | number)[];
       console.log('🔍 [REPORT DISPLAY DEBUG] Received report data with', data.productSummaries?.length, 'products');
-      
+      console.log('🔍 [REPORT DISPLAY DEBUG] Client group IDs:', clientGroupIds);
+
+      // Fetch client group names
+      if (clientGroupIds && clientGroupIds.length > 0) {
+        try {
+          const clientGroupData = await Promise.all(
+            clientGroupIds.map(async (id) => {
+              const response = await api.get(`/api/client_groups/${id}`);
+              return {
+                id: Number(id),
+                name: response.data.name
+              };
+            })
+          );
+          setClientGroups(clientGroupData);
+          console.log('🔍 [REPORT DISPLAY DEBUG] Fetched client groups:', clientGroupData);
+        } catch (error) {
+          console.error('❌ Error fetching client group names:', error);
+        }
+      }
+
       setReportData(data);
       setStateReportData(data);
       setIsInitialLoading(false);
@@ -250,7 +271,7 @@ const ReportDisplayPage: React.FC = () => {
 
   return (
     <ReportErrorBoundary>
-      <ReportContainer reportData={reportData}>
+      <ReportContainer reportData={reportData} clientGroups={clientGroups}>
         {/* Summary Tab - Always rendered for print, conditionally displayed for screen */}
         <div className={`${activeTab === REPORT_TABS.SUMMARY ? '' : 'hidden print:block'}`}>
           <SummaryTab reportData={memoizedReportData} />

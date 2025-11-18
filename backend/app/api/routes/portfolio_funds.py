@@ -2569,14 +2569,8 @@ async def calculate_multiple_portfolio_funds_irr(
 
         # IMPORTANT: Save portfolio IRR to database so it can be retrieved by getLatestPortfolioIRR
         # This ensures the UI Period Overview table shows the calculated portfolio IRR
-        logger.info(f"💾 [IRR SAVE DEBUG] ==================== STARTING PORTFOLIO IRR SAVE ====================")
-        logger.info(f"💾 [IRR SAVE DEBUG] Attempting to save portfolio IRR: {result['irr_percentage']}%")
-        logger.info(f"💾 [IRR SAVE DEBUG] Portfolio fund IDs: {portfolio_fund_ids}")
-        logger.info(f"💾 [IRR SAVE DEBUG] Date: {irr_date_obj}")
-
         try:
             # Check if all funds belong to the same portfolio
-            logger.info(f"💾 [IRR SAVE DEBUG] Checking if all {len(portfolio_fund_ids)} funds belong to the same portfolio...")
             portfolio_ids_result = await db.fetch("""
                 SELECT DISTINCT portfolio_id
                 FROM portfolio_funds
@@ -2584,21 +2578,17 @@ async def calculate_multiple_portfolio_funds_irr(
             """, portfolio_fund_ids)
 
             unique_portfolio_ids = [row['portfolio_id'] for row in portfolio_ids_result]
-            logger.info(f"💾 [IRR SAVE DEBUG] Found {len(unique_portfolio_ids)} unique portfolio(s): {unique_portfolio_ids}")
 
             if len(unique_portfolio_ids) > 1:
                 # This is a multi-portfolio IRR (client-level or report-level)
                 # Do NOT save it to any individual portfolio
-                logger.warning(f"⚠️ [IRR SAVE DEBUG] Funds belong to multiple portfolios {unique_portfolio_ids}. This is a client-level IRR calculation. NOT saving to any portfolio to avoid overwriting individual portfolio IRRs.")
-                logger.info(f"💾 [IRR SAVE DEBUG] ==================== PORTFOLIO IRR SAVE SKIPPED (MULTI-PORTFOLIO) ====================")
+                logger.info(f"Skipping portfolio IRR save - multiple portfolios detected ({len(unique_portfolio_ids)} portfolios). This is a client-level IRR calculation.")
             elif len(unique_portfolio_ids) == 1:
                 # All funds are from the same portfolio - safe to save
                 portfolio_id = unique_portfolio_ids[0]
-                logger.info(f"💾 [IRR SAVE DEBUG] All funds belong to portfolio {portfolio_id} - proceeding with save")
 
                 # Check portfolio completeness (all non-cash funds must have valuations)
                 # Get all active non-cash funds
-                logger.info(f"💾 [IRR SAVE DEBUG] Checking portfolio completeness...")
                 non_cash_funds = await db.fetch("""
                     SELECT pf.id
                     FROM portfolio_funds pf
@@ -2608,11 +2598,8 @@ async def calculate_multiple_portfolio_funds_irr(
                       AND NOT (af.fund_name = 'Cash' AND af.isin_number = 'N/A')
                 """, portfolio_id)
 
-                logger.info(f"💾 [IRR SAVE DEBUG] Found {len(non_cash_funds) if non_cash_funds else 0} active non-cash funds")
-
                 if non_cash_funds:
                     non_cash_fund_ids = [int(f["id"]) for f in non_cash_funds]
-                    logger.info(f"💾 [IRR SAVE DEBUG] Non-cash fund IDs: {non_cash_fund_ids}")
 
                     # Check which non-cash funds have valuations for this date
                     funds_with_valuations = await db.fetch("""
@@ -2625,12 +2612,8 @@ async def calculate_multiple_portfolio_funds_irr(
                     funds_with_val_count = len(funds_with_valuations) if funds_with_valuations else 0
                     is_complete = funds_with_val_count == len(non_cash_fund_ids)
 
-                    logger.info(f"📊 [IRR SAVE DEBUG] Portfolio {portfolio_id} completeness for {irr_date_obj}: {funds_with_val_count}/{len(non_cash_fund_ids)} non-cash funds = {'COMPLETE' if is_complete else 'INCOMPLETE'}")
-
                     if not is_complete:
-                        logger.warning(f"⚠️ [IRR SAVE DEBUG] Portfolio {portfolio_id} is INCOMPLETE for {irr_date_obj}, skipping portfolio IRR save")
-                        logger.warning(f"⚠️ [IRR SAVE DEBUG] This is why your new IRR (4.8%) is not being saved!")
-                        logger.warning(f"⚠️ [IRR SAVE DEBUG] Missing valuations for {len(non_cash_fund_ids) - funds_with_val_count} funds")
+                        logger.warning(f"Portfolio {portfolio_id} is incomplete for {irr_date_obj} - skipping IRR save (missing valuations for {len(non_cash_fund_ids) - funds_with_val_count} non-cash funds)")
                         # Portfolio is incomplete - don't save portfolio IRR
                         # The cascade service will handle deletion if needed
                         raise ValueError("Portfolio incomplete - not all non-cash funds have valuations")
@@ -2643,52 +2626,22 @@ async def calculate_multiple_portfolio_funds_irr(
 
                 if existing_portfolio_irr:
                     # Update existing record
-                    logger.info(f"🔄 [IRR SAVE DEBUG] Updating existing portfolio IRR record (ID: {existing_portfolio_irr['id']}) for portfolio {portfolio_id}")
-                    logger.info(f"🔄 [IRR SAVE DEBUG] Old value check - fetching before update...")
-                    old_value = await db.fetchrow("SELECT irr_result FROM portfolio_irr_values WHERE id = $1", existing_portfolio_irr["id"])
-                    logger.info(f"🔄 [IRR SAVE DEBUG] Current DB value: {old_value['irr_result']}%, New value: {result['irr_percentage']}%")
-
-                    import traceback
-                    logger.info(f"🚨 [IRR OVERWRITE DEBUG] ==================== PORTFOLIO_FUNDS.PY UPDATING IRR ====================")
-                    logger.info(f"🚨 [IRR OVERWRITE DEBUG] Portfolio ID: {portfolio_id}, Date: {irr_date_obj}")
-                    logger.info(f"🚨 [IRR OVERWRITE DEBUG] Old value: {old_value['irr_result']}%, New value: {result['irr_percentage']}%")
-                    logger.info(f"🚨 [IRR OVERWRITE DEBUG] Call stack:")
-                    for line in traceback.format_stack()[:-1]:
-                        logger.info(f"🚨 [IRR OVERWRITE DEBUG]   {line.strip()}")
-                    logger.info(f"🚨 [IRR OVERWRITE DEBUG] ============================================================================")
-
                     await db.execute("""
                         UPDATE portfolio_irr_values
                         SET irr_result = $1
                         WHERE id = $2
                     """, result['irr_percentage'], existing_portfolio_irr["id"])
-
-                    # Verify the update succeeded
-                    updated_value = await db.fetchrow("SELECT irr_result FROM portfolio_irr_values WHERE id = $1", existing_portfolio_irr["id"])
-                    logger.info(f"✅ [IRR SAVE DEBUG] Updated portfolio IRR for portfolio {portfolio_id}, date {irr_date_obj}")
-                    logger.info(f"✅ [IRR SAVE DEBUG] Verified DB now shows: {updated_value['irr_result']}%")
-
-                    # Compare as floats to avoid decimal precision differences (4.8 vs 4.8000)
-                    if abs(float(updated_value['irr_result']) - float(result['irr_percentage'])) > 0.01:
-                        logger.error(f"🚨 [IRR SAVE DEBUG] MISMATCH! Expected {result['irr_percentage']}% but DB has {updated_value['irr_result']}%")
-                    else:
-                        logger.info(f"✅ [IRR SAVE DEBUG] Verification passed - values match (accounting for decimal precision)")
                 else:
                     # Insert new record (with duplicate handling)
                     try:
-                        logger.info(f"➕ [IRR SAVE DEBUG] Inserting NEW portfolio IRR record for portfolio {portfolio_id}, date {irr_date_obj}: {result['irr_percentage']}%")
                         await db.execute("""
                             INSERT INTO portfolio_irr_values (portfolio_id, irr_result, date)
                             VALUES ($1, $2, $3)
                         """, portfolio_id, result['irr_percentage'], irr_date_obj)
-
-                        # Verify the insert succeeded
-                        inserted_value = await db.fetchrow("SELECT irr_result FROM portfolio_irr_values WHERE portfolio_id = $1 AND date = $2", portfolio_id, irr_date_obj)
-                        logger.info(f"✅ [IRR SAVE DEBUG] Inserted portfolio IRR - Verified DB shows: {inserted_value['irr_result']}%")
                     except Exception as insert_error:
                         # If duplicate key error (race condition), try to update instead
                         if "duplicate key" in str(insert_error).lower() or "unique constraint" in str(insert_error).lower():
-                            logger.warning(f"⚠️ Duplicate portfolio IRR detected (race condition), updating instead for portfolio {portfolio_id} on {irr_date_obj}")
+                            logger.warning(f"Duplicate portfolio IRR detected (race condition), updating instead for portfolio {portfolio_id} on {irr_date_obj}")
                             existing_portfolio_irr = await db.fetchrow("""
                                 SELECT id FROM portfolio_irr_values
                                 WHERE portfolio_id = $1 AND date = $2
@@ -2699,31 +2652,15 @@ async def calculate_multiple_portfolio_funds_irr(
                                     SET irr_result = $1
                                     WHERE id = $2
                                 """, result['irr_percentage'], existing_portfolio_irr["id"])
-                                logger.info(f"✅ Updated portfolio IRR after race condition for portfolio {portfolio_id}, date {irr_date_obj}: {result['irr_percentage']}%")
                         else:
                             raise insert_error
             else:
                 # len(unique_portfolio_ids) == 0, which shouldn't happen, but handle gracefully
-                logger.error(f"❌ [IRR SAVE DEBUG] No portfolio found for any of the provided fund IDs: {portfolio_fund_ids}")
+                logger.error(f"No portfolio found for any of the provided fund IDs: {portfolio_fund_ids}")
 
         except Exception as save_error:
-            logger.error(f"❌ [IRR SAVE DEBUG] ==================== PORTFOLIO IRR SAVE FAILED ====================")
-            logger.error(f"❌ [IRR SAVE DEBUG] Error saving portfolio IRR to database: {str(save_error)}")
-            logger.error(f"❌ [IRR SAVE DEBUG] Error type: {type(save_error).__name__}")
-            logger.error(f"❌ [IRR SAVE DEBUG] Full error details:", exc_info=True)
-            logger.error(f"❌ [IRR SAVE DEBUG] Portfolio fund IDs: {portfolio_fund_ids}")
-            logger.error(f"❌ [IRR SAVE DEBUG] IRR value that failed to save: {result['irr_percentage']}%")
+            logger.error(f"Error saving portfolio IRR to database: {str(save_error)}", exc_info=True)
             # Don't fail the entire request if saving fails - the IRR is still cached and returned
-        else:
-            # Success path - could be saved, skipped, or nothing to save
-            if len(unique_portfolio_ids) == 1:
-                logger.info(f"💾 [IRR SAVE DEBUG] ==================== PORTFOLIO IRR SAVE COMPLETE ====================")
-                logger.info(f"💾 [IRR SAVE DEBUG] Successfully saved {result['irr_percentage']}% to database for portfolio {unique_portfolio_ids[0]}")
-            elif len(unique_portfolio_ids) > 1:
-                logger.info(f"💾 [IRR SAVE DEBUG] ==================== PORTFOLIO IRR SAVE SKIPPED (MULTI-PORTFOLIO) ====================")
-                logger.info(f"💾 [IRR SAVE DEBUG] IRR {result['irr_percentage']}% calculated but NOT saved (client-level calculation)")
-
-        logger.info(f"✅ Successfully calculated aggregate IRR for {len(portfolio_fund_ids)} portfolio funds: {result['irr_percentage']}%")
 
         return result
         
