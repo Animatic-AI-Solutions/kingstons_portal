@@ -2768,31 +2768,32 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                     }
                   }
                   
-                  return fundsToDisplay.map(fund => (
-                      <tr key={`compact-${fund.id}${fund.isInactiveBreakdown ? '-breakdown' : ''}`} 
+                  return fundsToDisplay.flatMap(fund => [
+                      // Total Activities row
+                      <tr key={`compact-activities-${fund.id}${fund.isInactiveBreakdown ? '-breakdown' : ''}`}
                           className={`${
-                        fund.isActive === false 
-                          ? fund.isInactiveBreakdown 
-                            ? 'bg-gray-50 border-t border-dashed border-gray-300' 
+                        fund.isActive === false
+                          ? fund.isInactiveBreakdown
+                            ? 'bg-gray-50 border-t border-dashed border-gray-300'
                             : 'bg-gray-100 border-t border-gray-300'
                               : 'bg-white border-t border-gray-200'
                       }`}>
                         {/* Activity column - shows fund name and "Total Activities" */}
                         <td className={`px-1 py-0 font-semibold text-sm ${
-                          fund.isActive === false 
-                            ? fund.isInactiveBreakdown 
-                              ? 'text-gray-600 pl-4' 
-                              : 'text-blue-800' 
+                          fund.isActive === false
+                            ? fund.isInactiveBreakdown
+                              ? 'text-gray-600 pl-4'
+                              : 'text-blue-800'
                             : 'text-gray-900'
                         } sticky left-0 z-10 ${
-                          fund.isActive === false 
-                            ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
+                          fund.isActive === false
+                            ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100'
                             : 'bg-white'
                         }`}>
                           <div className="flex flex-col">
                           <div className="flex items-center justify-between">
                               <div className="font-semibold">
-                              {fund.isInactiveBreakdown && 
+                              {fund.isInactiveBreakdown &&
                                 <span className="text-gray-400 mr-2">→</span>
                               }
                         {fund.fund_name}
@@ -2836,26 +2837,26 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                             </div>
                           </div>
                         </td>
-                        
+
                         {/* Month data columns */}
                         {months.map(month => {
                           const total = calculateFundTotal(fund.id, month);
                           return (
-                            <td key={`compact-${fund.id}-${month}`} 
+                            <td key={`compact-activities-${fund.id}-${month}`}
                                 className={`px-1 py-0 text-right text-sm font-bold text-red-700 ${
-                                  fund.isActive === false 
-                                    ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
+                                  fund.isActive === false
+                                    ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100'
                                     : 'bg-white'
                                 }`}>
                               {total !== 0 ? formatCurrency(total) : ''}
                             </td>
                           );
                         })}
-                        
+
                         {/* Row Total column for compact view */}
                         <td className={`px-1 py-0 text-right text-sm font-bold border-l border-gray-300 ${
-                          fund.isActive === false 
-                            ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
+                          fund.isActive === false
+                            ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100'
                             : 'bg-white'
                         }`}>
                           {(() => {
@@ -2867,8 +2868,44 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                             );
                           })()}
                         </td>
+                    </tr>,
+                    // Current Value (Valuations) row
+                    <tr key={`compact-valuation-${fund.id}${fund.isInactiveBreakdown ? '-breakdown' : ''}`}
+                        className={`${
+                          fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-blue-50'
+                        } border-t border-blue-200`}>
+                      {/* Activity type column */}
+                      <td className={`px-1 py-0 font-semibold text-sm text-blue-700 sticky left-0 z-10 pl-4 ${
+                        fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-blue-50'
+                      }`}>
+                        {fund.isInactiveBreakdown &&
+                          <span className="text-gray-400 mr-2">→</span>
+                        }
+                        Current Value
+                      </td>
+
+                      {/* Month data columns */}
+                      {months.map(month => {
+                        const valuation = getFundValuation(fund.id, month);
+                        return (
+                          <td key={`compact-valuation-${fund.id}-${month}`}
+                              className={`px-1 py-0 text-right text-sm font-semibold text-blue-700 ${
+                                fund.isInactiveBreakdown ? 'bg-gray-50 opacity-75' : 'bg-blue-50'
+                              }`}>
+                            {valuation && valuation.valuation !== null && valuation.valuation !== undefined
+                              ? formatCurrency(valuation.valuation)
+                              : ''}
+                          </td>
+                        );
+                      })}
+
+                      {/* Row Total column - empty for valuations */}
+                      <td className={`px-1 py-0 border-l border-gray-300 ${
+                        fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-blue-50'
+                      }`}>
+                      </td>
                     </tr>
-                    ));
+                    ]);
                   })()
                 ) : (
                   // Detailed view - each fund+activity combination as separate row
