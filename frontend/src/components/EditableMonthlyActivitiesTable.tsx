@@ -193,7 +193,10 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   
   // State for compact view toggle
   const [isCompactView, setIsCompactView] = useState(false);
-  
+
+  // State for tracking which funds are expanded in compact view
+  const [expandedFunds, setExpandedFunds] = useState<Set<number>>(new Set());
+
   // State and ref for sticky header tracking
   const [headerTop, setHeaderTop] = useState<number | null>(null);
   const [tableWidth, setTableWidth] = useState<number>(0);
@@ -2241,6 +2244,19 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     return providerSwitchesIndex.get(month);
   };
 
+  // Function to toggle fund expansion in compact view
+  const toggleFundExpansion = (fundId: number) => {
+    setExpandedFunds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(fundId)) {
+        newSet.delete(fundId);
+      } else {
+        newSet.add(fundId);
+      }
+      return newSet;
+    });
+  };
+
   // Function to reactivate a fund
   const reactivateFund = async (portfolioFundId: number, fundName: string) => {
     try {
@@ -2768,18 +2784,23 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                     }
                   }
                   
-                  return fundsToDisplay.flatMap(fund => [
-                      // Total Activities row
-                      <tr key={`compact-activities-${fund.id}${fund.isInactiveBreakdown ? '-breakdown' : ''}`}
+                  return fundsToDisplay.flatMap(fund => {
+                    const isExpanded = expandedFunds.has(fund.id);
+                    const rows: JSX.Element[] = [];
+
+                    // Fund header row with expand/collapse functionality
+                    rows.push(
+                      <tr key={`compact-header-${fund.id}${fund.isInactiveBreakdown ? '-breakdown' : ''}`}
                           className={`${
-                        fund.isActive === false
-                          ? fund.isInactiveBreakdown
-                            ? 'bg-gray-50 border-t border-dashed border-gray-300'
-                            : 'bg-gray-100 border-t border-gray-300'
-                              : 'bg-white border-t border-gray-200'
-                      }`}>
-                        {/* Activity column - shows fund name and "Total Activities" */}
-                        <td className={`px-1 py-0 font-semibold text-sm ${
+                            fund.isActive === false
+                              ? fund.isInactiveBreakdown
+                                ? 'bg-gray-50 border-t border-dashed border-gray-300'
+                                : 'bg-gray-100 border-t border-gray-300'
+                              : 'bg-white border-t-2 border-gray-300'
+                          } cursor-pointer hover:bg-gray-50`}
+                          onClick={() => toggleFundExpansion(fund.id)}>
+                        {/* Activity column - shows fund name with expand/collapse chevron */}
+                        <td className={`px-1 py-1 font-semibold text-sm ${
                           fund.isActive === false
                             ? fund.isInactiveBreakdown
                               ? 'text-gray-600 pl-4'
@@ -2787,125 +2808,218 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                             : 'text-gray-900'
                         } sticky left-0 z-10 ${
                           fund.isActive === false
-                            ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100'
-                            : 'bg-white'
+                            ? fund.isInactiveBreakdown ? 'bg-gray-50 hover:bg-gray-100' : 'bg-gray-100 hover:bg-gray-200'
+                            : 'bg-white hover:bg-gray-50'
                         }`}>
-                          <div className="flex flex-col">
                           <div className="flex items-center justify-between">
-                              <div className="font-semibold">
+                            <div className="flex items-center">
                               {fund.isInactiveBreakdown &&
                                 <span className="text-gray-400 mr-2">→</span>
                               }
-                        {fund.fund_name}
+                              {/* Chevron icon */}
+                              <span className="mr-2 text-gray-400">
+                                {isExpanded ? '▼' : '▶'}
+                              </span>
+                              <span className="font-semibold">{fund.fund_name}</span>
                               {fund.isActive === false && !fund.isInactiveBreakdown && (
-                                  <span className="text-xs text-gray-500 font-normal ml-1">
+                                <span className="text-xs text-gray-500 font-normal ml-1">
                                   ({fund.inactiveHoldingIds?.length || 0} inactive {(fund.inactiveHoldingIds?.length || 0) === 1 ? 'fund' : 'funds'})
-                                  </span>
+                                </span>
                               )}
                             </div>
-                            {fund.isActive === false && !fund.isInactiveBreakdown && fund.inactiveHoldingIds && fund.inactiveHoldingIds.length > 0 && (
-                              <button
-                                onClick={() => setShowInactiveFunds(!showInactiveFunds)}
-                                className="ml-2 px-2 py-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                                title={showInactiveFunds ? "Hide inactive funds" : "Show inactive funds breakdown"}
-                              >
-                                {showInactiveFunds ? "Hide" : "Show"} Breakdown
-                              </button>
-                            )}
-                            {fund.isInactiveBreakdown && (
-                              <button
-                                onClick={() => reactivateFund(fund.id, fund.fund_name)}
-                                disabled={reactivatingFunds.has(fund.id)}
-                                className="ml-2 px-2 py-1 text-xs bg-green-50 hover:bg-green-100 text-green-700 rounded border border-green-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                title="Reactivate this fund"
-                              >
-                                {reactivatingFunds.has(fund.id) ? 'Reactivating...' : 'Reactivate'}
-                              </button>
-                            )}
-                            {fund.isActive !== false && !fund.isInactiveBreakdown && (
-                              <button
-                                onClick={() => autoPopulateZeroValuations(fund.id)}
-                                className="ml-2 px-2 py-1 text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 rounded border border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
-                                title="Auto-populate zero valuations up to earliest non-zero valuation"
-                              >
-                                Fill Zeros
-                              </button>
-                            )}
-                          </div>
-                            <div className="font-bold text-red-700 text-sm mt-1">
-                          Total Activities
+                            <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
+                              {fund.isActive === false && !fund.isInactiveBreakdown && fund.inactiveHoldingIds && fund.inactiveHoldingIds.length > 0 && (
+                                <button
+                                  onClick={() => setShowInactiveFunds(!showInactiveFunds)}
+                                  className="px-2 py-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                                  title={showInactiveFunds ? "Hide inactive funds" : "Show inactive funds breakdown"}
+                                >
+                                  {showInactiveFunds ? "Hide" : "Show"} Breakdown
+                                </button>
+                              )}
+                              {fund.isInactiveBreakdown && (
+                                <button
+                                  onClick={() => reactivateFund(fund.id, fund.fund_name)}
+                                  disabled={reactivatingFunds.has(fund.id)}
+                                  className="px-2 py-1 text-xs bg-green-50 hover:bg-green-100 text-green-700 rounded border border-green-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                  title="Reactivate this fund"
+                                >
+                                  {reactivatingFunds.has(fund.id) ? 'Reactivating...' : 'Reactivate'}
+                                </button>
+                              )}
+                              {fund.isActive !== false && !fund.isInactiveBreakdown && (
+                                <button
+                                  onClick={() => autoPopulateZeroValuations(fund.id)}
+                                  className="px-2 py-1 text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 rounded border border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
+                                  title="Auto-populate zero valuations up to earliest non-zero valuation"
+                                >
+                                  Fill Zeros
+                                </button>
+                              )}
                             </div>
                           </div>
+                        </td>
+
+                        {/* Empty month data columns for header */}
+                        {months.map(month => (
+                          <td key={`compact-header-${fund.id}-${month}`}
+                              className={`px-1 py-1 ${
+                                fund.isActive === false
+                                  ? fund.isInactiveBreakdown ? 'bg-gray-50 hover:bg-gray-100' : 'bg-gray-100 hover:bg-gray-200'
+                                  : 'bg-white hover:bg-gray-50'
+                              }`}>
+                          </td>
+                        ))}
+
+                        {/* Empty row total column for header */}
+                        <td className={`px-1 py-1 border-l border-gray-300 ${
+                          fund.isActive === false
+                            ? fund.isInactiveBreakdown ? 'bg-gray-50 hover:bg-gray-100' : 'bg-gray-100 hover:bg-gray-200'
+                            : 'bg-white hover:bg-gray-50'
+                        }`}>
+                        </td>
+                      </tr>
+                    );
+
+                    if (isExpanded) {
+                      // Expanded view - show all activity types
+                      ACTIVITY_TYPES.forEach(activityType => {
+                        rows.push(
+                          <tr key={`compact-expanded-${fund.id}-${activityType}${fund.isInactiveBreakdown ? '-breakdown' : ''}`}
+                              className={`${
+                                fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-white'
+                              } border-t border-gray-100`}>
+                            {/* Activity type column */}
+                            <td className={`px-1 py-0 font-medium text-sm sticky left-0 z-10 pl-8 ${
+                              fund.isActive === false
+                                ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100'
+                                : 'bg-white'
+                            } text-gray-500`}>
+                              {fund.isInactiveBreakdown &&
+                                <span className="text-gray-400 mr-2">→</span>
+                              }
+                              {formatActivityType(activityType)}
+                            </td>
+
+                            {/* Month data columns */}
+                            {months.map(month => {
+                              const cellValue = getCellValue(fund.id, month, activityType);
+                              return (
+                                <td key={`compact-expanded-${fund.id}-${month}-${activityType}`}
+                                    className={`px-1 py-0 text-right text-sm ${
+                                      fund.isInactiveBreakdown ? 'bg-gray-50 opacity-75' : 'bg-white'
+                                    }`}>
+                                  {cellValue && cellValue !== '0' ? formatCellValue(cellValue, fund.id, month, activityType) : ''}
+                                </td>
+                              );
+                            })}
+
+                            {/* Row Total column - empty for individual activities */}
+                            <td className={`px-1 py-0 border-l border-gray-300 ${
+                              fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-white'
+                            }`}>
+                            </td>
+                          </tr>
+                        );
+                      });
+                    } else {
+                      // Collapsed view - show only Total Activities summary row
+                      rows.push(
+                        <tr key={`compact-activities-${fund.id}${fund.isInactiveBreakdown ? '-breakdown' : ''}`}
+                            className={`${
+                              fund.isActive === false
+                                ? fund.isInactiveBreakdown
+                                  ? 'bg-gray-50'
+                                  : 'bg-gray-100'
+                                : 'bg-white'
+                            } border-t border-gray-100`}>
+                          {/* Activity column - shows "Total Activities" */}
+                          <td className={`px-1 py-0 font-bold text-sm text-red-700 sticky left-0 z-10 pl-8 ${
+                            fund.isActive === false
+                              ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100'
+                              : 'bg-white'
+                          }`}>
+                            {fund.isInactiveBreakdown &&
+                              <span className="text-gray-400 mr-2">→</span>
+                            }
+                            Total Activities
+                          </td>
+
+                          {/* Month data columns */}
+                          {months.map(month => {
+                            const total = calculateFundTotal(fund.id, month);
+                            return (
+                              <td key={`compact-activities-${fund.id}-${month}`}
+                                  className={`px-1 py-0 text-right text-sm font-bold text-red-700 ${
+                                    fund.isActive === false
+                                      ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100'
+                                      : 'bg-white'
+                                  }`}>
+                                {total !== 0 ? formatCurrency(total) : ''}
+                              </td>
+                            );
+                          })}
+
+                          {/* Row Total column */}
+                          <td className={`px-1 py-0 text-right text-sm font-bold border-l border-gray-300 ${
+                            fund.isActive === false
+                              ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100'
+                              : 'bg-white'
+                          }`}>
+                            {(() => {
+                              const rowTotal = calculateFundRowTotal(fund.id);
+                              return (
+                                <span className="text-red-700">
+                                  {rowTotal !== 0 ? formatRowTotal(rowTotal) : ''}
+                                </span>
+                              );
+                            })()}
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    // Current Value (Valuations) row - always show
+                    rows.push(
+                      <tr key={`compact-valuation-${fund.id}${fund.isInactiveBreakdown ? '-breakdown' : ''}`}
+                          className={`${
+                            fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-blue-50'
+                          } border-t border-blue-200`}>
+                        {/* Activity type column */}
+                        <td className={`px-1 py-0 font-semibold text-sm text-blue-700 sticky left-0 z-10 pl-8 ${
+                          fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-blue-50'
+                        }`}>
+                          {fund.isInactiveBreakdown &&
+                            <span className="text-gray-400 mr-2">→</span>
+                          }
+                          Current Value
                         </td>
 
                         {/* Month data columns */}
                         {months.map(month => {
-                          const total = calculateFundTotal(fund.id, month);
+                          const valuation = getFundValuation(fund.id, month);
                           return (
-                            <td key={`compact-activities-${fund.id}-${month}`}
-                                className={`px-1 py-0 text-right text-sm font-bold text-red-700 ${
-                                  fund.isActive === false
-                                    ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100'
-                                    : 'bg-white'
+                            <td key={`compact-valuation-${fund.id}-${month}`}
+                                className={`px-1 py-0 text-right text-sm font-semibold text-blue-700 ${
+                                  fund.isInactiveBreakdown ? 'bg-gray-50 opacity-75' : 'bg-blue-50'
                                 }`}>
-                              {total !== 0 ? formatCurrency(total) : ''}
+                              {valuation && valuation.valuation !== null && valuation.valuation !== undefined
+                                ? formatCurrency(valuation.valuation)
+                                : ''}
                             </td>
                           );
                         })}
 
-                        {/* Row Total column for compact view */}
-                        <td className={`px-1 py-0 text-right text-sm font-bold border-l border-gray-300 ${
-                          fund.isActive === false
-                            ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100'
-                            : 'bg-white'
-                        }`}>
-                          {(() => {
-                            const rowTotal = calculateFundRowTotal(fund.id);
-                            return (
-                              <span className="text-red-700">
-                                {rowTotal !== 0 ? formatRowTotal(rowTotal) : ''}
-                              </span>
-                            );
-                          })()}
-                        </td>
-                    </tr>,
-                    // Current Value (Valuations) row
-                    <tr key={`compact-valuation-${fund.id}${fund.isInactiveBreakdown ? '-breakdown' : ''}`}
-                        className={`${
+                        {/* Row Total column - empty for valuations */}
+                        <td className={`px-1 py-0 border-l border-gray-300 ${
                           fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-blue-50'
-                        } border-t border-blue-200`}>
-                      {/* Activity type column */}
-                      <td className={`px-1 py-0 font-semibold text-sm text-blue-700 sticky left-0 z-10 pl-4 ${
-                        fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-blue-50'
-                      }`}>
-                        {fund.isInactiveBreakdown &&
-                          <span className="text-gray-400 mr-2">→</span>
-                        }
-                        Current Value
-                      </td>
+                        }`}>
+                        </td>
+                      </tr>
+                    );
 
-                      {/* Month data columns */}
-                      {months.map(month => {
-                        const valuation = getFundValuation(fund.id, month);
-                        return (
-                          <td key={`compact-valuation-${fund.id}-${month}`}
-                              className={`px-1 py-0 text-right text-sm font-semibold text-blue-700 ${
-                                fund.isInactiveBreakdown ? 'bg-gray-50 opacity-75' : 'bg-blue-50'
-                              }`}>
-                            {valuation && valuation.valuation !== null && valuation.valuation !== undefined
-                              ? formatCurrency(valuation.valuation)
-                              : ''}
-                          </td>
-                        );
-                      })}
-
-                      {/* Row Total column - empty for valuations */}
-                      <td className={`px-1 py-0 border-l border-gray-300 ${
-                        fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-blue-50'
-                      }`}>
-                      </td>
-                    </tr>
-                    ]);
+                    return rows;
+                  });
                   })()
                 ) : (
                   // Detailed view - each fund+activity combination as separate row
