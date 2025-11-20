@@ -192,7 +192,17 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   const [selectedBulkMonth, setSelectedBulkMonth] = useState<string>('');
 
   // State for tracking which funds are expanded (show all transactions)
-  const [expandedFunds, setExpandedFunds] = useState<Set<number>>(new Set());
+  // Initialize with all fund IDs to expand all funds by default
+  const initialExpandedFunds = useMemo(() => {
+    return new Set(funds.map(fund => fund.id));
+  }, [funds]);
+
+  const [expandedFunds, setExpandedFunds] = useState<Set<number>>(initialExpandedFunds);
+
+  // Update expanded funds when funds prop changes (e.g., when new funds are added)
+  useEffect(() => {
+    setExpandedFunds(new Set(funds.map(fund => fund.id)));
+  }, [funds]);
 
   // State and ref for sticky header tracking
   const [headerTop, setHeaderTop] = useState<number | null>(null);
