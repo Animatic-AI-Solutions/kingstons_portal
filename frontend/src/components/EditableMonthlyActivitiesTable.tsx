@@ -191,6 +191,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
   const [showBulkMonthModal, setShowBulkMonthModal] = useState(false);
   const [selectedBulkMonth, setSelectedBulkMonth] = useState<string>('');
 
+  // State for tracking which funds are expanded (show all transactions)
+  const [expandedFunds, setExpandedFunds] = useState<Set<number>>(new Set());
+
   // State and ref for sticky header tracking
   const [headerTop, setHeaderTop] = useState<number | null>(null);
   const [tableWidth, setTableWidth] = useState<number>(0);
@@ -2238,6 +2241,30 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
     return providerSwitchesIndex.get(month);
   };
 
+  // Function to toggle fund expansion (show/hide transaction rows)
+  const toggleFundExpansion = (fundId: number) => {
+    setExpandedFunds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(fundId)) {
+        newSet.delete(fundId);
+      } else {
+        newSet.add(fundId);
+      }
+      return newSet;
+    });
+  };
+
+  // Function to expand all funds
+  const expandAllFunds = () => {
+    const allFundIds = new Set(funds.map(f => f.id));
+    setExpandedFunds(allFundIds);
+  };
+
+  // Function to collapse all funds
+  const collapseAllFunds = () => {
+    setExpandedFunds(new Set());
+  };
+
   // Function to reactivate a fund
   const reactivateFund = async (portfolioFundId: number, fundName: string) => {
     try {
@@ -2494,8 +2521,25 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
               <h3 className="text-lg font-semibold text-gray-900">Monthly Activities</h3>
+
+              {/* Expand/Collapse All Button */}
+              <button
+                onClick={() => {
+                  // Check if all funds are currently expanded
+                  const allExpanded = funds.every(f => expandedFunds.has(f.id));
+                  if (allExpanded) {
+                    collapseAllFunds();
+                  } else {
+                    expandAllFunds();
+                  }
+                }}
+                className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md shadow-sm transition-colors"
+                title={funds.every(f => expandedFunds.has(f.id)) ? 'Collapse all funds' : 'Expand all funds'}
+              >
+                {funds.every(f => expandedFunds.has(f.id)) ? 'Collapse All' : 'Expand All'}
+              </button>
             </div>
-            
+
             {/* Row Total Info */}
             {availableYears.length > 1 && (
               <div className="text-sm text-gray-600">
@@ -2756,23 +2800,29 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
 
                     fundsToDisplay.forEach(fund => {
                       // Add fund name row first
+                      const isExpanded = expandedFunds.has(fund.id);
                         rows.push(
                         <tr key={`fund-header-${fund.id}${fund.isInactiveBreakdown ? '-breakdown' : ''}`}
-                            className={`${fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-white'} border-t-2 border-gray-300`}>
+                            className={`${fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-white'} border-t-2 border-gray-300 cursor-pointer hover:bg-gray-50`}
+                            onClick={() => toggleFundExpansion(fund.id)}>
                           {/* Activity column - shows fund name */}
                           <td className={`px-1 py-1 text-sm font-semibold ${
-                              fund.isActive === false 
-                                ? fund.isInactiveBreakdown 
-                                  ? 'text-gray-600' 
-                                  : 'text-blue-800' 
+                              fund.isActive === false
+                                ? fund.isInactiveBreakdown
+                                  ? 'text-gray-600'
+                                  : 'text-blue-800'
                                 : 'text-gray-900'
                             } sticky left-0 z-10 ${
-                              fund.isActive === false 
-                                ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100' 
+                              fund.isActive === false
+                                ? fund.isInactiveBreakdown ? 'bg-gray-50' : 'bg-gray-100'
                                 : 'bg-white'
                           }`}>
                                 <div className="flex items-center justify-between">
-                                  <div>
+                                  <div className="flex items-center">
+                                    {/* Chevron icon for expand/collapse */}
+                                    <span className="mr-2 text-gray-400">
+                                      {isExpanded ? '▼' : '▶'}
+                                    </span>
                                     {fund.isInactiveBreakdown && 
                                       <span className="text-gray-400 mr-2">→</span>
                                     }
@@ -2832,9 +2882,10 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                           </td>
                         </tr>
                       );
-                      
-                      // Add activity rows
-                      ACTIVITY_TYPES.forEach((activityType, activityIndex) => {
+
+                      // Add activity rows (filter to show only Current Value when collapsed)
+                      const activityTypesToShow = isExpanded ? ACTIVITY_TYPES : ACTIVITY_TYPES.filter(type => type === 'Current Value');
+                      activityTypesToShow.forEach((activityType, activityIndex) => {
                         rows.push(
                           <tr key={`${fund.id}-${activityType}${fund.isInactiveBreakdown ? '-breakdown' : ''}`} 
                               className={`${
