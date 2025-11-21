@@ -274,9 +274,11 @@ async def get_products_display(
         
         # Use direct query with proper value and IRR calculations (bypassing problematic view)
         base_query = """
-        SELECT 
+        SELECT
             cp.id as product_id,
             cp.product_name,
+            cp.product_type,
+            cp.plan_number,
             cp.status,
             cp.client_id,
             cg.name as client_name,
@@ -285,20 +287,20 @@ async def get_products_display(
             ap.theme_color as provider_theme_color,
             ap.theme_color as theme_color,
             cp.portfolio_id,
-            
+
             -- Portfolio value calculation (same logic as view but more explicit)
             COALESCE(pv_agg.total_portfolio_value, 0) as total_value,
-            
+
             -- IRR information from latest portfolio IRR values
             lpiv.irr_result as irr,
             lpiv.date as irr_date,
-            
+
             -- Portfolio type display
-            CASE 
+            CASE
                 WHEN cp.portfolio_id IS NOT NULL THEN 'Portfolio'
                 ELSE 'No Portfolio'
             END as portfolio_type_display
-            
+
         FROM client_products cp
         LEFT JOIN client_groups cg ON cg.id = cp.client_id
         LEFT JOIN available_providers ap ON ap.id = cp.provider_id
@@ -424,6 +426,8 @@ async def get_products_display(
             enhanced_product = {
                 "product_id": product_id,
                 "product_name": product.get("product_name"),
+                "product_type": product.get("product_type"),
+                "plan_number": product.get("plan_number"),
                 "status": product.get("status"),
                 "client_id": product.get("client_id"),
                 "client_name": product.get("client_name"),

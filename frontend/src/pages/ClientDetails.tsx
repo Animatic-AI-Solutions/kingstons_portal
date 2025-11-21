@@ -2045,7 +2045,7 @@ const RevenueAssignmentModal: React.FC<{
                   Product Name
                 </th>
                 <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Fixed Cost (£)
+                  Fixed Fee Facilitated (£)
                 </th>
                 <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Percentage Fee (%)

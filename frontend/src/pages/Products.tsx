@@ -79,12 +79,15 @@ const Products: React.FC = () => {
           id: sampleProduct.product_id, // Fixed: use product_id instead of id
           name: sampleProduct.product_name,
           client: sampleProduct.client_name,
+          planNumber: sampleProduct.plan_number, // Debug: Check if plan_number exists
           portfolioType: sampleProduct.portfolio_type_display,
           ownerCount: sampleProduct.product_owners?.length || 0,
           provider: sampleProduct.provider_name,
           providerThemeColor: sampleProduct.provider_theme_color,
           themeColor: sampleProduct.theme_color
         });
+        console.log('Full sample product object:', sampleProduct); // See complete object
+        console.log('Generated display name:', generateProductDisplayName(sampleProduct)); // See what the function produces
       }
       
       setProducts(productsData);

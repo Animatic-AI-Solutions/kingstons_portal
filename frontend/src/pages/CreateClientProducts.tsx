@@ -1292,10 +1292,10 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
 
       // Fee validation - both fields are required and must be explicitly entered by user
       if (product.fixed_cost === undefined || product.fixed_cost === null) {
-        productErrors.fixed_cost = 'Please enter a fixed cost (enter 0 if no fixed cost)';
+        productErrors.fixed_cost = 'Please enter a fixed fee (enter 0 if no fixed fee)';
         hasErrors = true;
       } else if (product.fixed_cost < 0) {
-        productErrors.fixed_cost = 'Fixed cost cannot be negative';
+        productErrors.fixed_cost = 'Fixed fee cannot be negative';
         hasErrors = true;
       }
 
@@ -2547,8 +2547,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                     <div className="grid grid-cols-2 gap-2">
                                       <div>
                                         <NumberInput
-                                          label="Fixed Cost (£) *"
-                                          placeholder="Enter amount (0 for no fixed cost)"
+                                          label="Fixed Fee Facilitated (£) *"
+                                          placeholder="Enter amount (0 for no fixed fee)"
                                           value={product.fixed_cost}
                                           onChange={(numericValue: number | null) => {
                                             handleProductChange(product.id, 'fixed_cost', numericValue);
@@ -2563,7 +2563,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                                             </svg>
                                           }
-                                          helperText="Annual fixed fee (required)"
+                                          helperText="Annual fixed facilitated fee (required)"
                                         />
                                       </div>
                                       <div>

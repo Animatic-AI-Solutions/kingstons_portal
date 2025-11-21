@@ -2374,11 +2374,11 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                       Revenue Configuration
                 </div>
                     <div className="grid grid-cols-3 gap-4">
-                      {/* Fixed Cost */}
+                      {/* Fixed Fee Facilitated */}
                       <div>
                         {isEditMode ? (
                           <div className="space-y-1">
-                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Fixed Cost (£)</div>
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Fixed Fee Facilitated (£)</div>
                             <div className="relative">
                               <input
                                 type="number"
@@ -2397,7 +2397,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           </div>
                         ) : (
                           <>
-                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Fixed Cost (£)</div>
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Fixed Fee Facilitated (£)</div>
                             <div className="text-sm font-medium text-gray-900">
                               {account.fixed_cost !== null && account.fixed_cost !== undefined ? formatCurrency(account.fixed_cost) : 'Not set'}
                             </div>
