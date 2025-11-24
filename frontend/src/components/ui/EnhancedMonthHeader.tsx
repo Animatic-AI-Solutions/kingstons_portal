@@ -46,9 +46,9 @@ const EnhancedMonthHeader: React.FC<EnhancedMonthHeaderProps> = ({
   };
 
   const showMiniYearSelector = isInFixedMode && availableYears.length > 1;
-  
-  // Keep consistent height with original implementation to prevent overlay issues
-  const headerHeight = '24px';
+
+  // Increase height when mini year selector is shown to prevent content clipping
+  const headerHeight = showMiniYearSelector ? '38px' : '24px';
 
   return (
     <th 
@@ -72,11 +72,11 @@ const EnhancedMonthHeader: React.FC<EnhancedMonthHeaderProps> = ({
       }}
     >
       {/* Month Display - Clickable area for bulk edit */}
-      <div 
-        className="flex flex-col items-center justify-center w-full h-full cursor-pointer hover:bg-blue-100/50 rounded-sm px-2 transition-colors duration-150 overflow-hidden"
+      <div
+        className="flex flex-col items-center justify-center w-full h-full cursor-pointer hover:bg-blue-100/50 rounded-sm px-2 transition-colors duration-150"
         onClick={() => onMonthHeaderClick(month)}
         title="Click to bulk edit activities for this month"
-        style={{ minHeight: '24px', maxWidth: '100px' }} // Ensure containment within column
+        style={{ minHeight: headerHeight, maxWidth: '100px' }}
       >
         {/* Month name - adjust size based on whether mini selector is shown */}
         <div className={`font-medium text-gray-800 leading-none text-center ${showMiniYearSelector ? 'text-xs mb-1' : 'text-sm'}`}>
