@@ -124,8 +124,18 @@ export const useConcurrentUserDetection = ({
   // Handle user choosing to go back
   const handleCancel = useCallback(() => {
     setShowConcurrentUserModal(false);
-    // Navigate back to the previous page
-    navigate(-1);
+
+    // Use setTimeout to ensure modal closes before navigation
+    setTimeout(() => {
+      // Navigate back to previous page, or fallback to products page
+      if (window.history.length > 2) {
+        // If there's a previous page in history, go back
+        navigate(-1);
+      } else {
+        // Otherwise, navigate to products page as fallback
+        navigate('/products');
+      }
+    }, 100);
   }, [navigate]);
 
   // Initialize presence checking on mount
