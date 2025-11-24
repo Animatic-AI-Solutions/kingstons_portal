@@ -900,7 +900,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
     handleCancel,
     isCheckingPresence
   } = useConcurrentUserDetection({
-    pageIdentifier: `irr-calculation-product-${accountId}`,
+    pageIdentifier: `irr-calculation:product-${accountId}`,
     pageName: 'IRR Calculation',
     onlyForProductPages: false
   });
