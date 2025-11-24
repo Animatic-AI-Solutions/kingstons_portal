@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Routes, Route, NavLink, Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import DynamicPageContainer from '../components/DynamicPageContainer';
@@ -21,7 +21,19 @@ const ProductDetails: React.FC = () => {
   const [account, setAccount] = useState<Account | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [breadcrumbTrail, setBreadcrumbTrail] = useState<Array<{path: string; label: string}>>([]);
-  
+
+  // Track history length when arriving from report-display to calculate correct back navigation
+  const initialHistoryLength = useRef<number | null>(null);
+  const isFromReport = useRef<boolean>(false);
+
+  // Initialize history tracking on mount
+  useEffect(() => {
+    if (location.state?.from === 'report-display' && initialHistoryLength.current === null) {
+      initialHistoryLength.current = window.history.length;
+      isFromReport.current = true;
+    }
+  }, []);
+
   // Debug logging
   console.log('🔍 ProductDetails: productId from useParams:', productId);
   console.log('🔍 ProductDetails: location.pathname:', location.pathname);
@@ -196,7 +208,15 @@ const ProductDetails: React.FC = () => {
             <li key={item.path} className="inline-flex items-center">
               {item.path === '#' ? (
                 <button
-                  onClick={() => navigate(-1)}
+                  onClick={() => {
+                    // Calculate steps to go back based on history changes since arriving from report
+                    if (isFromReport.current && initialHistoryLength.current !== null) {
+                      const stepsBack = window.history.length - initialHistoryLength.current + 1;
+                      navigate(-stepsBack);
+                    } else {
+                      navigate(-1);
+                    }
+                  }}
                   className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary-700 focus:outline-none"
                 >
                   {index === 0 && (
@@ -259,6 +279,7 @@ const ProductDetails: React.FC = () => {
           <NavLink
             to={`/products/${productId}/overview${location.search}`}
             state={location.state}
+            replace
             className={({ isActive }: { isActive: boolean }) =>
               isActive
                 ? 'bg-primary-700 text-white shadow-sm rounded-lg px-2 py-2 font-medium text-base transition-all duration-200 ease-in-out'
@@ -270,6 +291,7 @@ const ProductDetails: React.FC = () => {
           <NavLink
             to={`/products/${productId}/irr-calculation${location.search}`}
             state={location.state}
+            replace
             className={({ isActive }: { isActive: boolean }) =>
               isActive
                 ? 'bg-primary-700 text-white shadow-sm rounded-lg px-2 py-2 font-medium text-base transition-all duration-200 ease-in-out'
@@ -281,6 +303,7 @@ const ProductDetails: React.FC = () => {
           <NavLink
             to={`/products/${productId}/irr-history${location.search}`}
             state={location.state}
+            replace
             className={({ isActive }: { isActive: boolean }) =>
               isActive
                 ? 'bg-primary-700 text-white shadow-sm rounded-lg px-2 py-2 font-medium text-base transition-all duration-200 ease-in-out'
