@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import AppLayout from './components/layout/AppLayout';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 
 // Pages - Main site pages
 import Home from './pages/Home';
@@ -70,6 +70,52 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+/**
+ * Schema Version Tracker
+ * Implements version-based cache invalidation to handle database schema changes
+ *
+ * CRITICAL: Update SCHEMA_VERSION when deploying database migrations that affect:
+ * - Column renames (e.g., fixed_cost → fixed_fee_facilitated)
+ * - Computed column changes in views (e.g., total_fixed_revenue → total_fixed_facilitated_revenue)
+ * - Any breaking API response structure changes
+ *
+ * Version History:
+ * - 1.0.0: Initial version (before fixed_cost rename)
+ * - 1.1.0: Renamed fixed_cost to fixed_fee_facilitated (Migration 001)
+ */
+const SCHEMA_VERSION = '1.1.0';
+const SCHEMA_VERSION_KEY = 'app_schema_version';
+
+/**
+ * Cache Invalidation Component
+ * Checks schema version on mount and invalidates React Query cache if version changed
+ */
+const CacheInvalidationHandler: React.FC = () => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const storedVersion = localStorage.getItem(SCHEMA_VERSION_KEY);
+
+    if (storedVersion !== SCHEMA_VERSION) {
+      console.log(`Schema version changed: ${storedVersion} → ${SCHEMA_VERSION}`);
+      console.log('Invalidating React Query cache to prevent stale data...');
+
+      // Invalidate all queries to force refetch with new schema
+      queryClient.invalidateQueries();
+
+      // Clear all cached data
+      queryClient.clear();
+
+      // Update stored version
+      localStorage.setItem(SCHEMA_VERSION_KEY, SCHEMA_VERSION);
+
+      console.log('✅ Cache invalidation complete');
+    }
+  }, [queryClient]);
+
+  return null;
+};
 
 /**
  * Main App content component
@@ -168,6 +214,7 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
+      <CacheInvalidationHandler />
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AuthProvider>
           <AppContent />
