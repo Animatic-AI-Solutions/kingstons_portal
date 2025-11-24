@@ -2490,8 +2490,9 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             
                             // If percentage fee is involved (with or without fixed cost)
                             if (percentageFee > 0) {
-                              // If no valuation available, we need valuation
-                              if (!portfolioValue || portfolioValue <= 0) {
+                              // Only show "valuation needed" if portfolioTotalValue is null/undefined (no valuation data)
+                              // If valuation is explicitly 0, calculate normally (result will be fixedCost + 0)
+                              if (portfolioTotalValue === null || portfolioTotalValue === undefined) {
                                 return <span className="text-orange-600">Latest valuation needed</span>;
                               }
                               // If valuation exists, calculate properly with NaN protection

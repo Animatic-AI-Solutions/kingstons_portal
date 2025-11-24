@@ -85,10 +85,10 @@ const EnhancedMonthHeader: React.FC<EnhancedMonthHeaderProps> = ({
         
         {/* Mini Year Selector - Ultra compact for fixed mode with strict containment */}
         {showMiniYearSelector && (
-          <div 
+          <div
             onClick={(e) => e.stopPropagation()}
-            style={{ width: '100%', maxWidth: '58px' }} // Ensure it doesn't exceed available space
-            className="flex justify-center"
+            style={{ width: '58px', minWidth: '58px' }}
+            className="flex justify-center flex-shrink-0"
           >
             <MiniYearSelector
               currentYear={currentYear}
