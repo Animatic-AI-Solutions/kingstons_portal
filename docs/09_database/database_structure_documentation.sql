@@ -113,6 +113,7 @@ CREATE TABLE client_products (
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     notes text,
     template_generation_id bigint(64),
+    fixed_fee_direct text,
     fixed_fee_facilitated text,
     percentage_fee_facilitated text
 );
@@ -386,6 +387,11 @@ UNION ALL
 CREATE OR REPLACE VIEW company_revenue_analytics AS
  SELECT sum(
         CASE
+            WHEN ((cp.status = 'active'::text) AND (cp.fixed_fee_direct IS NOT NULL)) THEN (cp.fixed_fee_direct)::numeric
+            ELSE (0)::numeric
+        END) AS total_fixed_direct_revenue,
+    sum(
+        CASE
             WHEN ((cp.status = 'active'::text) AND (cp.fixed_fee_facilitated IS NOT NULL)) THEN (cp.fixed_fee_facilitated)::numeric
             ELSE (0)::numeric
         END) AS total_fixed_facilitated_revenue,
@@ -396,7 +402,7 @@ CREATE OR REPLACE VIEW company_revenue_analytics AS
         END) AS total_percentage_facilitated_revenue,
     sum(
         CASE
-            WHEN (cp.status = 'active'::text) THEN (COALESCE((cp.fixed_fee_facilitated)::numeric, (0)::numeric) +
+            WHEN (cp.status = 'active'::text) THEN (COALESCE((cp.fixed_fee_direct)::numeric, (0)::numeric) + COALESCE((cp.fixed_fee_facilitated)::numeric, (0)::numeric) +
             CASE
                 WHEN ((cp.percentage_fee_facilitated IS NOT NULL) AND (pv.total_value > (0)::numeric)) THEN (pv.total_value * ((cp.percentage_fee_facilitated)::numeric / 100.0))
                 ELSE (0)::numeric
@@ -417,6 +423,11 @@ CREATE OR REPLACE VIEW company_revenue_analytics AS
             WHEN ((cp.fixed_fee_facilitated IS NOT NULL) AND ((cp.fixed_fee_facilitated)::numeric > (0)::numeric)) THEN (cp.fixed_fee_facilitated)::numeric
             ELSE NULL::numeric
         END) AS avg_fixed_facilitated_fee,
+    avg(
+        CASE
+            WHEN ((cp.fixed_fee_direct IS NOT NULL) AND ((cp.fixed_fee_direct)::numeric > (0)::numeric)) THEN (cp.fixed_fee_direct)::numeric
+            ELSE NULL::numeric
+        END) AS avg_fixed_direct_fee,
     CURRENT_TIMESTAMP AS calculated_at
    FROM (client_products cp
      LEFT JOIN ( SELECT p.id AS portfolio_id,
@@ -767,6 +778,7 @@ CREATE OR REPLACE VIEW products_list_view AS
     lpir.date AS irr_date,
     count(DISTINCT pop.product_owner_id) AS owner_count,
     string_agg(DISTINCT COALESCE(po.known_as, concat(po.firstname, ' ', po.surname)), ', '::text) AS owners,
+    cp.fixed_fee_direct,
     cp.fixed_fee_facilitated,
     cp.percentage_fee_facilitated
    FROM (((((((client_products cp
@@ -778,7 +790,7 @@ CREATE OR REPLACE VIEW products_list_view AS
      LEFT JOIN product_owner_products pop ON ((cp.id = pop.product_id)))
      LEFT JOIN product_owners po ON (((pop.product_owner_id = po.id) AND (po.status = 'active'::text))))
   WHERE (cg.status = 'active'::text)
-  GROUP BY cp.id, cp.client_id, cp.product_name, cp.product_type, cp.status, cp.start_date, cp.end_date, cp.provider_id, cp.portfolio_id, cp.plan_number, cp.created_at, cg.name, cg.advisor, cg.type, ap.name, ap.theme_color, p.portfolio_name, p.status, lpv.valuation, lpv.valuation_date, lpir.irr_result, lpir.date, cp.fixed_fee_facilitated, cp.percentage_fee_facilitated;;
+  GROUP BY cp.id, cp.client_id, cp.product_name, cp.product_type, cp.status, cp.start_date, cp.end_date, cp.provider_id, cp.portfolio_id, cp.plan_number, cp.created_at, cg.name, cg.advisor, cg.type, ap.name, ap.theme_color, p.portfolio_name, p.status, lpv.valuation, lpv.valuation_date, lpir.irr_result, lpir.date, cp.fixed_fee_direct, cp.fixed_fee_facilitated, cp.percentage_fee_facilitated;;
 
 -- View: provider_distribution_fast
 CREATE OR REPLACE VIEW provider_distribution_fast AS
@@ -825,6 +837,7 @@ CREATE OR REPLACE VIEW revenue_analytics_optimized AS
     cg.name AS client_name,
     cg.status AS client_status,
     cp.id AS product_id,
+    cp.fixed_fee_direct,
     cp.fixed_fee_facilitated,
     cp.percentage_fee_facilitated,
     cp.portfolio_id,

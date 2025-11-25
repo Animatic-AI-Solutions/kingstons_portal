@@ -1837,17 +1837,18 @@ const RevenueAssignmentModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   clientAccounts: ClientAccount[];
-  onSave: (updates: Record<number, { fixed_fee_facilitated: number | null; percentage_fee_facilitated: number | null }>) => void;
+  onSave: (updates: Record<number, { fixed_fee_direct: number | null; fixed_fee_facilitated: number | null; percentage_fee_facilitated: number | null }>) => void;
 }> = ({ isOpen, onClose, clientAccounts, onSave }) => {
-  const [formData, setFormData] = useState<Record<number, { fixed_fee_facilitated: string; percentage_fee_facilitated: string }>>({});
+  const [formData, setFormData] = useState<Record<number, { fixed_fee_direct: string; fixed_fee_facilitated: string; percentage_fee_facilitated: string }>>({});
   const [isSaving, setIsSaving] = useState(false);
 
   // Initialize form data when modal opens
   useEffect(() => {
     if (isOpen) {
-      const initialData: Record<number, { fixed_fee_facilitated: string; percentage_fee_facilitated: string }> = {};
+      const initialData: Record<number, { fixed_fee_direct: string; fixed_fee_facilitated: string; percentage_fee_facilitated: string }> = {};
       clientAccounts.forEach(account => {
         initialData[account.id] = {
+          fixed_fee_direct: account.fixed_fee_direct?.toString() || '',
           fixed_fee_facilitated: account.fixed_fee_facilitated?.toString() || '',
           percentage_fee_facilitated: account.percentage_fee_facilitated?.toString() || ''
         };
@@ -1865,7 +1866,7 @@ const RevenueAssignmentModal: React.FC<{
     }).format(amount);
   };
 
-  const handleInputChange = (productId: number, field: 'fixed_fee_facilitated' | 'percentage_fee_facilitated', value: number | null) => {
+  const handleInputChange = (productId: number, field: 'fixed_fee_direct' | 'fixed_fee_facilitated' | 'percentage_fee_facilitated', value: number | null) => {
     setFormData(prev => ({
       ...prev,
       [productId]: {
@@ -1882,28 +1883,29 @@ const RevenueAssignmentModal: React.FC<{
     return (totalValue * fee) / 100;
   };
 
-  const calculateTotalRevenue = (fixedFeeFacilitated: string, percentageFeeFacilitated: string, totalValue: number): string | number => {
-    const fixed = parseFloat(fixedFeeFacilitated) || 0;
+  const calculateTotalRevenue = (fixedFeeDirect: string, fixedFeeFacilitated: string, percentageFeeFacilitated: string, totalValue: number): string | number => {
+    const direct = parseFloat(fixedFeeDirect) || 0;
+    const facilitated = parseFloat(fixedFeeFacilitated) || 0;
     const percentage = parseFloat(percentageFeeFacilitated) || 0;
     
-    // If neither cost type is set
-    if (!fixed && !percentage) {
+    // If no fee types are set
+    if (!direct && !facilitated && !percentage) {
       return 'None';
     }
     
-    // If only fixed cost is set (no percentage fee)
-    if (fixed && !percentage) {
-      return fixed;
+    // If only fixed fees are set (no percentage fee)
+    if ((direct || facilitated) && !percentage) {
+      return direct + facilitated;
     }
     
-    // If percentage fee is involved (with or without fixed cost)
+    // If percentage fee is involved (with or without fixed fees)
     if (percentage > 0) {
       // Check if valuation data is actually missing (null/undefined) vs genuinely zero
       if (totalValue === null || totalValue === undefined) {
         return 'Latest valuation needed';
       }
       // If valuation exists (including zero), calculate properly
-      return fixed + ((totalValue * percentage) / 100);
+      return direct + facilitated + ((totalValue * percentage) / 100);
     }
     
     return 'None';
@@ -1912,14 +1914,20 @@ const RevenueAssignmentModal: React.FC<{
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const updates: Record<number, { fixed_fee_facilitated: number | null; percentage_fee_facilitated: number | null }> = {};
+      const updates: Record<number, { fixed_fee_direct: number | null; fixed_fee_facilitated: number | null; percentage_fee_facilitated: number | null }> = {};
       
       Object.entries(formData).forEach(([productId, data]) => {
         const id = parseInt(productId);
         
         // Parse values, treating empty strings as null
+        let fixedFeeDirect: number | null = null;
         let fixedFeeFacilitated: number | null = null;
         let percentageFeeFacilitated: number | null = null;
+        
+        if (data.fixed_fee_direct && data.fixed_fee_direct.trim() !== '') {
+          const parsed = parseFloat(data.fixed_fee_direct);
+          fixedFeeDirect = isNaN(parsed) ? null : parsed;
+        }
         
         if (data.fixed_fee_facilitated && data.fixed_fee_facilitated.trim() !== '') {
           const parsed = parseFloat(data.fixed_fee_facilitated);
@@ -1932,6 +1940,7 @@ const RevenueAssignmentModal: React.FC<{
         }
         
         updates[id] = {
+          fixed_fee_direct: fixedFeeDirect,
           fixed_fee_facilitated: fixedFeeFacilitated,
           percentage_fee_facilitated: percentageFeeFacilitated
         };
@@ -2047,6 +2056,9 @@ const RevenueAssignmentModal: React.FC<{
                   Product Name
                 </th>
                 <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Fixed Fee Direct (£)
+                </th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Fixed Fee Facilitated (£)
                 </th>
                 <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -2065,10 +2077,10 @@ const RevenueAssignmentModal: React.FC<{
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {clientAccounts.map((account) => {
-                const productData = formData[account.id] || { fixed_fee_facilitated: '', percentage_fee_facilitated: '' };
+                const productData = formData[account.id] || { fixed_fee_direct: '', fixed_fee_facilitated: '', percentage_fee_facilitated: '' };
                 const totalValue = account.total_value || 0;
                 const percentageRevenue = calculatePercentageRevenue(productData.percentage_fee_facilitated, totalValue);
-                const totalRevenue = calculateTotalRevenue(productData.fixed_fee_facilitated, productData.percentage_fee_facilitated, totalValue);
+                const totalRevenue = calculateTotalRevenue(productData.fixed_fee_direct, productData.fixed_fee_facilitated, productData.percentage_fee_facilitated, totalValue);
                 
                                  return (
                    <tr key={account.id} className="hover:bg-gray-50">
@@ -2082,6 +2094,19 @@ const RevenueAssignmentModal: React.FC<{
                            <div className="text-xs font-medium text-gray-900">{generateProductDisplayName(account)}</div>
                          </div>
                        </div>
+                     </td>
+                     <td className="px-4 py-2 whitespace-nowrap text-right">
+                       <NumberInput
+                         value={productData.fixed_fee_direct}
+                         onChange={(value) => handleInputChange(account.id, 'fixed_fee_direct', value)}
+                         placeholder="0.00"
+                         min={0}
+                         decimalPlaces={2}
+                         format="currency"
+                         currency="£"
+                         size="sm"
+                         className="w-20 text-xs text-right"
+                       />
                      </td>
                      <td className="px-4 py-2 whitespace-nowrap text-right">
                        <NumberInput

@@ -558,7 +558,7 @@ async def get_client_products(
             -- Client product fields
             cp.id, cp.client_id, cp.provider_id, cp.portfolio_id, cp.product_name,
             cp.status, cp.start_date, cp.end_date, cp.plan_number, cp.product_type,
-            cp.notes, cp.fixed_fee_facilitated, cp.percentage_fee_facilitated, cp.created_at,
+            cp.notes, cp.fixed_fee_direct, cp.fixed_fee_facilitated, cp.percentage_fee_facilitated, cp.created_at,
             
             -- Joined data
             cg.name as client_name,
@@ -921,6 +921,7 @@ async def create_client_product(client_product: ClientproductCreate, db = Depend
             "provider_id": client_product.provider_id,
             "product_type": client_product.product_type,
             "template_generation_id": client_product.template_generation_id,
+            "fixed_fee_direct": str(client_product.fixed_fee_direct) if client_product.fixed_fee_direct is not None else None,
             "fixed_fee_facilitated": str(client_product.fixed_fee_facilitated) if client_product.fixed_fee_facilitated is not None else None,
             "percentage_fee_facilitated": str(client_product.percentage_fee_facilitated) if client_product.percentage_fee_facilitated is not None else None
         }
@@ -1135,6 +1136,9 @@ async def update_client_product(client_product_id: int, client_product_update: C
 
     # Additional safety: Prevent accidental NULL fees (they should only be NULL on initial creation)
     # If someone explicitly wants to clear fees, they should use a dedicated endpoint
+    if 'fixed_fee_direct' in update_data and update_data['fixed_fee_direct'] is None:
+        logger.warning(f"Rejected attempt to set fixed_fee_direct to NULL for product {client_product_id}")
+        del update_data['fixed_fee_direct']  # Remove from update to preserve existing value
     if 'fixed_fee_facilitated' in update_data and update_data['fixed_fee_facilitated'] is None:
         logger.warning(f"Rejected attempt to set fixed_fee_facilitated to NULL for product {client_product_id}")
         del update_data['fixed_fee_facilitated']  # Remove from update to preserve existing value
@@ -1167,7 +1171,7 @@ async def update_client_product(client_product_id: int, client_product_update: C
         for key, value in update_data.items():
             set_clauses.append(f"{key} = ${param_counter}")
             # Ensure proper type conversion for numeric fields
-            if key in ['fixed_fee_facilitated', 'percentage_fee_facilitated'] and value is not None:
+            if key in ['fixed_fee_direct', 'fixed_fee_facilitated', 'percentage_fee_facilitated'] and value is not None:
                 # Convert to string representation for PostgreSQL numeric type
                 # asyncpg sometimes expects string input for numeric columns
                 values.append(str(float(value)))
@@ -2013,12 +2017,12 @@ async def reactivate_product(product_id: int, db = Depends(get_db)):
 @router.get("/client_products/{product_id}/revenue", response_model=ProductRevenueCalculation)
 async def calculate_product_revenue(product_id: int, db = Depends(get_db)):
     """
-    What it does: Calculates estimated annual revenue for a product based on fixed facilitated fee and percentage fee.
+    What it does: Calculates estimated annual revenue for a product based on all three fee types.
     Why it's needed: Allows advisors to estimate how much revenue they're making from each product.
     How it works:
-        1. Retrieves the product with its fixed_fee_facilitated and percentage_fee_facilitated
+        1. Retrieves the product with its fixed_fee_direct, fixed_fee_facilitated and percentage_fee_facilitated
         2. Gets the latest portfolio valuation for the product
-        3. Calculates: (latest_valuation × percentage_fee_facilitated/100) + fixed_fee_facilitated = total revenue
+        3. Calculates: fixed_fee_direct + fixed_fee_facilitated + (latest_valuation × percentage_fee_facilitated/100) = total revenue
         4. Returns detailed breakdown of the calculation
     Expected output: JSON object with revenue calculation breakdown
     """
@@ -2035,6 +2039,7 @@ async def calculate_product_revenue(product_id: int, db = Depends(get_db)):
         response = ProductRevenueCalculation(
             product_id=product_id,
             product_name=product.get("product_name"),
+            fixed_fee_direct=product.get("fixed_fee_direct"),
             fixed_fee_facilitated=product.get("fixed_fee_facilitated"),
             percentage_fee_facilitated=product.get("percentage_fee_facilitated"),
             latest_portfolio_valuation=None,
@@ -2045,10 +2050,11 @@ async def calculate_product_revenue(product_id: int, db = Depends(get_db)):
         )
         
         # Check if product has any revenue data
-        has_fixed_fee = product.get("fixed_fee_facilitated") is not None
+        has_fixed_fee_direct = product.get("fixed_fee_direct") is not None
+        has_fixed_fee_facilitated = product.get("fixed_fee_facilitated") is not None
         has_percentage_fee_facilitated = product.get("percentage_fee_facilitated") is not None
 
-        if not has_fixed_fee and not has_percentage_fee_facilitated:
+        if not has_fixed_fee_direct and not has_fixed_fee_facilitated and not has_percentage_fee_facilitated:
             logger.info(f"Product {product_id} has no revenue data configured")
             return response
         
@@ -2105,14 +2111,20 @@ async def calculate_product_revenue(product_id: int, db = Depends(get_db)):
                 logger.error(f"Error getting portfolio valuation: {str(e)}")
         
         # Calculate revenue components with proper null handling
-        raw_fixed_fee = product.get("fixed_fee_facilitated")
+        raw_fixed_fee_direct = product.get("fixed_fee_direct")
+        raw_fixed_fee_facilitated = product.get("fixed_fee_facilitated")
         raw_percentage_fee_facilitated = product.get("percentage_fee_facilitated")
 
         # Safe conversion to float with explicit null checks
         try:
-            fixed_fee_amount = float(raw_fixed_fee) if raw_fixed_fee is not None else 0.0
+            fixed_fee_direct_amount = float(raw_fixed_fee_direct) if raw_fixed_fee_direct is not None else 0.0
         except (ValueError, TypeError):
-            fixed_fee_amount = 0.0
+            fixed_fee_direct_amount = 0.0
+            
+        try:
+            fixed_fee_facilitated_amount = float(raw_fixed_fee_facilitated) if raw_fixed_fee_facilitated is not None else 0.0
+        except (ValueError, TypeError):
+            fixed_fee_facilitated_amount = 0.0
             
         try:
             percentage_fee_facilitated_rate = float(raw_percentage_fee_facilitated) if raw_percentage_fee_facilitated is not None else 0.0
@@ -2129,7 +2141,7 @@ async def calculate_product_revenue(product_id: int, db = Depends(get_db)):
         
         # Calculate total estimated annual revenue with safety checks
         try:
-            total_revenue = fixed_fee_amount + calculated_percentage_fee_facilitated
+            total_revenue = fixed_fee_direct_amount + fixed_fee_facilitated_amount + calculated_percentage_fee_facilitated
             
             # Additional NaN/Infinity checks
             import math
@@ -2146,7 +2158,8 @@ async def calculate_product_revenue(product_id: int, db = Depends(get_db)):
         response.total_estimated_annual_revenue = total_revenue if total_revenue > 0 else None
         
         logger.info(f"Revenue calculation for product {product_id}:")
-        logger.info(f"  Fixed facilitated fee: £{fixed_fee_amount:.2f}")
+        logger.info(f"  Fixed direct fee: £{fixed_fee_direct_amount:.2f}")
+        logger.info(f"  Fixed facilitated fee: £{fixed_fee_facilitated_amount:.2f}")
         logger.info(f"  Portfolio value: £{latest_valuation:.2f}")
         logger.info(f"  Percentage fee rate: {percentage_fee_facilitated_rate}%")
         logger.info(f"  Calculated percentage fee: £{calculated_percentage_fee_facilitated:.2f}")

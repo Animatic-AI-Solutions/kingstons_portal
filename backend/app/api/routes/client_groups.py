@@ -1229,6 +1229,7 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                 lpir.date AS irr_date,
                 count(DISTINCT pop.product_owner_id) AS owner_count,
                 string_agg(DISTINCT COALESCE(po.known_as, concat(po.firstname, ' ', po.surname)), ', '::text) AS owners,
+                cp.fixed_fee_direct,
                 cp.fixed_fee_facilitated,
                 cp.percentage_fee_facilitated,
                 tpg.id as template_generation_id,
@@ -1246,7 +1247,7 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
             LEFT JOIN template_portfolio_generations tpg ON cp.template_generation_id = tpg.id
             LEFT JOIN available_portfolios ap2 ON tpg.available_portfolio_id = ap2.id
             WHERE cp.client_id = $1
-            GROUP BY cp.id, cp.client_id, cp.product_name, cp.product_type, cp.status, cp.start_date, cp.end_date, cp.provider_id, cp.portfolio_id, cp.plan_number, cp.created_at, cg.name, cg.advisor, cg.type, ap.name, ap.theme_color, p.portfolio_name, p.status, lpv.valuation, lpv.valuation_date, lpir.irr_result, lpir.date, cp.fixed_fee_facilitated, cp.percentage_fee_facilitated, tpg.id, tpg.generation_name, tpg.description, ap2.name
+            GROUP BY cp.id, cp.client_id, cp.product_name, cp.product_type, cp.status, cp.start_date, cp.end_date, cp.provider_id, cp.portfolio_id, cp.plan_number, cp.created_at, cg.name, cg.advisor, cg.type, ap.name, ap.theme_color, p.portfolio_name, p.status, lpv.valuation, lpv.valuation_date, lpir.irr_result, lpir.date, cp.fixed_fee_direct, cp.fixed_fee_facilitated, cp.percentage_fee_facilitated, tpg.id, tpg.generation_name, tpg.description, ap2.name
         """, client_group_id)
         
         if not products_result:
@@ -1488,6 +1489,7 @@ async def get_complete_client_group_details(client_group_id: int, db = Depends(g
                     "name": product.get("template_name"),
                     "description": product.get("template_description")
                 } if product.get("template_generation_id") else None,
+                "fixed_fee_direct": product.get("fixed_fee_direct"),
                 "fixed_fee_facilitated": product.get("fixed_fee_facilitated"),
                 "percentage_fee_facilitated": product.get("percentage_fee_facilitated"),
                 "product_owners": product_owners_data.get(product["id"], []),

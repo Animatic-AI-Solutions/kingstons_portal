@@ -59,6 +59,7 @@ interface Account {
     portfolio_name: string;
     start_date: string;
   };
+  fixed_fee_direct?: number;
   fixed_fee_facilitated?: number;
   percentage_fee_facilitated?: number;
 }
@@ -343,6 +344,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     plan_number: '',
     target_risk: '',
     start_date: null as Dayjs | null,
+    fixed_fee_direct: '' as string,
     fixed_fee_facilitated: '' as string,
     percentage_fee_facilitated: '' as string,
     template_generation_id: '' as string
@@ -1779,6 +1781,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         plan_number: account.plan_number || '',
         target_risk: account.target_risk?.toString() || '',
         start_date: account.start_date ? dayjs(account.start_date) : null,
+        fixed_fee_direct: account.fixed_fee_direct?.toString() ?? '',
         fixed_fee_facilitated: account.fixed_fee_facilitated?.toString() ?? '',
         percentage_fee_facilitated: account.percentage_fee_facilitated?.toString() ?? '',
         template_generation_id: account.template_generation_id?.toString() || ''
@@ -1935,6 +1938,10 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       }
 
       // Include revenue fields - set to null if empty/undefined, otherwise parse as float
+      updateData.fixed_fee_direct = editFormData.fixed_fee_direct && editFormData.fixed_fee_direct.trim() !== '' 
+        ? parseFloat(editFormData.fixed_fee_direct) 
+        : null;
+      
       updateData.fixed_fee_facilitated = editFormData.fixed_fee_facilitated && editFormData.fixed_fee_facilitated.trim() !== '' 
         ? parseFloat(editFormData.fixed_fee_facilitated) 
         : null;
@@ -2374,6 +2381,37 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                       Revenue Configuration
                 </div>
                     <div className="grid grid-cols-3 gap-4">
+                      {/* Fixed Fee Direct */}
+                      <div>
+                        {isEditMode ? (
+                          <div className="space-y-1">
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Fixed Fee Direct (£)</div>
+                            <div className="relative">
+                              <input
+                                type="number"
+                                name="fixed_fee_direct"
+                                value={editFormData.fixed_fee_direct}
+                                onChange={handleInputChange}
+                                placeholder="0.00"
+                                min="0"
+                                step="0.01"
+                                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-sm font-medium text-gray-900 border-gray-300 rounded-md py-1.5 px-7"
+                              />
+                              <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                                <span className="text-gray-500 text-sm">£</span>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Fixed Fee Direct (£)</div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {account.fixed_fee_direct !== null && account.fixed_fee_direct !== undefined ? formatCurrency(account.fixed_fee_direct) : 'Not set'}
+                            </div>
+                          </>
+                        )}
+                      </div>
+
                       {/* Fixed Fee Facilitated */}
                       <div>
                         {isEditMode ? (
@@ -2455,6 +2493,13 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                         <div className="text-sm font-semibold">
                           {(() => {
                             // Safe number conversion with NaN protection
+                            const fixedFeeDirect = (() => {
+                              const value = account.fixed_fee_direct;
+                              if (value === null || value === undefined) return 0;
+                              const num = parseFloat(String(value));
+                              return isNaN(num) ? 0 : num;
+                            })();
+                            
                             const fixedFeeFacilitated = (() => {
                               const value = account.fixed_fee_facilitated;
                               if (value === null || value === undefined) return 0;
@@ -2478,14 +2523,14 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             
 
                             
-                            // If neither cost type is set
-                            if (!fixedFeeFacilitated && !percentageFeeFacilitated) {
+                            // If no fee types are set
+                            if (!fixedFeeDirect && !fixedFeeFacilitated && !percentageFeeFacilitated) {
                               return <span className="text-gray-500">None</span>;
                             }
                             
-                            // If only fixed cost is set (no percentage fee)
-                            if (fixedFeeFacilitated && !percentageFeeFacilitated) {
-                              return <span className="text-green-600">{formatCurrency(fixedFeeFacilitated)}</span>;
+                            // If only fixed fees are set (no percentage fee)
+                            if ((fixedFeeDirect || fixedFeeFacilitated) && !percentageFeeFacilitated) {
+                              return <span className="text-green-600">{formatCurrency(fixedFeeDirect + fixedFeeFacilitated)}</span>;
                             }
                             
                             // If percentage fee is involved (with or without fixed cost)
@@ -2497,7 +2542,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                               }
                               // If valuation exists, calculate properly with NaN protection
                               const calculatedFee = (portfolioValue * percentageFeeFacilitated) / 100;
-                              const totalRevenue = fixedFeeFacilitated + calculatedFee;
+                              const totalRevenue = fixedFeeDirect + fixedFeeFacilitated + calculatedFee;
                               
 
                               

@@ -60,8 +60,9 @@ interface ProductItem {
   start_date: dayjs.Dayjs; // Required field - each product has its own start date
   plan_number?: string; // Add plan number field
   product_owner_ids: number[]; // Changed from product_owner_id to product_owner_ids array
-  fixed_fee_facilitated?: number; // Fixed annual cost for revenue calculation (required, user must enter value)
-  percentage_fee_facilitated?: number; // Percentage fee for revenue calculation (required, user must enter value)
+  fixed_fee_direct?: number; // Fixed annual direct fee for revenue calculation
+  fixed_fee_facilitated?: number; // Fixed annual facilitated fee for revenue calculation
+  percentage_fee_facilitated?: number; // Percentage fee for revenue calculation
   portfolio: {
     id?: number; // Portfolio ID when created or selected
     name: string;
@@ -1291,11 +1292,19 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       }
 
       // Fee validation - both fields are required and must be explicitly entered by user
+      if (product.fixed_fee_direct === undefined || product.fixed_fee_direct === null) {
+        productErrors.fixed_fee_direct = 'Please enter a fixed fee direct (enter 0 if no fixed fee direct)';
+        hasErrors = true;
+      } else if (product.fixed_fee_direct < 0) {
+        productErrors.fixed_fee_direct = 'Fixed fee direct cannot be negative';
+        hasErrors = true;
+      }
+
       if (product.fixed_fee_facilitated === undefined || product.fixed_fee_facilitated === null) {
-        productErrors.fixed_fee_facilitated = 'Please enter a fixed fee (enter 0 if no fixed fee)';
+        productErrors.fixed_fee_facilitated = 'Please enter a fixed fee facilitated (enter 0 if no fixed fee facilitated)';
         hasErrors = true;
       } else if (product.fixed_fee_facilitated < 0) {
-        productErrors.fixed_fee_facilitated = 'Fixed fee cannot be negative';
+        productErrors.fixed_fee_facilitated = 'Fixed fee facilitated cannot be negative';
         hasErrors = true;
       }
 
@@ -1595,6 +1604,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               plan_number: product.plan_number || null,
               target_risk: targetRisk,
               template_generation_id: product.portfolio.type === 'template' ? product.portfolio.generationId : null,
+              fixed_fee_direct: product.fixed_fee_direct ?? null,
               fixed_fee_facilitated: product.fixed_fee_facilitated ?? null,
               percentage_fee_facilitated: product.percentage_fee_facilitated ?? null
             });
@@ -2544,7 +2554,28 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                       </svg>
                                       Revenue Configuration (Required)
                                     </h5>
-                                    <div className="grid grid-cols-2 gap-2">
+                                    <div className="grid grid-cols-3 gap-2">
+                                      <div>
+                                        <NumberInput
+                                          label="Fixed Fee Direct (£) *"
+                                          placeholder="Enter amount (0 for no fixed fee direct)"
+                                          value={product.fixed_fee_direct}
+                                          onChange={(numericValue: number | null) => {
+                                            handleProductChange(product.id, 'fixed_fee_direct', numericValue);
+                                          }}
+                                          size="sm"
+                                          fullWidth
+                                          min={0}
+                                          required
+                                          error={validationErrors[product.id]?.fixed_fee_direct}
+                                          leftIcon={
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                                            </svg>
+                                          }
+                                          helperText="Annual fixed direct fee (required)"
+                                        />
+                                      </div>
                                       <div>
                                         <NumberInput
                                           label="Fixed Fee Facilitated (£) *"

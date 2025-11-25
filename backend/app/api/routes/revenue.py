@@ -96,7 +96,7 @@ async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
             
             # Get all products for this client group (active and inactive for complete analytics)
             products = await db.fetch(
-                "SELECT id, fixed_fee_facilitated, percentage_fee_facilitated, portfolio_id FROM client_products WHERE client_id = $1",
+                "SELECT id, fixed_fee_direct, fixed_fee_facilitated, percentage_fee_facilitated, portfolio_id FROM client_products WHERE client_id = $1",
                 client_id
             )
             
@@ -276,7 +276,7 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
             
             # Get all products for this client group (active and inactive for complete analytics)
             products = await db.fetch(
-                "SELECT id, fixed_fee_facilitated, percentage_fee_facilitated, portfolio_id FROM client_products WHERE client_id = $1",
+                "SELECT id, fixed_fee_direct, fixed_fee_facilitated, percentage_fee_facilitated, portfolio_id FROM client_products WHERE client_id = $1",
                 client_id
             )
             
