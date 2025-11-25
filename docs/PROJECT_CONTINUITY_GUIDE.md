@@ -140,7 +140,7 @@ client_products
 ├── product_type (Product type)
 ├── provider_id → available_providers.id (Foreign Key)
 ├── portfolio_id → portfolios.id (Foreign Key)
-├── fixed_cost (Annual fixed fees)
+├── fixed_fee_facilitated (Annual fixed fees)
 ├── percentage_fee (Percentage of FUM fee)
 └── status (active/inactive/lapsed)
 ```
