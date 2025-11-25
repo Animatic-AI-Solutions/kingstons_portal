@@ -1,27 +1,23 @@
 -- ============================================================================
--- Migration 002: Rename percentage_fee to percentage_fee_facilitated
+-- ROLLBACK: Revert percentage_fee_facilitated back to percentage_fee
+-- Execute: Only if migration 002 fails or critical issues found
 -- Created: 2025-11-25
--- Risk: MEDIUM-HIGH
--- Rollback: See 002_rollback_percentage_fee_facilitated.sql
--- Prerequisites: Phase 1 migration (fixed_cost → fixed_fee_facilitated) must be completed
 -- ============================================================================
 
 BEGIN;
 
 -- ============================================================================
--- STEP 1: Rename Column
+-- STEP 1: Rename Column Back
 -- ============================================================================
 
 ALTER TABLE client_products
-RENAME COLUMN percentage_fee TO percentage_fee_facilitated;
+RENAME COLUMN percentage_fee_facilitated TO percentage_fee;
 
-COMMENT ON COLUMN client_products.percentage_fee_facilitated IS 'Annual percentage facilitated fee rate (e.g., 1.5 for 1.5%)';
+COMMENT ON COLUMN client_products.percentage_fee IS 'Annual percentage fee rate (e.g., 1.5 for 1.5%)';
 
 -- ============================================================================
--- STEP 2: Update company_revenue_analytics View
+-- STEP 2: Restore company_revenue_analytics View
 -- ============================================================================
--- Changes: 4 field references + 1 computed column rename
--- This view calculates company-wide revenue totals from all active products
 
 DROP VIEW IF EXISTS company_revenue_analytics CASCADE;
 
@@ -35,17 +31,17 @@ SELECT
         END) AS total_fixed_facilitated_revenue,
     sum(
         CASE
-            WHEN ((cp.status = 'active'::text) AND (cp.percentage_fee_facilitated IS NOT NULL) AND (pv.total_value > (0)::numeric))
-            THEN (pv.total_value * ((cp.percentage_fee_facilitated)::numeric / 100.0))
+            WHEN ((cp.status = 'active'::text) AND (cp.percentage_fee IS NOT NULL) AND (pv.total_value > (0)::numeric))
+            THEN (pv.total_value * ((cp.percentage_fee)::numeric / 100.0))
             ELSE (0)::numeric
-        END) AS total_percentage_facilitated_revenue,  -- RENAMED FROM total_percentage_revenue
+        END) AS total_percentage_revenue,  -- ORIGINAL NAME RESTORED
     sum(
         CASE
             WHEN (cp.status = 'active'::text)
             THEN (COALESCE((cp.fixed_fee_facilitated)::numeric, (0)::numeric) +
             CASE
-                WHEN ((cp.percentage_fee_facilitated IS NOT NULL) AND (pv.total_value > (0)::numeric))
-                THEN (pv.total_value * ((cp.percentage_fee_facilitated)::numeric / 100.0))
+                WHEN ((cp.percentage_fee IS NOT NULL) AND (pv.total_value > (0)::numeric))
+                THEN (pv.total_value * ((cp.percentage_fee)::numeric / 100.0))
                 ELSE (0)::numeric
             END)
             ELSE (0)::numeric
@@ -56,10 +52,10 @@ SELECT
     sum(COALESCE(pv.total_value, (0)::numeric)) AS total_fum,
     avg(
         CASE
-            WHEN ((cp.percentage_fee_facilitated IS NOT NULL) AND ((cp.percentage_fee_facilitated)::numeric > (0)::numeric))
-            THEN (cp.percentage_fee_facilitated)::numeric
+            WHEN ((cp.percentage_fee IS NOT NULL) AND ((cp.percentage_fee)::numeric > (0)::numeric))
+            THEN (cp.percentage_fee)::numeric
             ELSE NULL::numeric
-        END) AS avg_percentage_facilitated_fee,  -- RENAMED FROM avg_percentage_fee
+        END) AS avg_percentage_fee,  -- ORIGINAL NAME RESTORED
     avg(
         CASE
             WHEN ((cp.fixed_fee_facilitated IS NOT NULL) AND ((cp.fixed_fee_facilitated)::numeric > (0)::numeric))
@@ -78,10 +74,8 @@ FROM (client_products cp
     ) pv ON ((cp.portfolio_id = pv.portfolio_id)));
 
 -- ============================================================================
--- STEP 3: Update products_list_view View
+-- STEP 3: Restore products_list_view View
 -- ============================================================================
--- Changes: 2 field references (SELECT + GROUP BY)
--- This view provides comprehensive product listing with fee information
 
 DROP VIEW IF EXISTS products_list_view CASCADE;
 
@@ -112,7 +106,7 @@ SELECT
     count(DISTINCT pop.product_owner_id) AS owner_count,
     string_agg(DISTINCT COALESCE(po.known_as, concat(po.firstname, ' ', po.surname)), ', '::text) AS owners,
     cp.fixed_fee_facilitated,
-    cp.percentage_fee_facilitated  -- CHANGED FROM percentage_fee
+    cp.percentage_fee  -- ORIGINAL NAME RESTORED
 FROM (((((((client_products cp
     JOIN client_groups cg ON ((cp.client_id = cg.id)))
     LEFT JOIN available_providers ap ON ((cp.provider_id = ap.id)))
@@ -127,14 +121,11 @@ GROUP BY
     cp.end_date, cp.provider_id, cp.portfolio_id, cp.plan_number, cp.created_at,
     cg.name, cg.advisor, cg.type, ap.name, ap.theme_color, p.portfolio_name, p.status,
     lpv.valuation, lpv.valuation_date, lpir.irr_result, lpir.date,
-    cp.fixed_fee_facilitated, cp.percentage_fee_facilitated;  -- CHANGED FROM percentage_fee
+    cp.fixed_fee_facilitated, cp.percentage_fee;  -- ORIGINAL NAME RESTORED
 
 -- ============================================================================
--- STEP 4: Update revenue_analytics_optimized View
+-- STEP 4: Restore revenue_analytics_optimized View
 -- ============================================================================
--- Changes: 1 field reference
--- This view provides optimized revenue analytics with window functions
--- CRITICAL: Preserves status filters in JOIN conditions and WHERE clause
 
 DROP VIEW IF EXISTS revenue_analytics_optimized CASCADE;
 
@@ -145,7 +136,7 @@ SELECT
     cg.status AS client_status,
     cp.id AS product_id,
     cp.fixed_fee_facilitated,
-    cp.percentage_fee_facilitated,  -- CHANGED FROM percentage_fee
+    cp.percentage_fee,  -- ORIGINAL NAME RESTORED
     cp.portfolio_id,
     pf.id AS portfolio_fund_id,
     lfv.valuation AS fund_valuation,
@@ -163,90 +154,55 @@ FROM (((client_groups cg
 WHERE (cg.status = ANY (ARRAY['active'::text, 'dormant'::text]));
 
 -- ============================================================================
--- VALIDATION: Quick Checks Before Commit
+-- VALIDATION: Verify Rollback Success
 -- ============================================================================
 
--- Check 1: Verify column renamed successfully
+-- Check 1: Verify column rollback
 DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
-        WHERE table_name = 'client_products' AND column_name = 'percentage_fee_facilitated'
+        WHERE table_name = 'client_products' AND column_name = 'percentage_fee'
     ) THEN
-        RAISE EXCEPTION 'CRITICAL: percentage_fee_facilitated column not found after rename';
+        RAISE EXCEPTION 'ROLLBACK FAILED: percentage_fee column not found';
     END IF;
 
     IF EXISTS (
         SELECT 1 FROM information_schema.columns
-        WHERE table_name = 'client_products' AND column_name = 'percentage_fee'
+        WHERE table_name = 'client_products' AND column_name = 'percentage_fee_facilitated'
     ) THEN
-        RAISE EXCEPTION 'CRITICAL: percentage_fee column still exists after rename';
+        RAISE EXCEPTION 'ROLLBACK FAILED: percentage_fee_facilitated column still exists';
     END IF;
 
-    RAISE NOTICE 'SUCCESS: Column rename validated successfully';
+    RAISE NOTICE 'SUCCESS: Column rollback validated';
 END $$;
 
--- Check 2: Verify all views are queryable and return data
-DO $$
-DECLARE
-    view_count INTEGER;
-    test_result RECORD;
-BEGIN
-    -- Test company_revenue_analytics
-    SELECT COUNT(*) INTO view_count FROM company_revenue_analytics;
-    RAISE NOTICE 'company_revenue_analytics: % rows', view_count;
-    
-    -- Test products_list_view  
-    SELECT COUNT(*) INTO view_count FROM products_list_view;
-    RAISE NOTICE 'products_list_view: % rows', view_count;
-    
-    -- Test revenue_analytics_optimized
-    SELECT COUNT(*) INTO view_count FROM revenue_analytics_optimized;
-    RAISE NOTICE 'revenue_analytics_optimized: % rows', view_count;
-    
-    RAISE NOTICE 'SUCCESS: All views are queryable';
-END $$;
+-- Check 2: Verify views work
+SELECT * FROM company_revenue_analytics LIMIT 1;
+SELECT * FROM products_list_view LIMIT 1;
+SELECT * FROM revenue_analytics_optimized LIMIT 1;
 
--- Check 3: Verify data integrity - compare a few sample calculations
--- Test that percentage fee calculations still work correctly
+-- Check 3: Verify data is accessible
 SELECT 
-    'Data Integrity Check' as check_type,
-    COUNT(*) as products_with_percentage_fees,
-    SUM(
-        CASE 
-            WHEN percentage_fee_facilitated IS NOT NULL AND percentage_fee_facilitated::numeric > 0
-            THEN 1 
-            ELSE 0 
-        END
-    ) as products_with_nonzero_percentage_fees
-FROM client_products 
-WHERE status = 'active';
+    'Rollback Data Check' as check_type,
+    COUNT(*) as total_products,
+    SUM(CASE WHEN percentage_fee IS NOT NULL THEN 1 ELSE 0 END) as products_with_percentage_fee
+FROM client_products;
 
--- Quick calculation test
-SELECT 
-    'Sample Revenue Calculation' as test_type,
-    id as product_id,
-    percentage_fee_facilitated,
-    CASE 
-        WHEN percentage_fee_facilitated IS NOT NULL 
-        THEN 'Can calculate: ' || percentage_fee_facilitated || '% of portfolio value'
-        ELSE 'No percentage fee'
-    END as calculation_test
-FROM client_products 
-WHERE status = 'active' 
-    AND percentage_fee_facilitated IS NOT NULL
-LIMIT 3;
-
--- If all validations pass, commit the transaction
 COMMIT;
 
--- Success message
+-- Success messages
 SELECT '=================================================================' as divider;
-SELECT '🎉 MIGRATION 002 COMPLETED SUCCESSFULLY! 🎉' as status;
+SELECT '🔄 ROLLBACK COMPLETED SUCCESSFULLY' as status;
 SELECT '=================================================================' as divider;
-SELECT 'Column renamed: percentage_fee → percentage_fee_facilitated' as change1;
-SELECT 'Views updated: company_revenue_analytics, products_list_view, revenue_analytics_optimized' as change2;
-SELECT 'All validations passed' as change3;
-SELECT 'Ready for backend/frontend code deployment' as next_step;
+SELECT 'Column reverted: percentage_fee_facilitated → percentage_fee' as change1;
+SELECT 'Views restored: All views using original column names' as change2;
+SELECT 'Database is back to pre-migration state' as change3;
+SELECT '=================================================================' as divider;
 
--- If any validation fails, transaction will auto-rollback with error message
+-- Important notes
+SELECT 'IMPORTANT NOTES:' as section;
+SELECT '1. If code was deployed, you must also revert backend/frontend changes' as note1;
+SELECT '2. Clear application caches if any were created' as note2;
+SELECT '3. Test application thoroughly before returning to normal operation' as note3;
+SELECT '4. Investigate root cause of migration failure before retry' as note4;
