@@ -114,7 +114,7 @@ CREATE TABLE client_products (
     notes text,
     template_generation_id bigint(64),
     fixed_fee_facilitated text,
-    percentage_fee text
+    percentage_fee_facilitated text
 );
 
 -- Table: holding_activity_log
@@ -391,14 +391,14 @@ CREATE OR REPLACE VIEW company_revenue_analytics AS
         END) AS total_fixed_facilitated_revenue,
     sum(
         CASE
-            WHEN ((cp.status = 'active'::text) AND (cp.percentage_fee IS NOT NULL) AND (pv.total_value > (0)::numeric)) THEN (pv.total_value * ((cp.percentage_fee)::numeric / 100.0))
+            WHEN ((cp.status = 'active'::text) AND (cp.percentage_fee_facilitated IS NOT NULL) AND (pv.total_value > (0)::numeric)) THEN (pv.total_value * ((cp.percentage_fee_facilitated)::numeric / 100.0))
             ELSE (0)::numeric
-        END) AS total_percentage_revenue,
+        END) AS total_percentage_facilitated_revenue,
     sum(
         CASE
             WHEN (cp.status = 'active'::text) THEN (COALESCE((cp.fixed_fee_facilitated)::numeric, (0)::numeric) +
             CASE
-                WHEN ((cp.percentage_fee IS NOT NULL) AND (pv.total_value > (0)::numeric)) THEN (pv.total_value * ((cp.percentage_fee)::numeric / 100.0))
+                WHEN ((cp.percentage_fee_facilitated IS NOT NULL) AND (pv.total_value > (0)::numeric)) THEN (pv.total_value * ((cp.percentage_fee_facilitated)::numeric / 100.0))
                 ELSE (0)::numeric
             END)
             ELSE (0)::numeric
@@ -409,9 +409,9 @@ CREATE OR REPLACE VIEW company_revenue_analytics AS
     sum(COALESCE(pv.total_value, (0)::numeric)) AS total_fum,
     avg(
         CASE
-            WHEN ((cp.percentage_fee IS NOT NULL) AND ((cp.percentage_fee)::numeric > (0)::numeric)) THEN (cp.percentage_fee)::numeric
+            WHEN ((cp.percentage_fee_facilitated IS NOT NULL) AND ((cp.percentage_fee_facilitated)::numeric > (0)::numeric)) THEN (cp.percentage_fee_facilitated)::numeric
             ELSE NULL::numeric
-        END) AS avg_percentage_fee,
+        END) AS avg_percentage_facilitated_fee,
     avg(
         CASE
             WHEN ((cp.fixed_fee_facilitated IS NOT NULL) AND ((cp.fixed_fee_facilitated)::numeric > (0)::numeric)) THEN (cp.fixed_fee_facilitated)::numeric
@@ -768,7 +768,7 @@ CREATE OR REPLACE VIEW products_list_view AS
     count(DISTINCT pop.product_owner_id) AS owner_count,
     string_agg(DISTINCT COALESCE(po.known_as, concat(po.firstname, ' ', po.surname)), ', '::text) AS owners,
     cp.fixed_fee_facilitated,
-    cp.percentage_fee
+    cp.percentage_fee_facilitated
    FROM (((((((client_products cp
      JOIN client_groups cg ON ((cp.client_id = cg.id)))
      LEFT JOIN available_providers ap ON ((cp.provider_id = ap.id)))
@@ -778,7 +778,7 @@ CREATE OR REPLACE VIEW products_list_view AS
      LEFT JOIN product_owner_products pop ON ((cp.id = pop.product_id)))
      LEFT JOIN product_owners po ON (((pop.product_owner_id = po.id) AND (po.status = 'active'::text))))
   WHERE (cg.status = 'active'::text)
-  GROUP BY cp.id, cp.client_id, cp.product_name, cp.product_type, cp.status, cp.start_date, cp.end_date, cp.provider_id, cp.portfolio_id, cp.plan_number, cp.created_at, cg.name, cg.advisor, cg.type, ap.name, ap.theme_color, p.portfolio_name, p.status, lpv.valuation, lpv.valuation_date, lpir.irr_result, lpir.date, cp.fixed_fee_facilitated, cp.percentage_fee;;
+  GROUP BY cp.id, cp.client_id, cp.product_name, cp.product_type, cp.status, cp.start_date, cp.end_date, cp.provider_id, cp.portfolio_id, cp.plan_number, cp.created_at, cg.name, cg.advisor, cg.type, ap.name, ap.theme_color, p.portfolio_name, p.status, lpv.valuation, lpv.valuation_date, lpir.irr_result, lpir.date, cp.fixed_fee_facilitated, cp.percentage_fee_facilitated;;
 
 -- View: provider_distribution_fast
 CREATE OR REPLACE VIEW provider_distribution_fast AS
@@ -826,7 +826,7 @@ CREATE OR REPLACE VIEW revenue_analytics_optimized AS
     cg.status AS client_status,
     cp.id AS product_id,
     cp.fixed_fee_facilitated,
-    cp.percentage_fee,
+    cp.percentage_fee_facilitated,
     cp.portfolio_id,
     pf.id AS portfolio_fund_id,
     lfv.valuation AS fund_valuation,

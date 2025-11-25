@@ -25,6 +25,7 @@ export interface ProductDetails {
     name?: string;
   };
   product_owners?: any[];
+  fixed_fee_direct?: number;
   fixed_fee_facilitated?: number;
   percentage_fee_facilitated?: number;
   client_group_id?: number;

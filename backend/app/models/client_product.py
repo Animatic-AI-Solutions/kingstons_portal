@@ -18,6 +18,7 @@ class ClientproductBase(BaseModel):
     template_generation_id: Optional[int] = None
     template_info: Optional[Dict[str, Any]] = None
     notes: Optional[str] = None
+    fixed_fee_direct: Optional[float] = None  # Fixed annual direct fee
     fixed_fee_facilitated: Optional[float] = None  # Fixed annual facilitated fee
     percentage_fee_facilitated: Optional[float] = None  # Percentage facilitated fee (e.g., 1.5 for 1.5%)
     
@@ -46,6 +47,7 @@ class ClientproductUpdate(BaseModel):
     portfolio_id: Optional[int] = None
     notes: Optional[str] = None
     template_generation_id: Optional[int] = None
+    fixed_fee_direct: Optional[float] = None
     fixed_fee_facilitated: Optional[float] = None
     percentage_fee_facilitated: Optional[float] = None
 
@@ -69,6 +71,7 @@ class ProductRevenueCalculation(BaseModel):
     """Response model for product revenue calculation"""
     product_id: int
     product_name: Optional[str] = None
+    fixed_fee_direct: Optional[float] = None
     fixed_fee_facilitated: Optional[float] = None
     percentage_fee_facilitated: Optional[float] = None
     latest_portfolio_valuation: Optional[float] = None

@@ -87,6 +87,7 @@ interface ClientAccount {
     name?: string;
   };
   product_owners?: ProductOwner[];
+  fixed_fee_direct?: number;
   fixed_fee_facilitated?: number;
   percentage_fee_facilitated?: number;
 }
@@ -766,25 +767,26 @@ const ProductCard: React.FC<{
   };
 
   // Calculate estimated annual revenue with proper validation logic
-  const calculateRevenue = (fixedFeeFacilitated?: number, percentageFeeFacilitated?: number, portfolioValue?: number): string | number => {
+  const calculateRevenue = (fixedFeeDirect?: number, fixedFeeFacilitated?: number, percentageFeeFacilitated?: number, portfolioValue?: number): string | number => {
     // Ensure all values are properly converted to numbers (not strings)
-    const fixed = Number(fixedFeeFacilitated) || 0;
+    const direct = Number(fixedFeeDirect) || 0;
+    const facilitated = Number(fixedFeeFacilitated) || 0;
     const percentage = Number(percentageFeeFacilitated) || 0;
     const value = Number(portfolioValue) || 0;
     
     // Revenue calculation with proper number conversion
     
-    // If neither cost type is set, return 'None'
-    if (!fixed && !percentage) {
+    // If no fee types are set, return 'None'
+    if (!direct && !facilitated && !percentage) {
       return 'None';
     }
     
-    // If only fixed cost is set (no percentage fee)
-    if (fixed && !percentage) {
-      return fixed;
+    // If only fixed fees are set (no percentage fee)
+    if ((direct || facilitated) && !percentage) {
+      return direct + facilitated;
     }
     
-    // If percentage fee is involved (with or without fixed cost)
+    // If percentage fee is involved (with or without fixed fees)
     if (percentage > 0) {
       // Check if valuation data is actually missing (null/undefined) vs genuinely zero
       if (portfolioValue === null || portfolioValue === undefined) {
@@ -792,7 +794,7 @@ const ProductCard: React.FC<{
       }
       // If valuation exists (including zero), calculate properly
       const percentageFeeFacilitatedAmount = Number((value * percentage) / 100);
-      const totalRevenue = Number(fixed + percentageFeeFacilitatedAmount);
+      const totalRevenue = Number(direct + facilitated + percentageFeeFacilitatedAmount);
       return totalRevenue;
     }
     
@@ -910,7 +912,7 @@ const ProductCard: React.FC<{
               </div>
               <div className="text-sm font-semibold mt-1">
                 {(() => {
-                  const revenue = calculateRevenue(account.fixed_fee_facilitated, account.percentage_fee_facilitated, displayValue);
+                  const revenue = calculateRevenue(account.fixed_fee_direct, account.fixed_fee_facilitated, account.percentage_fee_facilitated, displayValue);
                   if (typeof revenue === 'number') {
                     return <span className="text-green-600">{formatCurrency(revenue)}</span>;
                   } else if (revenue === 'Latest valuation needed') {
@@ -1268,7 +1270,7 @@ const ClientDetails: React.FC = () => {
   const [versions, setVersions] = useState<any[]>([]);
   const [showVersionModal, setShowVersionModal] = useState(false);
   const [showRevenueModal, setShowRevenueModal] = useState(false);
-  const [revenueFormData, setRevenueFormData] = useState<Record<number, { fixed_fee_facilitated: string; percentage_fee_facilitated: string }>>({});
+  const [revenueFormData, setRevenueFormData] = useState<Record<number, { fixed_fee_direct: string; fixed_fee_facilitated: string; percentage_fee_facilitated: string }>>({});
   const [formData, setFormData] = useState<ClientFormData>({
     name: null,
     status: 'active',
@@ -1539,7 +1541,7 @@ const ClientDetails: React.FC = () => {
 
 
   // Handle revenue assignment save
-  const handleRevenueAssignmentSave = async (updates: Record<number, { fixed_fee_facilitated: number | null; percentage_fee_facilitated: number | null }>) => {
+  const handleRevenueAssignmentSave = async (updates: Record<number, { fixed_fee_direct: number | null; fixed_fee_facilitated: number | null; percentage_fee_facilitated: number | null }>) => {
     try {
       // Call API to update products with revenue data
       for (const [productId, data] of Object.entries(updates)) {
