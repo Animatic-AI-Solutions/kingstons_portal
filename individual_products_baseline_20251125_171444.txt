@@ -1,0 +1,291 @@
+SELECT 260
+                   section                    
+----------------------------------------------
+ === COMPLETE INDIVIDUAL PRODUCT BASELINE ===
+(1 row)
+
+ product_id |  status  |                       client_name                        |               product_name               | fixed_cost_exact | percentage_fee_exact | calculated_fixed_revenue 
+------------+----------+----------------------------------------------------------+------------------------------------------+------------------+----------------------+--------------------------
+          3 | active   | McArthur, Alan & Josie                                   | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+          4 | active   | McArthur, Alan & Josie                                   | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+          5 | active   | Plumb, Andrew & Ros                                      | Onshore Bond                             | 0.0              | 0.95                 |                      0.0
+          6 | active   | Plumb, Andrew & Ros                                      | SIPP Drawdown                            | 0.0              | 0.95                 |                      0.0
+          7 | active   | Plumb, Andrew & Ros                                      | Pension Drawdown                         | 0.0              | 0.95                 |                      0.0
+          8 | active   | Allan, David                                             |  Retirement Account                      | NULL             | 0.95                 |                        0
+          9 | active   | The Muriel Allan DDGT Trust 2024                         | Investment Plan                          | 0.0              | 0.95                 |                      0.0
+         12 | active   | Munford, Steven & Anita                                  | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+         13 | active   | Munford, Steven & Anita                                  | Stocks & Shares JISA                     | 0.0              | 0.95                 |                      0.0
+         14 | active   | Munford, Steven & Anita                                  | Stocks & Shares JISA                     | 0.0              | 0.95                 |                      0.0
+         15 | active   | Munford, Steven & Anita                                  | RIA                                      | 0.0              | 0.95                 |                      0.0
+         16 | active   | Meddle, Michael                                          | Pension                                  | 0.0              | 0.95                 |                      0.0
+         19 | active   | Franklin, Julian & Tracie                                | SIPP                                     | 0.0              | 0.95                 |                      0.0
+         20 | active   | Franklin, Julian & Tracie                                | SIPP                                     | 0.0              | 0.95                 |                      0.0
+         23 | active   | Sear, Alison                                             | Prudential Retirement Account            | 0.0              | 0.95                 |                      0.0
+         24 | active   | Scarborough, Terry & Angela                              | International Investment Bond            | 0.0              | 0.95                 |                      0.0
+         25 | active   | Scarborough, Terry & Angela                              | Investment Plan                          | 0.0              | 0.95                 |                      0.0
+         27 | active   | Bullock, Michael & Jenny                                 | Investment Plan                          | 0.0              | 0.95                 |                      0.0
+         28 | active   | Meddle, Stephen                                          | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+         30 | active   | Meddle, Stephen                                          | Flexible Transitions Account             | 0.0              | 0.95                 |                      0.0
+         31 | active   | SJ Meddle Limited                                        | Investment Plan                          | 0.0              | 0.95                 |                      0.0
+         33 | active   | McArthur, Alan & Josie                                   | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+         34 | active   | Bullock, Michael & Jenny                                 | Stocks & Shares ISA                      | 0.0              | 0.0                  |                      0.0
+         36 | active   | Bullock, Michael & Jenny                                 | Investment Bond                          | 0.0              | 0.95                 |                      0.0
+         37 | active   | Bullock, Michael & Jenny                                 | Investment Plan                          | 0.0              | 0.95                 |                      0.0
+         38 | active   | Merry, John & Rosemary                                   | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+         39 | active   | Merry, John & Rosemary                                   | Investment Plan                          | 0.0              | 0.95                 |                      0.0
+        177 | active   | Dobson, Eric & Stella                                    | International Investment Bond            | NULL             | 0.95                 |                        0
+        183 | active   | Cole, Sue                                                | Personal Pension                         | 0.0              | 0.95                 |                      0.0
+        184 | active   | Cole, Sue                                                | Stocks & Shares ISA                      | NULL             | 0.95                 |                        0
+        185 | active   | Cole, Sue                                                | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        187 | active   | Norman, Jacqueline                                       | International Investment Bond            | 0.0              | 0.95                 |                      0.0
+        192 | active   | McArthur, Alan & Josie                                   | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        193 | active   | McArthur, Alan & Josie                                   | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        195 | active   | McKie, Jayne                                             | Investment Plan                          | NULL             | 0.95                 |                        0
+        196 | active   | McKie, Jayne                                             | Junior ISA                               | 0.0              | 0.0                  |                      0.0
+        197 | active   | McKie, Jayne                                             | Junior ISA                               | 0.0              | 0.0                  |                      0.0
+        198 | active   | McKie, Jayne                                             | Junior ISA                               | 0.0              | 0.0                  |                      0.0
+        199 | active   | McKie, Jayne                                             | Junior ISA                               | 0.0              | 0.0                  |                      0.0
+        204 | active   | McArthur, Alan & Josie                                   | Investment Plan                          | 0.0              | 0.95                 |                      0.0
+        205 | active   | McArthur, Alan & Josie                                   | Onshore Bond                             | 0.0              | 0.95                 |                      0.0
+        207 | active   | The Gina Christie Loan Trust                             | Investment Plan                          | NULL             | 0.95                 |                        0
+        208 | active   | The G Christie Trust 2017                                | Investment Plan                          | NULL             | 0.95                 |                        0
+        209 | active   | Christie, Gina                                           | Inheritance Tax Plan                     | 0.0              | 0.95                 |                      0.0
+        210 | active   | McArthur, Alan & Josie                                   | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        212 | active   | Plumb, Andrew & Ros                                      | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        215 | active   | Plumb, Andrew & Ros                                      | Stocks and Shares ISA                    | 0.0              | 0.95                 |                      0.0
+        216 | active   | Purkiss, Dawn                                            | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        217 | active   | Purkiss, Dawn                                            | Investment Plan                          | NULL             | 0.95                 |                        0
+        218 | active   | Mills, Maggie                                            | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        219 | active   | Whistler, Jaime                                          | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        220 | active   | Whistler, Jaime                                          | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        221 | active   | Whistler, Jaime                                          | SIPP                                     | 0.0              | 0.95                 |                      0.0
+        223 | active   | Mills, Maggie                                            | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        224 | active   | Whistler, Jaime                                          | PIP                                      | 0.0              | 0.95                 |                      0.0
+        225 | active   | Kavanagh, Dermot & Elaine                                | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        226 | active   | Kavanagh, Dermot & Elaine                                | SIPP                                     | 0.0              | 0.95                 |                      0.0
+        227 | active   | Dunlop, Elizabeth                                        | Investment Plan                          | NULL             | 0.95                 |                        0
+        228 | active   | Dunlop, Elizabeth                                        | Stocks & Shares ISA                      | NULL             | 0.95                 |                        0
+        229 | active   | Dunlop, Elizabeth                                        | SIPP Flexible Drawdown                   | 0.0              | 0.95                 |                      0.0
+        232 | active   | Turpin, Ben                                              | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        233 | active   | Turpin, Ben                                              | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        238 | active   | Turpin, Ben                                              | GIA                                      | 0.0              | 0.95                 |                      0.0
+        239 | active   | Hardy, Karen                                             | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        240 | active   | Hardy, Karen                                             | Onshore Bond                             | 0.0              | 0.95                 |                      0.0
+        241 | active   | Turpin, Ben                                              | Retirement Account                       | 0.0              | 0.95                 |                      0.0
+        242 | active   | Wade, Anne                                               | SIPP Drawdown                            | 0.0              | 0.95                 |                      0.0
+        243 | active   | The Anne Wade 2021 Trust                                 | Onshore Bond                             | NULL             | 0.95                 |                        0
+        244 | active   | White, Frances                                           | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        245 | active   | White, Frances                                           | Flexible Transitions Account             | NULL             | 0.95                 |                        0
+        246 | active   | White, Frances                                           | Retirement Account                       | 0.0              | 0.95                 |                      0.0
+        247 | active   | Hayes Jarrod                                             |  SIPP                                    | 0.0              | 0.95                 |                      0.0
+        248 | active   | Hayes Jarrod                                             | SIPP                                     | 0.0              | 0.95                 |                      0.0
+        249 | active   | Kavanagh, Dermot & Elaine                                | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        250 | active   | Hubert, Kirti                                            | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        251 | active   | Fry, Pam                                                 | Retirement Account                       | 0.0              | 0.95                 |                      0.0
+        252 | active   | The Merry Family Trust 2020                              | Investment Plan                          | 0.0              | 0.95                 |                      0.0
+        253 | active   | Downing, Stephen & Sarah                                 | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        254 | active   | Downing, Stephen & Sarah                                 | Personal Pension                         | 0.0              | 0.95                 |                      0.0
+        255 | active   | Downing, Stephen & Sarah                                 | Investment Bond                          | NULL             | NULL                 |                        0
+        256 | active   | Ashby, Linda                                             | Stocks & Shares ISA                      | NULL             | 0.95                 |                        0
+        257 | active   | Downing, Stephen & Sarah                                 | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        259 | active   | Batchelor, Peter & Bradley, Andrea                       | Retirement Account                       | 0.0              | 0.95                 |                      0.0
+        260 | active   | Ashby, Linda                                             | Retirement Account                       | NULL             | 0.95                 |                        0
+        261 | active   | Batchelor, Peter & Bradley, Andrea                       | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        262 | active   | Batchelor, Peter & Bradley, Andrea                       | Personal Pension                         | 0.0              | 0.95                 |                      0.0
+        263 | active   | Brand, Daniel                                            | Stocks & Shares ISA                      | NULL             | 0.95                 |                        0
+        265 | active   | Cornelius, Kevin & Sharon                                | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        266 | active   | Morrison, Mary                                           | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        270 | active   | Cornelius, Kevin & Sharon                                | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        273 | active   | Morrison, Mary                                           | Flexible Transitions Account             | 0.0              | 0.95                 |                      0.0
+        274 | active   | Brand, Polly                                             | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        275 | active   | Cornelius, Kevin & Sharon                                | SIPP                                     | 0.0              | 0.95                 |                      0.0
+        276 | active   | Cornelius, Kevin & Sharon                                | Retirement Account                       | 0.0              | 0.95                 |                      0.0
+        277 | active   | Brand, Polly                                             | Retirement Account                       | 0.0              | 0.95                 |                      0.0
+        279 | active   | The Brand Family Trust 2018                              | Investment Plan                          | 0.0              | 0.95                 |                      0.0
+        281 | active   | Brand, Sophie                                            | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        283 | active   | Cotton, Colin & Jackie                                   | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        284 | active   | Cotton, Colin & Jackie                                   | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        285 | active   | Cotton, Colin & Jackie                                   | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        286 | active   | Cotton, Colin & Jackie                                   | Retirement Account                       | 0.0              | 0.95                 |                      0.0
+        287 | active   | Russ, Stephen & Julie                                    | Onshore Bond                             | 0.0              | 0.95                 |                      0.0
+        288 | active   | Russ, Stephen & Julie                                    | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        289 | active   | Russ, Stephen & Julie                                    | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        290 | active   | Russ, Stephen & Julie                                    | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        291 | active   | Downing, Alan                                            | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        292 | active   | Russ, Stephen & Julie                                    | Retirement Account                       | 0.0              | 0.95                 |                      0.0
+        294 | active   | Russ, Stephen & Julie                                    | Flexible Retirement Plan                 | 0.0              | 0.95                 |                      0.0
+        295 | active   | Duncan, Ricky                                            | Retirement Account                       | 0.0              | 0.95                 |                      0.0
+        296 | active   | Ivison, Barclay & Christine                              | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        297 | active   | Ivison, Barclay & Christine                              | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        298 | active   | Ivison, Barclay & Christine                              | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        299 | active   | Ivison, Barclay & Christine                              | Flexible investment Plan (IC)            | NULL             | NULL                 |                        0
+        301 | active   | Skinner, John                                            | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        304 | active   | Kavanagh, Dermot & Elaine                                | PIP                                      | 0.0              | 0.95                 |                      0.0
+        305 | active   | Hubert, Kirti                                            | Retirement Account                       | 0.0              | 0.95                 |                      0.0
+        306 | active   | Woplin, Ray & Tina                                       | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        307 | active   | Woplin, Ray & Tina                                       | RIA                                      | 0.0              | 0.95                 |                      0.0
+        309 | active   | Woplin, Ray & Tina                                       | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        310 | active   | Woplin, Ray & Tina                                       | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        311 | active   | Savage, Lorna                                            | PIP                                      | NULL             | 0.95                 |                        0
+        312 | active   | The Phil Savage Memorial Fund                            | International Bond                       | 0.0              | 0.95                 |                      0.0
+        313 | active   | Cottrell, Stephen                                        | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        315 | active   | Cottrell, Stephen                                        | SIPP                                     | 0.0              | 0.95                 |                      0.0
+        316 | active   | Cottrell, Stephen                                        | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        317 | active   | Nichols, Julian & Ruth                                   | Stocks & Shares                          | NULL             | NULL                 |                        0
+        318 | active   | Nichols, Julian & Ruth                                   | Stocks & Shares                          | NULL             | NULL                 |                        0
+        319 | active   | Nichols, Julian & Ruth                                   | Stocks & Shares                          | NULL             | NULL                 |                        0
+        320 | active   | Nichols, Julian & Ruth                                   | Retirement Account                       | 0.0              | 0.95                 |                      0.0
+        321 | active   | Nichols, Julian & Ruth                                   | SIPP- Uncrystallised                     | NULL             | NULL                 |                        0
+        324 | active   | Bradley, Fred & Val                                      | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        325 | active   | Bradley, Fred & Val                                      | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        326 | active   | Bradley F & V Loan Trusts                                | The V Bradley Loan Trust 2005            | 0.0              | 0.95                 |                      0.0
+        327 | active   | Bradley F & V Loan Trusts                                | The F Bradley Loan Trust 2020            | 0.0              | 0.95                 |                      0.0
+        328 | active   | Bradley F & V Loan Trusts                                | The V Bradley Loan Trust 2014            | 0.0              | 0.95                 |                      0.0
+        329 | active   | Bradley, P & N - Trusts                                  | The Bradley Family DGT Trust             | 0.0              | 0.95                 |                      0.0
+        330 | active   | Bradley, P & N - Trusts                                  | The Bradley Family DDGT 2025             | 0.0              | 0.95                 |                      0.0
+        331 | active   | Holland, Ray & Margaret                                  | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        332 | active   | Holland, Ray & Margaret                                  | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        333 | active   | Smith, Sue                                               | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        334 | active   | Andrew, James                                            | Retirement Account                       | 0.0              | 0.95                 |                      0.0
+        335 | active   | Berry, Mark                                              | Investment Plan                          | 0.0              | 0.95                 |                      0.0
+        336 | active   | Goddard, Gill                                            | SIPP Drawdown (Capped)                   | 0.0              | 0.95                 |                      0.0
+        337 | active   | Goddard, Gill                                            | SIPP Drawdown (Capped)                   | 0.0              | 0.95                 |                      0.0
+        338 | active   | Goddard, Gill                                            | SIPP Pension                             | NULL             | 0.95                 |                        0
+        339 | active   | Hunnings, Peter & Anita                                  | Stocks & Shares ISA                      | NULL             | 0.95                 |                        0
+        340 | active   | Hunnings, Peter & Anita                                  | Stocks & Shares ISA                      | NULL             | 0.95                 |                        0
+        341 | active   | Hunnings, Peter & Anita                                  | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        342 | active   | Hunnings, Peter & Anita                                  | Stocks & Shares ISA                      | NULL             | 0.95                 |                        0
+        343 | active   | Sach, Phil                                               | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        344 | active   | Sach, Phil                                               | Investment Plan                          | 0.0              | 0.95                 |                      0.0
+        345 | active   | Sach, Phil                                               | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        346 | active   | Sach, Phil                                               | Investment Bond                          | 618.0            | 0.0                  |                    618.0
+        347 | active   | Nichols, Julian & Ruth                                   | SIPP - Crystallised                      | 0.95             | 0.0                  |                     0.95
+        348 | active   | Nichols, Julian & Ruth                                   | PIP                                      | 0.95             | 0.0                  |                     0.95
+        350 | active   | O'Brien, Anne                                            | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        351 | active   | Prosser, Mitchell  & Reader, Matilda                     | Stocks & Shares                          | NULL             | 0.95                 |                        0
+        352 | active   | Prosser, Mitchell  & Reader, Matilda                     | Stocks & Shares                          | NULL             | 0.95                 |                        0
+        353 | active   | Prosser, Mitchell  & Reader, Matilda                     | PIP                                      | NULL             | 0.95                 |                        0
+        354 | active   | Prosser, Mitchell  & Reader, Matilda                     | Onshore Bond                             | 0.0              | 0.95                 |                      0.0
+        355 | active   | Oates, Doris                                             | PIP                                      | 0.0              | 0.95                 |                      0.0
+        356 | active   | Oates, Doris                                             | PIP                                      | 0.0              | 0.95                 |                      0.0
+        357 | active   | Oates, Doris                                             | PIP                                      | 0.0              | 0.95                 |                      0.0
+        358 | active   | Oates, Jeremy & Denise                                   | Drawdown                                 | 0.0              | 0.95                 |                      0.0
+        359 | active   | Oates, Jeremy & Denise                                   | Flexible Retirement Plan                 | 0.0              | 0.95                 |                      0.0
+        360 | active   | Oates, Jeremy & Denise                                   | Retirement Account - Drawdown            | 0.0              | 0.95                 |                      0.0
+        361 | active   | Trustees of The Mr JJ Oates D.D.G.T Dated 31.01.2019     | DDGT                                     | NULL             | NULL                 |                        0
+        362 | active   | Trustees of The Mr JJ Oates D.D.G.T Dated 31.01.2019     | DDGT                                     | 0.0              | 0.95                 |                      0.0
+        363 | active   | Cherry, Martin                                           | Retirement Account                       | 0.0              | 0.95                 |                      0.0
+        364 | active   | Langford, Pat                                            | Investment Plan                          | 0.0              | 0.95                 |                      0.0
+        366 | active   | Smart, Steve & Heather                                   | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        367 | active   | Smart, Steve & Heather                                   | Stocks & Shares ISA                      | NULL             | 0.95                 |                        0
+        368 | active   | Smart, Steve & Heather                                   | Investment Plan                          | NULL             | 0.95                 |                        0
+        369 | active   | Flint, Irene                                             | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        371 | active   | Gibbons, Stuart & Lisa                                   | Stocks & Shares                          | 0.0              | 0.0                  |                      0.0
+        372 | active   | Gibbons, Stuart & Lisa                                   | Stocks & Shares                          | 0.0              | 0.0                  |                      0.0
+        373 | active   | Gibbons, Stuart & Lisa                                   | International Bond                       | 0.0              | 0.0                  |                      0.0
+        374 | active   | Gibbons, Stuart & Lisa                                   | SIPP                                     | 5900.0           | 0.0                  |                   5900.0
+        377 | active   | Russ, Stephen & Julie                                    | SIPP                                     | 0.0              | 0.95                 |                      0.0
+        379 | active   | Gibbons, Stuart & Lisa                                   | Retirement Account - Crystallised        | 5500.0           | 0.0                  |                   5500.0
+        380 | active   | Gibbons, Stuart & Lisa                                   | SIPP - Uncrystallised                    | 0.0              | 0.0                  |                      0.0
+        382 | active   | Jay, Tony & Ann                                          | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        383 | active   | Jay, Tony & Ann                                          | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        384 | active   | Jay, Tony & Ann                                          | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        385 | active   | Jay, Tony & Ann                                          | Stocks & shares                          | 0.0              | 0.95                 |                      0.0
+        386 | active   | The Jay Family Trust 2010                                | Flexible Investment Plan                 | 0.0              | 0.95                 |                      0.0
+        388 | active   | Cairns, Phil & Angela                                    | Retirement Account - Uncrystallised      | 0.0              | 0.95                 |                      0.0
+        389 | active   | Cairns, Phil & Angela                                    | Retirement Account - Crystallised        | 0.0              | 0.95                 |                      0.0
+        390 | active   | Cairns, Phil & Angela                                    | PIP                                      | 0.0              | 0.95                 |                      0.0
+        392 | active   | Cairns, Phil & Angela                                    | SIPP - Drawdown                          | 0.0              | 0.95                 |                      0.0
+        393 | active   | Cairns, Phil & Angela                                    | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        394 | active   | Cornelius, Kevin & Sharon                                | PIP                                      | 0.0              | 0.95                 |                      0.0
+        395 | active   | Gibbons, Stuart & Lisa                                   | Bond                                     | 0.0              | 0.0                  |                      0.0
+        396 | active   | The Atkins Family DGT Trust 2025                         | Collective investment Bond               | 0.0              | 0.95                 |                      0.0
+        398 | active   | Shove, Alan & Susan                                      | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        399 | active   | Shove, Alan & Susan                                      | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        400 | active   | Shove, Alan & Susan                                      | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        401 | active   | Shove, Alan & Susan                                      | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        402 | active   | Shove, Alan & Susan                                      | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        403 | active   | Shove, Alan & Susan                                      | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        404 | active   | The Atkins Loan Trust 2025                               | Smoothed Managed Bond                    | 0.0              | 0.95                 |                      0.0
+        405 | active   | Russ, Shaun & Jade                                       | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        406 | active   | Russ, Shaun & Jade                                       | Junior ISA                               | 0.0              | 0.95                 |                      0.0
+        407 | active   | Russ, Shaun & Jade                                       | Junior ISA                               | 0.0              | 0.95                 |                      0.0
+        408 | active   | Holland, Duncan & Anna                                   | Junior Stocks & Shares                   | 0.0              | 0.0                  |                      0.0
+        409 | active   | Holland, Duncan & Anna                                   | Junior Stocks & Shares                   | 0.0              | 0.0                  |                      0.0
+        410 | active   | Holland, Duncan & Anna                                   | Junior Stocks & Shares                   | 0.0              | 0.0                  |                      0.0
+        411 | active   | Holland, Duncan & Anna                                   | Uncrystallised                           | 0.0              | 0.95                 |                      0.0
+        412 | active   | Driscoll, Daron & Franklin, Nicola                       | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        413 | active   | Driscoll, Daron & Franklin, Nicola                       | SIPP- Uncrystallised                     | 0.0              | 0.95                 |                      0.0
+        414 | active   | Driscoll, Daron & Franklin, Nicola                       | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        415 | active   | Driscoll, Daron & Franklin, Nicola                       | PIP                                      | 0.0              | 0.95                 |                      0.0
+        416 | active   | Stalker, Lorraine                                        | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        417 | active   | Stalker, Lorraine                                        | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        418 | active   | Stalker, Lorraine                                        | PIP                                      | 0.0              | 0.95                 |                      0.0
+        419 | active   | Shellito, Paul & Tracy                                   | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        420 | active   | Shellito, Paul & Tracy                                   | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        421 | active   | Shellito, Paul & Tracy                                   | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        422 | active   | Shellito, Paul & Tracy                                   | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        423 | active   | Shellito, Paul & Tracy                                   | SIPP                                     | 0.0              | 0.95                 |                      0.0
+        424 | active   | Shellito, Paul & Tracy                                   | Select Investment Growth & Income Option | 0.0              | 0.95                 |                      0.0
+        425 | active   | Shellito, Paul & Tracy                                   | PIP                                      | 0.0              | 0.95                 |                      0.0
+        426 | active   | Shellito, Paul & Tracy                                   | Retirement Account - Uncrystallised      | 0.0              | 0.95                 |                      0.0
+        427 | active   | The Skinner Family DDGT 2025                             | DDGT                                     | 0.0              | 0.95                 |                      0.0
+        429 | active   | Tyce Terri                                               | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        430 | active   | Baker, Rob & Sarah                                       | Retirement Account                       | 0.0              | 0.95                 |                      0.0
+        432 | active   | Marshall, Tom                                            | Investment Plan                          | 0.0              | 0.95                 |                      0.0
+        433 | active   | Trustees of The Pamela Mary Stokes DDGT Dated 27.07.2018 | DDGT                                     | 0.0              | 0.95                 |                      0.0
+        435 | active   | Z TEST Debugger                                          | Investment Bond                          | 0.0              | 0.0                  |                      0.0
+        436 | active   | Tyce Terri                                               | Flexible retirement Plan                 | 0.0              | 0.95                 |                      0.0
+        437 | active   | Brand, Polly                                             | Investment Plan                          | 0.0              | 0.95                 |                      0.0
+        438 | active   | Mrs D Oates DGT Dated 15.01.2019                         | PIP - DDGT                               | 0.0              | 0.95                 |                      0.0
+        439 | active   | Mrs D Oates DGT Dated 15.01.2019                         | PIP - DDGT                               | 0.0              | 0.95                 |                      0.0
+        440 | active   | Mrs D Oates DGT Dated 15.01.2019                         | PIP - DDGT                               | 0.0              | 0.95                 |                      0.0
+        441 | active   | Mrs D Oates DGT Dated 15.01.2019                         | Investment Bond                          | 0.0              | 0.95                 |                      0.0
+         21 | inactive | Franklin, Julian & Tracie                                | SIPP                                     | 0.0              | 0.95                 |                      0.0
+         22 | inactive | Franklin, Julian & Tracie                                | SIPP                                     | 0.0              | 0.95                 |                      0.0
+         29 | inactive | Meddle, Stephen                                          | GIA                                      | 0.0              | 0.95                 |                      0.0
+        230 | inactive | Dunlop, Elizabeth                                        | Flexible Transitions Account             | 0.0              | 0.95                 |                      0.0
+        231 | inactive | Cairns, Phil & Angela                                    | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        264 | inactive | Brand, Daniel                                            | GIA                                      | 0.0              | 0.95                 |                      0.0
+        267 | inactive | Morrison, Mary                                           | Stocks & Shares ISA                      | 0.0              | 0.95                 |                      0.0
+        268 | inactive | Morrison, Mary                                           | Investment Plan                          | 0.0              | 0.95                 |                      0.0
+        269 | inactive | Morrison, Mary                                           | Flexible Investment Plan                 | 0.0              | 0.95                 |                      0.0
+        271 | inactive | Morrison, Mary                                           | Investment Plan                          | 0.0              | 0.95                 |                      0.0
+        272 | inactive | Morrison, Mary                                           | With Profits Bond                        | NULL             | NULL                 |                        0
+        293 | inactive | Downing, Alan                                            | Investment Plan                          | 0.0              | 0.95                 |                      0.0
+        300 | inactive | Ivison, Barclay & Christine                              | Investment Plan                          | 0.0              | 0.95                 |                      0.0
+        302 | inactive | Russ, Stephen & Julie                                    | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        303 | inactive | Russ, Stephen & Julie                                    | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        308 | inactive | Woplin, Ray & Tina                                       | Stocks & Shares                          | 0.0              | 0.95                 |                      0.0
+        314 | inactive | Cottrell, Stephen                                        | Flexible Transitions Account             | 0.0              | 0.95                 |                      0.0
+        349 | inactive | O'Brien, Anne                                            | Stocks & Shares                          | 0.95             | 0.0                  |                     0.95
+        365 | inactive | Langford, Pat                                            | Flexible Guarantee Bond                  | 0.0              | 0.95                 |                      0.0
+        375 | inactive | Franklin, Julian & Tracie                                | SIPP                                     | 0.0              | 0.95                 |                      0.0
+        376 | inactive | Franklin, Julian & Tracie                                | SIPP                                     | 0.0              | 0.95                 |                      0.0
+        391 | inactive | Cairns, Phil & Angela                                    | Flexible Transitions Account             | 0.0              | 0.95                 |                      0.0
+        431 | inactive | Baker, Rob & Sarah                                       | Flexible Transitions Account             | 0.0              | 0.95                 |                      0.0
+        434 | inactive | Z TEST Debugger                                          | Investment Bond                          | 0.0              | 0.0                  |                      0.0
+        442 | inactive | Sach, Phil                                               | With Profits Growth Bond                 | 0.0              | 0.95                 |                      0.0
+(260 rows)
+
+           section            
+------------------------------
+ === SUMMARY VERIFICATION ===
+(1 row)
+
+  status  | product_count | non_zero_fixed | has_percentage_fee | total_fixed_revenue 
+----------+---------------+----------------+--------------------+---------------------
+ active   |           235 |              5 |                228 |            12019.90
+ inactive |            25 |              1 |                 24 |                0.95
+(2 rows)
+
+    category    | count 
+----------------+-------
+ TOTAL PRODUCTS |   260
+(1 row)
+
+                status                
+--------------------------------------
+ === INDIVIDUAL BASELINE COMPLETE ===
+(1 row)
+
