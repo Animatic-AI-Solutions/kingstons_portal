@@ -2048,13 +2048,13 @@ const RevenueAssignmentModal: React.FC<{
                   Fixed Fee Facilitated (£)
                 </th>
                 <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Percentage Fee (%)
+                  Percentage Fee Facilitated (%)
                 </th>
                 <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Latest Valuation
                 </th>
                 <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Percentage Revenue
+                  Percentage Revenue Facilitated
                 </th>
                 <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Total Revenue

@@ -217,7 +217,7 @@ const ClientManagementSection: React.FC<ClientManagementSectionProps> = ({
               <th className="px-2 py-1 text-left text-xs font-bold text-gray-900 uppercase">Client Group</th>
               <th className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase">Fixed Fee Direct</th>
               <th className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase">Fixed Fee Facilitated</th>
-              <th className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase">Percentage Fee</th>
+              <th className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase">Percentage Fee Facilitated</th>
               <th className="px-2 py-1 text-right text-xs font-bold text-gray-900 uppercase">Total Revenue</th>
             </tr>
           </thead>

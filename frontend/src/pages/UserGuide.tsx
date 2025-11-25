@@ -158,10 +158,10 @@ const UserGuide: React.FC = () => {
               <p><strong>Both fee types are required (enter 0 if no fee applies):</strong></p>
               <ul className="list-disc list-inside ml-4 space-y-2">
                 <li><strong>Fixed Fee:</strong> Annual fixed amount in pounds</li>
-                <li><strong>Percentage Fee:</strong> Annual percentage of portfolio value</li>
+                <li><strong>Percentage Fee Facilitated:</strong> Annual percentage of portfolio value</li>
               </ul>
               <div className="bg-green-50 p-3 rounded border-l-4 border-green-400">
-                <p><strong>Example:</strong> Fixed fee "500" + Percentage fee "1.5" = £500 fixed + 1.5% annual management fee</p>
+                <p><strong>Example:</strong> Fixed fee "500" + Percentage fee facilitated "1.5" = £500 fixed + 1.5% annual management fee</p>
               </div>
             </div>
           </div>

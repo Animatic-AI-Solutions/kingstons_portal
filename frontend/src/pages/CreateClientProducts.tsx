@@ -1300,13 +1300,13 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       }
 
       if (product.percentage_fee_facilitated === undefined || product.percentage_fee_facilitated === null) {
-        productErrors.percentage_fee_facilitated = 'Please enter a percentage fee (enter 0 if no percentage fee)';
+        productErrors.percentage_fee_facilitated = 'Please enter a percentage fee facilitated (enter 0 if no percentage fee)';
         hasErrors = true;
       } else if (product.percentage_fee_facilitated < 0) {
-        productErrors.percentage_fee_facilitated = 'Percentage fee cannot be negative';
+        productErrors.percentage_fee_facilitated = 'Percentage fee facilitated cannot be negative';
         hasErrors = true;
       } else if (product.percentage_fee_facilitated > 100) {
-        productErrors.percentage_fee_facilitated = 'Percentage fee cannot exceed 100%';
+        productErrors.percentage_fee_facilitated = 'Percentage fee facilitated cannot exceed 100%';
         hasErrors = true;
       }
 
@@ -2568,8 +2568,8 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                       </div>
                                       <div>
                                         <NumberInput
-                                          label="Percentage Fee (%) *"
-                                          placeholder="Enter percentage (0 for no percentage fee)"
+                                          label="Percentage Fee Facilitated (%) *"
+                                          placeholder="Enter percentage (0 for no percentage fee facilitated)"
                                           value={product.percentage_fee_facilitated}
                                           onChange={(numericValue: number | null) => {
                                             handleProductChange(product.id, 'percentage_fee_facilitated', numericValue);

@@ -1907,7 +1907,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       if (editFormData.percentage_fee_facilitated && editFormData.percentage_fee_facilitated.trim() !== '') {
         const percentageValue = parseFloat(editFormData.percentage_fee_facilitated);
         if (percentageValue > 100) {
-          setFormError('Percentage fee cannot exceed 100%');
+          setFormError('Percentage fee facilitated cannot exceed 100%');
           setIsSubmitting(false);
           return;
         }
@@ -2409,7 +2409,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                       <div>
                         {isEditMode ? (
                           <div className="space-y-1">
-                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Percentage Fee (%)</div>
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Percentage Fee Facilitated (%)</div>
                             <div className="relative">
                               <input
                                 type="number"
@@ -2435,7 +2435,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           </div>
                         ) : (
                           <>
-                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Percentage Fee (%)</div>
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Percentage Fee Facilitated (%)</div>
                             <div className="text-sm font-medium text-gray-900">
                               {account.percentage_fee_facilitated !== null && account.percentage_fee_facilitated !== undefined ? `${account.percentage_fee_facilitated}%` : 'Not set'}
                             </div>
