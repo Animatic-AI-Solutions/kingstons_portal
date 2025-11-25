@@ -2455,7 +2455,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                         <div className="text-sm font-semibold">
                           {(() => {
                             // Safe number conversion with NaN protection
-                            const fixedCost = (() => {
+                            const fixedFeeFacilitated = (() => {
                               const value = account.fixed_fee_facilitated;
                               if (value === null || value === undefined) return 0;
                               const num = parseFloat(String(value));
@@ -2479,25 +2479,25 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
 
                             
                             // If neither cost type is set
-                            if (!fixedCost && !percentageFee) {
+                            if (!fixedFeeFacilitated && !percentageFee) {
                               return <span className="text-gray-500">None</span>;
                             }
                             
                             // If only fixed cost is set (no percentage fee)
-                            if (fixedCost && !percentageFee) {
-                              return <span className="text-green-600">{formatCurrency(fixedCost)}</span>;
+                            if (fixedFeeFacilitated && !percentageFee) {
+                              return <span className="text-green-600">{formatCurrency(fixedFeeFacilitated)}</span>;
                             }
                             
                             // If percentage fee is involved (with or without fixed cost)
                             if (percentageFee > 0) {
                               // Only show "valuation needed" if portfolioTotalValue is null/undefined (no valuation data)
-                              // If valuation is explicitly 0, calculate normally (result will be fixedCost + 0)
+                              // If valuation is explicitly 0, calculate normally (result will be fixedFeeFacilitated + 0)
                               if (portfolioTotalValue === null || portfolioTotalValue === undefined) {
                                 return <span className="text-orange-600">Latest valuation needed</span>;
                               }
                               // If valuation exists, calculate properly with NaN protection
                               const calculatedFee = (portfolioValue * percentageFee) / 100;
-                              const totalRevenue = fixedCost + calculatedFee;
+                              const totalRevenue = fixedFeeFacilitated + calculatedFee;
                               
 
                               

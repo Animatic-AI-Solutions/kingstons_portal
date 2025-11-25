@@ -766,9 +766,9 @@ const ProductCard: React.FC<{
   };
 
   // Calculate estimated annual revenue with proper validation logic
-  const calculateRevenue = (fixedCost?: number, percentageFee?: number, portfolioValue?: number): string | number => {
+  const calculateRevenue = (fixedFeeFacilitated?: number, percentageFee?: number, portfolioValue?: number): string | number => {
     // Ensure all values are properly converted to numbers (not strings)
-    const fixed = Number(fixedCost) || 0;
+    const fixed = Number(fixedFeeFacilitated) || 0;
     const percentage = Number(percentageFee) || 0;
     const value = Number(portfolioValue) || 0;
     
@@ -1194,32 +1194,32 @@ const ClientDetails: React.FC = () => {
   // Calculate total revenue across all products
   const totalRevenue = clientAccounts.reduce((sum: number, product: any) => {
     // Ensure all values are properly converted to numbers (prevent NaN)
-    const fixedCost = Number(product.fixed_fee_facilitated) || 0;
+    const fixedFeeFacilitated = Number(product.fixed_fee_facilitated) || 0;
     const percentageFee = Number(product.percentage_fee) || 0;
     const portfolioValue = Number(product.total_value) || 0;
     
     // Calculate revenue for this product
     
     // If neither cost type is set, add 0 to sum
-    if (!fixedCost && !percentageFee) {
+    if (!fixedFeeFacilitated && !percentageFee) {
       return sum;
     }
     
     // If only fixed cost is set (no percentage fee)
-    if (fixedCost && !percentageFee) {
-      return sum + fixedCost;
+    if (fixedFeeFacilitated && !percentageFee) {
+      return sum + fixedFeeFacilitated;
     }
     
     // If percentage fee is involved (with or without fixed cost)
     if (percentageFee > 0 && portfolioValue > 0) {
       const percentageFeeAmount = Number((portfolioValue * percentageFee) / 100);
-      const productRevenue = Number(fixedCost + percentageFeeAmount);
+      const productRevenue = Number(fixedFeeFacilitated + percentageFeeAmount);
       return sum + productRevenue;
     }
     
     // If percentage fee but no valuation, just add fixed cost if any
     if (percentageFee > 0 && (!portfolioValue || portfolioValue <= 0)) {
-      return sum + fixedCost;
+      return sum + fixedFeeFacilitated;
     }
     
     return sum;
@@ -1880,8 +1880,8 @@ const RevenueAssignmentModal: React.FC<{
     return (totalValue * fee) / 100;
   };
 
-  const calculateTotalRevenue = (fixedCost: string, percentageFee: string, totalValue: number): string | number => {
-    const fixed = parseFloat(fixedCost) || 0;
+  const calculateTotalRevenue = (fixedFeeFacilitated: string, percentageFee: string, totalValue: number): string | number => {
+    const fixed = parseFloat(fixedFeeFacilitated) || 0;
     const percentage = parseFloat(percentageFee) || 0;
     
     // If neither cost type is set
@@ -1916,12 +1916,12 @@ const RevenueAssignmentModal: React.FC<{
         const id = parseInt(productId);
         
         // Parse values, treating empty strings as null
-        let fixedCost: number | null = null;
+        let fixedFeeFacilitated: number | null = null;
         let percentageFee: number | null = null;
         
         if (data.fixed_fee_facilitated && data.fixed_fee_facilitated.trim() !== '') {
           const parsed = parseFloat(data.fixed_fee_facilitated);
-          fixedCost = isNaN(parsed) ? null : parsed;
+          fixedFeeFacilitated = isNaN(parsed) ? null : parsed;
         }
         
         if (data.percentage_fee && data.percentage_fee.trim() !== '') {
@@ -1930,7 +1930,7 @@ const RevenueAssignmentModal: React.FC<{
         }
         
         updates[id] = {
-          fixed_fee_facilitated: fixedCost,
+          fixed_fee_facilitated: fixedFeeFacilitated,
           percentage_fee: percentageFee
         };
         
@@ -1956,11 +1956,11 @@ const RevenueAssignmentModal: React.FC<{
     const productData = formData[account.id];
     if (!productData) return acc;
     
-    const fixedCost = parseFloat(productData.fixed_fee_facilitated) || 0;
+    const fixedFeeFacilitated = parseFloat(productData.fixed_fee_facilitated) || 0;
     const percentageFee = parseFloat(productData.percentage_fee) || 0;
     const totalValue = account.total_value || 0;
     
-    acc.fixedCost += fixedCost;
+    acc.fixedFeeFacilitated += fixedFeeFacilitated;
     acc.totalValue += totalValue;
     
     const percentageRevenue = calculatePercentageRevenue(productData.percentage_fee, totalValue);
@@ -1974,7 +1974,7 @@ const RevenueAssignmentModal: React.FC<{
     }
     
     return acc;
-  }, { fixedCost: 0, totalValue: 0, percentageRevenue: 0, totalRevenue: 0 });
+  }, { fixedFeeFacilitated: 0, totalValue: 0, percentageRevenue: 0, totalRevenue: 0 });
 
   if (!isOpen) return null;
 
@@ -2015,7 +2015,7 @@ const RevenueAssignmentModal: React.FC<{
             <div className="bg-white rounded-lg p-4 border border-gray-200">
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Fixed Revenue</div>
               <div className="text-lg font-bold text-blue-600 mt-1">
-                {formatCurrency(totals.fixedCost)}
+                {formatCurrency(totals.fixedFeeFacilitated)}
               </div>
             </div>
             <div className="bg-white rounded-lg p-4 border border-gray-200">
@@ -2137,7 +2137,7 @@ const RevenueAssignmentModal: React.FC<{
                    TOTALS
                  </td>
                  <td className="px-4 py-2 whitespace-nowrap text-right text-xs font-bold text-gray-900">
-                   {formatCurrency(totals.fixedCost)}
+                   {formatCurrency(totals.fixedFeeFacilitated)}
                  </td>
                  <td className="px-4 py-2 whitespace-nowrap text-right text-xs text-gray-500">
                    -
