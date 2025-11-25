@@ -59,7 +59,7 @@ interface Account {
     portfolio_name: string;
     start_date: string;
   };
-  fixed_cost?: number;
+  fixed_fee_facilitated?: number;
   percentage_fee?: number;
 }
 
@@ -343,7 +343,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     plan_number: '',
     target_risk: '',
     start_date: null as Dayjs | null,
-    fixed_cost: '' as string,
+    fixed_fee_facilitated: '' as string,
     percentage_fee: '' as string,
     template_generation_id: '' as string
   });
@@ -1779,7 +1779,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         plan_number: account.plan_number || '',
         target_risk: account.target_risk?.toString() || '',
         start_date: account.start_date ? dayjs(account.start_date) : null,
-        fixed_cost: account.fixed_cost?.toString() ?? '',
+        fixed_fee_facilitated: account.fixed_fee_facilitated?.toString() ?? '',
         percentage_fee: account.percentage_fee?.toString() ?? '',
         template_generation_id: account.template_generation_id?.toString() || ''
       });
@@ -1935,8 +1935,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       }
 
       // Include revenue fields - set to null if empty/undefined, otherwise parse as float
-      updateData.fixed_cost = editFormData.fixed_cost && editFormData.fixed_cost.trim() !== '' 
-        ? parseFloat(editFormData.fixed_cost) 
+      updateData.fixed_fee_facilitated = editFormData.fixed_fee_facilitated && editFormData.fixed_fee_facilitated.trim() !== '' 
+        ? parseFloat(editFormData.fixed_fee_facilitated) 
         : null;
       
       updateData.percentage_fee = editFormData.percentage_fee && editFormData.percentage_fee.trim() !== '' 
@@ -2382,8 +2382,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             <div className="relative">
                               <input
                                 type="number"
-                                name="fixed_cost"
-                                value={editFormData.fixed_cost}
+                                name="fixed_fee_facilitated"
+                                value={editFormData.fixed_fee_facilitated}
                                 onChange={handleInputChange}
                                 placeholder="0.00"
                                 min="0"
@@ -2399,7 +2399,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           <>
                             <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Fixed Fee Facilitated (£)</div>
                             <div className="text-sm font-medium text-gray-900">
-                              {account.fixed_cost !== null && account.fixed_cost !== undefined ? formatCurrency(account.fixed_cost) : 'Not set'}
+                              {account.fixed_fee_facilitated !== null && account.fixed_fee_facilitated !== undefined ? formatCurrency(account.fixed_fee_facilitated) : 'Not set'}
                             </div>
                           </>
                         )}
@@ -2456,7 +2456,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           {(() => {
                             // Safe number conversion with NaN protection
                             const fixedCost = (() => {
-                              const value = account.fixed_cost;
+                              const value = account.fixed_fee_facilitated;
                               if (value === null || value === undefined) return 0;
                               const num = parseFloat(String(value));
                               return isNaN(num) ? 0 : num;

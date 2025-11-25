@@ -60,7 +60,7 @@ interface ProductItem {
   start_date: dayjs.Dayjs; // Required field - each product has its own start date
   plan_number?: string; // Add plan number field
   product_owner_ids: number[]; // Changed from product_owner_id to product_owner_ids array
-  fixed_cost?: number; // Fixed annual cost for revenue calculation (required, user must enter value)
+  fixed_fee_facilitated?: number; // Fixed annual cost for revenue calculation (required, user must enter value)
   percentage_fee?: number; // Percentage fee for revenue calculation (required, user must enter value)
   portfolio: {
     id?: number; // Portfolio ID when created or selected
@@ -648,7 +648,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       start_date: dayjs(), // Default to current date
       plan_number: '', // Initialize as empty string
       product_owner_ids: [],
-      // fixed_cost and percentage_fee left undefined - user must enter values
+      // fixed_fee_facilitated and percentage_fee left undefined - user must enter values
       portfolio: {
         name: '', // Will be generated when product details are filled
         selectedFunds: initialSelectedFunds,
@@ -1291,11 +1291,11 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       }
 
       // Fee validation - both fields are required and must be explicitly entered by user
-      if (product.fixed_cost === undefined || product.fixed_cost === null) {
-        productErrors.fixed_cost = 'Please enter a fixed fee (enter 0 if no fixed fee)';
+      if (product.fixed_fee_facilitated === undefined || product.fixed_fee_facilitated === null) {
+        productErrors.fixed_fee_facilitated = 'Please enter a fixed fee (enter 0 if no fixed fee)';
         hasErrors = true;
-      } else if (product.fixed_cost < 0) {
-        productErrors.fixed_cost = 'Fixed fee cannot be negative';
+      } else if (product.fixed_fee_facilitated < 0) {
+        productErrors.fixed_fee_facilitated = 'Fixed fee cannot be negative';
         hasErrors = true;
       }
 
@@ -1595,7 +1595,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               plan_number: product.plan_number || null,
               target_risk: targetRisk,
               template_generation_id: product.portfolio.type === 'template' ? product.portfolio.generationId : null,
-              fixed_cost: product.fixed_cost ?? null,
+              fixed_fee_facilitated: product.fixed_fee_facilitated ?? null,
               percentage_fee: product.percentage_fee ?? null
             });
             
@@ -2549,15 +2549,15 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                         <NumberInput
                                           label="Fixed Fee Facilitated (£) *"
                                           placeholder="Enter amount (0 for no fixed fee)"
-                                          value={product.fixed_cost}
+                                          value={product.fixed_fee_facilitated}
                                           onChange={(numericValue: number | null) => {
-                                            handleProductChange(product.id, 'fixed_cost', numericValue);
+                                            handleProductChange(product.id, 'fixed_fee_facilitated', numericValue);
                                           }}
                                           size="sm"
                                           fullWidth
                                           min={0}
                                           required
-                                          error={validationErrors[product.id]?.fixed_cost}
+                                          error={validationErrors[product.id]?.fixed_fee_facilitated}
                                           leftIcon={
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />

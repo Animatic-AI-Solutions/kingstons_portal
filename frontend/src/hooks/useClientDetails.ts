@@ -37,7 +37,7 @@ export interface ClientAccount {
     name?: string;
   };
   product_owners?: ProductOwner[];
-  fixed_cost?: number;
+  fixed_fee_facilitated?: number;
   percentage_fee?: number;
 }
 

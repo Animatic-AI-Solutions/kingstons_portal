@@ -53,7 +53,7 @@ async def get_company_revenue_analytics(db = Depends(get_db)):
         # Ensure all values are properly formatted
         formatted_data = {
             "total_annual_revenue": total_annual_revenue,
-            "total_fixed_revenue": float(revenue_data.get("total_fixed_revenue", 0) or 0),
+            "total_fixed_revenue": float(revenue_data.get("total_fixed_facilitated_revenue", 0) or 0),
             "total_percentage_revenue": float(revenue_data.get("total_percentage_revenue", 0) or 0),
             "active_products": active_products,
             "revenue_generating_products": revenue_generating_products,
@@ -96,7 +96,7 @@ async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
             
             # Get all products for this client group (active and inactive for complete analytics)
             products = await db.fetch(
-                "SELECT id, fixed_cost, percentage_fee, portfolio_id FROM client_products WHERE client_id = $1",
+                "SELECT id, fixed_fee_facilitated, percentage_fee, portfolio_id FROM client_products WHERE client_id = $1",
                 client_id
             )
             
@@ -125,7 +125,7 @@ async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
             for product in products:
                 product_id = product["id"]
                 portfolio_id = product["portfolio_id"]
-                fixed_cost = float(product["fixed_cost"] or 0)
+                fixed_cost = float(product["fixed_fee_facilitated"] or 0)
                 percentage_fee = float(product["percentage_fee"] or 0)
                 
                 if portfolio_id:
@@ -230,7 +230,7 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
         # Get a hash of all revenue-relevant data to check if recalculation is needed
         # Get all client products with revenue configuration (active and inactive for complete analytics)
         products_for_hash = await db.fetch(
-            "SELECT id, client_id, fixed_cost, percentage_fee, portfolio_id, status FROM client_products"
+            "SELECT id, client_id, fixed_fee_facilitated, percentage_fee, portfolio_id, status FROM client_products"
         )
         
         # Get all latest valuations
@@ -275,7 +275,7 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
             
             # Get all products for this client group (active and inactive for complete analytics)
             products = await db.fetch(
-                "SELECT id, fixed_cost, percentage_fee, portfolio_id FROM client_products WHERE client_id = $1",
+                "SELECT id, fixed_fee_facilitated, percentage_fee, portfolio_id FROM client_products WHERE client_id = $1",
                 client_id
             )
             
@@ -287,7 +287,7 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
             products_with_positive_fees = []
             
             for product in products:
-                fixed_cost = product["fixed_cost"]
+                fixed_cost = product["fixed_fee_facilitated"]
                 percentage_fee = product["percentage_fee"]
                 
                 # Check if product has any fee setup (including zero fees)
@@ -312,7 +312,7 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
             
             for product in products_with_fee_setup:
                 portfolio_id = product["portfolio_id"]
-                fixed_cost_val = float(product["fixed_cost"] or 0)
+                fixed_cost_val = float(product["fixed_fee_facilitated"] or 0)
                 percentage_fee_val = float(product["percentage_fee"] or 0)
                 
                 if portfolio_id:
@@ -461,7 +461,7 @@ async def get_revenue_breakdown_optimized(db = Depends(get_db)):
                     client["total_fum"] += product_fum
                     
                     # Calculate revenue
-                    fixed_cost = float(row["fixed_cost"] or 0)
+                    fixed_cost = float(row["fixed_fee_facilitated"] or 0)
                     percentage_fee = float(row["percentage_fee"] or 0)
                     
                     if fixed_cost > 0 or percentage_fee > 0:
