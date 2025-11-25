@@ -19,7 +19,7 @@ class ClientproductBase(BaseModel):
     template_info: Optional[Dict[str, Any]] = None
     notes: Optional[str] = None
     fixed_fee_facilitated: Optional[float] = None  # Fixed annual facilitated fee
-    percentage_fee: Optional[float] = None  # Percentage fee (e.g., 1.5 for 1.5%)
+    percentage_fee_facilitated: Optional[float] = None  # Percentage facilitated fee (e.g., 1.5 for 1.5%)
     
     # Portfolio performance fields
     irr: Optional[float] = None  # Portfolio IRR value
@@ -47,7 +47,7 @@ class ClientproductUpdate(BaseModel):
     notes: Optional[str] = None
     template_generation_id: Optional[int] = None
     fixed_fee_facilitated: Optional[float] = None
-    percentage_fee: Optional[float] = None
+    percentage_fee_facilitated: Optional[float] = None
 
     model_config = ConfigDict(
         from_attributes=True
@@ -70,10 +70,10 @@ class ProductRevenueCalculation(BaseModel):
     product_id: int
     product_name: Optional[str] = None
     fixed_fee_facilitated: Optional[float] = None
-    percentage_fee: Optional[float] = None
+    percentage_fee_facilitated: Optional[float] = None
     latest_portfolio_valuation: Optional[float] = None
     valuation_date: Optional[datetime] = None
-    calculated_percentage_fee: Optional[float] = None
+    calculated_percentage_facilitated_fee: Optional[float] = None
     total_estimated_annual_revenue: Optional[float] = None
     has_revenue_data: bool = False
     

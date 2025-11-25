@@ -272,6 +272,6 @@ export interface ClientGroupFees {
   clientGroupName: string;
   fixedFeeDirect: number;
   fixedFeeFacilitated: number;
-  percentageFee: number;
+  percentageFeeFacilitated: number;
   totalRevenue: number;
 }

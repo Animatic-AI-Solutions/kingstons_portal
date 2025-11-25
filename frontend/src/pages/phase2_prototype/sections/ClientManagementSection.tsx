@@ -54,7 +54,7 @@ const ClientManagementSection: React.FC<ClientManagementSectionProps> = ({
   // Calculate totals for the fees table
   const totalFixedFeeDirect = clientGroupFees.reduce((sum, fee) => sum + fee.fixedFeeDirect, 0);
   const totalFixedFeeFacilitated = clientGroupFees.reduce((sum, fee) => sum + fee.fixedFeeFacilitated, 0);
-  const totalPercentageFee = clientGroupFees.reduce((sum, fee) => sum + fee.percentageFee, 0);
+  const totalPercentageFeeFacilitated = clientGroupFees.reduce((sum, fee) => sum + fee.percentageFeeFacilitated, 0);
   const totalRevenue = clientGroupFees.reduce((sum, fee) => sum + fee.totalRevenue, 0);
 
   return (
@@ -227,7 +227,7 @@ const ClientManagementSection: React.FC<ClientManagementSectionProps> = ({
                 <td className="px-2 py-1 text-sm font-medium text-gray-900">{fee.clientGroupName}</td>
                 <td className="px-2 py-1 text-sm text-gray-900 text-right">{formatMoney(fee.fixedFeeDirect)}</td>
                 <td className="px-2 py-1 text-sm text-gray-900 text-right">{formatMoney(fee.fixedFeeFacilitated)}</td>
-                <td className="px-2 py-1 text-sm text-gray-900 text-right">{formatMoney(fee.percentageFee)}</td>
+                <td className="px-2 py-1 text-sm text-gray-900 text-right">{formatMoney(fee.percentageFeeFacilitated)}</td>
                 <td className="px-2 py-1 text-sm font-semibold text-gray-900 text-right">{formatMoney(fee.totalRevenue)}</td>
               </tr>
             ))}
@@ -236,7 +236,7 @@ const ClientManagementSection: React.FC<ClientManagementSectionProps> = ({
               <td className="px-2 py-1 text-sm text-gray-900">Total</td>
               <td className="px-2 py-1 text-sm text-gray-900 text-right">{formatMoney(totalFixedFeeDirect)}</td>
               <td className="px-2 py-1 text-sm text-gray-900 text-right">{formatMoney(totalFixedFeeFacilitated)}</td>
-              <td className="px-2 py-1 text-sm text-gray-900 text-right">{formatMoney(totalPercentageFee)}</td>
+              <td className="px-2 py-1 text-sm text-gray-900 text-right">{formatMoney(totalPercentageFeeFacilitated)}</td>
               <td className="px-2 py-1 text-sm text-gray-900 text-right">{formatMoney(totalRevenue)}</td>
             </tr>
           </tbody>

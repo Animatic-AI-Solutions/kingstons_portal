@@ -61,7 +61,7 @@ interface ProductItem {
   plan_number?: string; // Add plan number field
   product_owner_ids: number[]; // Changed from product_owner_id to product_owner_ids array
   fixed_fee_facilitated?: number; // Fixed annual cost for revenue calculation (required, user must enter value)
-  percentage_fee?: number; // Percentage fee for revenue calculation (required, user must enter value)
+  percentage_fee_facilitated?: number; // Percentage fee for revenue calculation (required, user must enter value)
   portfolio: {
     id?: number; // Portfolio ID when created or selected
     name: string;
@@ -648,7 +648,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       start_date: dayjs(), // Default to current date
       plan_number: '', // Initialize as empty string
       product_owner_ids: [],
-      // fixed_fee_facilitated and percentage_fee left undefined - user must enter values
+      // fixed_fee_facilitated and percentage_fee_facilitated left undefined - user must enter values
       portfolio: {
         name: '', // Will be generated when product details are filled
         selectedFunds: initialSelectedFunds,
@@ -1299,14 +1299,14 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         hasErrors = true;
       }
 
-      if (product.percentage_fee === undefined || product.percentage_fee === null) {
-        productErrors.percentage_fee = 'Please enter a percentage fee (enter 0 if no percentage fee)';
+      if (product.percentage_fee_facilitated === undefined || product.percentage_fee_facilitated === null) {
+        productErrors.percentage_fee_facilitated = 'Please enter a percentage fee (enter 0 if no percentage fee)';
         hasErrors = true;
-      } else if (product.percentage_fee < 0) {
-        productErrors.percentage_fee = 'Percentage fee cannot be negative';
+      } else if (product.percentage_fee_facilitated < 0) {
+        productErrors.percentage_fee_facilitated = 'Percentage fee cannot be negative';
         hasErrors = true;
-      } else if (product.percentage_fee > 100) {
-        productErrors.percentage_fee = 'Percentage fee cannot exceed 100%';
+      } else if (product.percentage_fee_facilitated > 100) {
+        productErrors.percentage_fee_facilitated = 'Percentage fee cannot exceed 100%';
         hasErrors = true;
       }
 
@@ -1596,7 +1596,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               target_risk: targetRisk,
               template_generation_id: product.portfolio.type === 'template' ? product.portfolio.generationId : null,
               fixed_fee_facilitated: product.fixed_fee_facilitated ?? null,
-              percentage_fee: product.percentage_fee ?? null
+              percentage_fee_facilitated: product.percentage_fee_facilitated ?? null
             });
             
             const createdProductId = clientProductResponse.data.id;
@@ -2570,9 +2570,9 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                         <NumberInput
                                           label="Percentage Fee (%) *"
                                           placeholder="Enter percentage (0 for no percentage fee)"
-                                          value={product.percentage_fee}
+                                          value={product.percentage_fee_facilitated}
                                           onChange={(numericValue: number | null) => {
-                                            handleProductChange(product.id, 'percentage_fee', numericValue);
+                                            handleProductChange(product.id, 'percentage_fee_facilitated', numericValue);
                                           }}
                                           size="sm"
                                           fullWidth
@@ -2580,7 +2580,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                                           max={100}
                                           step={0.1}
                                           required
-                                          error={validationErrors[product.id]?.percentage_fee}
+                                          error={validationErrors[product.id]?.percentage_fee_facilitated}
                                           leftIcon={
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />

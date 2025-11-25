@@ -2020,7 +2020,7 @@ export const clientGroupFees: ClientGroupFees[] = [
     clientGroupName: 'Mitchell Family',
     fixedFeeDirect: 15600,
     fixedFeeFacilitated: 0,
-    percentageFee: 17575, // 0.95% of £1,850,000
+    percentageFeeFacilitated: 17575, // 0.95% of £1,850,000
     totalRevenue: 33175
   },
   {
@@ -2028,7 +2028,7 @@ export const clientGroupFees: ClientGroupFees[] = [
     clientGroupName: 'Mitchell Family Trust',
     fixedFeeDirect: 0,
     fixedFeeFacilitated: 2400,
-    percentageFee: 0,
+    percentageFeeFacilitated: 0,
     totalRevenue: 2400
   },
   {
@@ -2036,7 +2036,7 @@ export const clientGroupFees: ClientGroupFees[] = [
     clientGroupName: 'Education Trust Fund',
     fixedFeeDirect: 0,
     fixedFeeFacilitated: 1200,
-    percentageFee: 0,
+    percentageFeeFacilitated: 0,
     totalRevenue: 1200
   },
   {
@@ -2044,7 +2044,7 @@ export const clientGroupFees: ClientGroupFees[] = [
     clientGroupName: 'Life Insurance Trust',
     fixedFeeDirect: 0,
     fixedFeeFacilitated: 800,
-    percentageFee: 0,
+    percentageFeeFacilitated: 0,
     totalRevenue: 800
   },
   {
@@ -2052,7 +2052,7 @@ export const clientGroupFees: ClientGroupFees[] = [
     clientGroupName: 'Mitchell Consulting Ltd',
     fixedFeeDirect: 5000,
     fixedFeeFacilitated: 0,
-    percentageFee: 0,
+    percentageFeeFacilitated: 0,
     totalRevenue: 5000
   }
 ];

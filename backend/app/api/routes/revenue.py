@@ -96,7 +96,7 @@ async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
             
             # Get all products for this client group (active and inactive for complete analytics)
             products = await db.fetch(
-                "SELECT id, fixed_fee_facilitated, percentage_fee, portfolio_id FROM client_products WHERE client_id = $1",
+                "SELECT id, fixed_fee_facilitated, percentage_fee_facilitated, portfolio_id FROM client_products WHERE client_id = $1",
                 client_id
             )
             
@@ -126,7 +126,7 @@ async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
                 product_id = product["id"]
                 portfolio_id = product["portfolio_id"]
                 fixed_fee_facilitated = float(product["fixed_fee_facilitated"] or 0)
-                percentage_fee = float(product["percentage_fee"] or 0)
+                percentage_fee_facilitated = float(product["percentage_fee_facilitated"] or 0)
                 
                 if portfolio_id:
                     # Get portfolio funds for this product
@@ -169,8 +169,8 @@ async def get_client_groups_revenue_breakdown(db = Depends(get_db)):
                     total_client_fum += product_fum
                     
                     # Calculate revenue only for products with complete valuations
-                    if fixed_fee_facilitated > 0 or percentage_fee > 0:
-                        revenue = (fixed_fee_facilitated) + (product_fum * percentage_fee / 100)
+                    if fixed_fee_facilitated > 0 or percentage_fee_facilitated > 0:
+                        revenue = (fixed_fee_facilitated) + (product_fum * percentage_fee_facilitated / 100)
                         total_client_revenue += revenue
                         products_with_revenue += 1
             
@@ -230,7 +230,7 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
         # Get a hash of all revenue-relevant data to check if recalculation is needed
         # Get all client products with revenue configuration (active and inactive for complete analytics)
         products_for_hash = await db.fetch(
-            "SELECT id, client_id, fixed_fee_facilitated, percentage_fee, portfolio_id, status FROM client_products"
+            "SELECT id, client_id, fixed_fee_facilitated, percentage_fee_facilitated, portfolio_id, status FROM client_products"
         )
         
         # Get all latest valuations
@@ -275,7 +275,7 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
             
             # Get all products for this client group (active and inactive for complete analytics)
             products = await db.fetch(
-                "SELECT id, fixed_fee_facilitated, percentage_fee, portfolio_id FROM client_products WHERE client_id = $1",
+                "SELECT id, fixed_fee_facilitated, percentage_fee_facilitated, portfolio_id FROM client_products WHERE client_id = $1",
                 client_id
             )
             
@@ -288,17 +288,17 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
             
             for product in products:
                 fixed_fee_facilitated_value = product["fixed_fee_facilitated"]
-                percentage_fee = product["percentage_fee"]
+                percentage_fee_facilitated = product["percentage_fee_facilitated"]
                 
                 # Check if product has any fee setup (including zero fees)
-                if fixed_fee_facilitated_value is not None or percentage_fee is not None:
+                if fixed_fee_facilitated_value is not None or percentage_fee_facilitated is not None:
                     products_with_fee_setup.append(product)
                     
                     # Also track products with positive fees
                     fixed_fee_facilitated_val = float(fixed_fee_facilitated_value) if fixed_fee_facilitated_value is not None else 0
-                    percentage_fee_val = float(percentage_fee) if percentage_fee is not None else 0
+                    percentage_fee_facilitated_val = float(percentage_fee_facilitated) if percentage_fee_facilitated is not None else 0
                     
-                    if fixed_fee_facilitated_val > 0 or percentage_fee_val > 0:
+                    if fixed_fee_facilitated_val > 0 or percentage_fee_facilitated_val > 0:
                         products_with_positive_fees.append(product)
             
             # Skip if no fee setup at all
@@ -313,7 +313,7 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
             for product in products_with_fee_setup:
                 portfolio_id = product["portfolio_id"]
                 fixed_fee_facilitated_val = float(product["fixed_fee_facilitated"] or 0)
-                percentage_fee_val = float(product["percentage_fee"] or 0)
+                percentage_fee_facilitated_val = float(product["percentage_fee_facilitated"] or 0)
                 
                 if portfolio_id:
                     # Get portfolio funds for this product
@@ -336,7 +336,7 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
                         total_valuations = sum(float(v["valuation"]) for v in valuations) if valuations else 0
                         
                         # If this product has positive fees, it must have complete valuations to be "complete"
-                        if fixed_fee_facilitated_val > 0 or percentage_fee_val > 0:
+                        if fixed_fee_facilitated_val > 0 or percentage_fee_facilitated_val > 0:
                             if funds_with_valuations != len(fund_ids):
                                 client_complete = False
                                 continue  # Skip this product for revenue calculation
@@ -346,16 +346,16 @@ async def get_revenue_rate_analytics(db = Depends(get_db)):
                             client_fum += total_valuations
                             
                             # Calculate revenue (only for positive fee products)
-                            if fixed_fee_facilitated_val > 0 or percentage_fee_val > 0:
-                                product_revenue = fixed_fee_facilitated_val + (total_valuations * percentage_fee_val / 100)
+                            if fixed_fee_facilitated_val > 0 or percentage_fee_facilitated_val > 0:
+                                product_revenue = fixed_fee_facilitated_val + (total_valuations * percentage_fee_facilitated_val / 100)
                                 client_revenue += product_revenue
                     else:
                         # Product has no funds - if it has positive fees, mark as incomplete
-                        if fixed_fee_facilitated_val > 0 or percentage_fee_val > 0:
+                        if fixed_fee_facilitated_val > 0 or percentage_fee_facilitated_val > 0:
                             client_complete = False
                 else:
                     # Product has no portfolio - if it has positive fees, mark as incomplete
-                    if fixed_fee_facilitated_val > 0 or percentage_fee_val > 0:
+                    if fixed_fee_facilitated_val > 0 or percentage_fee_facilitated_val > 0:
                         client_complete = False
             
             # Only include complete clients in totals
@@ -462,10 +462,10 @@ async def get_revenue_breakdown_optimized(db = Depends(get_db)):
                     
                     # Calculate revenue
                     fixed_fee_facilitated = float(row["fixed_fee_facilitated"] or 0)
-                    percentage_fee = float(row["percentage_fee"] or 0)
+                    percentage_fee_facilitated = float(row["percentage_fee_facilitated"] or 0)
                     
-                    if fixed_fee_facilitated > 0 or percentage_fee > 0:
-                        revenue = fixed_fee_facilitated + (product_fum * percentage_fee / 100)
+                    if fixed_fee_facilitated > 0 or percentage_fee_facilitated > 0:
+                        revenue = fixed_fee_facilitated + (product_fum * percentage_fee_facilitated / 100)
                         client["total_revenue"] += revenue
                         client["products_with_revenue"] += 1
                 else:

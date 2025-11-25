@@ -88,7 +88,7 @@ interface ClientAccount {
   };
   product_owners?: ProductOwner[];
   fixed_fee_facilitated?: number;
-  percentage_fee?: number;
+  percentage_fee_facilitated?: number;
 }
 
 // Add ProductOwner interface
@@ -766,10 +766,10 @@ const ProductCard: React.FC<{
   };
 
   // Calculate estimated annual revenue with proper validation logic
-  const calculateRevenue = (fixedFeeFacilitated?: number, percentageFee?: number, portfolioValue?: number): string | number => {
+  const calculateRevenue = (fixedFeeFacilitated?: number, percentageFeeFacilitated?: number, portfolioValue?: number): string | number => {
     // Ensure all values are properly converted to numbers (not strings)
     const fixed = Number(fixedFeeFacilitated) || 0;
-    const percentage = Number(percentageFee) || 0;
+    const percentage = Number(percentageFeeFacilitated) || 0;
     const value = Number(portfolioValue) || 0;
     
     // Revenue calculation with proper number conversion
@@ -791,8 +791,8 @@ const ProductCard: React.FC<{
         return 'Latest valuation needed';
       }
       // If valuation exists (including zero), calculate properly
-      const percentageFeeAmount = Number((value * percentage) / 100);
-      const totalRevenue = Number(fixed + percentageFeeAmount);
+      const percentageFeeFacilitatedAmount = Number((value * percentage) / 100);
+      const totalRevenue = Number(fixed + percentageFeeFacilitatedAmount);
       return totalRevenue;
     }
     
@@ -910,7 +910,7 @@ const ProductCard: React.FC<{
               </div>
               <div className="text-sm font-semibold mt-1">
                 {(() => {
-                  const revenue = calculateRevenue(account.fixed_fee_facilitated, account.percentage_fee, displayValue);
+                  const revenue = calculateRevenue(account.fixed_fee_facilitated, account.percentage_fee_facilitated, displayValue);
                   if (typeof revenue === 'number') {
                     return <span className="text-green-600">{formatCurrency(revenue)}</span>;
                   } else if (revenue === 'Latest valuation needed') {
@@ -1195,30 +1195,30 @@ const ClientDetails: React.FC = () => {
   const totalRevenue = clientAccounts.reduce((sum: number, product: any) => {
     // Ensure all values are properly converted to numbers (prevent NaN)
     const fixedFeeFacilitated = Number(product.fixed_fee_facilitated) || 0;
-    const percentageFee = Number(product.percentage_fee) || 0;
+    const percentageFeeFacilitated = Number(product.percentage_fee_facilitated) || 0;
     const portfolioValue = Number(product.total_value) || 0;
     
     // Calculate revenue for this product
     
     // If neither cost type is set, add 0 to sum
-    if (!fixedFeeFacilitated && !percentageFee) {
+    if (!fixedFeeFacilitated && !percentageFeeFacilitated) {
       return sum;
     }
     
     // If only fixed cost is set (no percentage fee)
-    if (fixedFeeFacilitated && !percentageFee) {
+    if (fixedFeeFacilitated && !percentageFeeFacilitated) {
       return sum + fixedFeeFacilitated;
     }
     
     // If percentage fee is involved (with or without fixed cost)
-    if (percentageFee > 0 && portfolioValue > 0) {
-      const percentageFeeAmount = Number((portfolioValue * percentageFee) / 100);
-      const productRevenue = Number(fixedFeeFacilitated + percentageFeeAmount);
+    if (percentageFeeFacilitated > 0 && portfolioValue > 0) {
+      const percentageFeeFacilitatedAmount = Number((portfolioValue * percentageFeeFacilitated) / 100);
+      const productRevenue = Number(fixedFeeFacilitated + percentageFeeFacilitatedAmount);
       return sum + productRevenue;
     }
     
     // If percentage fee but no valuation, just add fixed cost if any
-    if (percentageFee > 0 && (!portfolioValue || portfolioValue <= 0)) {
+    if (percentageFeeFacilitated > 0 && (!portfolioValue || portfolioValue <= 0)) {
       return sum + fixedFeeFacilitated;
     }
     
@@ -1268,7 +1268,7 @@ const ClientDetails: React.FC = () => {
   const [versions, setVersions] = useState<any[]>([]);
   const [showVersionModal, setShowVersionModal] = useState(false);
   const [showRevenueModal, setShowRevenueModal] = useState(false);
-  const [revenueFormData, setRevenueFormData] = useState<Record<number, { fixed_fee_facilitated: string; percentage_fee: string }>>({});
+  const [revenueFormData, setRevenueFormData] = useState<Record<number, { fixed_fee_facilitated: string; percentage_fee_facilitated: string }>>({});
   const [formData, setFormData] = useState<ClientFormData>({
     name: null,
     status: 'active',
@@ -1539,7 +1539,7 @@ const ClientDetails: React.FC = () => {
 
 
   // Handle revenue assignment save
-  const handleRevenueAssignmentSave = async (updates: Record<number, { fixed_fee_facilitated: number | null; percentage_fee: number | null }>) => {
+  const handleRevenueAssignmentSave = async (updates: Record<number, { fixed_fee_facilitated: number | null; percentage_fee_facilitated: number | null }>) => {
     try {
       // Call API to update products with revenue data
       for (const [productId, data] of Object.entries(updates)) {
@@ -1835,19 +1835,19 @@ const RevenueAssignmentModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   clientAccounts: ClientAccount[];
-  onSave: (updates: Record<number, { fixed_fee_facilitated: number | null; percentage_fee: number | null }>) => void;
+  onSave: (updates: Record<number, { fixed_fee_facilitated: number | null; percentage_fee_facilitated: number | null }>) => void;
 }> = ({ isOpen, onClose, clientAccounts, onSave }) => {
-  const [formData, setFormData] = useState<Record<number, { fixed_fee_facilitated: string; percentage_fee: string }>>({});
+  const [formData, setFormData] = useState<Record<number, { fixed_fee_facilitated: string; percentage_fee_facilitated: string }>>({});
   const [isSaving, setIsSaving] = useState(false);
 
   // Initialize form data when modal opens
   useEffect(() => {
     if (isOpen) {
-      const initialData: Record<number, { fixed_fee_facilitated: string; percentage_fee: string }> = {};
+      const initialData: Record<number, { fixed_fee_facilitated: string; percentage_fee_facilitated: string }> = {};
       clientAccounts.forEach(account => {
         initialData[account.id] = {
           fixed_fee_facilitated: account.fixed_fee_facilitated?.toString() || '',
-          percentage_fee: account.percentage_fee?.toString() || ''
+          percentage_fee_facilitated: account.percentage_fee_facilitated?.toString() || ''
         };
       });
       setFormData(initialData);
@@ -1863,7 +1863,7 @@ const RevenueAssignmentModal: React.FC<{
     }).format(amount);
   };
 
-  const handleInputChange = (productId: number, field: 'fixed_fee_facilitated' | 'percentage_fee', value: number | null) => {
+  const handleInputChange = (productId: number, field: 'fixed_fee_facilitated' | 'percentage_fee_facilitated', value: number | null) => {
     setFormData(prev => ({
       ...prev,
       [productId]: {
@@ -1873,16 +1873,16 @@ const RevenueAssignmentModal: React.FC<{
     }));
   };
 
-  const calculatePercentageRevenue = (percentageFee: string, totalValue: number): string | number => {
-    const fee = parseFloat(percentageFee);
+  const calculatePercentageRevenue = (percentageFeeFacilitated: string, totalValue: number): string | number => {
+    const fee = parseFloat(percentageFeeFacilitated);
     if (!fee || fee <= 0) return 0;
     if (totalValue === null || totalValue === undefined) return 'Latest valuation needed';
     return (totalValue * fee) / 100;
   };
 
-  const calculateTotalRevenue = (fixedFeeFacilitated: string, percentageFee: string, totalValue: number): string | number => {
+  const calculateTotalRevenue = (fixedFeeFacilitated: string, percentageFeeFacilitated: string, totalValue: number): string | number => {
     const fixed = parseFloat(fixedFeeFacilitated) || 0;
-    const percentage = parseFloat(percentageFee) || 0;
+    const percentage = parseFloat(percentageFeeFacilitated) || 0;
     
     // If neither cost type is set
     if (!fixed && !percentage) {
@@ -1910,28 +1910,28 @@ const RevenueAssignmentModal: React.FC<{
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const updates: Record<number, { fixed_fee_facilitated: number | null; percentage_fee: number | null }> = {};
+      const updates: Record<number, { fixed_fee_facilitated: number | null; percentage_fee_facilitated: number | null }> = {};
       
       Object.entries(formData).forEach(([productId, data]) => {
         const id = parseInt(productId);
         
         // Parse values, treating empty strings as null
         let fixedFeeFacilitated: number | null = null;
-        let percentageFee: number | null = null;
+        let percentageFeeFacilitated: number | null = null;
         
         if (data.fixed_fee_facilitated && data.fixed_fee_facilitated.trim() !== '') {
           const parsed = parseFloat(data.fixed_fee_facilitated);
           fixedFeeFacilitated = isNaN(parsed) ? null : parsed;
         }
         
-        if (data.percentage_fee && data.percentage_fee.trim() !== '') {
-          const parsed = parseFloat(data.percentage_fee);
-          percentageFee = isNaN(parsed) ? null : parsed;
+        if (data.percentage_fee_facilitated && data.percentage_fee_facilitated.trim() !== '') {
+          const parsed = parseFloat(data.percentage_fee_facilitated);
+          percentageFeeFacilitated = isNaN(parsed) ? null : parsed;
         }
         
         updates[id] = {
           fixed_fee_facilitated: fixedFeeFacilitated,
-          percentage_fee: percentageFee
+          percentage_fee_facilitated: percentageFeeFacilitated
         };
         
         console.log(`Form data for product ${id}:`, {
@@ -1957,18 +1957,18 @@ const RevenueAssignmentModal: React.FC<{
     if (!productData) return acc;
     
     const fixedFeeFacilitated = parseFloat(productData.fixed_fee_facilitated) || 0;
-    const percentageFee = parseFloat(productData.percentage_fee) || 0;
+    const percentageFeeFacilitated = parseFloat(productData.percentage_fee_facilitated) || 0;
     const totalValue = account.total_value || 0;
     
     acc.fixedFeeFacilitated += fixedFeeFacilitated;
     acc.totalValue += totalValue;
     
-    const percentageRevenue = calculatePercentageRevenue(productData.percentage_fee, totalValue);
+    const percentageRevenue = calculatePercentageRevenue(productData.percentage_fee_facilitated, totalValue);
     if (typeof percentageRevenue === 'number') {
       acc.percentageRevenue += percentageRevenue;
     }
     
-    const totalRevenue = calculateTotalRevenue(productData.fixed_fee_facilitated, productData.percentage_fee, totalValue);
+    const totalRevenue = calculateTotalRevenue(productData.fixed_fee_facilitated, productData.percentage_fee_facilitated, totalValue);
     if (typeof totalRevenue === 'number') {
       acc.totalRevenue += totalRevenue;
     }
@@ -2063,10 +2063,10 @@ const RevenueAssignmentModal: React.FC<{
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {clientAccounts.map((account) => {
-                const productData = formData[account.id] || { fixed_fee_facilitated: '', percentage_fee: '' };
+                const productData = formData[account.id] || { fixed_fee_facilitated: '', percentage_fee_facilitated: '' };
                 const totalValue = account.total_value || 0;
-                const percentageRevenue = calculatePercentageRevenue(productData.percentage_fee, totalValue);
-                const totalRevenue = calculateTotalRevenue(productData.fixed_fee_facilitated, productData.percentage_fee, totalValue);
+                const percentageRevenue = calculatePercentageRevenue(productData.percentage_fee_facilitated, totalValue);
+                const totalRevenue = calculateTotalRevenue(productData.fixed_fee_facilitated, productData.percentage_fee_facilitated, totalValue);
                 
                                  return (
                    <tr key={account.id} className="hover:bg-gray-50">
@@ -2096,8 +2096,8 @@ const RevenueAssignmentModal: React.FC<{
                      </td>
                      <td className="px-4 py-2 whitespace-nowrap text-right">
                        <NumberInput
-                         value={productData.percentage_fee}
-                         onChange={(value) => handleInputChange(account.id, 'percentage_fee', value)}
+                         value={productData.percentage_fee_facilitated}
+                         onChange={(value) => handleInputChange(account.id, 'percentage_fee_facilitated', value)}
                          placeholder="0.00"
                          min={0}
                          decimalPlaces={2}

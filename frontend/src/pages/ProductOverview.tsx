@@ -60,7 +60,7 @@ interface Account {
     start_date: string;
   };
   fixed_fee_facilitated?: number;
-  percentage_fee?: number;
+  percentage_fee_facilitated?: number;
 }
 
 interface Holding {
@@ -344,7 +344,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     target_risk: '',
     start_date: null as Dayjs | null,
     fixed_fee_facilitated: '' as string,
-    percentage_fee: '' as string,
+    percentage_fee_facilitated: '' as string,
     template_generation_id: '' as string
   });
   const [editOwnersFormData, setEditOwnersFormData] = useState({
@@ -1780,7 +1780,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         target_risk: account.target_risk?.toString() || '',
         start_date: account.start_date ? dayjs(account.start_date) : null,
         fixed_fee_facilitated: account.fixed_fee_facilitated?.toString() ?? '',
-        percentage_fee: account.percentage_fee?.toString() ?? '',
+        percentage_fee_facilitated: account.percentage_fee_facilitated?.toString() ?? '',
         template_generation_id: account.template_generation_id?.toString() || ''
       });
       
@@ -1904,8 +1904,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       }
 
       // Validate percentage fee is not over 100%
-      if (editFormData.percentage_fee && editFormData.percentage_fee.trim() !== '') {
-        const percentageValue = parseFloat(editFormData.percentage_fee);
+      if (editFormData.percentage_fee_facilitated && editFormData.percentage_fee_facilitated.trim() !== '') {
+        const percentageValue = parseFloat(editFormData.percentage_fee_facilitated);
         if (percentageValue > 100) {
           setFormError('Percentage fee cannot exceed 100%');
           setIsSubmitting(false);
@@ -1939,8 +1939,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         ? parseFloat(editFormData.fixed_fee_facilitated) 
         : null;
       
-      updateData.percentage_fee = editFormData.percentage_fee && editFormData.percentage_fee.trim() !== '' 
-        ? parseFloat(editFormData.percentage_fee) 
+      updateData.percentage_fee_facilitated = editFormData.percentage_fee_facilitated && editFormData.percentage_fee_facilitated.trim() !== '' 
+        ? parseFloat(editFormData.percentage_fee_facilitated) 
         : null;
 
       await api.patch(`/api/client_products/${accountId}`, updateData);
@@ -2413,8 +2413,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                             <div className="relative">
                               <input
                                 type="number"
-                                name="percentage_fee"
-                                value={editFormData.percentage_fee}
+                                name="percentage_fee_facilitated"
+                                value={editFormData.percentage_fee_facilitated}
                                 onChange={handleInputChange}
                                 placeholder="0.0"
                                 min="0"
@@ -2427,9 +2427,9 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                               </div>
                             </div>
                             {/* Show calculated percentage fee amount in edit mode */}
-                            {editFormData.percentage_fee && parseFloat(editFormData.percentage_fee) > 0 && portfolioTotalValue > 0 && (
+                            {editFormData.percentage_fee_facilitated && parseFloat(editFormData.percentage_fee_facilitated) > 0 && portfolioTotalValue > 0 && (
                               <div className="text-xs text-blue-600 font-medium">
-                                = {formatCurrency((portfolioTotalValue * parseFloat(editFormData.percentage_fee)) / 100)} annually
+                                = {formatCurrency((portfolioTotalValue * parseFloat(editFormData.percentage_fee_facilitated)) / 100)} annually
                               </div>
                             )}
                           </div>
@@ -2437,12 +2437,12 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                           <>
                             <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Percentage Fee (%)</div>
                             <div className="text-sm font-medium text-gray-900">
-                              {account.percentage_fee !== null && account.percentage_fee !== undefined ? `${account.percentage_fee}%` : 'Not set'}
+                              {account.percentage_fee_facilitated !== null && account.percentage_fee_facilitated !== undefined ? `${account.percentage_fee_facilitated}%` : 'Not set'}
                             </div>
                             {/* Show calculated percentage fee amount in view mode */}
-                            {account.percentage_fee && account.percentage_fee > 0 && portfolioTotalValue > 0 && (
+                            {account.percentage_fee_facilitated && account.percentage_fee_facilitated > 0 && portfolioTotalValue > 0 && (
                               <div className="text-xs text-blue-600 font-medium mt-1">
-                                = {formatCurrency((portfolioTotalValue * account.percentage_fee) / 100)} annually
+                                = {formatCurrency((portfolioTotalValue * account.percentage_fee_facilitated) / 100)} annually
                               </div>
                             )}
                           </>
@@ -2462,8 +2462,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
                               return isNaN(num) ? 0 : num;
                             })();
                             
-                            const percentageFee = (() => {
-                              const value = account.percentage_fee;
+                            const percentageFeeFacilitated = (() => {
+                              const value = account.percentage_fee_facilitated;
                               if (value === null || value === undefined) return 0;
                               const num = parseFloat(String(value));
                               return isNaN(num) ? 0 : num;
@@ -2479,24 +2479,24 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
 
                             
                             // If neither cost type is set
-                            if (!fixedFeeFacilitated && !percentageFee) {
+                            if (!fixedFeeFacilitated && !percentageFeeFacilitated) {
                               return <span className="text-gray-500">None</span>;
                             }
                             
                             // If only fixed cost is set (no percentage fee)
-                            if (fixedFeeFacilitated && !percentageFee) {
+                            if (fixedFeeFacilitated && !percentageFeeFacilitated) {
                               return <span className="text-green-600">{formatCurrency(fixedFeeFacilitated)}</span>;
                             }
                             
                             // If percentage fee is involved (with or without fixed cost)
-                            if (percentageFee > 0) {
+                            if (percentageFeeFacilitated > 0) {
                               // Only show "valuation needed" if portfolioTotalValue is null/undefined (no valuation data)
                               // If valuation is explicitly 0, calculate normally (result will be fixedFeeFacilitated + 0)
                               if (portfolioTotalValue === null || portfolioTotalValue === undefined) {
                                 return <span className="text-orange-600">Latest valuation needed</span>;
                               }
                               // If valuation exists, calculate properly with NaN protection
-                              const calculatedFee = (portfolioValue * percentageFee) / 100;
+                              const calculatedFee = (portfolioValue * percentageFeeFacilitated) / 100;
                               const totalRevenue = fixedFeeFacilitated + calculatedFee;
                               
 
