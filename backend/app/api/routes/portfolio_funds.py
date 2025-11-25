@@ -2493,7 +2493,7 @@ async def calculate_multiple_portfolio_funds_irr(
         total_cash_flow = sum(abs(amount) for amount in cash_flows.values())
         if total_cash_flow < 0.01:  # Less than 1 penny total
             logger.info(f"💰 DEBUG: ⚠️  All cash flows are effectively zero (total: £{total_cash_flow:.6f}) for multiple funds {portfolio_fund_ids}, returning 0% IRR")
-            
+
             return {
                 "success": True,
                 "irr_percentage": 0.0,
@@ -2508,19 +2508,117 @@ async def calculate_multiple_portfolio_funds_irr(
                 "days_in_period": 0,
                 "note": "All cash flows are effectively zero - IRR set to 0%"
             }
-        
-        # Convert to sorted lists for IRR calculation
+
+        # ============================================================================
+        # 🔍 DEBUG LOGGING: Show all transactions and monthly totals for IRR investigation
+        # ============================================================================
+        logger.error(f"")
+        logger.error(f"{'='*80}")
+        logger.error(f"🔍 IRR CALCULATION DEBUG - Portfolio Funds: {portfolio_fund_ids}")
+        logger.error(f"🔍 Calculation Date: {irr_date_obj}")
+        logger.error(f"{'='*80}")
+
+        # Show all individual transactions
+        logger.error(f"")
+        logger.error(f"📋 ALL TRANSACTIONS INCLUDED IN CALCULATION:")
+        logger.error(f"   Total Activities: {len(activities)}")
+        logger.error(f"")
+
+        # Group activities by fund for better visibility
+        activities_by_fund = {}
+        for activity in activities:
+            fund_id = activity["portfolio_fund_id"]
+            if fund_id not in activities_by_fund:
+                activities_by_fund[fund_id] = []
+            activities_by_fund[fund_id].append(activity)
+
+        # Log each fund's transactions
+        for fund_id in sorted(activities_by_fund.keys()):
+            fund_activities = activities_by_fund[fund_id]
+            logger.error(f"   📁 Fund ID {fund_id}: {len(fund_activities)} transactions")
+
+            for i, activity in enumerate(fund_activities, 1):
+                activity_timestamp = activity["activity_timestamp"]
+                if isinstance(activity_timestamp, str):
+                    activity_date = datetime.fromisoformat(activity_timestamp.replace('Z', '+00:00')).date()
+                else:
+                    activity_date = activity_timestamp.date() if hasattr(activity_timestamp, 'date') else activity_timestamp
+
+                amount = float(activity["amount"])
+                activity_type = activity["activity_type"]
+
+                # Show sign used in IRR calculation
+                sign = ""
+                if any(keyword in activity_type.lower() for keyword in ["investment"]):
+                    sign = "NEGATIVE (investment)"
+                elif activity_type.lower() in ["taxuplift", "productswitchin", "fundswitchin"]:
+                    sign = "NEGATIVE (inflow)"
+                elif any(keyword in activity_type.lower() for keyword in ["withdrawal"]):
+                    sign = "POSITIVE (withdrawal)"
+                elif activity_type.lower() in ["productswitchout", "fundswitchout"]:
+                    sign = "POSITIVE (outflow)"
+                elif any(keyword in activity_type.lower() for keyword in ["fee", "charge", "expense"]):
+                    sign = "POSITIVE (fee)"
+                elif any(keyword in activity_type.lower() for keyword in ["dividend", "interest", "capital gain"]):
+                    sign = "NEGATIVE (reinvestment)"
+                else:
+                    sign = "NEUTRAL"
+
+                logger.error(f"      {i:3d}. {activity_date} | £{amount:>12,.2f} | {activity_type:20s} | {sign}")
+
+        logger.error(f"")
+        logger.error(f"{'='*80}")
+        logger.error(f"💰 MONTHLY CASH FLOW TOTALS:")
+        logger.error(f"{'='*80}")
+
+        # Show monthly totals in chronological order
         sorted_months = sorted(cash_flows.keys())
+        for i, month in enumerate(sorted_months, 1):
+            amount = cash_flows[month]
+            flow_type = "INFLOW (positive)" if amount > 0 else "OUTFLOW (negative)" if amount < 0 else "ZERO"
+
+            # Determine if this is the final valuation month
+            is_final = (i == len(sorted_months))
+            month_label = f"{month.strftime('%Y-%m-%d')} {'(FINAL VALUATION)' if is_final else '(activities)'}"
+
+            logger.error(f"   {i:3d}. {month_label:40s} | £{amount:>15,.2f} | {flow_type}")
+
+        logger.error(f"")
+        logger.error(f"{'='*80}")
+        logger.error(f"📊 SUMMARY STATISTICS:")
+        logger.error(f"{'='*80}")
+        logger.error(f"   Total Cash Flow Periods: {len(cash_flows)}")
+        logger.error(f"   Total Valuation: £{total_valuation:,.2f}")
+        logger.error(f"   Fund Valuations: {fund_valuations}")
+        logger.error(f"   Period: {sorted_months[0] if sorted_months else 'N/A'} to {sorted_months[-1] if sorted_months else 'N/A'}")
+        logger.error(f"{'='*80}")
+        logger.error(f"")
+
+        # Convert to sorted lists for IRR calculation
         amounts = [cash_flows[month] for month in sorted_months]
         dates = [month.strftime("%Y-%m-%dT00:00:00") for month in sorted_months]
-        
+
         # Calculate IRR using Excel-style method
         irr_result = calculate_excel_style_irr(dates, amounts)
-        
+
         # Extract the IRR value from the result dictionary
         irr_decimal = irr_result.get('period_irr', 0)
         days_in_period = irr_result.get('days_in_period', 0)
-        
+
+        # ============================================================================
+        # 🔍 DEBUG LOGGING: Show final IRR calculation result
+        # ============================================================================
+        logger.error(f"")
+        logger.error(f"{'='*80}")
+        logger.error(f"✅ FINAL IRR CALCULATION RESULT:")
+        logger.error(f"{'='*80}")
+        logger.error(f"   IRR (Decimal): {irr_decimal}")
+        logger.error(f"   IRR (Percentage): {round(irr_decimal * 100, 2)}%")
+        logger.error(f"   Days in Period: {days_in_period}")
+        logger.error(f"   Cash Flow Periods: {len(cash_flows)}")
+        logger.error(f"{'='*80}")
+        logger.error(f"")
+
         # 📊 PERFORMANCE: Summary logging only (detailed logging available via DEBUG_IRR_VERBOSE)
         logger.info(f"📊 IRR Calculation Complete: {round(irr_decimal * 100, 1)}% over {days_in_period} days ({len(cash_flows)} cash flow periods)")
         

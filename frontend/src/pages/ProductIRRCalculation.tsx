@@ -1346,20 +1346,29 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
     console.log(`✅ [PORTFOLIO IRR] Starting calculation for portfolio ${account.portfolio_id}`);
 
     try {
-      const activeHoldings = filterActiveHoldings(holdings);
-      console.log(`📋 [PORTFOLIO IRR] Active holdings count: ${activeHoldings.length}`, activeHoldings.map(h => ({
+      // CRITICAL FIX: Fetch current fund list from database instead of using stale frontend state
+      // This ensures newly reactivated/deactivated funds are properly included/excluded
+      console.log(`🔄 [PORTFOLIO IRR] Fetching fresh fund list from database...`);
+      const fundsResponse = await api.get(`/portfolios/${account.portfolio_id}/funds`);
+      const currentFunds = fundsResponse.data;
+
+      // Filter to active funds from the freshly fetched data
+      const activeHoldings = currentFunds.filter((fund: any) =>
+        fund.status === 'active' || fund.status === null
+      );
+
+      console.log(`📋 [PORTFOLIO IRR] Active holdings count (from fresh data): ${activeHoldings.length}`, activeHoldings.map((h: any) => ({
         id: h.id,
         fund_name: h.fund_name,
         isin: h.isin_number,
-        valuation_date: h.valuation_date,
-        market_value: h.market_value
+        status: h.status
       })));
 
       // IMPORTANT: Include ALL active funds (including Cash) in portfolio IRR calculation
       // The backend will naturally handle funds without valuations by skipping them
       // This allows Cash valuations to be included when they exist, while not blocking
       // portfolio IRR calculation when Cash doesn't have a valuation
-      const portfolioFundIds = activeHoldings.map(h => h.id);
+      const portfolioFundIds = activeHoldings.map((h: any) => h.id);
 
       const cashFunds = activeHoldings.filter(h =>
         isCashFund({
@@ -1403,7 +1412,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       });
       return null;
     }
-  }, [api, account?.portfolio_id, holdings]);
+  }, [api, account?.portfolio_id]); // Removed 'holdings' since we fetch fresh data from API
 
 
 

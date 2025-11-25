@@ -1,1 +1,6 @@
-double chekc your sql scripts to make sure you are not missing any columns out or are recreating teh tables incorrectly, we do not need to stop our backend service or do any commit versioning as we are doing this in one go when everyone is not online, we have daily backups alreayd
+We were debugging an issue with the irr caluclations in the product irr caluclation page where irrs were calculating inocrrectly, we introduced some debugging and realised soething is wrong  with deactivating and reactivating funds with how irrs are being caluclated after deactivating and reactivating teh funds
+
+i have done some testing and it seemed that when I reactivate a fund using the
+      reactivate button in the monthly activities table the portfolio IRR is
+      recalculated but the fund being reactivated is not included in the calculation,
+      i have attached the  bakend logs for context 
