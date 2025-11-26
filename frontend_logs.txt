@@ -1,294 +1,209 @@
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (3) [{…}, {…}, {…}]
 ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
 ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (3) [{…}, {…}, {…}]
 ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
 ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:2565 🔄 [ACTIVITIES UPDATED] onActivitiesUpdated callback triggered {affectedFundIds: undefined}
-ProductIRRCalculation.tsx:2576 📊 [ACTIVITIES UPDATED] Triggering portfolio IRR recalculation...
-ProductIRRCalculation.tsx:1334 🚀 [PORTFOLIO IRR] triggerPortfolioIRRRecalculation CALLED
-ProductIRRCalculation.tsx:1346 ✅ [PORTFOLIO IRR] Starting calculation for portfolio 443
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:1350 📋 [PORTFOLIO IRR] Active holdings count: 2 (2) [{…}, {…}]
-ProductIRRCalculation.tsx:1372 📊 [PORTFOLIO IRR] Portfolio IRR Calculation Summary:
-ProductIRRCalculation.tsx:1373    - Total active holdings: 2
-ProductIRRCalculation.tsx:1374    - Cash funds (will be included if they have valuations): 1
-ProductIRRCalculation.tsx:1378    💵 Cash fund Cash (ID: 2142): Has valuation (2025-06-01, £0.00)
-ProductIRRCalculation.tsx:1381    - All funds to include: 2
-ProductIRRCalculation.tsx:1382    - Fund IDs: [2142, 2143]
-ProductIRRCalculation.tsx:1389 🔄 [PORTFOLIO IRR] Calling calculateStandardizedMultipleFundsIRR with 2 funds...
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (3) [{…}, {…}, {…}]
 ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
 ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (3) [{…}, {…}, {…}]
 ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
 ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (3) [{…}, {…}, {…}]
 ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
 ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (3) [{…}, {…}, {…}]
 ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
 ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (3) [{…}, {…}, {…}]
 ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
 ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (3) [{…}, {…}, {…}]
 ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
 ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
-ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
-ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
-ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
-ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
-ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
-ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
-ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
-ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
-ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
-ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
-ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
-ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:1395 ✅ [PORTFOLIO IRR] Calculation successful! {success: true, irr_percentage: 4.8, irr_decimal: 0.04796882300504368, calculation_date: '2025-06-01', portfolio_fund_ids: Array(2), …}
-ProductIRRCalculation.tsx:2578 ✅ [ACTIVITIES UPDATED] Portfolio IRR recalculation complete
-ProductIRRCalculation.tsx:2581 🔄 [ACTIVITIES UPDATED] Refreshing data...
-ProductIRRCalculation.tsx:2583 ✅ [ACTIVITIES UPDATED] Data refresh complete
-ProductIRRCalculation.tsx:2587 🗑️ [CACHE INVALIDATION] ==================== STARTING CACHE INVALIDATION ====================
-ProductIRRCalculation.tsx:2588 🗑️ [CACHE INVALIDATION] Account ID: 430
-ProductIRRCalculation.tsx:2589 🗑️ [CACHE INVALIDATION] Client Group ID: undefined
-ProductIRRCalculation.tsx:2593 🗑️ [CACHE INVALIDATION] Current cached product data: undefined
-ProductIRRCalculation.tsx:2596 🗑️ [CACHE INVALIDATION] Invalidating product-details cache with key: (2) ['product-details', '430']
-ProductIRRCalculation.tsx:2598 ✅ [CACHE INVALIDATION] Product details cache invalidated
-ProductIRRCalculation.tsx:2609 🗑️ [CACHE INVALIDATION] Invalidating client list cache with key: ['clients']
-ProductIRRCalculation.tsx:2611 ✅ [CACHE INVALIDATION] Client list cache invalidated
-ProductIRRCalculation.tsx:2615 🗑️ [CACHE INVALIDATION] Cached product data after invalidation: undefined
-ProductIRRCalculation.tsx:2617 ✅ [CACHE INVALIDATION] ==================== CACHE INVALIDATION COMPLETE ====================
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
-ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
-ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
-ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
-ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
-ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
-ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 1
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 1
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:1093 ProductIRRCalculation: Starting optimized data fetch for account ID: 430
-ProductIRRCalculation.tsx:1097 ProductIRRCalculation: Account/product data received: {id: 430, client_id: 130, product_name: 'Retirement Account', product_type: 'Pension', status: 'active', …}
-ProductIRRCalculation.tsx:1101 ProductIRRCalculation: Using portfolio ID: 443
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:1093 ProductIRRCalculation: Starting optimized data fetch for account ID: 435
+ProductIRRCalculation.tsx:1097 ProductIRRCalculation: Account/product data received: {id: 435, client_id: 28, product_name: 'Investment Bond', product_type: 'Onshore Bond', status: 'active', …}
+ProductIRRCalculation.tsx:1101 ProductIRRCalculation: Using portfolio ID: 448
 ProductIRRCalculation.tsx:1128 ProductIRRCalculation: Fetching complete portfolio data with new optimized endpoint
-ProductIRRCalculation.tsx:1138 ProductIRRCalculation: Complete portfolio data received: {portfolio: {…}, template_info: null, portfolio_funds: Array(2), valuations_map: {…}, irr_map: {…}}
-ProductIRRCalculation.tsx:1139 ProductIRRCalculation: Complete activity logs received: {activity_logs: Array(27), summary: {…}}
-ProductIRRCalculation.tsx:188 Filtering inactive holdings from: 2 holdings
-ProductIRRCalculation.tsx:191 All holdings status values: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:206 Holding ID 2142 (Cash): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
-ProductIRRCalculation.tsx:206 Holding ID 2143 (PruFund Growth Series E): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
-ProductIRRCalculation.tsx:219 Found inactive holdings: []
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:1138 ProductIRRCalculation: Complete portfolio data received: {portfolio: {…}, template_info: null, portfolio_funds: Array(3), valuations_map: {…}, irr_map: {…}}
+ProductIRRCalculation.tsx:1139 ProductIRRCalculation: Complete activity logs received: {activity_logs: Array(3), summary: {…}}
+ProductIRRCalculation.tsx:188 Filtering inactive holdings from: 3 holdings
+ProductIRRCalculation.tsx:191 All holdings status values: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:206 Holding ID 2162 (Cash): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
+ProductIRRCalculation.tsx:206 Holding ID 2163 (Invesco Global Emerging Markets): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
+ProductIRRCalculation.tsx:206 Holding ID 2164 (Fundsmith Equity): {rawStatus: 'inactive', statusString: 'inactive', isStatusInactive: true, end_date: undefined, isInactive: true}
+ProductIRRCalculation.tsx:219 Found inactive holdings: [{…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
 ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:245 🔍 Valuation Date Detection Debug: {totalHoldings: 2, allActiveHoldings: 2, activeHoldingsExcludingCash: 1, excludedCashFunds: 1, holdingsData: Array(1)}
-ProductIRRCalculation.tsx:275 🔍 All unique valuation dates found: ['2025-06-01']
-ProductIRRCalculation.tsx:301 🔍 Date 2025-06-01 completeness: {totalActiveFunds: 1, fundsWithThisDate: 1, fundsWithoutThisDate: 0, missingFunds: Array(0)}
+ProductIRRCalculation.tsx:245 🔍 Valuation Date Detection Debug: {totalHoldings: 3, allActiveHoldings: 2, activeHoldingsExcludingCash: 1, excludedCashFunds: 1, holdingsData: Array(1)}
+ProductIRRCalculation.tsx:275 🔍 All unique valuation dates found: ['2024-04-01']
+ProductIRRCalculation.tsx:301 🔍 Date 2024-04-01 completeness: {totalActiveFunds: 1, fundsWithThisDate: 1, fundsWithoutThisDate: 0, missingFunds: Array(0)}
 ProductIRRCalculation.tsx:322 🔍 Date completeness analysis: {completeDates: 1, incompleteDates: 0, incompleteDetails: Array(0)}
 ProductIRRCalculation.tsx:385 🔍 All valuation dates are complete across all funds
-ProductIRRCalculation.tsx:386 ✅ [VALUATION CHECK] PASSED - Common dates found: ['2025-06-01']
-ProductIRRCalculation.tsx:387 ✅ [VALUATION CHECK] Portfolio IRR can be calculated for these dates: ['2025-06-01']
-ProductIRRCalculation.tsx:188 Filtering inactive holdings from: 2 holdings
-ProductIRRCalculation.tsx:191 All holdings status values: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:206 Holding ID 2142 (Cash): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
-ProductIRRCalculation.tsx:206 Holding ID 2143 (PruFund Growth Series E): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
-ProductIRRCalculation.tsx:219 Found inactive holdings: []
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:386 ✅ [VALUATION CHECK] PASSED - Common dates found: ['2024-04-01']
+ProductIRRCalculation.tsx:387 ✅ [VALUATION CHECK] Portfolio IRR can be calculated for these dates: ['2024-04-01']
+ProductIRRCalculation.tsx:188 Filtering inactive holdings from: 3 holdings
+ProductIRRCalculation.tsx:191 All holdings status values: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:206 Holding ID 2162 (Cash): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
+ProductIRRCalculation.tsx:206 Holding ID 2163 (Invesco Global Emerging Markets): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
+ProductIRRCalculation.tsx:206 Holding ID 2164 (Fundsmith Equity): {rawStatus: 'inactive', statusString: 'inactive', isStatusInactive: true, end_date: undefined, isInactive: true}
+ProductIRRCalculation.tsx:219 Found inactive holdings: [{…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
 ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:245 🔍 Valuation Date Detection Debug: {totalHoldings: 2, allActiveHoldings: 2, activeHoldingsExcludingCash: 1, excludedCashFunds: 1, holdingsData: Array(1)}
-ProductIRRCalculation.tsx:275 🔍 All unique valuation dates found: ['2025-06-01']
-ProductIRRCalculation.tsx:301 🔍 Date 2025-06-01 completeness: {totalActiveFunds: 1, fundsWithThisDate: 1, fundsWithoutThisDate: 0, missingFunds: Array(0)}
+ProductIRRCalculation.tsx:245 🔍 Valuation Date Detection Debug: {totalHoldings: 3, allActiveHoldings: 2, activeHoldingsExcludingCash: 1, excludedCashFunds: 1, holdingsData: Array(1)}
+ProductIRRCalculation.tsx:275 🔍 All unique valuation dates found: ['2024-04-01']
+ProductIRRCalculation.tsx:301 🔍 Date 2024-04-01 completeness: {totalActiveFunds: 1, fundsWithThisDate: 1, fundsWithoutThisDate: 0, missingFunds: Array(0)}
 ProductIRRCalculation.tsx:322 🔍 Date completeness analysis: {completeDates: 1, incompleteDates: 0, incompleteDetails: Array(0)}
 ProductIRRCalculation.tsx:385 🔍 All valuation dates are complete across all funds
-ProductIRRCalculation.tsx:386 ✅ [VALUATION CHECK] PASSED - Common dates found: ['2025-06-01']
-ProductIRRCalculation.tsx:387 ✅ [VALUATION CHECK] Portfolio IRR can be calculated for these dates: ['2025-06-01']
-ProductIRRCalculation.tsx:1017 Mapping IRR values from holdings data for 2 funds
-ProductIRRCalculation.tsx:1033 Mapped IRR for fund 2142 (Cash): {irr: 0, date: '2025-06-01'}
-ProductIRRCalculation.tsx:1033 Mapped IRR for fund 2143 (PruFund Growth Series E): {irr: 4.8, date: '2025-06-01'}
-ProductIRRCalculation.tsx:1657 Provider switches loaded: []
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:386 ✅ [VALUATION CHECK] PASSED - Common dates found: ['2024-04-01']
+ProductIRRCalculation.tsx:387 ✅ [VALUATION CHECK] Portfolio IRR can be calculated for these dates: ['2024-04-01']
+ProductIRRCalculation.tsx:1017 Mapping IRR values from holdings data for 3 funds
+ProductIRRCalculation.tsx:1036 No IRR data for fund 2162 (Cash)
+ProductIRRCalculation.tsx:1033 Mapped IRR for fund 2163 (Invesco Global Emerging Markets): {irr: 128, date: '2024-04-01'}
+ProductIRRCalculation.tsx:1033 Mapped IRR for fund 2164 (Fundsmith Equity): {irr: 114.5, date: '2024-04-01'}
+ProductIRRCalculation.tsx:1667 Provider switches loaded: []
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
 ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
-ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 1 inactive holdings
+ProductIRRCalculation.tsx:417 Previous Funds totals: {totalAmountInvested: 0, totalMarketValue: 0}
+ProductIRRCalculation.tsx:458 Created Previous Funds entry: {id: -1, fund_name: 'Previous Funds', amount_invested: 0, market_value: 0, irr: undefined, …}
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
 ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
 ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
-ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 1 inactive holdings
+ProductIRRCalculation.tsx:417 Previous Funds totals: {totalAmountInvested: 0, totalMarketValue: 0}
+ProductIRRCalculation.tsx:458 Created Previous Funds entry: {id: -1, fund_name: 'Previous Funds', amount_invested: 0, market_value: 0, irr: undefined, …}
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
 ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-usePresence.ts:138 WebSocket connection to 'ws://localhost:8001/api/ws/presence/irr-calculation:product-430' failed: WebSocket is closed before the connection is established.
+ProductIRRCalculation.tsx:734 PreviousFundsIRRDisplay: Starting IRR calculation for funds [2164]
+ProductIRRCalculation.tsx:735 PreviousFundsIRRDisplay: Cache key: 2164-2-0100.00120.00
+usePresence.ts:138 WebSocket connection to 'ws://localhost:8001/api/ws/presence/irr-calculation:product-435' failed: WebSocket is closed before the connection is established.
 (anonymous) @ usePresence.ts:138
 safelyCallDestroy @ chunk-QYFCA5BS.js?v=68f90eaa:16796
 commitHookEffectListUnmount @ chunk-QYFCA5BS.js?v=68f90eaa:16923
@@ -301,204 +216,466 @@ flushPassiveEffects @ chunk-QYFCA5BS.js?v=68f90eaa:19500
 workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
 flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
 performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+ProductIRRCalculation.tsx:734 PreviousFundsIRRDisplay: Starting IRR calculation for funds [2164]
+ProductIRRCalculation.tsx:735 PreviousFundsIRRDisplay: Cache key: 2164-2-0100.00120.00
 usePresence.ts:115 ❌ usePresence: WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
 ws.onerror @ usePresence.ts:115
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:744 PreviousFundsIRRDisplay: IRR calculation completed: 114.5%
+ProductIRRCalculation.tsx:744 PreviousFundsIRRDisplay: IRR calculation completed: 114.5%
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
 ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
-ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 1 inactive holdings
+ProductIRRCalculation.tsx:417 Previous Funds totals: {totalAmountInvested: 0, totalMarketValue: 0}
+ProductIRRCalculation.tsx:458 Created Previous Funds entry: {id: -1, fund_name: 'Previous Funds', amount_invested: 0, market_value: 0, irr: undefined, …}
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
 ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
 ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
-ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 1 inactive holdings
+ProductIRRCalculation.tsx:417 Previous Funds totals: {totalAmountInvested: 0, totalMarketValue: 0}
+ProductIRRCalculation.tsx:458 Created Previous Funds entry: {id: -1, fund_name: 'Previous Funds', amount_invested: 0, market_value: 0, irr: undefined, …}
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
 ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:833 PreviousFundsIRRDisplay: Skipping re-render - props unchanged
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
 ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
-ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 1 inactive holdings
+ProductIRRCalculation.tsx:417 Previous Funds totals: {totalAmountInvested: 0, totalMarketValue: 0}
+ProductIRRCalculation.tsx:458 Created Previous Funds entry: {id: -1, fund_name: 'Previous Funds', amount_invested: 0, market_value: 0, irr: undefined, …}
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
 ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
 ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 0 inactive holdings
-ProductIRRCalculation.tsx:400 No inactive holdings found, not creating Previous Funds entry
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 1 inactive holdings
+ProductIRRCalculation.tsx:417 Previous Funds totals: {totalAmountInvested: 0, totalMarketValue: 0}
+ProductIRRCalculation.tsx:458 Created Previous Funds entry: {id: -1, fund_name: 'Previous Funds', amount_invested: 0, market_value: 0, irr: undefined, …}
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
 ProductIRRCalculation.tsx:662 Calculating total investments...
-ProductIRRCalculation.tsx:670 Investments only for holding 2142 (Cash): 0
-ProductIRRCalculation.tsx:670 Investments only for holding 2143 (PruFund Growth Series E): 0
-ProductIRRCalculation.tsx:674 Total investments (Investment type only): 0
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
 ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:188 Filtering inactive holdings from: 2 holdings
-ProductIRRCalculation.tsx:191 All holdings status values: (2) [{…}, {…}]
-ProductIRRCalculation.tsx:206 Holding ID 2142 (Cash): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
-ProductIRRCalculation.tsx:206 Holding ID 2143 (PruFund Growth Series E): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
+ProductIRRCalculation.tsx:833 PreviousFundsIRRDisplay: Skipping re-render - props unchanged
+ProductDetails.tsx:38 🔍 ProductDetails: productId from useParams: 435
+ProductDetails.tsx:39 🔍 ProductDetails: location.pathname: /products/435/irr-history
+ProductDetails.tsx:38 🔍 ProductDetails: productId from useParams: 435
+ProductDetails.tsx:39 🔍 ProductDetails: location.pathname: /products/435/irr-history
+ProductIRRHistory.tsx:185 AccountIRRHistory: Fetching data for accountId: 435
+ProductIRRHistory.tsx:197 AccountIRRHistory: Making API request to complete endpoint for product data
+ProductIRRHistory.tsx:185 AccountIRRHistory: Fetching data for accountId: 435
+ProductIRRHistory.tsx:197 AccountIRRHistory: Making API request to complete endpoint for product data
+ProductIRRHistory.tsx:203 AccountIRRHistory: Complete product data received: {id: 435, client_id: 28, product_name: 'Investment Bond', product_type: 'Onshore Bond', status: 'active', …}
+ProductIRRHistory.tsx:224 Processing portfolio funds for standardized IRR history calculation: 448
+ProductIRRHistory.tsx:230 🔍 DEBUG: ProductIRRHistory all portfolio funds from API:
+ProductIRRHistory.tsx:232 🔍 DEBUG: ProductIRRHistory Fund 1: ID=2162, Name=Cash, Status=active
+ProductIRRHistory.tsx:232 🔍 DEBUG: ProductIRRHistory Fund 2: ID=2163, Name=Invesco Global Emerging Markets, Status=active
+ProductIRRHistory.tsx:232 🔍 DEBUG: ProductIRRHistory Fund 3: ID=2164, Name=Fundsmith Equity, Status=inactive
+ProductIRRHistory.tsx:264 Found 2 active holdings and 1 inactive holdings
+ProductIRRHistory.tsx:203 AccountIRRHistory: Complete product data received: {id: 435, client_id: 28, product_name: 'Investment Bond', product_type: 'Onshore Bond', status: 'active', …}
+ProductIRRHistory.tsx:224 Processing portfolio funds for standardized IRR history calculation: 448
+ProductIRRHistory.tsx:230 🔍 DEBUG: ProductIRRHistory all portfolio funds from API:
+ProductIRRHistory.tsx:232 🔍 DEBUG: ProductIRRHistory Fund 1: ID=2162, Name=Cash, Status=active
+ProductIRRHistory.tsx:232 🔍 DEBUG: ProductIRRHistory Fund 2: ID=2163, Name=Invesco Global Emerging Markets, Status=active
+ProductIRRHistory.tsx:232 🔍 DEBUG: ProductIRRHistory Fund 3: ID=2164, Name=Fundsmith Equity, Status=inactive
+ProductIRRHistory.tsx:264 Found 2 active holdings and 1 inactive holdings
+ProductIRRHistory.tsx:319 Available IRR dates found: (3) ['2024-04-01', '2024-03-01', '2024-02-01']
+ProductIRRHistory.tsx:328 🔍 DEBUG: Fetching stored portfolio IRR data for product 435
+ProductIRRHistory.tsx:319 Available IRR dates found: (3) ['2024-04-01', '2024-03-01', '2024-02-01']
+ProductIRRHistory.tsx:328 🔍 DEBUG: Fetching stored portfolio IRR data for product 435
+ProductIRRHistory.tsx:336 ✅ Found 1 funds with stored IRR records
+ProductIRRHistory.tsx:344 🔍 DEBUG: Using portfolio ID for IRR lookup: 448
+ProductIRRHistory.tsx:353 🔍 Looking for stored portfolio IRR values for portfolio 448
+ProductIRRHistory.tsx:361 📡 Successfully fetched portfolio IRR data for portfolio 448
+ProductIRRHistory.tsx:364 📡 Response status: 200, received 3 portfolio IRR records
+ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Apr 2024: 114.5%
+ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Mar 2024: 114.5%
+ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Feb 2024: 58.6%
+ProductIRRHistory.tsx:404 🔍 DEBUG: Portfolio IRR fetch complete. Setting 3 results: {Apr 2024: 114.5, Mar 2024: 114.5, Feb 2024: 58.6}
+ProductIRRHistory.tsx:411 Calculating Previous Funds IRR for 1 inactive funds
+ProductIRRHistory.tsx:417 Calculating Previous Funds IRR for date: 2024-04-01
+ProductIRRHistory.tsx:428 Previous Funds IRR for 2024-04-01: 114.5%
+ProductIRRHistory.tsx:417 Calculating Previous Funds IRR for date: 2024-03-01
+ProductIRRHistory.tsx:336 ✅ Found 1 funds with stored IRR records
+ProductIRRHistory.tsx:344 🔍 DEBUG: Using portfolio ID for IRR lookup: 448
+ProductIRRHistory.tsx:353 🔍 Looking for stored portfolio IRR values for portfolio 448
+ProductIRRHistory.tsx:361 📡 Successfully fetched portfolio IRR data for portfolio 448
+ProductIRRHistory.tsx:364 📡 Response status: 200, received 3 portfolio IRR records
+ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Apr 2024: 114.5%
+ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Mar 2024: 114.5%
+ProductIRRHistory.tsx:371 📊 Stored Portfolio IRR Feb 2024: 58.6%
+ProductIRRHistory.tsx:404 🔍 DEBUG: Portfolio IRR fetch complete. Setting 3 results: {Apr 2024: 114.5, Mar 2024: 114.5, Feb 2024: 58.6}
+ProductIRRHistory.tsx:411 Calculating Previous Funds IRR for 1 inactive funds
+ProductIRRHistory.tsx:417 Calculating Previous Funds IRR for date: 2024-04-01
+ProductIRRHistory.tsx:428 Previous Funds IRR for 2024-04-01: 114.5%
+ProductIRRHistory.tsx:417 Calculating Previous Funds IRR for date: 2024-03-01
+ProductIRRHistory.tsx:428 Previous Funds IRR for 2024-03-01: 114.5%
+ProductIRRHistory.tsx:417 Calculating Previous Funds IRR for date: 2024-02-01
+ProductIRRHistory.tsx:428 Previous Funds IRR for 2024-03-01: 114.5%
+ProductIRRHistory.tsx:417 Calculating Previous Funds IRR for date: 2024-02-01
+ProductIRRHistory.tsx:428 Previous Funds IRR for 2024-02-01: 58.6%
+ProductIRRHistory.tsx:444 Fetching stored IRR values for inactive fund Fundsmith Equity (portfolio_fund_id: 2164)
+ProductIRRHistory.tsx:449 Found 3 IRR values for inactive fund Fundsmith Equity: (3) [{…}, {…}, {…}]
+ProductIRRHistory.tsx:456 Added IRR value for Fundsmith Equity on Feb 2024: 58.6%
+ProductIRRHistory.tsx:456 Added IRR value for Fundsmith Equity on Mar 2024: 114.5%
+ProductIRRHistory.tsx:456 Added IRR value for Fundsmith Equity on Apr 2024: 114.5%
+ProductIRRHistory.tsx:428 Previous Funds IRR for 2024-02-01: 58.6%
+ProductIRRHistory.tsx:444 Fetching stored IRR values for inactive fund Fundsmith Equity (portfolio_fund_id: 2164)
+ProductIRRHistory.tsx:449 Found 3 IRR values for inactive fund Fundsmith Equity: (3) [{…}, {…}, {…}]
+ProductIRRHistory.tsx:456 Added IRR value for Fundsmith Equity on Feb 2024: 58.6%
+ProductIRRHistory.tsx:456 Added IRR value for Fundsmith Equity on Mar 2024: 114.5%
+ProductIRRHistory.tsx:456 Added IRR value for Fundsmith Equity on Apr 2024: 114.5%
+ProductIRRHistory.tsx:510 📊 Loaded 3 IRR values for fund: Invesco Global Emerging Markets
+ProductIRRHistory.tsx:510 📊 Loaded 3 IRR values for fund: Invesco Global Emerging Markets
+ProductDetails.tsx:38 🔍 ProductDetails: productId from useParams: 435
+ProductDetails.tsx:39 🔍 ProductDetails: location.pathname: /products/435/irr-calculation
+ProductDetails.tsx:38 🔍 ProductDetails: productId from useParams: 435
+ProductDetails.tsx:39 🔍 ProductDetails: location.pathname: /products/435/irr-calculation
+ProductIRRCalculation.tsx:188 Filtering inactive holdings from: 0 holdings
+ProductIRRCalculation.tsx:191 All holdings status values: []
 ProductIRRCalculation.tsx:219 Found inactive holdings: []
-ProductIRRCalculation.tsx:168 All holdings before filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: []
+ProductIRRCalculation.tsx:177 Active holdings after filtering: []
+ProductIRRCalculation.tsx:245 🔍 Valuation Date Detection Debug: {totalHoldings: 0, allActiveHoldings: 0, activeHoldingsExcludingCash: 0, excludedCashFunds: 0, holdingsData: Array(0)}
+ProductIRRCalculation.tsx:260 🔍 No active holdings found
+ProductIRRCalculation.tsx:188 Filtering inactive holdings from: 0 holdings
+ProductIRRCalculation.tsx:191 All holdings status values: []
+ProductIRRCalculation.tsx:219 Found inactive holdings: []
+ProductIRRCalculation.tsx:168 All holdings before filtering: []
+ProductIRRCalculation.tsx:177 Active holdings after filtering: []
+ProductIRRCalculation.tsx:245 🔍 Valuation Date Detection Debug: {totalHoldings: 0, allActiveHoldings: 0, activeHoldingsExcludingCash: 0, excludedCashFunds: 0, holdingsData: Array(0)}
+ProductIRRCalculation.tsx:260 🔍 No active holdings found
+ProductIRRCalculation.tsx:1093 ProductIRRCalculation: Starting optimized data fetch for account ID: 435
+usePresence.ts:138 WebSocket connection to 'ws://localhost:8001/api/ws/presence/irr-calculation:product-435' failed: WebSocket is closed before the connection is established.
+(anonymous) @ usePresence.ts:138
+safelyCallDestroy @ chunk-QYFCA5BS.js?v=68f90eaa:16796
+commitHookEffectListUnmount @ chunk-QYFCA5BS.js?v=68f90eaa:16923
+invokePassiveEffectUnmountInDEV @ chunk-QYFCA5BS.js?v=68f90eaa:18413
+invokeEffectsInDev @ chunk-QYFCA5BS.js?v=68f90eaa:19754
+commitDoubleInvokeEffectsInDEV @ chunk-QYFCA5BS.js?v=68f90eaa:19735
+flushPassiveEffectsImpl @ chunk-QYFCA5BS.js?v=68f90eaa:19556
+flushPassiveEffects @ chunk-QYFCA5BS.js?v=68f90eaa:19500
+performSyncWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18921
+flushSyncCallbacks @ chunk-QYFCA5BS.js?v=68f90eaa:9166
+commitRootImpl @ chunk-QYFCA5BS.js?v=68f90eaa:19485
+commitRoot @ chunk-QYFCA5BS.js?v=68f90eaa:19330
+finishConcurrentRender @ chunk-QYFCA5BS.js?v=68f90eaa:18858
+performConcurrentWorkOnRoot @ chunk-QYFCA5BS.js?v=68f90eaa:18768
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+ProductIRRCalculation.tsx:1093 ProductIRRCalculation: Starting optimized data fetch for account ID: 435
+usePresence.ts:115 ❌ usePresence: WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ usePresence.ts:115
+ ProductIRRCalculation: Account/product data received: {id: 435, client_id: 28, product_name: 'Investment Bond', product_type: 'Onshore Bond', status: 'active', …}
+ ProductIRRCalculation: Using portfolio ID: 448
+ ProductIRRCalculation: Fetching complete portfolio data with new optimized endpoint
+ Fetching total portfolio IRR for portfolio 448
+ ProductIRRCalculation: Account/product data received: {id: 435, client_id: 28, product_name: 'Investment Bond', product_type: 'Onshore Bond', status: 'active', …}
+ ProductIRRCalculation: Using portfolio ID: 448
+ ProductIRRCalculation: Fetching complete portfolio data with new optimized endpoint
+ ProductIRRCalculation: Complete portfolio data received: {portfolio: {…}, template_info: null, portfolio_funds: Array(3), valuations_map: {…}, irr_map: {…}}
+ ProductIRRCalculation: Complete activity logs received: {activity_logs: Array(3), summary: {…}}
+ Latest portfolio IRR response: {portfolio_id: 448, irr_result: 114.5, irr_date: '2024-04-01', source: 'stored'}
+ Filtering inactive holdings from: 3 holdings
+ All holdings status values: (3) [{…}, {…}, {…}]
+ Holding ID 2162 (Cash): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
+ Holding ID 2163 (Invesco Global Emerging Markets): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
+ProductIRRCalculation.tsx:206 Holding ID 2164 (Fundsmith Equity): {rawStatus: 'inactive', statusString: 'inactive', isStatusInactive: true, end_date: undefined, isInactive: true}
+ProductIRRCalculation.tsx:219 Found inactive holdings: [{…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:245 🔍 Valuation Date Detection Debug: {totalHoldings: 3, allActiveHoldings: 2, activeHoldingsExcludingCash: 1, excludedCashFunds: 1, holdingsData: Array(1)}
+ProductIRRCalculation.tsx:275 🔍 All unique valuation dates found: ['2024-04-01']
+ProductIRRCalculation.tsx:301 🔍 Date 2024-04-01 completeness: {totalActiveFunds: 1, fundsWithThisDate: 1, fundsWithoutThisDate: 0, missingFunds: Array(0)}
+ProductIRRCalculation.tsx:322 🔍 Date completeness analysis: {completeDates: 1, incompleteDates: 0, incompleteDetails: Array(0)}
+ProductIRRCalculation.tsx:385 🔍 All valuation dates are complete across all funds
+ProductIRRCalculation.tsx:386 ✅ [VALUATION CHECK] PASSED - Common dates found: ['2024-04-01']
+ProductIRRCalculation.tsx:387 ✅ [VALUATION CHECK] Portfolio IRR can be calculated for these dates: ['2024-04-01']
+ProductIRRCalculation.tsx:188 Filtering inactive holdings from: 3 holdings
+ProductIRRCalculation.tsx:191 All holdings status values: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:206 Holding ID 2162 (Cash): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
+ProductIRRCalculation.tsx:206 Holding ID 2163 (Invesco Global Emerging Markets): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
+ProductIRRCalculation.tsx:206 Holding ID 2164 (Fundsmith Equity): {rawStatus: 'inactive', statusString: 'inactive', isStatusInactive: true, end_date: undefined, isInactive: true}
+ProductIRRCalculation.tsx:219 Found inactive holdings: [{…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:245 🔍 Valuation Date Detection Debug: {totalHoldings: 3, allActiveHoldings: 2, activeHoldingsExcludingCash: 1, excludedCashFunds: 1, holdingsData: Array(1)}
+ProductIRRCalculation.tsx:275 🔍 All unique valuation dates found: ['2024-04-01']
+ProductIRRCalculation.tsx:301 🔍 Date 2024-04-01 completeness: {totalActiveFunds: 1, fundsWithThisDate: 1, fundsWithoutThisDate: 0, missingFunds: Array(0)}
+ProductIRRCalculation.tsx:322 🔍 Date completeness analysis: {completeDates: 1, incompleteDates: 0, incompleteDetails: Array(0)}
+ProductIRRCalculation.tsx:385 🔍 All valuation dates are complete across all funds
+ProductIRRCalculation.tsx:386 ✅ [VALUATION CHECK] PASSED - Common dates found: ['2024-04-01']
+ProductIRRCalculation.tsx:387 ✅ [VALUATION CHECK] Portfolio IRR can be calculated for these dates: ['2024-04-01']
+ProductIRRCalculation.tsx:1017 Mapping IRR values from holdings data for 3 funds
+ProductIRRCalculation.tsx:1036 No IRR data for fund 2162 (Cash)
+ProductIRRCalculation.tsx:1033 Mapped IRR for fund 2163 (Invesco Global Emerging Markets): {irr: 128, date: '2024-04-01'}
+ProductIRRCalculation.tsx:1033 Mapped IRR for fund 2164 (Fundsmith Equity): {irr: 114.5, date: '2024-04-01'}
+ProductIRRCalculation.tsx:1138 ProductIRRCalculation: Complete portfolio data received: {portfolio: {…}, template_info: null, portfolio_funds: Array(3), valuations_map: {…}, irr_map: {…}}
+ProductIRRCalculation.tsx:1139 ProductIRRCalculation: Complete activity logs received: {activity_logs: Array(3), summary: {…}}
+ProductIRRCalculation.tsx:188 Filtering inactive holdings from: 3 holdings
+ProductIRRCalculation.tsx:191 All holdings status values: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:206 Holding ID 2162 (Cash): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
+ProductIRRCalculation.tsx:206 Holding ID 2163 (Invesco Global Emerging Markets): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
+ProductIRRCalculation.tsx:206 Holding ID 2164 (Fundsmith Equity): {rawStatus: 'inactive', statusString: 'inactive', isStatusInactive: true, end_date: undefined, isInactive: true}
+ProductIRRCalculation.tsx:219 Found inactive holdings: [{…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:245 🔍 Valuation Date Detection Debug: {totalHoldings: 3, allActiveHoldings: 2, activeHoldingsExcludingCash: 1, excludedCashFunds: 1, holdingsData: Array(1)}
+ProductIRRCalculation.tsx:275 🔍 All unique valuation dates found: ['2024-04-01']
+ProductIRRCalculation.tsx:301 🔍 Date 2024-04-01 completeness: {totalActiveFunds: 1, fundsWithThisDate: 1, fundsWithoutThisDate: 0, missingFunds: Array(0)}
+ProductIRRCalculation.tsx:322 🔍 Date completeness analysis: {completeDates: 1, incompleteDates: 0, incompleteDetails: Array(0)}
+ProductIRRCalculation.tsx:385 🔍 All valuation dates are complete across all funds
+ProductIRRCalculation.tsx:386 ✅ [VALUATION CHECK] PASSED - Common dates found: ['2024-04-01']
+ProductIRRCalculation.tsx:387 ✅ [VALUATION CHECK] Portfolio IRR can be calculated for these dates: ['2024-04-01']
+ProductIRRCalculation.tsx:188 Filtering inactive holdings from: 3 holdings
+ProductIRRCalculation.tsx:191 All holdings status values: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:206 Holding ID 2162 (Cash): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
+ProductIRRCalculation.tsx:206 Holding ID 2163 (Invesco Global Emerging Markets): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
+ProductIRRCalculation.tsx:206 Holding ID 2164 (Fundsmith Equity): {rawStatus: 'inactive', statusString: 'inactive', isStatusInactive: true, end_date: undefined, isInactive: true}
+ProductIRRCalculation.tsx:219 Found inactive holdings: [{…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:245 🔍 Valuation Date Detection Debug: {totalHoldings: 3, allActiveHoldings: 2, activeHoldingsExcludingCash: 1, excludedCashFunds: 1, holdingsData: Array(1)}
+ProductIRRCalculation.tsx:275 🔍 All unique valuation dates found: ['2024-04-01']
+ProductIRRCalculation.tsx:301 🔍 Date 2024-04-01 completeness: {totalActiveFunds: 1, fundsWithThisDate: 1, fundsWithoutThisDate: 0, missingFunds: Array(0)}
+ProductIRRCalculation.tsx:322 🔍 Date completeness analysis: {completeDates: 1, incompleteDates: 0, incompleteDetails: Array(0)}
+ProductIRRCalculation.tsx:385 🔍 All valuation dates are complete across all funds
+ProductIRRCalculation.tsx:386 ✅ [VALUATION CHECK] PASSED - Common dates found: ['2024-04-01']
+ ✅ [VALUATION CHECK] Portfolio IRR can be calculated for these dates: ['2024-04-01']
+ Mapping IRR values from holdings data for 3 funds
+ No IRR data for fund 2162 (Cash)
+ Mapped IRR for fund 2163 (Invesco Global Emerging Markets): {irr: 128, date: '2024-04-01'}
+ Mapped IRR for fund 2164 (Fundsmith Equity): {irr: 114.5, date: '2024-04-01'}
+ Provider switches loaded: []
+ All holdings before filtering: (3) [{…}, {…}, {…}]
  Active holdings after filtering: (2) [{…}, {…}]
- 🔍 Valuation Date Detection Debug: {totalHoldings: 2, allActiveHoldings: 2, activeHoldingsExcludingCash: 1, excludedCashFunds: 1, holdingsData: Array(1)}
- 🔍 All unique valuation dates found: ['2025-06-01']
- 🔍 Date 2025-06-01 completeness: {totalActiveFunds: 1, fundsWithThisDate: 1, fundsWithoutThisDate: 0, missingFunds: Array(0)}
- 🔍 Date completeness analysis: {completeDates: 1, incompleteDates: 0, incompleteDetails: Array(0)}
- 🔍 All valuation dates are complete across all funds
- ✅ [VALUATION CHECK] PASSED - Common dates found: ['2025-06-01']
- ✅ [VALUATION CHECK] Portfolio IRR can be calculated for these dates: ['2025-06-01']
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Creating Previous Funds entry with 0 inactive holdings
- No inactive holdings found, not creating Previous Funds entry
+ Creating Previous Funds entry with 1 inactive holdings
+ Previous Funds totals: {totalAmountInvested: 0, totalMarketValue: 0}
+ Created Previous Funds entry: {id: -1, fund_name: 'Previous Funds', amount_invested: 0, market_value: 0, irr: undefined, …}
  Calculating total investments...
- Investments only for holding 2142 (Cash): 0
- Investments only for holding 2143 (PruFund Growth Series E): 0
- Total investments (Investment type only): 0
+ Investments only for holding 2162 (Cash): 0
+ Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ Investments only for holding 2164 (Fundsmith Equity): 100
+ Total investments (Investment type only): 200
  Calculating total investments...
- Investments only for holding 2142 (Cash): 0
- Investments only for holding 2143 (PruFund Growth Series E): 0
- Total investments (Investment type only): 0
- All holdings before filtering: (2) [{…}, {…}]
+ Investments only for holding 2162 (Cash): 0
+ Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ Investments only for holding 2164 (Fundsmith Equity): 100
+ Total investments (Investment type only): 200
+ All holdings before filtering: (3) [{…}, {…}, {…}]
  Active holdings after filtering: (2) [{…}, {…}]
- Filtering inactive holdings from: 2 holdings
- All holdings status values: (2) [{…}, {…}]
- Holding ID 2142 (Cash): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
- Holding ID 2143 (PruFund Growth Series E): {rawStatus: 'active', statusString: 'active', isStatusInactive: false, end_date: undefined, isInactive: false}
- Found inactive holdings: []
- All holdings before filtering: (2) [{…}, {…}]
+ All holdings before filtering: (3) [{…}, {…}, {…}]
  Active holdings after filtering: (2) [{…}, {…}]
- 🔍 Valuation Date Detection Debug: {totalHoldings: 2, allActiveHoldings: 2, activeHoldingsExcludingCash: 1, excludedCashFunds: 1, holdingsData: Array(1)}
- 🔍 All unique valuation dates found: ['2025-06-01']
- 🔍 Date 2025-06-01 completeness: {totalActiveFunds: 1, fundsWithThisDate: 1, fundsWithoutThisDate: 0, missingFunds: Array(0)}
- 🔍 Date completeness analysis: {completeDates: 1, incompleteDates: 0, incompleteDetails: Array(0)}
- 🔍 All valuation dates are complete across all funds
- ✅ [VALUATION CHECK] PASSED - Common dates found: ['2025-06-01']
- ✅ [VALUATION CHECK] Portfolio IRR can be calculated for these dates: ['2025-06-01']
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Creating Previous Funds entry with 0 inactive holdings
- No inactive holdings found, not creating Previous Funds entry
+ Creating Previous Funds entry with 1 inactive holdings
+ Previous Funds totals: {totalAmountInvested: 0, totalMarketValue: 0}
+ Created Previous Funds entry: {id: -1, fund_name: 'Previous Funds', amount_invested: 0, market_value: 0, irr: undefined, …}
  Calculating total investments...
- Investments only for holding 2142 (Cash): 0
- Investments only for holding 2143 (PruFund Growth Series E): 0
- Total investments (Investment type only): 0
+ Investments only for holding 2162 (Cash): 0
+ Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ Investments only for holding 2164 (Fundsmith Equity): 100
+ Total investments (Investment type only): 200
  Calculating total investments...
- Investments only for holding 2142 (Cash): 0
- Investments only for holding 2143 (PruFund Growth Series E): 0
- Total investments (Investment type only): 0
- All holdings before filtering: (2) [{…}, {…}]
+ Investments only for holding 2162 (Cash): 0
+ Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ Investments only for holding 2164 (Fundsmith Equity): 100
+ Total investments (Investment type only): 200
+ All holdings before filtering: (3) [{…}, {…}, {…}]
  Active holdings after filtering: (2) [{…}, {…}]
- Mapping IRR values from holdings data for 2 funds
- Mapped IRR for fund 2142 (Cash): {irr: 0, date: '2025-06-01'}
- Mapped IRR for fund 2143 (PruFund Growth Series E): {irr: 4.8, date: '2025-06-01'}
- All holdings before filtering: (2) [{…}, {…}]
+ PreviousFundsIRRDisplay: Starting IRR calculation for funds [2164]
+ PreviousFundsIRRDisplay: Cache key: 2164-2-0100.00120.00
+ WebSocket connection to 'ws://localhost:8001/api/ws/presence/irr-calculation:product-435' failed: WebSocket is closed before the connection is established.
+(anonymous) @ usePresence.ts:92
+safelyCallDestroy @ chunk-QYFCA5BS.js?v=68f90eaa:16796
+commitHookEffectListUnmount @ chunk-QYFCA5BS.js?v=68f90eaa:16923
+invokePassiveEffectUnmountInDEV @ chunk-QYFCA5BS.js?v=68f90eaa:18413
+invokeEffectsInDev @ chunk-QYFCA5BS.js?v=68f90eaa:19754
+commitDoubleInvokeEffectsInDEV @ chunk-QYFCA5BS.js?v=68f90eaa:19735
+flushPassiveEffectsImpl @ chunk-QYFCA5BS.js?v=68f90eaa:19556
+flushPassiveEffects @ chunk-QYFCA5BS.js?v=68f90eaa:19500
+(anonymous) @ chunk-QYFCA5BS.js?v=68f90eaa:19381
+workLoop @ chunk-QYFCA5BS.js?v=68f90eaa:197
+flushWork @ chunk-QYFCA5BS.js?v=68f90eaa:176
+performWorkUntilDeadline @ chunk-QYFCA5BS.js?v=68f90eaa:384
+ PreviousFundsIRRDisplay: Starting IRR calculation for funds [2164]
+ PreviousFundsIRRDisplay: Cache key: 2164-2-0100.00120.00
+ ❌ usePresence: WebSocket error: Event {isTrusted: true, type: 'error', target: WebSocket, currentTarget: WebSocket, eventPhase: 2, …}
+ws.onerror @ usePresence.ts:74
+ Provider switches loaded: []
+ All holdings before filtering: (3) [{…}, {…}, {…}]
  Active holdings after filtering: (2) [{…}, {…}]
- Creating Previous Funds entry with 0 inactive holdings
- No inactive holdings found, not creating Previous Funds entry
+ Creating Previous Funds entry with 1 inactive holdings
+ Previous Funds totals: {totalAmountInvested: 0, totalMarketValue: 0}
+ Created Previous Funds entry: {id: -1, fund_name: 'Previous Funds', amount_invested: 0, market_value: 0, irr: undefined, …}
  Calculating total investments...
- Investments only for holding 2142 (Cash): 0
- Investments only for holding 2143 (PruFund Growth Series E): 0
- Total investments (Investment type only): 0
- Calculating total investments...
- Investments only for holding 2142 (Cash): 0
- Investments only for holding 2143 (PruFund Growth Series E): 0
- Total investments (Investment type only): 0
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Creating Previous Funds entry with 0 inactive holdings
- No inactive holdings found, not creating Previous Funds entry
- Calculating total investments...
- Investments only for holding 2142 (Cash): 0
- Investments only for holding 2143 (PruFund Growth Series E): 0
- Total investments (Investment type only): 0
- Calculating total investments...
- Investments only for holding 2142 (Cash): 0
- Investments only for holding 2143 (PruFund Growth Series E): 0
- Total investments (Investment type only): 0
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Creating Previous Funds entry with 0 inactive holdings
- No inactive holdings found, not creating Previous Funds entry
- Calculating total investments...
- Investments only for holding 2142 (Cash): 0
- Investments only for holding 2143 (PruFund Growth Series E): 0
- Total investments (Investment type only): 0
- Calculating total investments...
- Investments only for holding 2142 (Cash): 0
- Investments only for holding 2143 (PruFund Growth Series E): 0
- Total investments (Investment type only): 0
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Creating Previous Funds entry with 0 inactive holdings
- No inactive holdings found, not creating Previous Funds entry
- Calculating total investments...
- Investments only for holding 2142 (Cash): 0
- Investments only for holding 2143 (PruFund Growth Series E): 0
- Total investments (Investment type only): 0
- Calculating total investments...
- Investments only for holding 2142 (Cash): 0
- Investments only for holding 2143 (PruFund Growth Series E): 0
- Total investments (Investment type only): 0
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Creating Previous Funds entry with 0 inactive holdings
- No inactive holdings found, not creating Previous Funds entry
- Calculating total investments...
- Investments only for holding 2142 (Cash): 0
- Investments only for holding 2143 (PruFund Growth Series E): 0
- Total investments (Investment type only): 0
- Calculating total investments...
- Investments only for holding 2142 (Cash): 0
- Investments only for holding 2143 (PruFund Growth Series E): 0
- Total investments (Investment type only): 0
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
- Creating Previous Funds entry with 0 inactive holdings
- No inactive holdings found, not creating Previous Funds entry
- Calculating total investments...
- Investments only for holding 2142 (Cash): 0
- Investments only for holding 2143 (PruFund Growth Series E): 0
- Total investments (Investment type only): 0
- Calculating total investments...
- Investments only for holding 2142 (Cash): 0
- Investments only for holding 2143 (PruFund Growth Series E): 0
- Total investments (Investment type only): 0
- All holdings before filtering: (2) [{…}, {…}]
- Active holdings after filtering: (2) [{…}, {…}]
+ Investments only for holding 2162 (Cash): 0
+ Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 1 inactive holdings
+ProductIRRCalculation.tsx:417 Previous Funds totals: {totalAmountInvested: 0, totalMarketValue: 0}
+ProductIRRCalculation.tsx:458 Created Previous Funds entry: {id: -1, fund_name: 'Previous Funds', amount_invested: 0, market_value: 0, irr: undefined, …}
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:833 PreviousFundsIRRDisplay: Skipping re-render - props unchanged
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 1 inactive holdings
+ProductIRRCalculation.tsx:417 Previous Funds totals: {totalAmountInvested: 0, totalMarketValue: 0}
+ProductIRRCalculation.tsx:458 Created Previous Funds entry: {id: -1, fund_name: 'Previous Funds', amount_invested: 0, market_value: 0, irr: undefined, …}
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 1 inactive holdings
+ProductIRRCalculation.tsx:417 Previous Funds totals: {totalAmountInvested: 0, totalMarketValue: 0}
+ProductIRRCalculation.tsx:458 Created Previous Funds entry: {id: -1, fund_name: 'Previous Funds', amount_invested: 0, market_value: 0, irr: undefined, …}
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:833 PreviousFundsIRRDisplay: Skipping re-render - props unchanged
+ProductIRRCalculation.tsx:744 PreviousFundsIRRDisplay: IRR calculation completed: 114.5%
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 1 inactive holdings
+ProductIRRCalculation.tsx:417 Previous Funds totals: {totalAmountInvested: 0, totalMarketValue: 0}
+ProductIRRCalculation.tsx:458 Created Previous Funds entry: {id: -1, fund_name: 'Previous Funds', amount_invested: 0, market_value: 0, irr: undefined, …}
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 1 inactive holdings
+ProductIRRCalculation.tsx:417 Previous Funds totals: {totalAmountInvested: 0, totalMarketValue: 0}
+ProductIRRCalculation.tsx:458 Created Previous Funds entry: {id: -1, fund_name: 'Previous Funds', amount_invested: 0, market_value: 0, irr: undefined, …}
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:833 PreviousFundsIRRDisplay: Skipping re-render - props unchanged
+ProductIRRCalculation.tsx:744 PreviousFundsIRRDisplay: IRR calculation completed: 114.5%
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 1 inactive holdings
+ProductIRRCalculation.tsx:417 Previous Funds totals: {totalAmountInvested: 0, totalMarketValue: 0}
+ProductIRRCalculation.tsx:458 Created Previous Funds entry: {id: -1, fund_name: 'Previous Funds', amount_invested: 0, market_value: 0, irr: undefined, …}
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:397 Creating Previous Funds entry with 1 inactive holdings
+ProductIRRCalculation.tsx:417 Previous Funds totals: {totalAmountInvested: 0, totalMarketValue: 0}
+ProductIRRCalculation.tsx:458 Created Previous Funds entry: {id: -1, fund_name: 'Previous Funds', amount_invested: 0, market_value: 0, irr: undefined, …}
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:662 Calculating total investments...
+ProductIRRCalculation.tsx:670 Investments only for holding 2162 (Cash): 0
+ProductIRRCalculation.tsx:670 Investments only for holding 2163 (Invesco Global Emerging Markets): 100
+ProductIRRCalculation.tsx:670 Investments only for holding 2164 (Fundsmith Equity): 100
+ProductIRRCalculation.tsx:674 Total investments (Investment type only): 200
+ProductIRRCalculation.tsx:168 All holdings before filtering: (3) [{…}, {…}, {…}]
+ProductIRRCalculation.tsx:177 Active holdings after filtering: (2) [{…}, {…}]
+ProductIRRCalculation.tsx:833 PreviousFundsIRRDisplay: Skipping re-render - props unchanged

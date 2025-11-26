@@ -165,12 +165,15 @@ const PreviousFundsIRRDisplay: React.FC<{
     
     setIsLoadingLivePreviousFundsIRR(true);
     try {
+      // CRITICAL: Use storeResult: false to prevent overwriting portfolio IRRs
+      // This calculates IRR for inactive funds only for display purposes
       const response = await calculateStandardizedMultipleFundsIRR({
-        portfolioFundIds: inactiveFundIds
+        portfolioFundIds: inactiveFundIds,
+        storeResult: false  // CRITICAL: Don't overwrite portfolio IRRs with inactive-only IRR!
       });
-      
+
       if (response.data && response.data.irr_percentage !== undefined) {
-        console.log(`PreviousFundsIRRDisplay: IRR calculation completed: ${response.data.irr_percentage}%`);
+        console.log(`PreviousFundsIRRDisplay: IRR calculation completed (NOT STORED): ${response.data.irr_percentage}%`);
         // API returns a percentage value (like 5.2 for 5.2%) ready for display
         setLivePreviousFundsIRR(response.data.irr_percentage);
       }

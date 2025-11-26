@@ -2125,15 +2125,17 @@ const ReportGenerator: React.FC = () => {
                 formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
               }
               
-              console.log('🚀 Calculating Previous Funds IRR for fund IDs:', inactiveFundIds, 'with date:', formattedDate);
+              console.log('🚀 Calculating Previous Funds IRR for fund IDs:', inactiveFundIds, 'with date:', formattedDate, '(display only, NOT storing)');
 
-              
+              // CRITICAL: Use storeResult: false to prevent overwriting portfolio IRRs
+              // This calculates IRR for inactive funds only for display in reports
               const irrResponse = await calculateStandardizedMultipleFundsIRR({
                 portfolioFundIds: inactiveFundIds,
-                irrDate: formattedDate
+                irrDate: formattedDate,
+                storeResult: false  // CRITICAL: Don't overwrite portfolio IRRs with inactive-only IRR!
               });
-              
-              console.log('📊 Previous Funds IRR API Response:', irrResponse);
+
+              console.log('📊 Previous Funds IRR API Response (NOT STORED):', irrResponse);
               console.log('📊 Response data:', irrResponse.data);
               
               if (irrResponse.data && typeof irrResponse.data.irr_percentage === 'number') {

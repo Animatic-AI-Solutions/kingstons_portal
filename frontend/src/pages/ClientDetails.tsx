@@ -177,16 +177,18 @@ const PreviousFundsIRRDisplay: React.FC<{ inactiveFundIds: number[] }> = ({ inac
       setLivePreviousFundsIRRError(null);
 
       try {
-        console.log(`Calculating live Previous Funds IRR for ${memoizedFundIds.length} inactive funds`);
+        console.log(`Calculating live Previous Funds IRR for ${memoizedFundIds.length} inactive funds (display only, NOT storing)`);
         console.log('Inactive fund IDs for live calculation:', memoizedFundIds);
         console.log('🔍 DEBUG: ClientDetails.tsx calling IRR with cache key:', cacheKey);
-        
-        // Use the standardized multiple IRR endpoint with £0 valuation handling
+
+        // CRITICAL: Use storeResult: false to prevent overwriting portfolio IRRs
+        // This calculates IRR for inactive funds only for display purposes
         const response = await calculateStandardizedMultipleFundsIRR({
-          portfolioFundIds: memoizedFundIds
+          portfolioFundIds: memoizedFundIds,
+          storeResult: false  // CRITICAL: Don't overwrite portfolio IRRs with inactive-only IRR!
         });
-        
-        console.log('Live Previous Funds IRR response:', response.data);
+
+        console.log('Live Previous Funds IRR response (NOT STORED):', response.data);
         
         if (response.data && response.data.success && response.data.irr_percentage !== null) {
           setLivePreviousFundsIRR({

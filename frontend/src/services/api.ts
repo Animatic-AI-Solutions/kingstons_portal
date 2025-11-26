@@ -581,15 +581,18 @@ export const reactivateProduct = (productId: number) => {
  * @param {Object} params - IRR calculation parameters
  * @param {number[]} params.portfolioFundIds - Array of portfolio fund IDs
  * @param {string} params.irrDate - Date for the IRR calculation (YYYY-MM-DD format)
+ * @param {boolean} params.storeResult - Whether to store the result in the database (defaults to true)
  * @returns {Promise} - API response with standardized IRR calculation
  */
 export const calculateStandardizedMultipleFundsIRR = (params: {
   portfolioFundIds: number[];
   irrDate?: string;
+  storeResult?: boolean;
 }) => {
   return api.post('portfolio_funds/multiple/irr', {
     portfolio_fund_ids: params.portfolioFundIds,
-    irr_date: params.irrDate || null
+    irr_date: params.irrDate || null,
+    store_result: params.storeResult !== undefined ? params.storeResult : true
   });
 };
 

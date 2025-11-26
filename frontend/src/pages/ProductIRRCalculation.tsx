@@ -680,8 +680,8 @@ interface AccountIRRCalculationProps {
 }
 
 // Move PreviousFundsIRRDisplay outside main component to prevent recreating on each render
-const PreviousFundsIRRDisplay: React.FC<{ 
-  inactiveHoldings: Holding[]; 
+const PreviousFundsIRRDisplay: React.FC<{
+  inactiveHoldings: Holding[];
   latestValuationDate: string | null;
   activityLogs: ActivityLog[]; // Add activityLogs as dependency since IRR depends on cash flows
 }> = React.memo(({ inactiveHoldings, latestValuationDate, activityLogs }) => {
@@ -725,23 +725,28 @@ const PreviousFundsIRRDisplay: React.FC<{
     return `${fundIdsStr}-${activityCount}-${activitySum}`;
   }, [inactiveFundIds, relevantActivities]);
 
+  // CRITICAL FIX: Calculate proper aggregated IRR for inactive funds but DON'T store in database
+  // Use storeResult: false to prevent overwriting the portfolio IRR with inactive-only IRR
   const calculateLivePreviousFundsIRR = useCallback(async () => {
     if (inactiveFundIds.length === 0) {
       console.log('PreviousFundsIRRDisplay: No inactive funds, skipping calculation');
+      setLivePreviousFundsIRR(null);
       return;
     }
-    
-    console.log(`PreviousFundsIRRDisplay: Starting IRR calculation for funds [${inactiveFundIds.join(', ')}]`);
+
+    console.log(`PreviousFundsIRRDisplay: Starting IRR calculation for inactive funds [${inactiveFundIds.join(', ')}] with storeResult=false`);
     console.log(`PreviousFundsIRRDisplay: Cache key: ${cacheKey}`);
-    
+
     setIsLoadingLivePreviousFundsIRR(true);
     try {
+      // Calculate aggregated IRR for inactive funds WITHOUT storing in database
       const response = await calculateStandardizedMultipleFundsIRR({
-        portfolioFundIds: inactiveFundIds
+        portfolioFundIds: inactiveFundIds,
+        storeResult: false  // CRITICAL: Don't store this calculation - display only!
       });
-      
+
       if (response.data && response.data.irr_percentage !== undefined) {
-        console.log(`PreviousFundsIRRDisplay: IRR calculation completed: ${response.data.irr_percentage}%`);
+        console.log(`PreviousFundsIRRDisplay: IRR calculation completed (NOT STORED): ${response.data.irr_percentage}%`);
         // API returns a percentage value (like 5.2 for 5.2%) ready for display
         setLivePreviousFundsIRR(response.data.irr_percentage);
       }
@@ -1347,30 +1352,31 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
 
     try {
       // CRITICAL FIX: Fetch current fund list from database instead of using stale frontend state
-      // This ensures newly reactivated/deactivated funds are properly included/excluded
+      // This ensures ALL funds are included in portfolio IRR calculation regardless of status
       console.log(`🔄 [PORTFOLIO IRR] Fetching fresh fund list from database...`);
-      const fundsResponse = await api.get(`/portfolios/${account.portfolio_id}/funds`);
-      const currentFunds = fundsResponse.data;
+      const portfolioResponse = await api.get(`/portfolios/${account.portfolio_id}/complete`);
+      const currentFunds = portfolioResponse.data.portfolio_funds || [];
 
-      // Filter to active funds from the freshly fetched data
-      const activeHoldings = currentFunds.filter((fund: any) =>
-        fund.status === 'active' || fund.status === null
-      );
+      // IMPORTANT BUSINESS RULE: Portfolio IRR calculation should include ALL funds regardless of status
+      // - Completeness check uses only ACTIVE funds (backend handles this)
+      // - But IRR calculation includes ALL funds (active, inactive, etc.)
+      // This ensures portfolio IRR reflects the complete financial picture
+      const allFundsForIRR = currentFunds; // No filtering by status!
 
-      console.log(`📋 [PORTFOLIO IRR] Active holdings count (from fresh data): ${activeHoldings.length}`, activeHoldings.map((h: any) => ({
+      console.log(`📋 [PORTFOLIO IRR] All funds count (from fresh data): ${allFundsForIRR.length}`, allFundsForIRR.map((h: any) => ({
         id: h.id,
         fund_name: h.fund_name,
         isin: h.isin_number,
         status: h.status
       })));
 
-      // IMPORTANT: Include ALL active funds (including Cash) in portfolio IRR calculation
+      // IMPORTANT: Include ALL funds (including Cash and inactive funds) in portfolio IRR calculation
       // The backend will naturally handle funds without valuations by skipping them
       // This allows Cash valuations to be included when they exist, while not blocking
       // portfolio IRR calculation when Cash doesn't have a valuation
-      const portfolioFundIds = activeHoldings.map((h: any) => h.id);
+      const portfolioFundIds = allFundsForIRR.map((h: any) => h.id);
 
-      const cashFunds = activeHoldings.filter(h =>
+      const cashFunds = allFundsForIRR.filter(h =>
         isCashFund({
           fund_name: h.fund_name,
           isin_number: h.isin_number,
@@ -1379,7 +1385,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       );
 
       console.log(`📊 [PORTFOLIO IRR] Portfolio IRR Calculation Summary:`);
-      console.log(`   - Total active holdings: ${activeHoldings.length}`);
+      console.log(`   - Total funds (all statuses): ${allFundsForIRR.length}`);
       console.log(`   - Cash funds (will be included if they have valuations): ${cashFunds.length}`);
       if (cashFunds.length > 0) {
         cashFunds.forEach(cf => {
@@ -1391,7 +1397,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       console.log(`   - Fund IDs: [${portfolioFundIds.join(', ')}]`);
 
       if (portfolioFundIds.length === 0) {
-        console.log('⏭️ [PORTFOLIO IRR] No active funds to calculate portfolio IRR for');
+        console.log('⏭️ [PORTFOLIO IRR] No funds to calculate portfolio IRR for');
         return null;
       }
 

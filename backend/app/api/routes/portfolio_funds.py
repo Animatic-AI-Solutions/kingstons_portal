@@ -2160,6 +2160,7 @@ async def calculate_multiple_portfolio_funds_irr(
     portfolio_fund_ids: List[int] = Body(..., description="List of portfolio fund IDs to include in IRR calculation"),
     irr_date: Optional[str] = Body(None, description="Date for IRR calculation in YYYY-MM-DD format (defaults to latest valuation date)"),
     bypass_cache: bool = Body(False, description="Bypass cache for fresh calculation (used during cascade operations)"),
+    store_result: bool = Body(True, description="Store the calculated IRR in the database (set to False for display-only calculations)"),
     db = Depends(get_db)
 ):
     """
@@ -2667,98 +2668,105 @@ async def calculate_multiple_portfolio_funds_irr(
 
         # IMPORTANT: Save portfolio IRR to database so it can be retrieved by getLatestPortfolioIRR
         # This ensures the UI Period Overview table shows the calculated portfolio IRR
-        try:
-            # Check if all funds belong to the same portfolio
-            portfolio_ids_result = await db.fetch("""
-                SELECT DISTINCT portfolio_id
-                FROM portfolio_funds
-                WHERE id = ANY($1::int[])
-            """, portfolio_fund_ids)
+        # Only save if store_result is True (skip for display-only calculations like Previous Funds IRR)
+        if store_result:
+            logger.info(f"💾 Storing portfolio IRR result in database (store_result=True)")
+        else:
+            logger.info(f"⏭️ Skipping database storage (store_result=False) - this is a display-only calculation")
 
-            unique_portfolio_ids = [row['portfolio_id'] for row in portfolio_ids_result]
+        if store_result:
+            try:
+                # Check if all funds belong to the same portfolio
+                portfolio_ids_result = await db.fetch("""
+                    SELECT DISTINCT portfolio_id
+                    FROM portfolio_funds
+                    WHERE id = ANY($1::int[])
+                """, portfolio_fund_ids)
 
-            if len(unique_portfolio_ids) > 1:
-                # This is a multi-portfolio IRR (client-level or report-level)
-                # Do NOT save it to any individual portfolio
-                logger.info(f"Skipping portfolio IRR save - multiple portfolios detected ({len(unique_portfolio_ids)} portfolios). This is a client-level IRR calculation.")
-            elif len(unique_portfolio_ids) == 1:
-                # All funds are from the same portfolio - safe to save
-                portfolio_id = unique_portfolio_ids[0]
+                unique_portfolio_ids = [row['portfolio_id'] for row in portfolio_ids_result]
 
-                # Check portfolio completeness (all non-cash funds must have valuations)
-                # Get all active non-cash funds
-                non_cash_funds = await db.fetch("""
-                    SELECT pf.id
-                    FROM portfolio_funds pf
-                    JOIN available_funds af ON pf.available_funds_id = af.id
-                    WHERE pf.portfolio_id = $1
-                      AND pf.status = 'active'
-                      AND NOT (af.fund_name = 'Cash' AND af.isin_number = 'N/A')
-                """, portfolio_id)
+                if len(unique_portfolio_ids) > 1:
+                    # This is a multi-portfolio IRR (client-level or report-level)
+                    # Do NOT save it to any individual portfolio
+                    logger.info(f"Skipping portfolio IRR save - multiple portfolios detected ({len(unique_portfolio_ids)} portfolios). This is a client-level IRR calculation.")
+                elif len(unique_portfolio_ids) == 1:
+                    # All funds are from the same portfolio - safe to save
+                    portfolio_id = unique_portfolio_ids[0]
 
-                if non_cash_funds:
-                    non_cash_fund_ids = [int(f["id"]) for f in non_cash_funds]
+                    # Check portfolio completeness (all non-cash funds must have valuations)
+                    # Get all active non-cash funds
+                    non_cash_funds = await db.fetch("""
+                        SELECT pf.id
+                        FROM portfolio_funds pf
+                        JOIN available_funds af ON pf.available_funds_id = af.id
+                        WHERE pf.portfolio_id = $1
+                          AND pf.status = 'active'
+                          AND NOT (af.fund_name = 'Cash' AND af.isin_number = 'N/A')
+                    """, portfolio_id)
 
-                    # Check which non-cash funds have valuations for this date
-                    funds_with_valuations = await db.fetch("""
-                        SELECT DISTINCT portfolio_fund_id
-                        FROM portfolio_fund_valuations
-                        WHERE portfolio_fund_id = ANY($1::int[])
-                          AND valuation_date = $2
-                    """, non_cash_fund_ids, irr_date_obj)
+                    if non_cash_funds:
+                        non_cash_fund_ids = [int(f["id"]) for f in non_cash_funds]
 
-                    funds_with_val_count = len(funds_with_valuations) if funds_with_valuations else 0
-                    is_complete = funds_with_val_count == len(non_cash_fund_ids)
+                        # Check which non-cash funds have valuations for this date
+                        funds_with_valuations = await db.fetch("""
+                            SELECT DISTINCT portfolio_fund_id
+                            FROM portfolio_fund_valuations
+                            WHERE portfolio_fund_id = ANY($1::int[])
+                              AND valuation_date = $2
+                        """, non_cash_fund_ids, irr_date_obj)
 
-                    if not is_complete:
-                        logger.warning(f"Portfolio {portfolio_id} is incomplete for {irr_date_obj} - skipping IRR save (missing valuations for {len(non_cash_fund_ids) - funds_with_val_count} non-cash funds)")
-                        # Portfolio is incomplete - don't save portfolio IRR
-                        # The cascade service will handle deletion if needed
-                        raise ValueError("Portfolio incomplete - not all non-cash funds have valuations")
+                        funds_with_val_count = len(funds_with_valuations) if funds_with_valuations else 0
+                        is_complete = funds_with_val_count == len(non_cash_fund_ids)
 
-                # Check if portfolio IRR already exists for this date
-                existing_portfolio_irr = await db.fetchrow("""
-                    SELECT id FROM portfolio_irr_values
-                    WHERE portfolio_id = $1 AND date = $2
-                """, portfolio_id, irr_date_obj)
+                        if not is_complete:
+                            logger.warning(f"Portfolio {portfolio_id} is incomplete for {irr_date_obj} - skipping IRR save (missing valuations for {len(non_cash_fund_ids) - funds_with_val_count} non-cash funds)")
+                            # Portfolio is incomplete - don't save portfolio IRR
+                            # The cascade service will handle deletion if needed
+                            raise ValueError("Portfolio incomplete - not all non-cash funds have valuations")
 
-                if existing_portfolio_irr:
-                    # Update existing record
-                    await db.execute("""
-                        UPDATE portfolio_irr_values
-                        SET irr_result = $1
-                        WHERE id = $2
-                    """, result['irr_percentage'], existing_portfolio_irr["id"])
-                else:
-                    # Insert new record (with duplicate handling)
-                    try:
+                    # Check if portfolio IRR already exists for this date
+                    existing_portfolio_irr = await db.fetchrow("""
+                        SELECT id FROM portfolio_irr_values
+                        WHERE portfolio_id = $1 AND date = $2
+                    """, portfolio_id, irr_date_obj)
+
+                    if existing_portfolio_irr:
+                        # Update existing record
                         await db.execute("""
-                            INSERT INTO portfolio_irr_values (portfolio_id, irr_result, date)
-                            VALUES ($1, $2, $3)
-                        """, portfolio_id, result['irr_percentage'], irr_date_obj)
-                    except Exception as insert_error:
-                        # If duplicate key error (race condition), try to update instead
-                        if "duplicate key" in str(insert_error).lower() or "unique constraint" in str(insert_error).lower():
-                            logger.warning(f"Duplicate portfolio IRR detected (race condition), updating instead for portfolio {portfolio_id} on {irr_date_obj}")
-                            existing_portfolio_irr = await db.fetchrow("""
-                                SELECT id FROM portfolio_irr_values
-                                WHERE portfolio_id = $1 AND date = $2
-                            """, portfolio_id, irr_date_obj)
-                            if existing_portfolio_irr:
-                                await db.execute("""
-                                    UPDATE portfolio_irr_values
-                                    SET irr_result = $1
-                                    WHERE id = $2
-                                """, result['irr_percentage'], existing_portfolio_irr["id"])
-                        else:
-                            raise insert_error
-            else:
-                # len(unique_portfolio_ids) == 0, which shouldn't happen, but handle gracefully
-                logger.error(f"No portfolio found for any of the provided fund IDs: {portfolio_fund_ids}")
+                            UPDATE portfolio_irr_values
+                            SET irr_result = $1
+                            WHERE id = $2
+                        """, result['irr_percentage'], existing_portfolio_irr["id"])
+                    else:
+                        # Insert new record (with duplicate handling)
+                        try:
+                            await db.execute("""
+                                INSERT INTO portfolio_irr_values (portfolio_id, irr_result, date)
+                                VALUES ($1, $2, $3)
+                            """, portfolio_id, result['irr_percentage'], irr_date_obj)
+                        except Exception as insert_error:
+                            # If duplicate key error (race condition), try to update instead
+                            if "duplicate key" in str(insert_error).lower() or "unique constraint" in str(insert_error).lower():
+                                logger.warning(f"Duplicate portfolio IRR detected (race condition), updating instead for portfolio {portfolio_id} on {irr_date_obj}")
+                                existing_portfolio_irr = await db.fetchrow("""
+                                    SELECT id FROM portfolio_irr_values
+                                    WHERE portfolio_id = $1 AND date = $2
+                                """, portfolio_id, irr_date_obj)
+                                if existing_portfolio_irr:
+                                    await db.execute("""
+                                        UPDATE portfolio_irr_values
+                                        SET irr_result = $1
+                                        WHERE id = $2
+                                    """, result['irr_percentage'], existing_portfolio_irr["id"])
+                            else:
+                                raise insert_error
+                else:
+                    # len(unique_portfolio_ids) == 0, which shouldn't happen, but handle gracefully
+                    logger.error(f"No portfolio found for any of the provided fund IDs: {portfolio_fund_ids}")
 
-        except Exception as save_error:
-            logger.error(f"Error saving portfolio IRR to database: {str(save_error)}", exc_info=True)
-            # Don't fail the entire request if saving fails - the IRR is still cached and returned
+            except Exception as save_error:
+                logger.error(f"Error saving portfolio IRR to database: {str(save_error)}", exc_info=True)
+                # Don't fail the entire request if saving fails - the IRR is still cached and returned
 
         return result
         

@@ -82,9 +82,14 @@ export class IRRDataService {
       // Import the existing API function
       const { calculateStandardizedMultipleFundsIRR } = await import('./api');
 
+      // IMPORTANT: If endDate is specified, this is a historical comparison query
+      // and should NOT overwrite stored IRRs. Only store if calculating current IRR.
+      const isHistoricalQuery = !!params.endDate;
+
       const response = await calculateStandardizedMultipleFundsIRR({
         portfolioFundIds: params.portfolioFundIds,
-        irrDate: params.endDate
+        irrDate: params.endDate,
+        storeResult: !isHistoricalQuery  // Don't store historical queries, only current IRR calculations
       });
 
       // Fix: Properly handle zero values - check each field without treating 0 as falsy

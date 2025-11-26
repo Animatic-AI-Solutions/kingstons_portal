@@ -414,18 +414,21 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
           
           for (const date of recentDates) {
             try {
-              console.log(`Calculating Previous Funds IRR for date: ${date}`);
-              
+              console.log(`Calculating Previous Funds IRR for date: ${date} (display only, NOT storing)`);
+
+              // CRITICAL: Use storeResult: false to prevent overwriting historical portfolio IRRs
+              // This calculates IRR for inactive funds only for display purposes
               const irrResponse = await calculateStandardizedMultipleFundsIRR({
                 portfolioFundIds: inactiveFundIds,
-                irrDate: date
+                irrDate: date,
+                storeResult: false  // CRITICAL: Don't overwrite historical portfolio IRRs!
               });
-              
+
               const irrPercentage = irrResponse.data.irr_percentage;
               const monthYear = formatMonthYear(date + 'T00:00:00Z');
               previousFundsIRRResults[monthYear] = irrPercentage;
-              
-              console.log(`Previous Funds IRR for ${date}: ${irrPercentage}%`);
+
+              console.log(`Previous Funds IRR for ${date}: ${irrPercentage}% (NOT STORED)`);
             } catch (err) {
               console.warn(`Failed to calculate Previous Funds IRR for date ${date}:`, err);
             }
