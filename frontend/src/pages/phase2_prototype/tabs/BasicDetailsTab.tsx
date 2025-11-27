@@ -25,11 +25,14 @@ interface ClientManagementInfo {
   ongoingClientStartDate?: string;
   dateOfClientDeclaration: string;
   dateOfPrivacyDeclaration: string;
-  lastFeeAgreement: string;
+  fullFeeAgreement: string;
+  lastSatisfactionDiscussion: string;
   feeAchieved: number;
   fixedFee: number;
   totalFUM: number;
   nextReviewDate: string;
+  frequencyOfPayment: 'Annually' | 'Monthly';
+  notes: string;
 }
 
 interface BasicDetailsTabProps {

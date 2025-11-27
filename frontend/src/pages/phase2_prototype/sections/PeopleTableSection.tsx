@@ -59,13 +59,13 @@ const PeopleTableSection: React.FC<PeopleTableSectionProps> = ({
           {sortedPeople.map((person) => {
             const fullName = `${person.title} ${person.forename} ${person.surname}`;
             const status = person.status || 'Active';
-            const isInactive = status === 'Lapsed' || status === 'Deceased';
+            const isInactive = status === 'Lapsed' || status === 'Deceased' || status === 'Historical';
 
             return (
               <tr
                 key={person.id}
                 className={`hover:bg-gray-50 cursor-pointer transition-colors ${
-                  isInactive ? 'opacity-60' : ''
+                  isInactive ? 'opacity-50 grayscale-[30%]' : ''
                 }`}
                 onClick={() => onPersonClick(person)}
               >

@@ -36,11 +36,15 @@ const SummaryTab: React.FC<SummaryTabProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {sortedPeople.map((person) => {
             const fullName = `${person.title} ${person.forename} ${person.middleNames} ${person.surname}`.trim();
+            const status = person.status || 'Active';
+            const isInactive = status === 'Lapsed' || status === 'Deceased' || status === 'Historical';
 
             return (
               <div
                 key={person.id}
-                className="bg-white shadow-md rounded-lg p-5 border border-gray-100"
+                className={`bg-white shadow-md rounded-lg p-5 border border-gray-100 ${
+                  isInactive ? 'opacity-50 grayscale-[30%]' : ''
+                }`}
               >
                 {/* Header */}
                 <div className="flex items-center mb-4 pb-3 border-b border-gray-200">
@@ -183,6 +187,8 @@ const SummaryTab: React.FC<SummaryTabProps> = ({
           {sortedPeople.map((person, index) => {
             const fullName = `${person.title} ${person.forename} ${person.surname}`.trim();
             const isDragging = draggedPersonId === person.id;
+            const status = person.status || 'Active';
+            const isInactive = status === 'Lapsed' || status === 'Deceased' || status === 'Historical';
             return (
               <div
                 key={person.id}
@@ -194,7 +200,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({
                   isDragging
                     ? 'border-primary-400 bg-primary-50 opacity-50 scale-105'
                     : 'border-gray-200 hover:border-primary-300 hover:bg-gray-100'
-                }`}
+                } ${isInactive ? 'opacity-50 grayscale-[30%]' : ''}`}
               >
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-gray-900 w-5">{index + 1}.</span>

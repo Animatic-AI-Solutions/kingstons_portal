@@ -39,7 +39,7 @@ export interface Person {
   shareDataWith: string;
   notes: string;
   // For display
-  relationship: string; // Relationship to client group (Husband, Wife, etc.)
+  relationship: 'wife' | 'husband' | 'father' | 'daughter' | 'son' | 'grandfather' | 'grandmother'; // Relationship to client group
   status?: 'Active' | 'Lapsed' | 'Deceased'; // Status of the person in the client group
 }
 
@@ -91,15 +91,15 @@ export interface VulnerabilityItem {
 
 export interface Document {
   id: string;
-  type: 'Will' | 'LPA H&W' | 'LPA P&F' | 'EPA' | 'Advance Directive' | 'General Power of Attorney' | 'Other';
+  type: 'Will' | 'LPOA H&W' | 'LPOA P&F' | 'EPA' | 'Advance Directive' | 'General Power of Attorney' | 'Other';
   people: string[]; // Associated people from client group
   status: 'Signed' | 'Pending' | 'Unknown' | 'Lapsed' | 'Pending Reg' | 'Registered' | 'In Use';
   // Status usage by document type:
   // - Will: Signed, Pending, Unknown, Lapsed
   // - Advance Directive: Signed, Pending, Lapsed, Unknown
   // - General Power of Attorney: Signed, Lapsed, Unknown
-  // - LPA H&W: Pending Reg, Registered, In Use, Lapsed, Unknown
-  // - LPA P&F: Pending Reg, Registered, In Use, Lapsed, Unknown
+  // - LPOA H&W: Pending Reg, Registered, In Use, Lapsed, Unknown
+  // - LPOA P&F: Pending Reg, Registered, In Use, Lapsed, Unknown
   // - EPA: Signed, In Use, Lapsed, Unknown
   // - Other: In Use, Lapsed, Signed, Unknown
   date: string; // General date field for the document
@@ -128,7 +128,7 @@ export interface CapacityToLoss {
   id: string;
   personName: string;
   score: number;
-  category: string;
+  category: 'High' | 'Medium-High' | 'Medium' | 'Medium-Low' | 'Low';
   dateAssessed: string;
   status: 'Active' | 'Lapsed';
   notes: string;
@@ -166,6 +166,7 @@ export interface Income {
   amount: number;
   frequency: string;
   owner: string;
+  lastUpdated: string;
 }
 
 export interface Expenditure {
@@ -174,6 +175,7 @@ export interface Expenditure {
   description: string;
   amount: number;
   frequency: string;
+  lastUpdated: string;
 }
 
 export interface Product {

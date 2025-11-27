@@ -1,0 +1,18 @@
+{
+  "lspServers": {
+    "pyright": {
+      "command": "pyright-langserver",
+      "args": ["--stdio"],
+      "rootPath": "./backend",
+      "filePatterns": ["**/*.py"],
+      "enabled": true
+    },
+    "typescript": {
+      "command": "typescript-language-server",
+      "args": ["--stdio"],
+      "rootPath": "./frontend",
+      "filePatterns": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
+      "enabled": true
+    }
+  }
+}

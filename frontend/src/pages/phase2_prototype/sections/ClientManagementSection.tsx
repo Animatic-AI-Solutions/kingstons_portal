@@ -9,11 +9,14 @@ interface ClientManagementInfo {
   ongoingClientStartDate?: string;
   dateOfClientDeclaration: string;
   dateOfPrivacyDeclaration: string;
-  lastFeeAgreement: string;
+  fullFeeAgreement: string;
+  lastSatisfactionDiscussion: string;
   feeAchieved: number;
   fixedFee: number;
   totalFUM: number;
   nextReviewDate: string;
+  frequencyOfPayment: 'Annually' | 'Monthly';
+  notes: string;
 }
 
 interface ClientManagementSectionProps {
@@ -131,6 +134,28 @@ const ClientManagementSection: React.FC<ClientManagementSectionProps> = ({
             )}
           </div>
 
+          {/* Ongoing Start Date (if Ongoing) */}
+          {editedInfo.typeOfClient === 'Ongoing' && (
+            <>
+              {/* Divider */}
+              <div className="h-4 w-px bg-gray-300"></div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-gray-500 uppercase">Ongoing Start:</span>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedInfo.ongoingClientStartDate}
+                    onChange={(e) => handleChange('ongoingClientStartDate', e.target.value)}
+                    className="px-2 py-0.5 text-sm font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <span className="text-sm font-semibold text-gray-900">{editedInfo.ongoingClientStartDate}</span>
+                )}
+              </div>
+            </>
+          )}
+
           {/* Divider */}
           <div className="h-4 w-px bg-gray-300"></div>
 
@@ -170,43 +195,59 @@ const ClientManagementSection: React.FC<ClientManagementSectionProps> = ({
           {/* Divider */}
           <div className="h-4 w-px bg-gray-300"></div>
 
-          {/* Fee Agreement Date */}
+          {/* Full Fee Agreement Date */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-gray-500 uppercase">Fee Agreement:</span>
+            <span className="text-xs font-semibold text-gray-500 uppercase">Full Fee Agreement:</span>
             {isEditing ? (
               <input
                 type="text"
-                value={editedInfo.lastFeeAgreement}
-                onChange={(e) => handleChange('lastFeeAgreement', e.target.value)}
+                value={editedInfo.fullFeeAgreement}
+                onChange={(e) => handleChange('fullFeeAgreement', e.target.value)}
                 className="px-2 py-0.5 text-sm font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             ) : (
-              <span className="text-sm font-semibold text-gray-900">{editedInfo.lastFeeAgreement}</span>
+              <span className="text-sm font-semibold text-gray-900">{editedInfo.fullFeeAgreement}</span>
             )}
           </div>
 
-          {/* Client Start Date (if Ongoing) */}
-          {editedInfo.typeOfClient === 'Ongoing' && (
-            <>
-              {/* Divider */}
-              <div className="h-4 w-px bg-gray-300"></div>
+          {/* Divider */}
+          <div className="h-4 w-px bg-gray-300"></div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase">Client Start:</span>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={editedInfo.ongoingClientStartDate}
-                    onChange={(e) => handleChange('ongoingClientStartDate', e.target.value)}
-                    className="px-2 py-0.5 text-sm font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  <span className="text-sm font-semibold text-gray-900">{editedInfo.ongoingClientStartDate}</span>
-                )}
-              </div>
-            </>
-          )}
+          {/* Last Satisfaction Discussion */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-gray-500 uppercase">Last Satisfaction Discussion:</span>
+            {isEditing ? (
+              <input
+                type="text"
+                value={editedInfo.lastSatisfactionDiscussion}
+                onChange={(e) => handleChange('lastSatisfactionDiscussion', e.target.value)}
+                className="px-2 py-0.5 text-sm font-semibold text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            ) : (
+              <span className="text-sm font-semibold text-gray-900">{editedInfo.lastSatisfactionDiscussion}</span>
+            )}
+          </div>
         </div>
+      </div>
+
+      {/* Notes Section */}
+      <div className="mb-3">
+        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
+          Notes
+        </label>
+        {isEditing ? (
+          <textarea
+            value={editedInfo.notes}
+            onChange={(e) => handleChange('notes', e.target.value)}
+            rows={4}
+            className="w-full px-2 py-1.5 text-sm text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+            placeholder="Add notes about this client..."
+          />
+        ) : (
+          <div className="px-2 py-1.5 text-sm text-gray-900 bg-gray-50 rounded border border-gray-200 min-h-[80px]">
+            {editedInfo.notes || <span className="text-gray-400">No notes added</span>}
+          </div>
+        )}
       </div>
 
       {/* Fees Table */}

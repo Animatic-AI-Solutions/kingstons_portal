@@ -24,16 +24,35 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
 }) => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
-  // Sort documents: Signed/Pending/Unknown before Lapsed, then by client order
-  // For documents with multiple people, use the earliest person in client order
+
+  // Sort documents by: 1) Document Type, 2) Status (Active before Lapsed), 3) Client Order
   const sortedDocuments = [...documents].sort((a, b) => {
-    // First sort by status (Signed/Pending/Unknown before Lapsed)
+    // Define document type ordering: Wills → LPOA P&F → LPOA H&W → EPA → GPA → Advance Directive → Other
+    const typeOrder: Record<string, number> = {
+      'Will': 0,
+      'LPOA P&F': 1,
+      'LPOA H&W': 2,
+      'EPA': 3,
+      'General Power of Attorney': 4,
+      'Advance Directive': 5,
+      'Other': 6
+    };
+
+    const aTypeOrder = typeOrder[a.type] ?? 99;
+    const bTypeOrder = typeOrder[b.type] ?? 99;
+
+    // First sort by document type
+    if (aTypeOrder !== bTypeOrder) {
+      return aTypeOrder - bTypeOrder;
+    }
+
+    // Then sort by status (Signed/Pending/Unknown before Lapsed)
     const isALapsed = a.status === 'Lapsed';
     const isBLapsed = b.status === 'Lapsed';
     if (!isALapsed && isBLapsed) return -1;
     if (isALapsed && !isBLapsed) return 1;
 
-    // Then get the highest priority person (earliest in client order) for each document
+    // Finally get the highest priority person (earliest in client order) for each document
     const getHighestPriorityIndex = (doc: Document) => {
       const peopleNames = doc.people;
       const indices = peopleNames.map(name => {
@@ -79,9 +98,9 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
                       ? 'bg-gray-200 text-gray-900'
                       : doc.type === 'Will'
                       ? 'bg-blue-100 text-blue-800'
-                      : doc.type === 'LPA H&W'
+                      : doc.type === 'LPOA H&W'
                       ? 'bg-green-100 text-green-800'
-                      : doc.type === 'LPA P&F'
+                      : doc.type === 'LPOA P&F'
                       ? 'bg-green-100 text-green-800'
                       : doc.type === 'EPA'
                       ? 'bg-orange-100 text-orange-800'

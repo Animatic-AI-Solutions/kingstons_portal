@@ -57,7 +57,7 @@ export const LIABILITY_CATEGORY_ORDER = [
 export const samplePeople: Person[] = [
   {
     id: '1',
-    relationship: 'Husband',
+    relationship: 'husband',
     // Personal Details
     gender: 'Male',
     title: 'Mr',
@@ -96,7 +96,7 @@ export const samplePeople: Person[] = [
   },
   {
     id: '2',
-    relationship: 'Wife',
+    relationship: 'wife',
     // Personal Details
     gender: 'Female',
     title: 'Mrs',
@@ -135,7 +135,7 @@ export const samplePeople: Person[] = [
   },
   {
     id: '3',
-    relationship: 'Daughter',
+    relationship: 'daughter',
     // Personal Details
     gender: 'Female',
     title: 'Miss',
@@ -174,7 +174,7 @@ export const samplePeople: Person[] = [
   },
   {
     id: '4',
-    relationship: 'Mother',
+    relationship: 'grandmother',
     // Personal Details
     gender: 'Female',
     title: 'Mrs',
@@ -436,7 +436,7 @@ export const sampleDocuments: Document[] = [
   },
   {
     id: '4',
-    type: 'LPA H&W',
+    type: 'LPOA H&W',
     people: ['James Mitchell', 'Sarah Mitchell'],
     status: 'Registered',
     date: '20/03/2023',
@@ -444,7 +444,7 @@ export const sampleDocuments: Document[] = [
   },
   {
     id: '5',
-    type: 'LPA P&F',
+    type: 'LPOA P&F',
     people: ['James Mitchell', 'Sarah Mitchell'],
     status: 'Registered',
     date: '20/03/2023',
@@ -522,8 +522,9 @@ export const sampleRiskAssessments: RiskAssessment[] = [
 export const sampleCapacityToLoss: CapacityToLoss[] = [
   { id: '1', personName: 'James Mitchell', score: 7, category: 'High', dateAssessed: '12/03/2024', status: 'Active', notes: 'Strong financial position with diversified assets' },
   { id: '2', personName: 'Sarah Mitchell', score: 6, category: 'Medium-High', dateAssessed: '12/03/2024', status: 'Active', notes: 'Stable income from self-employment, moderate reserves' },
-  { id: '3', personName: 'Emma Mitchell', score: 3, category: 'Low', dateAssessed: '12/03/2024', status: 'Active', notes: 'Student with limited income and assets' },
-  { id: '4', personName: 'James Mitchell', score: 5, category: 'Medium', dateAssessed: '15/03/2023', status: 'Lapsed', notes: 'Previous assessment before portfolio rebalancing. Financial position has since improved.' },
+  { id: '3', personName: 'Emma Mitchell', score: 4, category: 'Medium-Low', dateAssessed: '12/03/2024', status: 'Active', notes: 'Student with limited income and assets, modest family support' },
+  { id: '4', personName: 'Margaret Thompson', score: 2, category: 'Low', dateAssessed: '12/03/2024', status: 'Active', notes: 'Elderly with fixed pension income and minimal savings' },
+  { id: '5', personName: 'James Mitchell', score: 5, category: 'Medium', dateAssessed: '15/03/2023', status: 'Lapsed', notes: 'Previous assessment before portfolio rebalancing. Financial position has since improved.' },
 ];
 
 export const sampleAssets: Asset[] = [
@@ -1513,22 +1514,22 @@ export const sampleBusinessTrusteeships: Trusteeship[] = [
 ];
 
 export const sampleIncome: Income[] = [
-  { id: '1', type: 'Net Pay', source: 'Kingston & Associates Ltd', amount: 75000, frequency: 'Annual', owner: 'James Mitchell' },
-  { id: '2', type: 'Net Pay', source: 'Self-Employed Consultancy', amount: 45000, frequency: 'Annual', owner: 'Sarah Mitchell' },
-  { id: '3', type: 'Investment Income', source: 'Stocks & Shares ISA', amount: 3500, frequency: 'Annual', owner: 'James Mitchell' },
-  { id: '4', type: 'State Benefits', source: 'Child Benefit', amount: 1248, frequency: 'Annual', owner: 'Sarah Mitchell' },
+  { id: '1', type: 'Net Pay', source: 'Kingston & Associates Ltd', amount: 75000, frequency: 'Annual', owner: 'James Mitchell', lastUpdated: '15/03/2025' },
+  { id: '2', type: 'Net Pay', source: 'Self-Employed Consultancy', amount: 45000, frequency: 'Annual', owner: 'Sarah Mitchell', lastUpdated: '22/02/2025' },
+  { id: '3', type: 'Investment Income', source: 'Stocks & Shares ISA', amount: 3500, frequency: 'Annual', owner: 'James Mitchell', lastUpdated: '10/01/2025' },
+  { id: '4', type: 'State Benefits', source: 'Child Benefit', amount: 1248, frequency: 'Annual', owner: 'Sarah Mitchell', lastUpdated: '05/04/2024' },
 ];
 
 export const sampleExpenditure: Expenditure[] = [
-  { id: '1', type: 'Home', description: 'Mortgage Payment', amount: 1250, frequency: 'Monthly' },
-  { id: '2', type: 'Home', description: 'Utilities (Gas, Electric, Water)', amount: 350, frequency: 'Monthly' },
-  { id: '3', type: 'Home', description: 'Council Tax', amount: 185, frequency: 'Monthly' },
-  { id: '4', type: 'Personal', description: 'Groceries & Food Shopping', amount: 450, frequency: 'Monthly' },
-  { id: '5', type: 'Children', description: 'School Fees - Emma', amount: 850, frequency: 'Monthly' },
-  { id: '6', type: 'Car(s) and Travel', description: 'Car Insurance & Tax', amount: 95, frequency: 'Monthly' },
-  { id: '7', type: 'Financial', description: 'Life Insurance Premiums', amount: 125, frequency: 'Monthly' },
-  { id: '8', type: 'Discretionary', description: 'Holidays & Travel', amount: 5000, frequency: 'Annual' },
-  { id: '9', type: 'Discretionary', description: 'Dining Out & Entertainment', amount: 300, frequency: 'Monthly' },
+  { id: '1', type: 'Home', description: 'Mortgage Payment', amount: 1250, frequency: 'Monthly', lastUpdated: '12/03/2025' },
+  { id: '2', type: 'Home', description: 'Utilities (Gas, Electric, Water)', amount: 350, frequency: 'Monthly', lastUpdated: '12/03/2025' },
+  { id: '3', type: 'Home', description: 'Council Tax', amount: 185, frequency: 'Monthly', lastUpdated: '12/03/2025' },
+  { id: '4', type: 'Personal', description: 'Groceries & Food Shopping', amount: 450, frequency: 'Monthly', lastUpdated: '18/02/2025' },
+  { id: '5', type: 'Children', description: 'School Fees - Emma', amount: 850, frequency: 'Monthly', lastUpdated: '15/01/2025' },
+  { id: '6', type: 'Car(s) and Travel', description: 'Car Insurance & Tax', amount: 95, frequency: 'Monthly', lastUpdated: '08/11/2024' },
+  { id: '7', type: 'Financial', description: 'Life Insurance Premiums', amount: 125, frequency: 'Monthly', lastUpdated: '22/09/2024' },
+  { id: '8', type: 'Discretionary', description: 'Holidays & Travel', amount: 5000, frequency: 'Annual', lastUpdated: '05/08/2024' },
+  { id: '9', type: 'Discretionary', description: 'Dining Out & Entertainment', amount: 300, frequency: 'Monthly', lastUpdated: '05/08/2024' },
 ];
 
 export const sampleProducts: Product[] = [
@@ -1904,7 +1905,8 @@ export const clientManagementInfo = {
   ongoingClientStartDate: '15/06/2020',
   dateOfClientDeclaration: '10/06/2020',
   dateOfPrivacyDeclaration: '10/06/2020',
-  lastFeeAgreement: '01/04/2023',
+  fullFeeAgreement: '01/04/2023',
+  lastSatisfactionDiscussion: '12/03/2025',
   feeAchieved: 0.95, // Percentage fee charged
   fixedFee: 15600,
   totalFUM: 1850000, // Total Funds Under Management
@@ -1912,6 +1914,8 @@ export const clientManagementInfo = {
   clientSince: '15/06/2020',
   primaryAdvisor: 'John Anderson',
   meetingsPerYear: 2,
+  frequencyOfPayment: 'Annually' as 'Annually' | 'Monthly',
+  notes: 'Long-standing clients with diversified portfolio. Prefer annual reviews in March. Both clients are engaged and actively interested in financial planning decisions.',
 };
 
 export const otherClientGroups: OtherClientGroup[] = [

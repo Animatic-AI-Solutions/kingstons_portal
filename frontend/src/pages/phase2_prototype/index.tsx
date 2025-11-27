@@ -198,274 +198,222 @@ const ClientGroupPhase2 = () => {
 
         {/* Personal Details Section - Matching Summary Card Layout */}
         <div className="mb-2">
-          <h5 className="text-sm font-semibold text-gray-900 uppercase mb-2 flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">
-            <UserIcon className="w-3 h-3" />
-            Personal Details
-          </h5>
-          <div className="border border-gray-200 rounded bg-white p-3 space-y-2">
-            {/* First Grid - Name fields and Previous Names/Status/Place of Birth */}
-            <div className="grid grid-cols-2 gap-x-3 text-sm">
-              <div className="space-y-2">
+          <h5 className="text-base font-semibold text-gray-900 uppercase mb-2">Personal Details</h5>
+          <div className="space-y-2">
+            {/* Section 1: Basic Info - Matching Summary Card */}
+            <div className="grid grid-cols-2 gap-x-3 text-base pb-3 border-b border-gray-200">
+              <div className="space-y-1">
                 <div>
-                  <label className="block font-bold text-blue-600 mb-0.5">Title</label>
-                  <input
-                    type="text"
-                    defaultValue={person.title}
-                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-blue-600 mb-0.5">Forename</label>
-                  <input
-                    type="text"
-                    defaultValue={person.forename}
-                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-blue-600 mb-0.5">Middle Names</label>
-                  <input
-                    type="text"
-                    defaultValue={person.middleNames}
-                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-blue-600 mb-0.5">Surname</label>
-                  <input
-                    type="text"
-                    defaultValue={person.surname}
-                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-blue-600 mb-0.5">Known As</label>
-                  <input
-                    type="text"
-                    defaultValue={person.knownAs}
-                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-blue-600 mb-0.5">Gender</label>
+                  <span className="font-bold text-blue-600">Gender: </span>
                   <input
                     type="text"
                     defaultValue={person.gender}
-                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                    className="px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-blue-600 mb-0.5">DOB</label>
+                  <span className="font-bold text-blue-600">DOB: </span>
                   <input
                     type="text"
                     defaultValue={person.dateOfBirth}
-                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                    className="px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-blue-600 mb-0.5">Age</label>
+                  <span className="font-bold text-blue-600">Age: </span>
                   <input
                     type="number"
                     defaultValue={person.age}
-                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-20 px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <div>
-                  <label className="block font-bold text-blue-600 mb-0.5">Previous Names</label>
+                  <span className="font-bold text-blue-600">Previous Names: </span>
                   <input
                     type="text"
                     defaultValue={person.previousNames}
-                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                    className="px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-blue-600 mb-0.5">Status</label>
+                  <span className="font-bold text-blue-600">Status: </span>
                   <input
                     type="text"
                     defaultValue={person.relationshipStatus}
-                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                    className="px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-blue-600 mb-0.5">Place of Birth</label>
+                  <span className="font-bold text-blue-600">Place of Birth: </span>
                   <input
                     type="text"
                     defaultValue={person.placeOfBirth}
-                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                    className="px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Address Section */}
-            <div className="pt-1 space-y-2">
+            {/* Section 2: Address & Contact Details - Matching Summary Card */}
+            <div className="grid grid-cols-2 gap-x-3 text-base pt-3 pb-3 border-b border-gray-200">
               <div>
-                <label className="block text-sm font-bold text-blue-600 mb-0.5">Address Line 1</label>
-                <input
-                  type="text"
-                  defaultValue={person.addressLine1}
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                />
+                <p className="text-base font-bold text-blue-600 mb-1">Address</p>
+                <div className="space-y-1">
+                  <input
+                    type="text"
+                    defaultValue={person.addressLine1}
+                    placeholder="Address Line 1"
+                    className="w-full px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                  <input
+                    type="text"
+                    defaultValue={person.addressLine2}
+                    placeholder="Address Line 2"
+                    className="w-full px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                  <input
+                    type="text"
+                    defaultValue={person.addressLine3}
+                    placeholder="Address Line 3"
+                    className="w-full px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                  <input
+                    type="text"
+                    defaultValue={person.addressLine4}
+                    placeholder="Address Line 4"
+                    className="w-full px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                  <input
+                    type="text"
+                    defaultValue={person.addressLine5}
+                    placeholder="Address Line 5"
+                    className="w-full px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                  <input
+                    type="text"
+                    defaultValue={person.postcode}
+                    placeholder="Postcode"
+                    className="w-full px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                <p className="text-base text-gray-900 mt-2">
+                  <span className="font-bold text-blue-600">Moved in: </span>
+                  <input
+                    type="text"
+                    defaultValue={person.dateMovedIn}
+                    className="px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </p>
               </div>
               <div>
-                <label className="block text-sm font-bold text-blue-600 mb-0.5">Address Line 2</label>
-                <input
-                  type="text"
-                  defaultValue={person.addressLine2}
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-blue-600 mb-0.5">Address Line 3</label>
-                <input
-                  type="text"
-                  defaultValue={person.addressLine3}
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-blue-600 mb-0.5">Address Line 4</label>
-                <input
-                  type="text"
-                  defaultValue={person.addressLine4}
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-blue-600 mb-0.5">Address Line 5</label>
-                <input
-                  type="text"
-                  defaultValue={person.addressLine5}
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-blue-600 mb-0.5">Postcode</label>
-                <input
-                  type="text"
-                  defaultValue={person.postcode}
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-blue-600 mb-0.5">Moved in</label>
-                <input
-                  type="text"
-                  defaultValue={person.dateMovedIn}
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-            </div>
-
-            {/* Contact Section */}
-            <div className="pt-1 space-y-2 text-sm">
-              <div>
-                <label className="block font-bold text-blue-600 mb-0.5">Email 1</label>
-                <input
-                  type="email"
-                  defaultValue={person.primaryEmail}
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-              <div>
-                <label className="block font-bold text-blue-600 mb-0.5">Email 2</label>
-                <input
-                  type="email"
-                  defaultValue={person.secondaryEmail}
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-              <div>
-                <label className="block font-bold text-blue-600 mb-0.5">Phone 1</label>
-                <input
-                  type="tel"
-                  defaultValue={person.primaryPhone}
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-              <div>
-                <label className="block font-bold text-blue-600 mb-0.5">Phone 2</label>
-                <input
-                  type="tel"
-                  defaultValue={person.secondaryPhone}
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-            </div>
-
-            {/* Employment/Security Section */}
-            <div className="grid grid-cols-2 gap-x-3 text-sm pt-3">
-              <div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <div>
-                    <label className="block font-bold text-blue-600 mb-0.5">Employment Status</label>
+                    <span className="font-bold text-blue-600">Email 1: </span>
                     <input
-                      type="text"
-                      defaultValue={person.employmentStatus}
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                      type="email"
+                      defaultValue={person.primaryEmail}
+                      className="px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-blue-600 mb-0.5">Occupation</label>
+                    <span className="font-bold text-blue-600">Email 2: </span>
                     <input
-                      type="text"
-                      defaultValue={person.occupation}
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                      type="email"
+                      defaultValue={person.secondaryEmail}
+                      className="px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-blue-600 mb-0.5">NI Number</label>
+                    <span className="font-bold text-blue-600">Phone 1: </span>
                     <input
-                      type="text"
-                      defaultValue={person.niNumber}
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                      type="tel"
+                      defaultValue={person.primaryPhone}
+                      className="px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                  <div>
+                    <span className="font-bold text-blue-600">Phone 2: </span>
+                    <input
+                      type="tel"
+                      defaultValue={person.secondaryPhone}
+                      className="px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                 </div>
-                <div className="space-y-2 mt-3">
+                <div className="pt-2 space-y-1">
                   <div>
-                    <label className="block font-bold text-blue-600 mb-0.5">3 words</label>
+                    <span className="font-bold text-blue-600">3 words: </span>
                     <input
                       type="text"
                       defaultValue={person.safeWords.join(', ')}
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                      className="px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-blue-600 mb-0.5">Share Data With</label>
+                    <span className="font-bold text-blue-600">Share Data With: </span>
                     <input
                       type="text"
                       defaultValue={person.shareDataWith}
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                      className="px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                 </div>
               </div>
-              <div className="space-y-2">
+            </div>
+
+            {/* Section 3: Employment & Documents - Matching Summary Card */}
+            <div className="grid grid-cols-2 gap-x-3 text-base pt-3">
+              <div className="space-y-1">
                 <div>
-                  <label className="block font-bold text-blue-600 mb-0.5">Passport</label>
+                  <span className="font-bold text-blue-600">Employment Status: </span>
+                  <input
+                    type="text"
+                    defaultValue={person.employmentStatus}
+                    className="px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                <div>
+                  <span className="font-bold text-blue-600">Occupation: </span>
+                  <input
+                    type="text"
+                    defaultValue={person.occupation}
+                    className="px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                <div>
+                  <span className="font-bold text-blue-600">NI Number: </span>
+                  <input
+                    type="text"
+                    defaultValue={person.niNumber}
+                    className="px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div>
+                  <span className="font-bold text-blue-600">Passport: </span>
                   <input
                     type="text"
                     defaultValue={person.passportExpiry}
-                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                    className="px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-blue-600 mb-0.5">AML Result</label>
+                  <span className="font-bold text-blue-600">AML Result: </span>
                   <input
                     type="text"
                     defaultValue={person.amlResult}
-                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                    className="px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-blue-600 mb-0.5">AML Date</label>
+                  <span className="font-bold text-blue-600">AML Date: </span>
                   <input
                     type="text"
                     defaultValue={person.amlDate}
-                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                    className="px-2 py-0.5 border border-gray-300 rounded text-base focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
               </div>
