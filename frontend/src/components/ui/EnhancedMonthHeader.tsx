@@ -48,12 +48,12 @@ const EnhancedMonthHeader: React.FC<EnhancedMonthHeaderProps> = ({
   const showMiniYearSelector = isInFixedMode && availableYears.length > 1;
 
   // Increase height when mini year selector is shown to prevent content clipping
-  const headerHeight = showMiniYearSelector ? '38px' : '24px';
+  const headerHeight = showMiniYearSelector ? '38px' : '28px';
 
   return (
-    <th 
-      key={month} 
-      className="px-1 py-0 text-right font-medium text-gray-800 whitespace-nowrap bg-blue-50 border-b border-gray-300 relative group sticky top-0 z-40"
+    <th
+      key={month}
+      className="px-1 py-1 text-right font-medium text-gray-800 whitespace-nowrap bg-blue-50 border-b border-gray-300 relative group sticky top-0 z-40 overflow-visible"
       style={{
         ...(headerTop !== null && columnPositions[columnIndex] ? {
           position: 'absolute',
@@ -104,9 +104,9 @@ const EnhancedMonthHeader: React.FC<EnhancedMonthHeaderProps> = ({
 
       {/* Provider Switch Indicator */}
       {providerSwitch && (
-        <div className="absolute -top-1 -right-1 z-50">
+        <div className="absolute top-0.5 right-0.5 z-50">
           <div className="relative group">
-            <div className="w-2 h-2 bg-orange-500 rounded-full border border-white shadow-sm"></div>
+            <div className="w-3 h-3 bg-orange-500 rounded-full border border-white shadow-sm"></div>
             <div className="absolute top-6 right-0 bg-white border border-gray-200 rounded-lg shadow-lg p-3 min-w-[200px] opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto z-50">
               <div className="text-xs font-semibold text-orange-700 mb-1">Provider Switch</div>
               <div className="text-xs text-gray-600 space-y-1">

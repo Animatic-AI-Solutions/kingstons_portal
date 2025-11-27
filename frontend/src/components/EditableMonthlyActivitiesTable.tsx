@@ -2644,24 +2644,24 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                   ...(headerTop !== null && { display: 'block' })
                 }}
               >
-                <tr 
+                <tr
                   className=""
                   style={{
-                    ...(headerTop !== null && { 
+                    ...(headerTop !== null && {
                       display: 'block',
                       position: 'relative',
-                      height: '24px'
+                      height: '28px'
                     })
                   }}
                 >
-                  <th 
-                    className="px-1 py-0 text-left font-medium text-gray-800 sticky left-0 top-0 z-30 bg-blue-50 border-b border-gray-300"
+                  <th
+                    className="px-1 py-1 text-left font-medium text-gray-800 sticky left-0 top-0 z-30 bg-blue-50 border-b border-gray-300"
                     style={{
                       ...(headerTop !== null && columnPositions[0] ? {
                         position: 'absolute',
                         left: '0px', // Always position Activities column at left edge
                         width: `${columnPositions[0].width}px`,
-                        height: '24px',
+                        height: '28px',
                         display: 'flex',
                         alignItems: 'center'
                       } : {
@@ -2696,9 +2696,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                     
                     // Fallback to original header implementation
                     return (
-                      <th 
-                        key={month} 
-                        className="px-1 py-0 text-right font-medium text-gray-800 whitespace-nowrap bg-blue-50 border-b border-gray-300 relative group sticky top-0 z-40 cursor-pointer hover:bg-blue-100"
+                      <th
+                        key={month}
+                        className="px-1 py-1 text-right font-medium text-gray-800 whitespace-nowrap bg-blue-50 border-b border-gray-300 relative group sticky top-0 z-40 cursor-pointer hover:bg-blue-100 overflow-visible"
                         onClick={() => handleMonthHeaderClick(month)}
                         title="Click to bulk edit activities for this month"
                         style={{
@@ -2706,7 +2706,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                             position: 'absolute',
                             left: `${columnPositions[columnIndex].left}px`,
                             width: `${columnPositions[columnIndex].width}px`,
-                            height: '24px',
+                            height: '28px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -2718,8 +2718,8 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                       >
                         <span className="text-sm">{formatMonth(month)}</span>
                         {providerSwitch && (
-                          <div className="absolute -top-1 right-0 w-4 h-4">
-                            <div 
+                          <div className="absolute top-0.5 right-0.5 w-3 h-3">
+                            <div
                               className="w-3 h-3 bg-indigo-500 rounded-full cursor-help"
                               title={`Provider Switch: ${providerSwitch.previous_provider_name || 'None'} → ${providerSwitch.new_provider_name}`}
                             />
