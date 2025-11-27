@@ -2845,7 +2845,10 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                   </div>
                                   {fund.isActive === false && !fund.isInactiveBreakdown && fund.inactiveHoldingIds && fund.inactiveHoldingIds.length > 0 && (
                                     <button
-                                      onClick={() => setShowInactiveFunds(!showInactiveFunds)}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowInactiveFunds(!showInactiveFunds);
+                                      }}
                                       className="ml-2 px-2 py-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                                     >
                                       {showInactiveFunds ? "Hide" : "Show"} Breakdown
@@ -2853,7 +2856,10 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                   )}
                                   {fund.isInactiveBreakdown && (
                                     <button
-                                      onClick={() => reactivateFund(fund.id, fund.fund_name)}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        reactivateFund(fund.id, fund.fund_name);
+                                      }}
                                       disabled={reactivatingFunds.has(fund.id)}
                                       className="ml-2 px-2 py-1 text-xs bg-green-50 hover:bg-green-100 text-green-700 rounded border border-green-300 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
@@ -2862,7 +2868,10 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
                                   )}
                                   {fund.isActive !== false && !fund.isInactiveBreakdown && (
                                     <button
-                                      onClick={() => autoPopulateZeroValuations(fund.id)}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        autoPopulateZeroValuations(fund.id);
+                                      }}
                                       className="ml-2 px-2 py-1 text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 rounded border border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
                                       title="Auto-populate zero valuations up to earliest non-zero valuation"
                                     >
