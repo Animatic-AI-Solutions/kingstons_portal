@@ -1134,18 +1134,6 @@ async def update_client_product(client_product_id: int, client_product_update: C
     # Now only explicitly provided fields will be in all_data
     update_data = all_data
 
-    # Additional safety: Prevent accidental NULL fees (they should only be NULL on initial creation)
-    # If someone explicitly wants to clear fees, they should use a dedicated endpoint
-    if 'fixed_fee_direct' in update_data and update_data['fixed_fee_direct'] is None:
-        logger.warning(f"Rejected attempt to set fixed_fee_direct to NULL for product {client_product_id}")
-        del update_data['fixed_fee_direct']  # Remove from update to preserve existing value
-    if 'fixed_fee_facilitated' in update_data and update_data['fixed_fee_facilitated'] is None:
-        logger.warning(f"Rejected attempt to set fixed_fee_facilitated to NULL for product {client_product_id}")
-        del update_data['fixed_fee_facilitated']  # Remove from update to preserve existing value
-    if 'percentage_fee_facilitated' in update_data and update_data['percentage_fee_facilitated'] is None:
-        logger.warning(f"Rejected attempt to set percentage_fee_facilitated to NULL for product {client_product_id}")
-        del update_data['percentage_fee_facilitated']  # Remove from update to preserve existing value
-
     if not update_data:
         raise HTTPException(status_code=400, detail="No valid update data provided")
     
@@ -1171,10 +1159,15 @@ async def update_client_product(client_product_id: int, client_product_update: C
         for key, value in update_data.items():
             set_clauses.append(f"{key} = ${param_counter}")
             # Ensure proper type conversion for numeric fields
-            if key in ['fixed_fee_direct', 'fixed_fee_facilitated', 'percentage_fee_facilitated'] and value is not None:
-                # Convert to string representation for PostgreSQL numeric type
-                # asyncpg sometimes expects string input for numeric columns
-                values.append(str(float(value)))
+            if key in ['fixed_fee_direct', 'fixed_fee_facilitated', 'percentage_fee_facilitated']:
+                if value is not None:
+                    # Convert to string representation for PostgreSQL numeric type
+                    # asyncpg sometimes expects string input for numeric columns
+                    values.append(str(float(value)))
+                else:
+                    # Log when fee fields are being cleared (set to null)
+                    logger.info(f"Setting {key} to NULL for product {client_product_id}")
+                    values.append(value)
             else:
                 values.append(value)
             param_counter += 1

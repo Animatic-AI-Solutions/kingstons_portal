@@ -261,6 +261,7 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
         break;
       case 'Backspace':
         if (searchTerm) {
+          e.preventDefault(); // Prevent default browser backspace behavior to avoid double deletion
           // Remove characters from search term if we're searching
           setSearchTerm(prev => prev.slice(0, -1));
         } else if (values.length > 0 && onChange) {

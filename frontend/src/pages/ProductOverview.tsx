@@ -476,10 +476,16 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       }
       
       console.log('ProductOverview: Complete product data received:', completeData);
-      
+
       // Set account data directly from the response
       setAccount(completeData);
-      
+
+      console.log('💰 Fee values after refresh:', {
+        fixed_fee_direct: completeData.fixed_fee_direct,
+        fixed_fee_facilitated: completeData.fixed_fee_facilitated,
+        percentage_fee_facilitated: completeData.percentage_fee_facilitated
+      });
+
       console.log('Product owners loaded:', completeData.product_owners?.length || 0);
       
       // Fetch portfolio summary after account data is loaded
@@ -1821,9 +1827,24 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   // Handle form input changes for product details
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+
+    // For fee fields, ensure empty or whitespace-only values become empty string
+    // This handles edge cases where number inputs might have partial values
+    let processedValue = value;
+    if (name === 'fixed_fee_direct' || name === 'fixed_fee_facilitated' || name === 'percentage_fee_facilitated') {
+      // If the value is empty, null, undefined, or just whitespace, set to empty string
+      processedValue = (value === null || value === undefined || value.toString().trim() === '') ? '' : value;
+
+      console.log(`📝 Fee field changed - ${name}:`, {
+        rawValue: value,
+        processedValue: processedValue,
+        isEmpty: processedValue === ''
+      });
+    }
+
     setEditFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: processedValue
     }));
   };
 
@@ -1940,20 +1961,39 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         updateData.start_date = editFormData.start_date.format('YYYY-MM-DD');
       }
 
-      // Include revenue fields - set to null if empty/undefined, otherwise parse as float
-      updateData.fixed_fee_direct = editFormData.fixed_fee_direct && editFormData.fixed_fee_direct.trim() !== '' 
-        ? parseFloat(editFormData.fixed_fee_direct) 
-        : null;
-      
-      updateData.fixed_fee_facilitated = editFormData.fixed_fee_facilitated && editFormData.fixed_fee_facilitated.trim() !== '' 
-        ? parseFloat(editFormData.fixed_fee_facilitated) 
-        : null;
-      
-      updateData.percentage_fee_facilitated = editFormData.percentage_fee_facilitated && editFormData.percentage_fee_facilitated.trim() !== '' 
-        ? parseFloat(editFormData.percentage_fee_facilitated) 
+      // Include revenue fields - set to null if empty/whitespace, otherwise parse as float
+      // Empty string, whitespace, null, undefined, or falsy values will save as null in the database
+      const isEmptyValue = (value: any) => {
+        return value === null || value === undefined || value === '' || (typeof value === 'string' && value.trim() === '');
+      };
+
+      updateData.fixed_fee_direct = !isEmptyValue(editFormData.fixed_fee_direct)
+        ? parseFloat(editFormData.fixed_fee_direct)
         : null;
 
-      await api.patch(`/api/client_products/${accountId}`, updateData);
+      updateData.fixed_fee_facilitated = !isEmptyValue(editFormData.fixed_fee_facilitated)
+        ? parseFloat(editFormData.fixed_fee_facilitated)
+        : null;
+
+      updateData.percentage_fee_facilitated = !isEmptyValue(editFormData.percentage_fee_facilitated)
+        ? parseFloat(editFormData.percentage_fee_facilitated)
+        : null;
+
+      console.log('💰 Saving fee data:', {
+        formValues: {
+          fixed_fee_direct: editFormData.fixed_fee_direct,
+          fixed_fee_facilitated: editFormData.fixed_fee_facilitated,
+          percentage_fee_facilitated: editFormData.percentage_fee_facilitated
+        },
+        apiPayload: {
+          fixed_fee_direct: updateData.fixed_fee_direct,
+          fixed_fee_facilitated: updateData.fixed_fee_facilitated,
+          percentage_fee_facilitated: updateData.percentage_fee_facilitated
+        }
+      });
+
+      const response = await api.patch(`/api/client_products/${accountId}`, updateData);
+      console.log('✅ Fee save response:', response.data);
       
       // Handle portfolio template change if changed
       const currentTemplateId = account?.template_generation_id?.toString() || '';
