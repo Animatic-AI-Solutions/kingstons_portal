@@ -906,14 +906,64 @@ class IRRCascadeService:
                 return False
             
             irr_percentage = safe_irr_value(irr_result.get("irr_percentage", 0.0))
-            
-            # Get portfolio valuation ID for this date
+
+            # Calculate and save portfolio valuation for this date (required for IRR foreign key)
+            # IMPORTANT: Fund valuations are already stored with the "knocked forward" date
+            # If IRR date is 2025-11-01, fund valuations are stored as 2025-11-01 (not in October)
+            # So we look for valuations on the SAME date as the IRR date
+
+            logger.debug(f"Looking for fund valuations on IRR date {date} for portfolio {portfolio_id}")
+
+            # Get all portfolio funds for this portfolio
+            portfolio_funds = await self.db.fetch(
+                "SELECT id FROM portfolio_funds WHERE portfolio_id = $1",
+                portfolio_id
+            )
+
+            if not portfolio_funds:
+                logger.warning(f"No portfolio funds found for portfolio {portfolio_id}")
+                portfolio_total_valuation = 0.0
+            else:
+                fund_ids = [pf["id"] for pf in portfolio_funds]
+
+                # Get fund valuations on the IRR date (valuations are already knocked forward)
+                fund_valuations = await self.db.fetch(
+                    "SELECT portfolio_fund_id, valuation, valuation_date FROM portfolio_fund_valuations WHERE portfolio_fund_id = ANY($1::int[]) AND valuation_date = $2",
+                    fund_ids, date_obj
+                )
+
+                if not fund_valuations:
+                    logger.warning(f"No fund valuations found for portfolio {portfolio_id} on {date} (IRR date)")
+                    portfolio_total_valuation = 0.0
+                else:
+                    portfolio_total_valuation = sum(float(fv["valuation"]) for fv in fund_valuations)
+                    logger.debug(f"Calculated portfolio valuation: £{portfolio_total_valuation:,.2f} from {len(fund_valuations)} fund valuations on {date}")
+                    # Log individual fund valuations for debugging
+                    for fv in fund_valuations:
+                        logger.debug(f"  Fund {fv['portfolio_fund_id']}: £{float(fv['valuation']):,.2f} on {fv['valuation_date']}")
+
+            # Check if portfolio valuation already exists for the IRR date
             valuation_result = await self.db.fetchrow(
                 "SELECT id FROM portfolio_valuations WHERE portfolio_id = $1 AND valuation_date = $2",
                 portfolio_id, date_obj
             )
-            
-            portfolio_valuation_id = valuation_result["id"] if valuation_result else None
+
+            if valuation_result:
+                # Update existing portfolio valuation
+                await self.db.execute(
+                    "UPDATE portfolio_valuations SET valuation = $1 WHERE id = $2",
+                    portfolio_total_valuation, valuation_result["id"]
+                )
+                portfolio_valuation_id = valuation_result["id"]
+                logger.debug(f"📊 Updated portfolio valuation for portfolio {portfolio_id} on {date}: £{portfolio_total_valuation:,.2f}")
+            else:
+                # Insert new portfolio valuation with the IRR date
+                new_valuation = await self.db.fetchrow(
+                    "INSERT INTO portfolio_valuations (portfolio_id, valuation_date, valuation) VALUES ($1, $2, $3) RETURNING id",
+                    portfolio_id, date_obj, portfolio_total_valuation
+                )
+                portfolio_valuation_id = new_valuation["id"] if new_valuation else None
+                logger.debug(f"📊 Created portfolio valuation for portfolio {portfolio_id} on {date}: £{portfolio_total_valuation:,.2f}")
             
             # Check if portfolio IRR already exists for this date
             existing_irr = await self.db.fetchrow(

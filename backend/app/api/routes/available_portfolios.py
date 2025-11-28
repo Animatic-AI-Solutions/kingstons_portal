@@ -1507,49 +1507,52 @@ async def get_generation_with_funds_batch(generation_id: int, db = Depends(get_d
         logger.error(f"Error in batch generation/funds fetch: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/{portfolio_id}/linked-products", response_model=List[dict])
+@router.get("/{portfolio_id}/linked-products", response_model=dict)
 async def get_products_linked_to_template(portfolio_id: int, db = Depends(get_db)):
     """
-    Get all products that are linked to this portfolio template through their template generations.
-    
+    Get all products that are linked to this portfolio template through their template generations,
+    including their most recent valuations and total funds under management.
+
     Products can be linked to a template in two ways:
     1. Through their portfolio's template_generation_id
     2. Directly through their own template_generation_id
-    
+
     Args:
         portfolio_id: The ID of the portfolio template
-        
+
     Returns:
-        List of products with client and provider information
+        Dict containing:
+        - products: List of products with client, provider, and valuation information
+        - total_fum: Total funds under management across all products using this template
     """
     try:
         logger.info(f"Fetching products linked to portfolio template {portfolio_id}")
-        
+
         # First, get all generations for this portfolio template
         generations_response = await db.fetch(
             "SELECT id FROM template_portfolio_generations WHERE available_portfolio_id = $1",
             portfolio_id
         )
-        
+
         if not generations_response:
             logger.info(f"No generations found for portfolio template {portfolio_id}")
-            return []
-        
+            return {"products": [], "total_fum": 0}
+
         generation_ids = [gen['id'] for gen in generations_response]
         logger.info(f"Found {len(generation_ids)} generations for template {portfolio_id}")
-        
+
         # Query products linked through portfolios (where portfolio.template_generation_id matches)
         products_via_portfolio = await db.fetch(
             "SELECT * FROM client_products WHERE portfolio_id IS NOT NULL"
         )
-        
+
         # Query products directly linked to template generations
         products_direct = await db.fetch(
             "SELECT * FROM client_products WHERE template_generation_id = ANY($1::int[])",
             generation_ids
         )
-        
-        # Helper function to enrich product with related data
+
+        # Helper function to enrich product with related data including valuation
         async def enrich_product(product):
             # Fetch client group
             if product.get('client_id'):
@@ -1558,7 +1561,7 @@ async def get_products_linked_to_template(portfolio_id: int, db = Depends(get_db
                     product['client_id']
                 )
                 product['client_groups'] = dict(client_response) if client_response else None
-            
+
             # Fetch provider
             if product.get('provider_id'):
                 provider_response = await db.fetchrow(
@@ -1570,15 +1573,38 @@ async def get_products_linked_to_template(portfolio_id: int, db = Depends(get_db
                     product['available_providers'] = provider_data
                     # Also add provider_name directly for generateProductDisplayName
                     product['provider_name'] = provider_data['name']
-            
-            # Fetch portfolio
+
+            # Fetch portfolio and most recent valuation
             if product.get('portfolio_id'):
                 portfolio_response = await db.fetchrow(
                     "SELECT id, portfolio_name, template_generation_id FROM portfolios WHERE id = $1",
                     product['portfolio_id']
                 )
                 product['portfolios'] = dict(portfolio_response) if portfolio_response else None
-            
+
+                # Fetch most recent portfolio valuation based on portfolio_id
+                # Use portfolio_valuations table for most accurate total portfolio value
+                latest_valuation_response = await db.fetchrow(
+                    """
+                    SELECT valuation, valuation_date
+                    FROM portfolio_valuations
+                    WHERE portfolio_id = $1
+                    ORDER BY valuation_date DESC
+                    LIMIT 1
+                    """,
+                    product['portfolio_id']
+                )
+
+                if latest_valuation_response:
+                    product['latest_valuation'] = float(latest_valuation_response['valuation']) if latest_valuation_response['valuation'] else 0
+                    product['valuation_date'] = latest_valuation_response['valuation_date'].isoformat() if latest_valuation_response['valuation_date'] else None
+                else:
+                    product['latest_valuation'] = 0
+                    product['valuation_date'] = None
+            else:
+                product['latest_valuation'] = 0
+                product['valuation_date'] = None
+
             # Fetch product owners through the correct relationship
             product_owners_response = await db.fetch(
                 """
@@ -1590,13 +1616,13 @@ async def get_products_linked_to_template(portfolio_id: int, db = Depends(get_db
                 product['id']
             )
             product['product_owners'] = [dict(owner) for owner in product_owners_response] if product_owners_response else []
-            
+
             return product
-        
+
         # Combine and deduplicate results
         all_products = []
         seen_product_ids = set()
-        
+
         # Add products from portfolio links (filter by portfolio's template_generation_id)
         if products_via_portfolio:
             for product in products_via_portfolio:
@@ -1604,14 +1630,14 @@ async def get_products_linked_to_template(portfolio_id: int, db = Depends(get_db
                 if product['id'] not in seen_product_ids:
                     # Enrich product with related data
                     enriched_product = await enrich_product(product.copy())
-                    
+
                     # Check if this product's portfolio is linked to our template
                     portfolio = enriched_product.get('portfolios')
                     if portfolio and portfolio.get('template_generation_id') in generation_ids:
                         enriched_product['link_type'] = 'portfolio'
                         all_products.append(enriched_product)
                         seen_product_ids.add(product['id'])
-        
+
         # Add products from direct links
         if products_direct:
             for product in products_direct:
@@ -1622,21 +1648,28 @@ async def get_products_linked_to_template(portfolio_id: int, db = Depends(get_db
                     enriched_product['link_type'] = 'direct'
                     all_products.append(enriched_product)
                     seen_product_ids.add(product['id'])
-        
+
+        # Calculate total FUM across all products
+        total_fum = sum(product.get('latest_valuation', 0) for product in all_products)
+
         logger.info(f"Found {len(all_products)} total products linked to template {portfolio_id}")
-        
+        logger.info(f"Total FUM for template {portfolio_id}: £{total_fum:,.2f}")
+
         # Log sample product for debugging
         if all_products:
             logger.info(f"Sample product structure: {all_products[0]}")
-        
+
         # Sort by client name, then product name
         all_products.sort(key=lambda x: (
             x.get('client_groups', {}).get('name', '') if x.get('client_groups') else '',
             x.get('product_name', '')
         ))
-        
-        return all_products
-        
+
+        return {
+            "products": all_products,
+            "total_fum": total_fum
+        }
+
     except Exception as e:
         logger.error(f"Error fetching products linked to template {portfolio_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e)) 

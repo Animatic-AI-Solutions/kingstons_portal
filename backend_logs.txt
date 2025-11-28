@@ -1,100 +1,784 @@
-tes': ['2024-01-01'], 'activity_dates': ['2024-01-01'], 'earliest_activity_date': '2024-01-01'}
-2025-11-28 15:34:03,068 - app.api.routes.holding_activity_logs - INFO - Sophisticated IRR recalculation result: {'success': True, 'portfolio_fund_id': 2227, 'portfolio_id': 448, 'activity_start_date': '2024-01-01', 'recalculated_existing': 1, 'new_entries_created': 0, 'portfolio_irr_recalculated': 0, 'dates_processed': 1, 'cascade_service_used': True, 'method': 'targeted_activity_batch'}
-2025-11-28 15:34:03,229 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 4 portfolio funds
-2025-11-28 15:34:03,229 - app.api.routes.portfolio_funds - INFO - No IRR date provided, finding latest valuation date
-2025-11-28 15:34:03,233 - app.api.routes.portfolio_funds - INFO - Using latest valuation date: 2024-01-01
-2025-11-28 15:34:03,233 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2024-01-01
-2025-11-28 15:34:03,235 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 4 funds (eliminates 4 individual requests)
-2025-11-28 15:34:03,239 - app.api.routes.portfolio_funds - WARNING - No valuation found for fund 2162 as of 2024-01-01
-2025-11-28 15:34:03,240 - app.api.routes.portfolio_funds - WARNING - No valuation found for fund 2163 as of 2024-01-01
-2025-11-28 15:34:03,240 - app.api.routes.portfolio_funds - WARNING - No valuation found for fund 2164 as of 2024-01-01
-2025-11-28 15:34:03,240 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {2227: 110.0, 2162: None, 2163: None, 2164: None}
-2025-11-28 15:34:03,241 - app.api.routes.portfolio_funds - WARNING - 💰 DEBUG: ⚠️ Excluding 3 funds without valuations from IRR calculatioon: [2162, 2163, 2164]
-2025-11-28 15:34:03,242 - app.api.routes.portfolio_funds - WARNING - 💰 DEBUG: ✅ Including 1 funds with valuations: [2227]
-2025-11-28 15:34:03,250 - app.api.routes.portfolio_funds - INFO - 📊 Processing 1 activities across 1 funds
-2025-11-28 15:34:03,286 - app.api.routes.portfolio_funds - ERROR - 
-2025-11-28 15:34:03,295 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-28 15:34:03,305 - app.api.routes.portfolio_funds - ERROR - 🔍 IRR CALCULATION DEBUG - Portfolio Funds: [2227]
-2025-11-28 15:34:03,312 - app.api.routes.portfolio_funds - ERROR - 🔍 Calculation Date: 2024-01-01
-2025-11-28 15:34:03,316 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-28 15:34:03,337 - app.api.routes.portfolio_funds - ERROR - 
-2025-11-28 15:34:03,337 - app.api.routes.portfolio_funds - ERROR - 📋 ALL TRANSACTIONS INCLUDED IN CALCULATION:
-2025-11-28 15:34:03,337 - app.api.routes.portfolio_funds - ERROR -    Total Activities: 1
-2025-11-28 15:34:03,337 - app.api.routes.portfolio_funds - ERROR -
-2025-11-28 15:34:03,338 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2227: 1 transactions
-2025-11-28 15:34:03,339 - app.api.routes.portfolio_funds - ERROR -         1. 2024-01-01 | £      100.00 | Investment           | NEGATIVE (investment)
-2025-11-28 15:34:03,339 - app.api.routes.portfolio_funds - ERROR -
-2025-11-28 15:34:03,339 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-28 15:34:03,339 - app.api.routes.portfolio_funds - ERROR - 💰 MONTHLY CASH FLOW TOTALS:
-2025-11-28 15:34:03,340 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-28 15:34:03,340 - app.api.routes.portfolio_funds - ERROR -      1. 2024-01-01 (activities)                  | £        -100.00 | OUTFLOW (negative)
-2025-11-28 15:34:03,340 - app.api.routes.portfolio_funds - ERROR -      2. 2024-02-01 (FINAL VALUATION)             | £         110.00 | INFLOW (positive)
-2025-11-28 15:34:03,340 - app.api.routes.portfolio_funds - ERROR -
-2025-11-28 15:34:03,341 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-28 15:34:03,341 - app.api.routes.portfolio_funds - ERROR - 📊 SUMMARY STATISTICS:
-2025-11-28 15:34:03,341 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-28 15:34:03,341 - app.api.routes.portfolio_funds - ERROR -    Total Cash Flow Periods: 2
-2025-11-28 15:34:03,342 - app.api.routes.portfolio_funds - ERROR -    Total Valuation: £110.00
-2025-11-28 15:34:03,342 - app.api.routes.portfolio_funds - ERROR -    Fund Valuations: {2227: 110.0, 2162: None, 2163: None, 2164: None}  
-2025-11-28 15:34:03,342 - app.api.routes.portfolio_funds - ERROR -    Period: 2024-01-01 to 2024-02-01
-2025-11-28 15:34:03,343 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-28 15:34:03,343 - app.api.routes.portfolio_funds - ERROR -
-2025-11-28 15:34:03,344 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Start date: 2024-01-01 00:00:00, End date: 2024-02-01 00:00:00
-2025-11-28 15:34:03,344 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Initial total_months calculated: 2
-2025-11-28 15:34:03,344 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Processing 2 cashflows into monthly array of size 2
-2025-11-28 15:34:03,344 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 0: date=2024-01-01, amount=-100.0, original_month_index=0, final_month_index=0, is_final=False
-2025-11-28 15:34:03,344 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Extended array to size 3 for final valuation
-2025-11-28 15:34:03,345 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 1: date=2024-02-01, amount=110.0, original_month_index=1, final_month_index=2, is_final=True
-2025-11-28 15:34:03,345 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Final monthly_amounts array: [-100.0, 0, 110.0]
-2025-11-28 15:34:03,345 - app.api.routes.portfolio_funds - INFO -
+2025-11-28 16:48:37,783 - app.api.routes.portfolio_funds - INFO -
 ============================================================
-2025-11-28 15:34:03,345 - app.api.routes.portfolio_funds - INFO - IRR CALCULATION - CASHFLOW BREAKDOWN
-2025-11-28 15:34:03,345 - app.api.routes.portfolio_funds - INFO - ============================================================
-2025-11-28 15:34:03,345 - app.api.routes.portfolio_funds - INFO - Period: 2024-01 to 2024-02
-2025-11-28 15:34:03,346 - app.api.routes.portfolio_funds - INFO - Total months: 2
-2025-11-28 15:34:03,346 - app.api.routes.portfolio_funds - INFO -
+2025-11-28 16:48:37,783 - app.api.routes.portfolio_funds - INFO - IRR CALCULATION - CASHFLOW BREAKDOWN
+2025-11-28 16:48:37,784 - app.api.routes.portfolio_funds - INFO - ============================================================
+2025-11-28 16:48:37,785 - app.api.routes.portfolio_funds - INFO - Period: 2025-11 to 2025-12
+2025-11-28 16:48:37,785 - app.api.routes.portfolio_funds - INFO - Total months: 2
+2025-11-28 16:48:37,786 - app.api.routes.portfolio_funds - INFO -
 Monthly cashflows:
-2025-11-28 15:34:03,346 - app.api.routes.portfolio_funds - INFO -   Month 0 (2024-01): £-100.00 (Inflow)
-2025-11-28 15:34:03,346 - app.api.routes.portfolio_funds - INFO -   Month 1 (2024-02): £0.00 (Zero)
-2025-11-28 15:34:03,346 - app.api.routes.portfolio_funds - INFO -   Month 2 (2024-03): £110.00 (Outflow)
-2025-11-28 15:34:03,347 - app.api.routes.portfolio_funds - INFO -
-Total negative flows (investments): £-100.00
-2025-11-28 15:34:03,347 - app.api.routes.portfolio_funds - INFO - Total positive flows (returns): £110.00
-2025-11-28 15:34:03,347 - app.api.routes.portfolio_funds - INFO - Net cash flow: £10.00
-2025-11-28 15:34:03,347 - app.api.routes.portfolio_funds - INFO - ============================================================
+2025-11-28 16:48:37,786 - app.api.routes.portfolio_funds - INFO -   Month 0 (2025-11): £-5,000.00 (Inflow)
+2025-11-28 16:48:37,787 - app.api.routes.portfolio_funds - INFO -   Month 1 (2025-12): £10,000.00 (Outflow)
+2025-11-28 16:48:37,787 - app.api.routes.portfolio_funds - INFO -
+Total negative flows (investments): £-5,000.00
+2025-11-28 16:48:37,788 - app.api.routes.portfolio_funds - INFO - Total positive flows (returns): £10,000.00
+2025-11-28 16:48:37,788 - app.api.routes.portfolio_funds - INFO - Net cash flow: £5,000.00
+2025-11-28 16:48:37,789 - app.api.routes.portfolio_funds - INFO - ============================================================
 
-2025-11-28 15:34:03,347 - app.api.routes.portfolio_funds - INFO - RESULT: Monthly IRR: 4.8809% | Annualized IRR: 58.5706%
-2025-11-28 15:34:03,347 - app.api.routes.portfolio_funds - INFO - ============================================================
+2025-11-28 16:48:37,790 - app.api.routes.portfolio_funds - INFO - RESULT: Monthly IRR: 100.0000% | Annualized IRR: 1200.0000%
+2025-11-28 16:48:37,791 - app.api.routes.portfolio_funds - INFO - ============================================================
 
-2025-11-28 15:34:03,348 - app.api.routes.portfolio_funds - ERROR -
-2025-11-28 15:34:03,348 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-28 15:34:03,348 - app.api.routes.portfolio_funds - ERROR - ✅ FINAL IRR CALCULATION RESULT:
-2025-11-28 15:34:03,348 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-28 15:34:03,349 - app.api.routes.portfolio_funds - ERROR -    IRR (Decimal): 0.5857061780418222
-2025-11-28 15:34:03,349 - app.api.routes.portfolio_funds - ERROR -    IRR (Percentage): 58.57%
-2025-11-28 15:34:03,349 - app.api.routes.portfolio_funds - ERROR -    Days in Period: 31
-2025-11-28 15:34:03,350 - app.api.routes.portfolio_funds - ERROR -    Cash Flow Periods: 2
-2025-11-28 15:34:03,350 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-28 15:34:03,350 - app.api.routes.portfolio_funds - ERROR -
-2025-11-28 15:34:03,350 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: 58.6% over 31 days (2 cash flow periods)   
-2025-11-28 15:34:03,351 - app.api.routes.portfolio_funds - INFO - 💾 Storing portfolio IRR result in database (store_result=True)
-2025-11-28 15:34:03,356 - app.api.routes.portfolio_funds - WARNING - Portfolio 448 is incomplete for 2024-01-01 - skipping IRR save (missing valuations for 2 non-cash funds)
-2025-11-28 15:34:03,357 - app.api.routes.portfolio_funds - ERROR - Error saving portfolio IRR to database: Portfolio incomplete - not all non-cash funds have valuations
-Traceback (most recent call last):
-  File "C:\Users\jacob\Documents\kingstons_portal\backend\app\api\routes\portfolio_funds.py", line 2713, in calculate_multiple_portfolio_funds_irr
-    raise ValueError("Portfolio incomplete - not all non-cash funds have valuations")
-ValueError: Portfolio incomplete - not all non-cash funds have valuations
-2025-11-28 15:34:04,412 - app.api.routes.client_products - INFO - Fetching complete product details for product ID: 435
-2025-11-28 15:34:04,415 - app.api.routes.client_products - INFO - Found product: Investment Bond (ID: 435)
+2025-11-28 16:48:37,791 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Final IRR calculation - Decimal: 12.0, Percentage: 1200.0%    
+2025-11-28 16:48:37,792 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: IRR calculation completed: 1200.0% for fund 2232 on 2025-11-01
+2025-11-28 16:48:37,793 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: ✅ IRR calculation completed successfully for fund 2232: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 12.0, 'calculation_date': '2025-11-01', 'portfolio_fund_id': 2232, 'valuation_amount': 10000.0, 'cash_flows_count': 2, 'period_start': '2025-11-01', 'period_end': '2025-12-01', 'days_in_period': 30}
+2025-11-28 16:48:37,794 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] IRR calculation returned: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 12.0, 'calculation_date': '2025-11-01', 'portfolio_fund_id': 2232, 'valuation_amount': 10000.0, 'cash_flows_count': 2, 'period_start': '2025-11-01', 'period_end': '2025-12-01', 'days_in_period': 30}
+2025-11-28 16:48:37,795 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calculated IRR percentage: 1200.0%
+2025-11-28 16:48:37,796 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Looking for fund valuation with fund_id=2232, date=2025-11-01
+2025-11-28 16:48:37,798 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund valuation ID: 9223
+2025-11-28 16:48:37,799 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Checking for existing IRR record with fund_id=2232, date=2025-11-01
+2025-11-28 16:48:37,802 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Found existing IRR record with ID: 9756
+2025-11-28 16:48:37,802 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Updating existing IRR ID 9756 with value 1200.0%   
+2025-11-28 16:48:37,806 - app.services.irr_cascade_service - INFO - 📊 ✅ Updated fund IRR for fund 2232 on 2025-11-01: 1200.0%
+2025-11-28 16:48:37,807 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [2232]
+2025-11-28 16:48:37,807 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] ✅ Successfully calculated IRR for fund 2232      
+2025-11-28 16:48:37,808 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Processing fund 2235 for date 2025-11-01
+2025-11-28 16:48:37,808 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] ========== CALCULATING FUND IRR ==========
+2025-11-28 16:48:37,808 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund ID: 2235, Date: 2025-11-01
+2025-11-28 16:48:37,809 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Converted date to date_obj: 2025-11-01
+2025-11-28 16:48:37,809 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calling calculate_single_portfolio_fund_irr with bypass_cache=True
+2025-11-28 16:48:37,810 - app.api.routes.portfolio_funds - INFO - 🔍 IRR CALC ENTRY: calculate_single_portfolio_fund_irr called for fund 2235, date 2025-11-01  (BYPASSING CACHE)
+2025-11-28 16:48:37,810 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh single fund calculation as requested       
+2025-11-28 16:48:37,817 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2025-11-01
+2025-11-28 16:48:37,821 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Fund valuation: £10000.0
+2025-11-28 16:48:37,824 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Found 1 activities for fund 2235 up to 2025-11-01 (using end-of-day filter: 2025-11-01 23:59:59.999999)
+2025-11-28 16:48:37,825 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Added final valuation of £10000.0 to next month (2025-12-01) to separate from activities in 2025-11-01
+2025-11-28 16:48:37,825 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Aggregated cash flows: 2 flows from 2025-11-01 to 2025-12-01  
+2025-11-28 16:48:37,826 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Total valuation: £10000.0
+2025-11-28 16:48:37,827 - app.api.routes.portfolio_funds - WARNING - IRR calculation includes 1 future dates. This may affect the result. 
+2025-11-28 16:48:37,828 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Start date: 2025-11-01 00:00:00, End date: 2025-12-01 00:00:00
+2025-11-28 16:48:37,828 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Initial total_months calculated: 2
+2025-11-28 16:48:37,829 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Processing 2 cashflows into monthly array of size 2
+2025-11-28 16:48:37,831 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 0: date=2025-11-01, adjusted_date=2025-11-01, amount=-5000.0, original_month_index=0, final_month_index=0, is_final=False
+2025-11-28 16:48:37,832 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Valuation dated 2025-12-01 (1st of month) adjusted to 2025-11-30 (end of previous month)
+2025-11-28 16:48:37,832 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 1: date=2025-12-01, adjusted_date=2025-11-30, amount=10000.0, original_month_index=0, final_month_index=1, is_final=True
+2025-11-28 16:48:37,832 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Final monthly_amounts array: [-5000.0, 10000.0]
+2025-11-28 16:48:37,832 - app.api.routes.portfolio_funds - INFO -
+============================================================
+2025-11-28 16:48:37,834 - app.api.routes.portfolio_funds - INFO - IRR CALCULATION - CASHFLOW BREAKDOWN
+2025-11-28 16:48:37,834 - app.api.routes.portfolio_funds - INFO - ============================================================
+2025-11-28 16:48:37,835 - app.api.routes.portfolio_funds - INFO - Period: 2025-11 to 2025-12
+2025-11-28 16:48:37,835 - app.api.routes.portfolio_funds - INFO - Total months: 2
+2025-11-28 16:48:37,836 - app.api.routes.portfolio_funds - INFO -
+Monthly cashflows:
+2025-11-28 16:48:37,836 - app.api.routes.portfolio_funds - INFO -   Month 0 (2025-11): £-5,000.00 (Inflow)
+2025-11-28 16:48:37,837 - app.api.routes.portfolio_funds - INFO -   Month 1 (2025-12): £10,000.00 (Outflow)
+2025-11-28 16:48:37,837 - app.api.routes.portfolio_funds - INFO -
+Total negative flows (investments): £-5,000.00
+2025-11-28 16:48:37,838 - app.api.routes.portfolio_funds - INFO - Total positive flows (returns): £10,000.00
+2025-11-28 16:48:37,839 - app.api.routes.portfolio_funds - INFO - Net cash flow: £5,000.00
+2025-11-28 16:48:37,839 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 16:48:37,840 - app.api.routes.portfolio_funds - INFO - RESULT: Monthly IRR: 100.0000% | Annualized IRR: 1200.0000%
+2025-11-28 16:48:37,840 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 16:48:37,841 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Final IRR calculation - Decimal: 12.0, Percentage: 1200.0%    
+2025-11-28 16:48:37,841 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: IRR calculation completed: 1200.0% for fund 2235 on 2025-11-01
+2025-11-28 16:48:37,842 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: ✅ IRR calculation completed successfully for fund 2235: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 12.0, 'calculation_date': '2025-11-01', 'portfolio_fund_id': 2235, 'valuation_amount': 10000.0, 'cash_flows_count': 2, 'period_start': '2025-11-01', 'period_end': '2025-12-01', 'days_in_period': 30}
+2025-11-28 16:48:37,843 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] IRR calculation returned: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 12.0, 'calculation_date': '2025-11-01', 'portfolio_fund_id': 2235, 'valuation_amount': 10000.0, 'cash_flows_count': 2, 'period_start': '2025-11-01', 'period_end': '2025-12-01', 'days_in_period': 30}
+2025-11-28 16:48:37,843 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calculated IRR percentage: 1200.0%
+2025-11-28 16:48:37,844 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Looking for fund valuation with fund_id=2235, date=2025-11-01
+2025-11-28 16:48:37,847 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund valuation ID: 9224
+2025-11-28 16:48:37,847 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Checking for existing IRR record with fund_id=2235, date=2025-11-01
+2025-11-28 16:48:37,850 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Found existing IRR record with ID: 9757
+2025-11-28 16:48:37,851 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Updating existing IRR ID 9757 with value 1200.0%   
+2025-11-28 16:48:37,855 - app.services.irr_cascade_service - INFO - 📊 ✅ Updated fund IRR for fund 2235 on 2025-11-01: 1200.0%
+2025-11-28 16:48:37,856 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [2235]
+2025-11-28 16:48:37,857 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] ✅ Successfully calculated IRR for fund 2235      
+2025-11-28 16:48:37,857 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Processing fund 2236 for date 2025-11-01
+2025-11-28 16:48:37,858 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] ========== CALCULATING FUND IRR ==========
+2025-11-28 16:48:37,858 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund ID: 2236, Date: 2025-11-01
+2025-11-28 16:48:37,859 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Converted date to date_obj: 2025-11-01
+2025-11-28 16:48:37,860 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calling calculate_single_portfolio_fund_irr with bypass_cache=True
+2025-11-28 16:48:37,860 - app.api.routes.portfolio_funds - INFO - 🔍 IRR CALC ENTRY: calculate_single_portfolio_fund_irr called for fund 2236, date 2025-11-01  (BYPASSING CACHE)
+2025-11-28 16:48:37,862 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh single fund calculation as requested       
+2025-11-28 16:48:37,869 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2025-11-01
+2025-11-28 16:48:37,872 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Fund valuation: £10000.0
+2025-11-28 16:48:37,875 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Found 1 activities for fund 2236 up to 2025-11-01 (using end-of-day filter: 2025-11-01 23:59:59.999999)
+2025-11-28 16:48:37,876 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Added final valuation of £10000.0 to next month (2025-12-01) to separate from activities in 2025-11-01
+2025-11-28 16:48:37,877 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Aggregated cash flows: 2 flows from 2025-11-01 to 2025-12-01  
+2025-11-28 16:48:37,877 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Total valuation: £10000.0
+2025-11-28 16:48:37,878 - app.api.routes.portfolio_funds - WARNING - IRR calculation includes 1 future dates. This may affect the result.
+2025-11-28 16:48:37,879 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Start date: 2025-11-01 00:00:00, End date: 2025-12-01 00:00:00
+2025-11-28 16:48:37,880 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Initial total_months calculated: 2
+2025-11-28 16:48:37,880 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Processing 2 cashflows into monthly array of size 2
+2025-11-28 16:48:37,881 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 0: date=2025-11-01, adjusted_date=2025-11-01, amount=-5000.0, original_month_index=0, final_month_index=0, is_final=False
+2025-11-28 16:48:37,882 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Valuation dated 2025-12-01 (1st of month) adjusted to 2025-11-30 (end of previous month)
+2025-11-28 16:48:37,883 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 1: date=2025-12-01, adjusted_date=2025-11-30, amount=10000.0, original_month_index=0, final_month_index=1, is_final=True
+2025-11-28 16:48:37,884 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Final monthly_amounts array: [-5000.0, 10000.0]
+2025-11-28 16:48:37,885 - app.api.routes.portfolio_funds - INFO -
+============================================================
+2025-11-28 16:48:37,885 - app.api.routes.portfolio_funds - INFO - IRR CALCULATION - CASHFLOW BREAKDOWN
+2025-11-28 16:48:37,885 - app.api.routes.portfolio_funds - INFO - ============================================================
+2025-11-28 16:48:37,886 - app.api.routes.portfolio_funds - INFO - Period: 2025-11 to 2025-12
+2025-11-28 16:48:37,887 - app.api.routes.portfolio_funds - INFO - Total months: 2
+2025-11-28 16:48:37,888 - app.api.routes.portfolio_funds - INFO -
+Monthly cashflows:
+2025-11-28 16:48:37,888 - app.api.routes.portfolio_funds - INFO -   Month 0 (2025-11): £-5,000.00 (Inflow)
+2025-11-28 16:48:37,889 - app.api.routes.portfolio_funds - INFO -   Month 1 (2025-12): £10,000.00 (Outflow)
+2025-11-28 16:48:37,890 - app.api.routes.portfolio_funds - INFO -
+Total negative flows (investments): £-5,000.00
+2025-11-28 16:48:37,891 - app.api.routes.portfolio_funds - INFO - Total positive flows (returns): £10,000.00
+2025-11-28 16:48:37,891 - app.api.routes.portfolio_funds - INFO - Net cash flow: £5,000.00
+2025-11-28 16:48:37,893 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 16:48:37,894 - app.api.routes.portfolio_funds - INFO - RESULT: Monthly IRR: 100.0000% | Annualized IRR: 1200.0000%
+2025-11-28 16:48:37,895 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 16:48:37,895 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Final IRR calculation - Decimal: 12.0, Percentage: 1200.0%    
+2025-11-28 16:48:37,897 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: IRR calculation completed: 1200.0% for fund 2236 on 2025-11-01
+2025-11-28 16:48:37,898 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: ✅ IRR calculation completed successfully for fund 2236: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 12.0, 'calculation_date': '2025-11-01', 'portfolio_fund_id': 2236, 'valuation_amount': 10000.0, 'cash_flows_count': 2, 'period_start': '2025-11-01', 'period_end': '2025-12-01', 'days_in_period': 30}
+2025-11-28 16:48:37,898 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] IRR calculation returned: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 12.0, 'calculation_date': '2025-11-01', 'portfolio_fund_id': 2236, 'valuation_amount': 10000.0, 'cash_flows_count': 2, 'period_start': '2025-11-01', 'period_end': '2025-12-01', 'days_in_period': 30}
+2025-11-28 16:48:37,899 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calculated IRR percentage: 1200.0%
+2025-11-28 16:48:37,900 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Looking for fund valuation with fund_id=2236, date=2025-11-01
+2025-11-28 16:48:37,903 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund valuation ID: 9225
+2025-11-28 16:48:37,904 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Checking for existing IRR record with fund_id=2236, date=2025-11-01
+2025-11-28 16:48:37,907 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Found existing IRR record with ID: 9758
+2025-11-28 16:48:37,908 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Updating existing IRR ID 9758 with value 1200.0%   
+2025-11-28 16:48:37,911 - app.services.irr_cascade_service - INFO - 📊 ✅ Updated fund IRR for fund 2236 on 2025-11-01: 1200.0%
+2025-11-28 16:48:37,912 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [2236]
+2025-11-28 16:48:37,913 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] ✅ Successfully calculated IRR for fund 2236      
+2025-11-28 16:48:37,914 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Processing fund 2237 for date 2025-11-01
+2025-11-28 16:48:37,914 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] ========== CALCULATING FUND IRR ==========
+2025-11-28 16:48:37,915 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund ID: 2237, Date: 2025-11-01
+2025-11-28 16:48:37,916 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Converted date to date_obj: 2025-11-01
+2025-11-28 16:48:37,917 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calling calculate_single_portfolio_fund_irr with bypass_cache=True
+2025-11-28 16:48:37,917 - app.api.routes.portfolio_funds - INFO - 🔍 IRR CALC ENTRY: calculate_single_portfolio_fund_irr called for fund 2237, date 2025-11-01  (BYPASSING CACHE)
+2025-11-28 16:48:37,918 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh single fund calculation as requested       
+2025-11-28 16:48:37,924 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2025-11-01
+2025-11-28 16:48:37,927 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Fund valuation: £10000.0
+2025-11-28 16:48:37,930 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Found 1 activities for fund 2237 up to 2025-11-01 (using end-of-day filter: 2025-11-01 23:59:59.999999)
+2025-11-28 16:48:37,931 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Added final valuation of £10000.0 to next month (2025-12-01) to separate from activities in 2025-11-01
+2025-11-28 16:48:37,931 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Aggregated cash flows: 2 flows from 2025-11-01 to 2025-12-01  
+2025-11-28 16:48:37,932 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Total valuation: £10000.0
+2025-11-28 16:48:37,933 - app.api.routes.portfolio_funds - WARNING - IRR calculation includes 1 future dates. This may affect the result. 
+2025-11-28 16:48:37,933 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Start date: 2025-11-01 00:00:00, End date: 2025-12-01 00:00:00
+2025-11-28 16:48:37,934 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Initial total_months calculated: 2
+2025-11-28 16:48:37,934 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Processing 2 cashflows into monthly array of size 2
+2025-11-28 16:48:37,935 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 0: date=2025-11-01, adjusted_date=2025-11-01, amount=-5000.0, original_month_index=0, final_month_index=0, is_final=False
+2025-11-28 16:48:37,936 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Valuation dated 2025-12-01 (1st of month) adjusted to 2025-11-30 (end of previous month)
+2025-11-28 16:48:37,936 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 1: date=2025-12-01, adjusted_date=2025-11-30, amount=10000.0, original_month_index=0, final_month_index=1, is_final=True
+2025-11-28 16:48:37,937 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Final monthly_amounts array: [-5000.0, 10000.0]
+2025-11-28 16:48:37,937 - app.api.routes.portfolio_funds - INFO -
+============================================================
+2025-11-28 16:48:37,938 - app.api.routes.portfolio_funds - INFO - IRR CALCULATION - CASHFLOW BREAKDOWN
+2025-11-28 16:48:37,939 - app.api.routes.portfolio_funds - INFO - ============================================================
+2025-11-28 16:48:37,939 - app.api.routes.portfolio_funds - INFO - Period: 2025-11 to 2025-12
+2025-11-28 16:48:37,940 - app.api.routes.portfolio_funds - INFO - Total months: 2
+2025-11-28 16:48:37,940 - app.api.routes.portfolio_funds - INFO -
+Monthly cashflows:
+2025-11-28 16:48:37,941 - app.api.routes.portfolio_funds - INFO -   Month 0 (2025-11): £-5,000.00 (Inflow)
+2025-11-28 16:48:37,941 - app.api.routes.portfolio_funds - INFO -   Month 1 (2025-12): £10,000.00 (Outflow)
+2025-11-28 16:48:37,942 - app.api.routes.portfolio_funds - INFO - 
+Total negative flows (investments): £-5,000.00
+2025-11-28 16:48:37,942 - app.api.routes.portfolio_funds - INFO - Total positive flows (returns): £10,000.00
+2025-11-28 16:48:37,943 - app.api.routes.portfolio_funds - INFO - Net cash flow: £5,000.00
+2025-11-28 16:48:37,943 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 16:48:37,945 - app.api.routes.portfolio_funds - INFO - RESULT: Monthly IRR: 100.0000% | Annualized IRR: 1200.0000%
+2025-11-28 16:48:37,945 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 16:48:37,946 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Final IRR calculation - Decimal: 12.0, Percentage: 1200.0%    
+2025-11-28 16:48:37,946 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: IRR calculation completed: 1200.0% for fund 2237 on 2025-11-01
+2025-11-28 16:48:37,947 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: ✅ IRR calculation completed successfully for fund 2237: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 12.0, 'calculation_date': '2025-11-01', 'portfolio_fund_id': 2237, 'valuation_amount': 10000.0, 'cash_flows_count': 2, 'period_start': '2025-11-01', 'period_end': '2025-12-01', 'days_in_period': 30}
+2025-11-28 16:48:37,948 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] IRR calculation returned: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 12.0, 'calculation_date': '2025-11-01', 'portfolio_fund_id': 2237, 'valuation_amount': 10000.0, 'cash_flows_count': 2, 'period_start': '2025-11-01', 'period_end': '2025-12-01', 'days_in_period': 30}
+2025-11-28 16:48:37,949 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calculated IRR percentage: 1200.0%
+2025-11-28 16:48:37,949 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Looking for fund valuation with fund_id=2237, date=2025-11-01
+2025-11-28 16:48:37,952 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund valuation ID: 9226
+2025-11-28 16:48:37,954 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Checking for existing IRR record with fund_id=2237, date=2025-11-01
+2025-11-28 16:48:37,958 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Found existing IRR record with ID: 9759
+2025-11-28 16:48:37,961 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Updating existing IRR ID 9759 with value 1200.0%   
+2025-11-28 16:48:37,965 - app.services.irr_cascade_service - INFO - 📊 ✅ Updated fund IRR for fund 2237 on 2025-11-01: 1200.0%
+2025-11-28 16:48:37,967 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [2237]
+2025-11-28 16:48:37,969 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] ✅ Successfully calculated IRR for fund 2237      
+2025-11-28 16:48:37,971 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Processing fund 2238 for date 2025-11-01
+2025-11-28 16:48:37,974 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] ========== CALCULATING FUND IRR ==========
+2025-11-28 16:48:37,976 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund ID: 2238, Date: 2025-11-01
+2025-11-28 16:48:37,977 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Converted date to date_obj: 2025-11-01
+2025-11-28 16:48:37,979 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calling calculate_single_portfolio_fund_irr with bypass_cache=True
+2025-11-28 16:48:37,982 - app.api.routes.portfolio_funds - INFO - 🔍 IRR CALC ENTRY: calculate_single_portfolio_fund_irr called for fund 2238, date 2025-11-01  (BYPASSING CACHE)
+2025-11-28 16:48:37,984 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh single fund calculation as requested       
+2025-11-28 16:48:37,989 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2025-11-01
+2025-11-28 16:48:37,990 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Fund valuation: £10000.0
+2025-11-28 16:48:37,993 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Found 1 activities for fund 2238 up to 2025-11-01 (using end-of-day filter: 2025-11-01 23:59:59.999999)
+2025-11-28 16:48:37,995 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Added final valuation of £10000.0 to next month (2025-12-01) to separate from activities in 2025-11-01
+2025-11-28 16:48:37,997 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Aggregated cash flows: 2 flows from 2025-11-01 to 2025-12-01  
+2025-11-28 16:48:37,997 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Total valuation: £10000.0
+2025-11-28 16:48:38,000 - app.api.routes.portfolio_funds - WARNING - IRR calculation includes 1 future dates. This may affect the result. 
+2025-11-28 16:48:38,001 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Start date: 2025-11-01 00:00:00, End date: 2025-12-01 00:00:00
+2025-11-28 16:48:38,003 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Initial total_months calculated: 2
+2025-11-28 16:48:38,006 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Processing 2 cashflows into monthly array of size 2
+2025-11-28 16:48:38,007 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 0: date=2025-11-01, adjusted_date=2025-11-01, amount=-5000.0, original_month_index=0, final_month_index=0, is_final=False
+2025-11-28 16:48:38,007 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Valuation dated 2025-12-01 (1st of month) adjusted to 2025-11-30 (end of previous month)
+2025-11-28 16:48:38,007 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 1: date=2025-12-01, adjusted_date=2025-11-30, amount=10000.0, original_month_index=0, final_month_index=1, is_final=True
+2025-11-28 16:48:38,009 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Final monthly_amounts array: [-5000.0, 10000.0]
+2025-11-28 16:48:38,010 - app.api.routes.portfolio_funds - INFO -
+============================================================
+2025-11-28 16:48:38,011 - app.api.routes.portfolio_funds - INFO - IRR CALCULATION - CASHFLOW BREAKDOWN
+2025-11-28 16:48:38,013 - app.api.routes.portfolio_funds - INFO - ============================================================
+2025-11-28 16:48:38,013 - app.api.routes.portfolio_funds - INFO - Period: 2025-11 to 2025-12
+2025-11-28 16:48:38,013 - app.api.routes.portfolio_funds - INFO - Total months: 2
+2025-11-28 16:48:38,015 - app.api.routes.portfolio_funds - INFO -
+Monthly cashflows:
+2025-11-28 16:48:38,015 - app.api.routes.portfolio_funds - INFO -   Month 0 (2025-11): £-5,000.00 (Inflow)
+2025-11-28 16:48:38,016 - app.api.routes.portfolio_funds - INFO -   Month 1 (2025-12): £10,000.00 (Outflow)
+2025-11-28 16:48:38,018 - app.api.routes.portfolio_funds - INFO -
+Total negative flows (investments): £-5,000.00
+2025-11-28 16:48:38,019 - app.api.routes.portfolio_funds - INFO - Total positive flows (returns): £10,000.00
+2025-11-28 16:48:38,021 - app.api.routes.portfolio_funds - INFO - Net cash flow: £5,000.00
+2025-11-28 16:48:38,022 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 16:48:38,023 - app.api.routes.portfolio_funds - INFO - RESULT: Monthly IRR: 100.0000% | Annualized IRR: 1200.0000%
+2025-11-28 16:48:38,023 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 16:48:38,024 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Final IRR calculation - Decimal: 12.0, Percentage: 1200.0%    
+2025-11-28 16:48:38,024 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: IRR calculation completed: 1200.0% for fund 2238 on 2025-11-01
+2025-11-28 16:48:38,025 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: ✅ IRR calculation completed successfully for fund 2238: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 12.0, 'calculation_date': '2025-11-01', 'portfolio_fund_id': 2238, 'valuation_amount': 10000.0, 'cash_flows_count': 2, 'period_start': '2025-11-01', 'period_end': '2025-12-01', 'days_in_period': 30}
+2025-11-28 16:48:38,025 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] IRR calculation returned: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 12.0, 'calculation_date': '2025-11-01', 'portfolio_fund_id': 2238, 'valuation_amount': 10000.0, 'cash_flows_count': 2, 'period_start': '2025-11-01', 'period_end': '2025-12-01', 'days_in_period': 30}
+2025-11-28 16:48:38,026 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calculated IRR percentage: 1200.0%
+2025-11-28 16:48:38,026 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Looking for fund valuation with fund_id=2238, date=2025-11-01
+2025-11-28 16:48:38,028 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund valuation ID: 9227
+2025-11-28 16:48:38,029 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Checking for existing IRR record with fund_id=2238, date=2025-11-01
+2025-11-28 16:48:38,031 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Found existing IRR record with ID: 9760
+2025-11-28 16:48:38,032 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Updating existing IRR ID 9760 with value 1200.0%   
+2025-11-28 16:48:38,035 - app.services.irr_cascade_service - INFO - 📊 ✅ Updated fund IRR for fund 2238 on 2025-11-01: 1200.0%
+2025-11-28 16:48:38,035 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [2238]
+2025-11-28 16:48:38,037 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] ✅ Successfully calculated IRR for fund 2238
+2025-11-28 16:48:38,039 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Processing fund 2239 for date 2025-11-01
+2025-11-28 16:48:38,039 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] ========== CALCULATING FUND IRR ==========
+2025-11-28 16:48:38,039 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund ID: 2239, Date: 2025-11-01
+2025-11-28 16:48:38,039 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Converted date to date_obj: 2025-11-01
+2025-11-28 16:48:38,040 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calling calculate_single_portfolio_fund_irr with bypass_cache=True
+2025-11-28 16:48:38,040 - app.api.routes.portfolio_funds - INFO - 🔍 IRR CALC ENTRY: calculate_single_portfolio_fund_irr called for fund 2239, date 2025-11-01  (BYPASSING CACHE)
+2025-11-28 16:48:38,040 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh single fund calculation as requested       
+2025-11-28 16:48:38,043 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2025-11-01
+2025-11-28 16:48:38,044 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Fund valuation: £10000.0
+2025-11-28 16:48:38,046 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Found 1 activities for fund 2239 up to 2025-11-01 (using end-of-day filter: 2025-11-01 23:59:59.999999)
+2025-11-28 16:48:38,046 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Added final valuation of £10000.0 to next month (2025-12-01) to separate from activities in 2025-11-01
+2025-11-28 16:48:38,047 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Aggregated cash flows: 2 flows from 2025-11-01 to 2025-12-01  
+2025-11-28 16:48:38,047 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Total valuation: £10000.0
+2025-11-28 16:48:38,047 - app.api.routes.portfolio_funds - WARNING - IRR calculation includes 1 future dates. This may affect the result. 
+2025-11-28 16:48:38,047 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Start date: 2025-11-01 00:00:00, End date: 2025-12-01 00:00:00
+2025-11-28 16:48:38,048 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Initial total_months calculated: 2
+2025-11-28 16:48:38,048 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Processing 2 cashflows into monthly array of size 2
+2025-11-28 16:48:38,048 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 0: date=2025-11-01, adjusted_date=2025-11-01, amount=-5000.0, original_month_index=0, final_month_index=0, is_final=False
+2025-11-28 16:48:38,048 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Valuation dated 2025-12-01 (1st of month) adjusted to 2025-11-30 (end of previous month)
+2025-11-28 16:48:38,048 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 1: date=2025-12-01, adjusted_date=2025-11-30, amount=10000.0, original_month_index=0, final_month_index=1, is_final=True
+2025-11-28 16:48:38,049 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Final monthly_amounts array: [-5000.0, 10000.0]
+2025-11-28 16:48:38,049 - app.api.routes.portfolio_funds - INFO -
+============================================================
+2025-11-28 16:48:38,049 - app.api.routes.portfolio_funds - INFO - IRR CALCULATION - CASHFLOW BREAKDOWN
+2025-11-28 16:48:38,049 - app.api.routes.portfolio_funds - INFO - ============================================================
+2025-11-28 16:48:38,049 - app.api.routes.portfolio_funds - INFO - Period: 2025-11 to 2025-12
+2025-11-28 16:48:38,049 - app.api.routes.portfolio_funds - INFO - Total months: 2
+2025-11-28 16:48:38,050 - app.api.routes.portfolio_funds - INFO -
+Monthly cashflows:
+2025-11-28 16:48:38,050 - app.api.routes.portfolio_funds - INFO -   Month 0 (2025-11): £-5,000.00 (Inflow)
+2025-11-28 16:48:38,050 - app.api.routes.portfolio_funds - INFO -   Month 1 (2025-12): £10,000.00 (Outflow)
+2025-11-28 16:48:38,050 - app.api.routes.portfolio_funds - INFO -
+Total negative flows (investments): £-5,000.00
+2025-11-28 16:48:38,050 - app.api.routes.portfolio_funds - INFO - Total positive flows (returns): £10,000.00
+2025-11-28 16:48:38,050 - app.api.routes.portfolio_funds - INFO - Net cash flow: £5,000.00
+2025-11-28 16:48:38,051 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 16:48:38,051 - app.api.routes.portfolio_funds - INFO - RESULT: Monthly IRR: 100.0000% | Annualized IRR: 1200.0000%
+2025-11-28 16:48:38,051 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 16:48:38,051 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Final IRR calculation - Decimal: 12.0, Percentage: 1200.0%    
+2025-11-28 16:48:38,052 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: IRR calculation completed: 1200.0% for fund 2239 on 2025-11-01
+2025-11-28 16:48:38,052 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: ✅ IRR calculation completed successfully for fund 2239: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 12.0, 'calculation_date': '2025-11-01', 'portfolio_fund_id': 2239, 'valuation_amount': 10000.0, 'cash_flows_count': 2, 'period_start': '2025-11-01', 'period_end': '2025-12-01', 'days_in_period': 30}
+2025-11-28 16:48:38,052 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] IRR calculation returned: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 12.0, 'calculation_date': '2025-11-01', 'portfolio_fund_id': 2239, 'valuation_amount': 10000.0, 'cash_flows_count': 2, 'period_start': '2025-11-01', 'period_end': '2025-12-01', 'days_in_period': 30}
+2025-11-28 16:48:38,052 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calculated IRR percentage: 1200.0%
+2025-11-28 16:48:38,053 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Looking for fund valuation with fund_id=2239, date=2025-11-01
+2025-11-28 16:48:38,054 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund valuation ID: 9228
+2025-11-28 16:48:38,056 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Checking for existing IRR record with fund_id=2239, date=2025-11-01
+2025-11-28 16:48:38,057 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Found existing IRR record with ID: 9761
+2025-11-28 16:48:38,058 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Updating existing IRR ID 9761 with value 1200.0%   
+2025-11-28 16:48:38,061 - app.services.irr_cascade_service - INFO - 📊 ✅ Updated fund IRR for fund 2239 on 2025-11-01: 1200.0%
+2025-11-28 16:48:38,061 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [2239]
+2025-11-28 16:48:38,063 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] ✅ Successfully calculated IRR for fund 2239      
+2025-11-28 16:48:38,063 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Processing fund 2240 for date 2025-11-01
+2025-11-28 16:48:38,063 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] ========== CALCULATING FUND IRR ==========
+2025-11-28 16:48:38,063 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund ID: 2240, Date: 2025-11-01
+2025-11-28 16:48:38,064 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Converted date to date_obj: 2025-11-01
+2025-11-28 16:48:38,065 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calling calculate_single_portfolio_fund_irr with bypass_cache=True
+2025-11-28 16:48:38,065 - app.api.routes.portfolio_funds - INFO - 🔍 IRR CALC ENTRY: calculate_single_portfolio_fund_irr called for fund 2240, date 2025-11-01  (BYPASSING CACHE)
+2025-11-28 16:48:38,065 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh single fund calculation as requested       
+2025-11-28 16:48:38,070 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2025-11-01
+2025-11-28 16:48:38,071 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Fund valuation: £10000.0
+2025-11-28 16:48:38,073 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Found 1 activities for fund 2240 up to 2025-11-01 (using end-of-day filter: 2025-11-01 23:59:59.999999)
+2025-11-28 16:48:38,073 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Added final valuation of £10000.0 to next month (2025-12-01) to separate from activities in 2025-11-01
+2025-11-28 16:48:38,074 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Aggregated cash flows: 2 flows from 2025-11-01 to 2025-12-01  
+2025-11-28 16:48:38,074 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Total valuation: £10000.0
+2025-11-28 16:48:38,074 - app.api.routes.portfolio_funds - WARNING - IRR calculation includes 1 future dates. This may affect the result. 
+2025-11-28 16:48:38,075 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Start date: 2025-11-01 00:00:00, End date: 2025-12-01 00:00:00
+2025-11-28 16:48:38,075 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Initial total_months calculated: 2
+2025-11-28 16:48:38,075 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Processing 2 cashflows into monthly array of size 2
+2025-11-28 16:48:38,075 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 0: date=2025-11-01, adjusted_date=2025-11-01, amount=-5000.0, original_month_index=0, final_month_index=0, is_final=False
+2025-11-28 16:48:38,076 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Valuation dated 2025-12-01 (1st of month) adjusted to 2025-11-30 (end of previous month)
+2025-11-28 16:48:38,076 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 1: date=2025-12-01, adjusted_date=2025-11-30, amount=10000.0, original_month_index=0, final_month_index=1, is_final=True
+2025-11-28 16:48:38,076 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Final monthly_amounts array: [-5000.0, 10000.0]
+2025-11-28 16:48:38,077 - app.api.routes.portfolio_funds - INFO -
+============================================================
+2025-11-28 16:48:38,077 - app.api.routes.portfolio_funds - INFO - IRR CALCULATION - CASHFLOW BREAKDOWN
+2025-11-28 16:48:38,077 - app.api.routes.portfolio_funds - INFO - ============================================================
+2025-11-28 16:48:38,077 - app.api.routes.portfolio_funds - INFO - Period: 2025-11 to 2025-12
+2025-11-28 16:48:38,077 - app.api.routes.portfolio_funds - INFO - Total months: 2
+2025-11-28 16:48:38,078 - app.api.routes.portfolio_funds - INFO -
+Monthly cashflows:
+2025-11-28 16:48:38,078 - app.api.routes.portfolio_funds - INFO -   Month 0 (2025-11): £-5,000.00 (Inflow)
+2025-11-28 16:48:38,078 - app.api.routes.portfolio_funds - INFO -   Month 1 (2025-12): £10,000.00 (Outflow)
+2025-11-28 16:48:38,078 - app.api.routes.portfolio_funds - INFO -
+Total negative flows (investments): £-5,000.00
+2025-11-28 16:48:38,079 - app.api.routes.portfolio_funds - INFO - Total positive flows (returns): £10,000.00
+2025-11-28 16:48:38,079 - app.api.routes.portfolio_funds - INFO - Net cash flow: £5,000.00
+2025-11-28 16:48:38,079 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 16:48:38,080 - app.api.routes.portfolio_funds - INFO - RESULT: Monthly IRR: 100.0000% | Annualized IRR: 1200.0000%
+2025-11-28 16:48:38,080 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 16:48:38,080 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Final IRR calculation - Decimal: 12.0, Percentage: 1200.0%    
+2025-11-28 16:48:38,081 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: IRR calculation completed: 1200.0% for fund 2240 on 2025-11-01
+2025-11-28 16:48:38,081 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: ✅ IRR calculation completed successfully for fund 2240: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 12.0, 'calculation_date': '2025-11-01', 'portfolio_fund_id': 2240, 'valuation_amount': 10000.0, 'cash_flows_count': 2, 'period_start': '2025-11-01', 'period_end': '2025-12-01', 'days_in_period': 30}
+2025-11-28 16:48:38,082 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] IRR calculation returned: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 12.0, 'calculation_date': '2025-11-01', 'portfolio_fund_id': 2240, 'valuation_amount': 10000.0, 'cash_flows_count': 2, 'period_start': '2025-11-01', 'period_end': '2025-12-01', 'days_in_period': 30}
+2025-11-28 16:48:38,082 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calculated IRR percentage: 1200.0%
+2025-11-28 16:48:38,082 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Looking for fund valuation with fund_id=2240, date=2025-11-01
+2025-11-28 16:48:38,084 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund valuation ID: 9229
+2025-11-28 16:48:38,084 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Checking for existing IRR record with fund_id=2240, date=2025-11-01
+2025-11-28 16:48:38,086 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Found existing IRR record with ID: 9762
+2025-11-28 16:48:38,086 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Updating existing IRR ID 9762 with value 1200.0%   
+2025-11-28 16:48:38,089 - app.services.irr_cascade_service - INFO - 📊 ✅ Updated fund IRR for fund 2240 on 2025-11-01: 1200.0%
+2025-11-28 16:48:38,089 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [2240]
+2025-11-28 16:48:38,089 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] ✅ Successfully calculated IRR for fund 2240      
+2025-11-28 16:48:38,090 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Processing fund 2241 for date 2025-11-01
+2025-11-28 16:48:38,090 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] ========== CALCULATING FUND IRR ==========
+2025-11-28 16:48:38,090 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund ID: 2241, Date: 2025-11-01
+2025-11-28 16:48:38,091 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Converted date to date_obj: 2025-11-01
+2025-11-28 16:48:38,091 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calling calculate_single_portfolio_fund_irr with bypass_cache=True
+2025-11-28 16:48:38,091 - app.api.routes.portfolio_funds - INFO - 🔍 IRR CALC ENTRY: calculate_single_portfolio_fund_irr called for fund 2241, date 2025-11-01  (BYPASSING CACHE)
+2025-11-28 16:48:38,092 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh single fund calculation as requested       
+2025-11-28 16:48:38,096 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2025-11-01
+2025-11-28 16:48:38,097 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Fund valuation: £10000.0
+2025-11-28 16:48:38,099 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Found 1 activities for fund 2241 up to 2025-11-01 (using end-of-day filter: 2025-11-01 23:59:59.999999)
+2025-11-28 16:48:38,100 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Added final valuation of £10000.0 to next month (2025-12-01) to separate from activities in 2025-11-01
+2025-11-28 16:48:38,101 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Aggregated cash flows: 2 flows from 2025-11-01 to 2025-12-01  
+2025-11-28 16:48:38,101 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Total valuation: £10000.0
+2025-11-28 16:48:38,102 - app.api.routes.portfolio_funds - WARNING - IRR calculation includes 1 future dates. This may affect the result.
+2025-11-28 16:48:38,102 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Start date: 2025-11-01 00:00:00, End date: 2025-12-01 00:00:00
+2025-11-28 16:48:38,103 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Initial total_months calculated: 2
+2025-11-28 16:48:38,103 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Processing 2 cashflows into monthly array of size 2
+2025-11-28 16:48:38,104 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 0: date=2025-11-01, adjusted_date=2025-11-01, amount=-5000.0, original_month_index=0, final_month_index=0, is_final=False
+2025-11-28 16:48:38,104 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Valuation dated 2025-12-01 (1st of month) adjusted to 2025-11-30 (end of previous month)
+2025-11-28 16:48:38,104 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 1: date=2025-12-01, adjusted_date=2025-11-30, amount=10000.0, original_month_index=0, final_month_index=1, is_final=True
+2025-11-28 16:48:38,105 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Final monthly_amounts array: [-5000.0, 10000.0]
+2025-11-28 16:48:38,105 - app.api.routes.portfolio_funds - INFO -
+============================================================
+2025-11-28 16:48:38,105 - app.api.routes.portfolio_funds - INFO - IRR CALCULATION - CASHFLOW BREAKDOWN
+2025-11-28 16:48:38,106 - app.api.routes.portfolio_funds - INFO - ============================================================
+2025-11-28 16:48:38,106 - app.api.routes.portfolio_funds - INFO - Period: 2025-11 to 2025-12
+2025-11-28 16:48:38,106 - app.api.routes.portfolio_funds - INFO - Total months: 2
+2025-11-28 16:48:38,107 - app.api.routes.portfolio_funds - INFO -
+Monthly cashflows:
+2025-11-28 16:48:38,107 - app.api.routes.portfolio_funds - INFO -   Month 0 (2025-11): £-5,000.00 (Inflow)
+2025-11-28 16:48:38,107 - app.api.routes.portfolio_funds - INFO -   Month 1 (2025-12): £10,000.00 (Outflow)
+2025-11-28 16:48:38,108 - app.api.routes.portfolio_funds - INFO -
+Total negative flows (investments): £-5,000.00
+2025-11-28 16:48:38,108 - app.api.routes.portfolio_funds - INFO - Total positive flows (returns): £10,000.00
+2025-11-28 16:48:38,108 - app.api.routes.portfolio_funds - INFO - Net cash flow: £5,000.00
+2025-11-28 16:48:38,109 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 16:48:38,110 - app.api.routes.portfolio_funds - INFO - RESULT: Monthly IRR: 100.0000% | Annualized IRR: 1200.0000%
+2025-11-28 16:48:38,110 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 16:48:38,111 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Final IRR calculation - Decimal: 12.0, Percentage: 1200.0%    
+2025-11-28 16:48:38,111 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: IRR calculation completed: 1200.0% for fund 2241 on 2025-11-01
+2025-11-28 16:48:38,112 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: ✅ IRR calculation completed successfully for fund 2241: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 12.0, 'calculation_date': '2025-11-01', 'portfolio_fund_id': 2241, 'valuation_amount': 10000.0, 'cash_flows_count': 2, 'period_start': '2025-11-01', 'period_end': '2025-12-01', 'days_in_period': 30}
+2025-11-28 16:48:38,112 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] IRR calculation returned: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 12.0, 'calculation_date': '2025-11-01', 'portfolio_fund_id': 2241, 'valuation_amount': 10000.0, 'cash_flows_count': 2, 'period_start': '2025-11-01', 'period_end': '2025-12-01', 'days_in_period': 30}
+2025-11-28 16:48:38,112 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calculated IRR percentage: 1200.0%
+2025-11-28 16:48:38,113 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Looking for fund valuation with fund_id=2241, date=2025-11-01
+2025-11-28 16:48:38,114 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund valuation ID: 9230
+2025-11-28 16:48:38,115 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Checking for existing IRR record with fund_id=2241, date=2025-11-01
+2025-11-28 16:48:38,117 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Found existing IRR record with ID: 9763
+2025-11-28 16:48:38,117 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Updating existing IRR ID 9763 with value 1200.0%   
+2025-11-28 16:48:38,119 - app.services.irr_cascade_service - INFO - 📊 ✅ Updated fund IRR for fund 2241 on 2025-11-01: 1200.0%
+2025-11-28 16:48:38,120 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [2241]
+2025-11-28 16:48:38,120 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] ✅ Successfully calculated IRR for fund 2241      
+2025-11-28 16:48:38,120 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Processing fund 2242 for date 2025-11-01
+2025-11-28 16:48:38,121 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] ========== CALCULATING FUND IRR ==========
+2025-11-28 16:48:38,121 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund ID: 2242, Date: 2025-11-01
+2025-11-28 16:48:38,122 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Converted date to date_obj: 2025-11-01
+2025-11-28 16:48:38,122 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calling calculate_single_portfolio_fund_irr with bypass_cache=True
+2025-11-28 16:48:38,122 - app.api.routes.portfolio_funds - INFO - 🔍 IRR CALC ENTRY: calculate_single_portfolio_fund_irr called for fund 2242, date 2025-11-01  (BYPASSING CACHE)
+2025-11-28 16:48:38,122 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh single fund calculation as requested       
+2025-11-28 16:48:38,126 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2025-11-01
+2025-11-28 16:48:38,128 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Fund valuation: £10000.0
+2025-11-28 16:48:38,130 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Found 1 activities for fund 2242 up to 2025-11-01 (using end-of-day filter: 2025-11-01 23:59:59.999999)
+2025-11-28 16:48:38,131 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Added final valuation of £10000.0 to next month (2025-12-01) to separate from activities in 2025-11-01
+2025-11-28 16:48:38,131 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Aggregated cash flows: 2 flows from 2025-11-01 to 2025-12-01  
+2025-11-28 16:48:38,131 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Total valuation: £10000.0
+2025-11-28 16:48:38,132 - app.api.routes.portfolio_funds - WARNING - IRR calculation includes 1 future dates. This may affect the result. 
+2025-11-28 16:48:38,132 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Start date: 2025-11-01 00:00:00, End date: 2025-12-01 00:00:00
+2025-11-28 16:48:38,133 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Initial total_months calculated: 2
+2025-11-28 16:48:38,133 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Processing 2 cashflows into monthly array of size 2
+2025-11-28 16:48:38,133 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 0: date=2025-11-01, adjusted_date=2025-11-01, amount=-5000.0, original_month_index=0, final_month_index=0, is_final=False
+2025-11-28 16:48:38,134 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Valuation dated 2025-12-01 (1st of month) adjusted to 2025-11-30 (end of previous month)
+2025-11-28 16:48:38,134 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 1: date=2025-12-01, adjusted_date=2025-11-30, amount=10000.0, original_month_index=0, final_month_index=1, is_final=True
+2025-11-28 16:48:38,135 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Final monthly_amounts array: [-5000.0, 10000.0]
+2025-11-28 16:48:38,135 - app.api.routes.portfolio_funds - INFO -
+============================================================
+2025-11-28 16:48:38,136 - app.api.routes.portfolio_funds - INFO - IRR CALCULATION - CASHFLOW BREAKDOWN
+2025-11-28 16:48:38,136 - app.api.routes.portfolio_funds - INFO - ============================================================
+2025-11-28 16:48:38,136 - app.api.routes.portfolio_funds - INFO - Period: 2025-11 to 2025-12
+2025-11-28 16:48:38,137 - app.api.routes.portfolio_funds - INFO - Total months: 2
+2025-11-28 16:48:38,137 - app.api.routes.portfolio_funds - INFO -
+Monthly cashflows:
+2025-11-28 16:48:38,137 - app.api.routes.portfolio_funds - INFO -   Month 0 (2025-11): £-5,000.00 (Inflow)
+2025-11-28 16:48:38,138 - app.api.routes.portfolio_funds - INFO -   Month 1 (2025-12): £10,000.00 (Outflow)
+2025-11-28 16:48:38,138 - app.api.routes.portfolio_funds - INFO -
+Total negative flows (investments): £-5,000.00
+2025-11-28 16:48:38,139 - app.api.routes.portfolio_funds - INFO - Total positive flows (returns): £10,000.00
+2025-11-28 16:48:38,139 - app.api.routes.portfolio_funds - INFO - Net cash flow: £5,000.00
+2025-11-28 16:48:38,140 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 16:48:38,141 - app.api.routes.portfolio_funds - INFO - RESULT: Monthly IRR: 100.0000% | Annualized IRR: 1200.0000%
+2025-11-28 16:48:38,141 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 16:48:38,141 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Final IRR calculation - Decimal: 12.0, Percentage: 1200.0%    
+2025-11-28 16:48:38,142 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: IRR calculation completed: 1200.0% for fund 2242 on 2025-11-01
+2025-11-28 16:48:38,142 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: ✅ IRR calculation completed successfully for fund 2242: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 12.0, 'calculation_date': '2025-11-01', 'portfolio_fund_id': 2242, 'valuation_amount': 10000.0, 'cash_flows_count': 2, 'period_start': '2025-11-01', 'period_end': '2025-12-01', 'days_in_period': 30}
+2025-11-28 16:48:38,142 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] IRR calculation returned: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 12.0, 'calculation_date': '2025-11-01', 'portfolio_fund_id': 2242, 'valuation_amount': 10000.0, 'cash_flows_count': 2, 'period_start': '2025-11-01', 'period_end': '2025-12-01', 'days_in_period': 30}
+2025-11-28 16:48:38,143 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calculated IRR percentage: 1200.0%
+2025-11-28 16:48:38,143 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Looking for fund valuation with fund_id=2242, date=2025-11-01
+2025-11-28 16:48:38,145 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund valuation ID: 9231
+2025-11-28 16:48:38,145 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Checking for existing IRR record with fund_id=2242, date=2025-11-01
+2025-11-28 16:48:38,147 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Found existing IRR record with ID: 9764
+2025-11-28 16:48:38,147 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Updating existing IRR ID 9764 with value 1200.0%   
+2025-11-28 16:48:38,150 - app.services.irr_cascade_service - INFO - 📊 ✅ Updated fund IRR for fund 2242 on 2025-11-01: 1200.0%
+2025-11-28 16:48:38,150 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [2242]
+2025-11-28 16:48:38,151 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] ✅ Successfully calculated IRR for fund 2242      
+2025-11-28 16:48:38,151 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] Processing fund 2233 for date 2025-11-01
+2025-11-28 16:48:38,152 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] ========== CALCULATING FUND IRR ==========
+2025-11-28 16:48:38,152 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund ID: 2233, Date: 2025-11-01
+2025-11-28 16:48:38,153 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Converted date to date_obj: 2025-11-01
+2025-11-28 16:48:38,153 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calling calculate_single_portfolio_fund_irr with bypass_cache=True
+2025-11-28 16:48:38,154 - app.api.routes.portfolio_funds - INFO - 🔍 IRR CALC ENTRY: calculate_single_portfolio_fund_irr called for fund 2233, date 2025-11-01  (BYPASSING CACHE)
+2025-11-28 16:48:38,154 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh single fund calculation as requested       
+2025-11-28 16:48:38,158 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2025-11-01
+2025-11-28 16:48:38,160 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Fund valuation: £10000.0
+2025-11-28 16:48:38,162 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Found 1 activities for fund 2233 up to 2025-11-01 (using end-of-day filter: 2025-11-01 23:59:59.999999)
+2025-11-28 16:48:38,163 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Added final valuation of £10000.0 to next month (2025-12-01) to separate from activities in 2025-11-01
+2025-11-28 16:48:38,163 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Aggregated cash flows: 2 flows from 2025-11-01 to 2025-12-01  
+2025-11-28 16:48:38,164 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Total valuation: £10000.0
+2025-11-28 16:48:38,164 - app.api.routes.portfolio_funds - WARNING - IRR calculation includes 1 future dates. This may affect the result. 
+2025-11-28 16:48:38,164 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Start date: 2025-11-01 00:00:00, End date: 2025-12-01 00:00:00
+2025-11-28 16:48:38,164 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Initial total_months calculated: 2
+2025-11-28 16:48:38,165 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Processing 2 cashflows into monthly array of size 2
+2025-11-28 16:48:38,165 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 0: date=2025-11-01, adjusted_date=2025-11-01, amount=-5000.0, original_month_index=0, final_month_index=0, is_final=False
+2025-11-28 16:48:38,166 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Valuation dated 2025-12-01 (1st of month) adjusted to 2025-11-30 (end of previous month)
+2025-11-28 16:48:38,166 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 1: date=2025-12-01, adjusted_date=2025-11-30, amount=10000.0, original_month_index=0, final_month_index=1, is_final=True
+2025-11-28 16:48:38,167 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Final monthly_amounts array: [-5000.0, 10000.0]
+2025-11-28 16:48:38,167 - app.api.routes.portfolio_funds - INFO -
+============================================================
+2025-11-28 16:48:38,168 - app.api.routes.portfolio_funds - INFO - IRR CALCULATION - CASHFLOW BREAKDOWN
+2025-11-28 16:48:38,168 - app.api.routes.portfolio_funds - INFO - ============================================================
+2025-11-28 16:48:38,168 - app.api.routes.portfolio_funds - INFO - Period: 2025-11 to 2025-12
+2025-11-28 16:48:38,169 - app.api.routes.portfolio_funds - INFO - Total months: 2
+2025-11-28 16:48:38,169 - app.api.routes.portfolio_funds - INFO -
+Monthly cashflows:
+2025-11-28 16:48:38,169 - app.api.routes.portfolio_funds - INFO -   Month 0 (2025-11): £-5,000.00 (Inflow)
+2025-11-28 16:48:38,170 - app.api.routes.portfolio_funds - INFO -   Month 1 (2025-12): £10,000.00 (Outflow)
+2025-11-28 16:48:38,170 - app.api.routes.portfolio_funds - INFO -
+Total negative flows (investments): £-5,000.00
+2025-11-28 16:48:38,170 - app.api.routes.portfolio_funds - INFO - Total positive flows (returns): £10,000.00
+2025-11-28 16:48:38,170 - app.api.routes.portfolio_funds - INFO - Net cash flow: £5,000.00
+2025-11-28 16:48:38,171 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 16:48:38,171 - app.api.routes.portfolio_funds - INFO - RESULT: Monthly IRR: 100.0000% | Annualized IRR: 1200.0000%
+2025-11-28 16:48:38,172 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 16:48:38,172 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: Final IRR calculation - Decimal: 12.0, Percentage: 1200.0%    
+2025-11-28 16:48:38,172 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: IRR calculation completed: 1200.0% for fund 2233 on 2025-11-01
+2025-11-28 16:48:38,173 - app.api.routes.portfolio_funds - INFO - 💰 DEBUG: ✅ IRR calculation completed successfully for fund 2233: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 12.0, 'calculation_date': '2025-11-01', 'portfolio_fund_id': 2233, 'valuation_amount': 10000.0, 'cash_flows_count': 2, 'period_start': '2025-11-01', 'period_end': '2025-12-01', 'days_in_period': 30}
+2025-11-28 16:48:38,174 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] IRR calculation returned: {'success': True, 'irr_percentage': 1200.0, 'irr_decimal': 12.0, 'calculation_date': '2025-11-01', 'portfolio_fund_id': 2233, 'valuation_amount': 10000.0, 'cash_flows_count': 2, 'period_start': '2025-11-01', 'period_end': '2025-12-01', 'days_in_period': 30}
+2025-11-28 16:48:38,174 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Calculated IRR percentage: 1200.0%
+2025-11-28 16:48:38,174 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Looking for fund valuation with fund_id=2233, date=2025-11-01
+2025-11-28 16:48:38,177 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Fund valuation ID: 9234
+2025-11-28 16:48:38,177 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Checking for existing IRR record with fund_id=2233, date=2025-11-01
+2025-11-28 16:48:38,179 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Found existing IRR record with ID: 9767
+2025-11-28 16:48:38,179 - app.services.irr_cascade_service - INFO - 🔍 [FUND IRR CALC] Updating existing IRR ID 9767 with value 1200.0%   
+2025-11-28 16:48:38,182 - app.services.irr_cascade_service - INFO - 📊 ✅ Updated fund IRR for fund 2233 on 2025-11-01: 1200.0%
+2025-11-28 16:48:38,183 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [2233]
+2025-11-28 16:48:38,183 - app.services.irr_cascade_service - INFO - 🔍 [BATCH IRR CALC] ✅ Successfully calculated IRR for fund 2233      
+2025-11-28 16:48:38,184 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [2234, 2232, 22335, 2236, 2237, 2238, 2239, 2240, 2241, 2242, 2233]
+2025-11-28 16:48:38,184 - app.services.irr_cascade_service - INFO - 🗑️ Invalidated 0 IRR cache entries for 11 recalculated funds
+2025-11-28 16:48:38,184 - app.services.irr_cascade_service - INFO - 📊 Recalculated 11 fund IRRs for portfolio 466 on 2025-11-01
+2025-11-28 16:48:38,188 - app.services.irr_cascade_service - INFO - 📊 Portfolio 466 completeness for 2025-11-01: 10/10 non-cash funds = True
+2025-11-28 16:48:38,189 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG] ==================== CASCADE SERVICE WRITING IRR ====================
+2025-11-28 16:48:38,190 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG] Portfolio ID: 466, Date: 2025-11-01  
+2025-11-28 16:48:38,190 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG] Call stack:
+2025-11-28 16:48:38,198 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "<string>", line 1, in <module>
+2025-11-28 16:48:38,198 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\multiprocessing\spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+2025-11-28 16:48:38,199 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\multiprocessing\spawn.py", line 135, in _main
+    return self._bootstrap(parent_sentinel)
+2025-11-28 16:48:38,199 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\multiprocessing\process.py", line 314, in _bootstrap
+    self.run()
+2025-11-28 16:48:38,200 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\multiprocessing\process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+2025-11-28 16:48:38,200 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\uvicorn\_subprocess.py", line 76, in subprocess_started
+    target(sockets=sockets)
+2025-11-28 16:48:38,200 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\uvicorn\server.py", line 61, in run
+    return asyncio.run(self.serve(sockets=sockets))
+2025-11-28 16:48:38,201 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\asyncio\runners.py", line 190, in run
+    return runner.run(main)
+2025-11-28 16:48:38,201 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+2025-11-28 16:48:38,202 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\asyncio\base_events.py", line 641, in run_until_complete
+    self.run_forever()
+2025-11-28 16:48:38,202 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\asyncio\base_events.py", line 608, in run_forever
+    self._run_once()
+2025-11-28 16:48:38,203 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\asyncio\base_events.py", line 1936, in _run_once
+    handle._run()
+2025-11-28 16:48:38,203 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\AppData\Local\Programs\Python\Python311\Lib\asyncio\events.py", line 84, in _run
+    self._context.run(self._callback, *self._args)
+2025-11-28 16:48:38,203 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 426, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+2025-11-28 16:48:38,204 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 84, in __call__
+    return await self.app(scope, receive, send)
+2025-11-28 16:48:38,204 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\applications.py", line 1106, in __call__
+    await super().__call__(scope, receive, send)
+2025-11-28 16:48:38,204 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\applications.py", line 122, in __call__
+    await self.middleware_stack(scope, receive, send)
+2025-11-28 16:48:38,205 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 162, in __call__
+    await self.app(scope, receive, _send)
+2025-11-28 16:48:38,205 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+2025-11-28 16:48:38,205 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 146, in simple_response
+    await self.app(scope, receive, send)
+2025-11-28 16:48:38,206 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 68, in __call__
+    await self.app(scope, receive, sender)
+2025-11-28 16:48:38,207 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 17, in __call__
+    await self.app(scope, receive, send)
+2025-11-28 16:48:38,207 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 718, in __call__
+    await route.handle(scope, receive, send)
+2025-11-28 16:48:38,208 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+2025-11-28 16:48:38,208 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\starlette\routing.py", line 66, in app
+    response = await func(request)
+2025-11-28 16:48:38,209 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\routing.py", line 274, in app
+    raw_response = await run_endpoint_function(
+2025-11-28 16:48:38,209 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\Documents\kingstons_portal\backend\venv\Lib\site-packages\fastapi\routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+2025-11-28 16:48:38,209 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\Documents\kingstons_portal\backend\app\api\routes\portfolio_funds.py", line 3530, in recalculate_irr_after_activity
+    result = await recalculate_irr_after_activity_change(
+2025-11-28 16:48:38,210 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\Documents\kingstons_portal\backend\app\api\routes\holding_activity_logs.py", line 153, in recalculate_irr_after_activity_change
+    cascade_result = await irr_service.handle_activity_changes_batch(portfolio_id, [activity_date])
+2025-11-28 16:48:38,210 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\Documents\kingstons_portal\backend\app\services\irr_cascade_service.py", line 185, in handle_activity_changes_batch
+    portfolio_recalc = await self._recalculate_portfolio_irr_for_date(portfolio_id, valuation_date)
+2025-11-28 16:48:38,211 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG]   File "C:\Users\jacob\Documents\kingstons_portal\backend\app\services\irr_cascade_service.py", line 666, in _recalculate_portfolio_irr_for_date
+    return await self._calculate_and_store_portfolio_irr(portfolio_id, date)
+2025-11-28 16:48:38,211 - app.services.irr_cascade_service - INFO - 🚨 [IRR CASCADE OVERWRITE DEBUG] ============================================================================
+2025-11-28 16:48:38,213 - app.utils.irr_cache - WARNING - ⚠️ [CACHE DEBUG] No cache entries found to invalidate for funds [2232, 2233, 22334, 2235, 2236, 2237, 2238, 2239, 2240, 2241, 2242]
+2025-11-28 16:48:38,214 - app.services.irr_cascade_service - WARNING - ⚠️ Targeted cache invalidation found 0 entries, clearing entire cacche for portfolio 466
+2025-11-28 16:48:38,214 - app.services.irr_cascade_service - INFO - 🗑️ Pre-calculation: Cleared 0 total cache entries to ensure fresh calcculation
+2025-11-28 16:48:38,214 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 11 portfolio funds  (BYPASSING CACHE)    
+2025-11-28 16:48:38,215 - app.api.routes.portfolio_funds - INFO - 🔄 Bypassing cache for fresh calculation as requested
+2025-11-28 16:48:38,215 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2025-11-01
+2025-11-28 16:48:38,216 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 11 funds (eliminates 11 individual requests)
+2025-11-28 16:48:38,218 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {2232: 10000.0, 2233: 10000.0, 2234: 10000.0, 2235: 10000.0, 2236: 10000.0, 2237: 10000.0, 2238: 10000.0, 2239: 10000.0, 2240: 10000.0, 2241: 10000.0, 2242: 10000.0}
+2025-11-28 16:48:38,222 - app.api.routes.portfolio_funds - INFO - 📊 Processing 11 activities across 11 funds
+2025-11-28 16:48:38,222 - app.api.routes.portfolio_funds - ERROR -
+2025-11-28 16:48:38,222 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 16:48:38,222 - app.api.routes.portfolio_funds - ERROR - 🔍 IRR CALCULATION DEBUG - Portfolio Funds: [2232, 2233, 2234, 2235, 2236, 2237, 2238, 2239, 2240, 2241, 2242]
+2025-11-28 16:48:38,223 - app.api.routes.portfolio_funds - ERROR - 🔍 Calculation Date: 2025-11-01
+2025-11-28 16:48:38,223 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 16:48:38,223 - app.api.routes.portfolio_funds - ERROR -
+2025-11-28 16:48:38,224 - app.api.routes.portfolio_funds - ERROR - 📋 ALL TRANSACTIONS INCLUDED IN CALCULATION:
+2025-11-28 16:48:38,224 - app.api.routes.portfolio_funds - ERROR -    Total Activities: 11
+2025-11-28 16:48:38,225 - app.api.routes.portfolio_funds - ERROR -
+2025-11-28 16:48:38,225 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2232: 1 transactions
+2025-11-28 16:48:38,225 - app.api.routes.portfolio_funds - ERROR -         1. 2025-11-01 | £    5,000.00 | Investment           | NEGATIVE (investment)
+2025-11-28 16:48:38,226 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2233: 1 transactions
+2025-11-28 16:48:38,226 - app.api.routes.portfolio_funds - ERROR -         1. 2025-11-01 | £    5,000.00 | Investment           | NEGATIVE (investment)
+2025-11-28 16:48:38,226 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2234: 1 transactions
+2025-11-28 16:48:38,227 - app.api.routes.portfolio_funds - ERROR -         1. 2025-11-01 | £    5,000.00 | Investment           | NEGATIVE (investment)
+2025-11-28 16:48:38,227 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2235: 1 transactions
+2025-11-28 16:48:38,227 - app.api.routes.portfolio_funds - ERROR -         1. 2025-11-01 | £    5,000.00 | Investment           | NEGATIVE (investment)
+2025-11-28 16:48:38,228 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2236: 1 transactions
+2025-11-28 16:48:38,228 - app.api.routes.portfolio_funds - ERROR -         1. 2025-11-01 | £    5,000.00 | Investment           | NEGATIVE (investment)
+2025-11-28 16:48:38,229 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2237: 1 transactions
+2025-11-28 16:48:38,229 - app.api.routes.portfolio_funds - ERROR -         1. 2025-11-01 | £    5,000.00 | Investment           | NEGATIVE (investment)
+2025-11-28 16:48:38,229 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2238: 1 transactions
+2025-11-28 16:48:38,230 - app.api.routes.portfolio_funds - ERROR -         1. 2025-11-01 | £    5,000.00 | Investment           | NEGATIVE (investment)
+2025-11-28 16:48:38,230 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2239: 1 transactions
+2025-11-28 16:48:38,230 - app.api.routes.portfolio_funds - ERROR -         1. 2025-11-01 | £    5,000.00 | Investment           | NEGATIVE (investment)
+2025-11-28 16:48:38,231 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2240: 1 transactions
+2025-11-28 16:48:38,231 - app.api.routes.portfolio_funds - ERROR -         1. 2025-11-01 | £    5,000.00 | Investment           | NEGATIVE (investment)
+2025-11-28 16:48:38,231 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2241: 1 transactions
+2025-11-28 16:48:38,232 - app.api.routes.portfolio_funds - ERROR -         1. 2025-11-01 | £    5,000.00 | Investment           | NEGATIVE (investment)
+2025-11-28 16:48:38,232 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2242: 1 transactions
+2025-11-28 16:48:38,232 - app.api.routes.portfolio_funds - ERROR -         1. 2025-11-01 | £    5,000.00 | Investment           | NEGATIVE (investment)
+2025-11-28 16:48:38,233 - app.api.routes.portfolio_funds - ERROR -
+2025-11-28 16:48:38,233 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 16:48:38,233 - app.api.routes.portfolio_funds - ERROR - 💰 MONTHLY CASH FLOW TOTALS:
+2025-11-28 16:48:38,234 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 16:48:38,234 - app.api.routes.portfolio_funds - ERROR -      1. 2025-11-01 (activities)                  | £     -55,000.00 | OUTFLOW (negative)
+2025-11-28 16:48:38,235 - app.api.routes.portfolio_funds - ERROR -      2. 2025-12-01 (FINAL VALUATION)             | £     110,000.00 | INFLOW (positive)
+2025-11-28 16:48:38,235 - app.api.routes.portfolio_funds - ERROR -
+2025-11-28 16:48:38,235 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 16:48:38,236 - app.api.routes.portfolio_funds - ERROR - 📊 SUMMARY STATISTICS:
+2025-11-28 16:48:38,236 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 16:48:38,237 - app.api.routes.portfolio_funds - ERROR -    Total Cash Flow Periods: 2
+2025-11-28 16:48:38,237 - app.api.routes.portfolio_funds - ERROR -    Total Valuation: £110,000.00
+2025-11-28 16:48:38,237 - app.api.routes.portfolio_funds - ERROR -    Fund Valuations: {2232: 10000.0, 2233: 10000.0, 2234: 10000.0, 2235: 10000.0, 2236: 10000.0, 2237: 10000.0, 2238: 10000.0, 2239: 10000.0, 2240: 10000.0, 2241: 10000.0, 2242: 10000.0}
+2025-11-28 16:48:38,238 - app.api.routes.portfolio_funds - ERROR -    Period: 2025-11-01 to 2025-12-01
+2025-11-28 16:48:38,238 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 16:48:38,239 - app.api.routes.portfolio_funds - ERROR -
+2025-11-28 16:48:38,239 - app.api.routes.portfolio_funds - WARNING - IRR calculation includes 1 future dates. This may affect the result. 
+2025-11-28 16:48:38,240 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Start date: 2025-11-01 00:00:00, End date: 2025-12-01 00:00:00
+2025-11-28 16:48:38,240 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Initial total_months calculated: 2
+2025-11-28 16:48:38,240 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Processing 2 cashflows into monthly array of size 2
+2025-11-28 16:48:38,241 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 0: date=2025-11-01, adjusted_date=2025-11-01, amount=-55000.0, original_month_index=0, final_month_index=0, is_final=False
+2025-11-28 16:48:38,241 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Valuation dated 2025-12-01 (1st of month) adjusted to 2025-11-30 (end of previous month)
+2025-11-28 16:48:38,241 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 1: date=2025-12-01, adjusted_date=2025-11-30, amount=110000.0, original_month_index=0, final_month_index=1, is_final=True
+2025-11-28 16:48:38,243 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Final monthly_amounts array: [-55000.0, 110000.0]
+2025-11-28 16:48:38,243 - app.api.routes.portfolio_funds - INFO -
+============================================================
+2025-11-28 16:48:38,243 - app.api.routes.portfolio_funds - INFO - IRR CALCULATION - CASHFLOW BREAKDOWN
+2025-11-28 16:48:38,243 - app.api.routes.portfolio_funds - INFO - ============================================================
+2025-11-28 16:48:38,243 - app.api.routes.portfolio_funds - INFO - Period: 2025-11 to 2025-12
+2025-11-28 16:48:38,245 - app.api.routes.portfolio_funds - INFO - Total months: 2
+2025-11-28 16:48:38,245 - app.api.routes.portfolio_funds - INFO -
+Monthly cashflows:
+2025-11-28 16:48:38,245 - app.api.routes.portfolio_funds - INFO -   Month 0 (2025-11): £-55,000.00 (Inflow)
+2025-11-28 16:48:38,246 - app.api.routes.portfolio_funds - INFO -   Month 1 (2025-12): £110,000.00 (Outflow)
+2025-11-28 16:48:38,246 - app.api.routes.portfolio_funds - INFO -
+Total negative flows (investments): £-55,000.00
+2025-11-28 16:48:38,246 - app.api.routes.portfolio_funds - INFO - Total positive flows (returns): £110,000.00
+2025-11-28 16:48:38,246 - app.api.routes.portfolio_funds - INFO - Net cash flow: £55,000.00
+2025-11-28 16:48:38,246 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 16:48:38,246 - app.api.routes.portfolio_funds - INFO - RESULT: Monthly IRR: 100.0000% | Annualized IRR: 1200.0000%
+2025-11-28 16:48:38,246 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 16:48:38,246 - app.api.routes.portfolio_funds - ERROR -
+2025-11-28 16:48:38,248 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 16:48:38,248 - app.api.routes.portfolio_funds - ERROR - ✅ FINAL IRR CALCULATION RESULT:
+2025-11-28 16:48:38,249 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 16:48:38,249 - app.api.routes.portfolio_funds - ERROR -    IRR (Decimal): 12.0
+2025-11-28 16:48:38,249 - app.api.routes.portfolio_funds - ERROR -    IRR (Percentage): 1200.0%
+2025-11-28 16:48:38,249 - app.api.routes.portfolio_funds - ERROR -    Days in Period: 30
+2025-11-28 16:48:38,249 - app.api.routes.portfolio_funds - ERROR -    Cash Flow Periods: 2
+2025-11-28 16:48:38,249 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 16:48:38,251 - app.api.routes.portfolio_funds - ERROR -
+2025-11-28 16:48:38,251 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: 1200.0% over 30 days (2 cash flow periods) 
+2025-11-28 16:48:38,252 - app.api.routes.portfolio_funds - INFO - 💾 Storing portfolio IRR result in database (store_result=True)
+2025-11-28 16:48:38,266 - app.services.irr_cascade_service - WARNING - No fund valuations found for portfolio 466 in month 2025-10 (IRR date 2025-11-01)
+2025-11-28 16:48:38,275 - app.services.irr_cascade_service - INFO - 📊 Updated portfolio IRR for portfolio 466 on 2025-11-01: 1200.0%
+2025-11-28 16:48:38,275 - app.services.irr_cascade_service - INFO - 🔄 [IRR CASCADE] ✅ Batch recalculation completed: {'success': True, 'portfolio_id': 466, 'dates_processed': 1, 'fund_irrs_recalculated': 11, 'portfolio_irrs_recalculated': 1, 'processed_dates': ['2025-11-01'], 'activity_dates': ['2025-11-01'], 'earliest_activity_date': '2025-11-01'}
+2025-11-28 16:48:38,276 - app.api.routes.holding_activity_logs - INFO - ✅ [ACTIVITY WRAPPER] Targeted IRR cascade completed successfully: {'success': True, 'portfolio_id': 466, 'dates_processed': 1, 'fund_irrs_recalculated': 11, 'portfolio_irrs_recalculated': 1, 'processed_dates': ['2025-11-01'], 'activity_dates': ['2025-11-01'], 'earliest_activity_date': '2025-11-01'}
+2025-11-28 16:48:38,357 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 11 portfolio funds
+2025-11-28 16:48:38,358 - app.api.routes.portfolio_funds - INFO - No IRR date provided, finding latest valuation date
+2025-11-28 16:48:38,360 - app.api.routes.portfolio_funds - INFO - Using latest valuation date: 2025-11-01
+2025-11-28 16:48:38,361 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2025-11-01
+2025-11-28 16:48:38,361 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 11 funds (eliminates 11 individual requests)
+2025-11-28 16:48:38,362 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {2232: 10000.0, 2233: 10000.0, 2234: 10000.0, 2235: 10000.0, 2236: 10000.0, 2237: 10000.0, 2238: 10000.0, 2239: 10000.0, 2240: 10000.0, 2241: 10000.0, 2242: 10000.0}
+2025-11-28 16:48:38,367 - app.api.routes.portfolio_funds - INFO - 📊 Processing 11 activities across 11 funds
+2025-11-28 16:48:38,367 - app.api.routes.portfolio_funds - ERROR -
+2025-11-28 16:48:38,368 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 16:48:38,368 - app.api.routes.portfolio_funds - ERROR - 🔍 IRR CALCULATION DEBUG - Portfolio Funds: [2232, 2233, 2234, 2235, 2236, 2237, 2238, 2239, 2240, 2241, 2242]
+2025-11-28 16:48:38,368 - app.api.routes.portfolio_funds - ERROR - 🔍 Calculation Date: 2025-11-01
+2025-11-28 16:48:38,368 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 16:48:38,369 - app.api.routes.portfolio_funds - ERROR -
+2025-11-28 16:48:38,369 - app.api.routes.portfolio_funds - ERROR - 📋 ALL TRANSACTIONS INCLUDED IN CALCULATION:
+2025-11-28 16:48:38,369 - app.api.routes.portfolio_funds - ERROR -    Total Activities: 11
+2025-11-28 16:48:38,369 - app.api.routes.portfolio_funds - ERROR -
+2025-11-28 16:48:38,370 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2232: 1 transactions
+2025-11-28 16:48:38,370 - app.api.routes.portfolio_funds - ERROR -         1. 2025-11-01 | £    5,000.00 | Investment           | NEGATIVE (investment)
+2025-11-28 16:48:38,370 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2233: 1 transactions
+2025-11-28 16:48:38,370 - app.api.routes.portfolio_funds - ERROR -         1. 2025-11-01 | £    5,000.00 | Investment           | NEGATIVE (investment)
+2025-11-28 16:48:38,371 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2234: 1 transactions
+2025-11-28 16:48:38,371 - app.api.routes.portfolio_funds - ERROR -         1. 2025-11-01 | £    5,000.00 | Investment           | NEGATIVE (investment)
+2025-11-28 16:48:38,371 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2235: 1 transactions
+2025-11-28 16:48:38,372 - app.api.routes.portfolio_funds - ERROR -         1. 2025-11-01 | £    5,000.00 | Investment           | NEGATIVE (investment)
+2025-11-28 16:48:38,372 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2236: 1 transactions
+2025-11-28 16:48:38,372 - app.api.routes.portfolio_funds - ERROR -         1. 2025-11-01 | £    5,000.00 | Investment           | NEGATIVE (investment)
+2025-11-28 16:48:38,372 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2237: 1 transactions
+2025-11-28 16:48:38,373 - app.api.routes.portfolio_funds - ERROR -         1. 2025-11-01 | £    5,000.00 | Investment           | NEGATIVE (investment)
+2025-11-28 16:48:38,373 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2238: 1 transactions
+2025-11-28 16:48:38,373 - app.api.routes.portfolio_funds - ERROR -         1. 2025-11-01 | £    5,000.00 | Investment           | NEGATIVE (investment)
+2025-11-28 16:48:38,373 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2239: 1 transactions
+2025-11-28 16:48:38,374 - app.api.routes.portfolio_funds - ERROR -         1. 2025-11-01 | £    5,000.00 | Investment           | NEGATIVE (investment)
+2025-11-28 16:48:38,374 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2240: 1 transactions
+2025-11-28 16:48:38,374 - app.api.routes.portfolio_funds - ERROR -         1. 2025-11-01 | £    5,000.00 | Investment           | NEGATIVE (investment)
+2025-11-28 16:48:38,374 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2241: 1 transactions
+2025-11-28 16:48:38,375 - app.api.routes.portfolio_funds - ERROR -         1. 2025-11-01 | £    5,000.00 | Investment           | NEGATIVE (investment)
+2025-11-28 16:48:38,375 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2242: 1 transactions
+2025-11-28 16:48:38,375 - app.api.routes.portfolio_funds - ERROR -         1. 2025-11-01 | £    5,000.00 | Investment           | NEGATIVE (investment)
+2025-11-28 16:48:38,375 - app.api.routes.portfolio_funds - ERROR -
+2025-11-28 16:48:38,376 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 16:48:38,376 - app.api.routes.portfolio_funds - ERROR - 💰 MONTHLY CASH FLOW TOTALS:
+2025-11-28 16:48:38,376 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 16:48:38,377 - app.api.routes.portfolio_funds - ERROR -      1. 2025-11-01 (activities)                  | £     -55,000.00 | OUTFLOW (negative)
+2025-11-28 16:48:38,377 - app.api.routes.portfolio_funds - ERROR -      2. 2025-12-01 (FINAL VALUATION)             | £     110,000.00 | INFLOW (positive)
+2025-11-28 16:48:38,377 - app.api.routes.portfolio_funds - ERROR -
+2025-11-28 16:48:38,377 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 16:48:38,378 - app.api.routes.portfolio_funds - ERROR - 📊 SUMMARY STATISTICS:
+2025-11-28 16:48:38,378 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 16:48:38,378 - app.api.routes.portfolio_funds - ERROR -    Total Cash Flow Periods: 2
+2025-11-28 16:48:38,379 - app.api.routes.portfolio_funds - ERROR -    Total Valuation: £110,000.00
+2025-11-28 16:48:38,379 - app.api.routes.portfolio_funds - ERROR -    Fund Valuations: {2232: 10000.0, 2233: 10000.0, 2234: 10000.0, 2235: 10000.0, 2236: 10000.0, 2237: 10000.0, 2238: 10000.0, 2239: 10000.0, 2240: 10000.0, 2241: 10000.0, 2242: 10000.0}
+2025-11-28 16:48:38,379 - app.api.routes.portfolio_funds - ERROR -    Period: 2025-11-01 to 2025-12-01
+2025-11-28 16:48:38,380 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 16:48:38,380 - app.api.routes.portfolio_funds - ERROR -
+2025-11-28 16:48:38,380 - app.api.routes.portfolio_funds - WARNING - IRR calculation includes 1 future dates. This may affect the result. 
+2025-11-28 16:48:38,381 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Start date: 2025-11-01 00:00:00, End date: 2025-12-01 00:00:00
+2025-11-28 16:48:38,381 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Initial total_months calculated: 2
+2025-11-28 16:48:38,381 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Processing 2 cashflows into monthly array of size 2
+2025-11-28 16:48:38,381 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 0: date=2025-11-01, adjusted_date=2025-11-01, amount=-55000.0, original_month_index=0, final_month_index=0, is_final=False
+2025-11-28 16:48:38,381 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Valuation dated 2025-12-01 (1st of month) adjusted to 2025-11-30 (end of previous month)
+2025-11-28 16:48:38,382 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 1: date=2025-12-01, adjusted_date=2025-11-30, amount=110000.0, original_month_index=0, final_month_index=1, is_final=True
+2025-11-28 16:48:38,382 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Final monthly_amounts array: [-55000.0, 110000.0]
+2025-11-28 16:48:38,383 - app.api.routes.portfolio_funds - INFO -
+============================================================
+2025-11-28 16:48:38,383 - app.api.routes.portfolio_funds - INFO - IRR CALCULATION - CASHFLOW BREAKDOWN
+2025-11-28 16:48:38,383 - app.api.routes.portfolio_funds - INFO - ============================================================
+2025-11-28 16:48:38,384 - app.api.routes.portfolio_funds - INFO - Period: 2025-11 to 2025-12
+2025-11-28 16:48:38,384 - app.api.routes.portfolio_funds - INFO - Total months: 2
+2025-11-28 16:48:38,384 - app.api.routes.portfolio_funds - INFO -
+Monthly cashflows:
+2025-11-28 16:48:38,385 - app.api.routes.portfolio_funds - INFO -   Month 0 (2025-11): £-55,000.00 (Inflow)
+2025-11-28 16:48:38,385 - app.api.routes.portfolio_funds - INFO -   Month 1 (2025-12): £110,000.00 (Outflow)
+2025-11-28 16:48:38,386 - app.api.routes.portfolio_funds - INFO -
+Total negative flows (investments): £-55,000.00
+2025-11-28 16:48:38,386 - app.api.routes.portfolio_funds - INFO - Total positive flows (returns): £110,000.00
+2025-11-28 16:48:38,386 - app.api.routes.portfolio_funds - INFO - Net cash flow: £55,000.00
+2025-11-28 16:48:38,386 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 16:48:38,387 - app.api.routes.portfolio_funds - INFO - RESULT: Monthly IRR: 100.0000% | Annualized IRR: 1200.0000%
+2025-11-28 16:48:38,387 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 16:48:38,388 - app.api.routes.portfolio_funds - ERROR -
+2025-11-28 16:48:38,388 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 16:48:38,388 - app.api.routes.portfolio_funds - ERROR - ✅ FINAL IRR CALCULATION RESULT:
+2025-11-28 16:48:38,388 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 16:48:38,390 - app.api.routes.portfolio_funds - ERROR -    IRR (Decimal): 12.0
+2025-11-28 16:48:38,390 - app.api.routes.portfolio_funds - ERROR -    IRR (Percentage): 1200.0%
+2025-11-28 16:48:38,390 - app.api.routes.portfolio_funds - ERROR -    Days in Period: 30
+2025-11-28 16:48:38,391 - app.api.routes.portfolio_funds - ERROR -    Cash Flow Periods: 2
+2025-11-28 16:48:38,391 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 16:48:38,391 - app.api.routes.portfolio_funds - ERROR -
+2025-11-28 16:48:38,391 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: 1200.0% over 30 days (2 cash flow periods) 
+2025-11-28 16:48:38,392 - app.api.routes.portfolio_funds - INFO - 💾 Storing portfolio IRR result in database (store_result=True)
+2025-11-28 16:48:39,425 - app.api.routes.client_products - INFO - Fetching complete product details for product ID: 448
+2025-11-28 16:48:39,425 - app.api.routes.client_products - INFO - Found product: General Investment Account (ID: 448)
 INFO:     connection closed
-2025-11-28 15:34:04,457 - app.api.routes.presence - WARNING - Failed to send message to user 3: received 1000 (OK) Component unmounting; then sent 1000 (OK) Component unmounting
-2025-11-28 15:34:04,585 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] ==================== FETCHING LATEST IRR ====================
-2025-11-28 15:34:04,592 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] Portfolio ID: 448
-2025-11-28 15:34:04,600 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] View query result: None
-2025-11-28 15:34:04,639 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] Raw table query result: None
-INFO:     ('127.0.0.1', 63844) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-435" [accepted]
+2025-11-28 16:48:39,449 - app.api.routes.presence - WARNING - Failed to send message to user 3: received 1000 (OK) Component unmounting; then sent 1000 (OK) Component unmounting
+2025-11-28 16:48:39,640 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] ==================== FETCHING LATEST IRR ====================
+2025-11-28 16:48:39,640 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] Portfolio ID: 466
+2025-11-28 16:48:39,645 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] View query result: <Record portfolio_id=466 irr_result=Decimal('1200.0000') date=datetime.date(2025, 11, 1)>
+2025-11-28 16:48:39,649 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] Raw table query result: <Record portfolio_id=466 irr_result=Decimal('1200.0000') date=datetime.date(2025, 11, 1)>
+INFO:     ('127.0.0.1', 53144) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-448" [accepted]
 INFO:     connection open
-INFO:     ('127.0.0.1', 57128) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-435" [accepted]
+2025-11-28 16:48:42,375 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
+2025-11-28 16:48:42,384 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
+INFO:     ('127.0.0.1', 60572) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-448" [accepted]
 INFO:     connection open
-2025-11-28 15:34:08,749 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
-2025-11-28 15:34:08,769 - app.api.routes.auth - INFO - User authenticated via cookie token: 3

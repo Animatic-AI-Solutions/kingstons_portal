@@ -79,14 +79,19 @@ export const usePortfolioTemplateDetails = (portfolioId: string | undefined) => 
       const [templateResponse, generationsResponse, linkedProductsResponse] = await Promise.all([
         api.get(`/available_portfolios/${portfolioId}`, { signal }),
         api.get(`/available_portfolios/${portfolioId}/generations`, { signal }),
-        api.get(`/available_portfolios/${portfolioId}/linked-products`, { signal }).catch(() => ({ data: [] }))
+        api.get(`/available_portfolios/${portfolioId}/linked-products`, { signal }).catch(() => ({ data: { products: [], total_fum: 0 } }))
       ]);
 
+      // Handle new API response structure which returns {products: [], total_fum: number}
+      const linkedProductsData = linkedProductsResponse.data;
+      const products = linkedProductsData?.products || [];
+      const totalFum = linkedProductsData?.total_fum || 0;
 
       return {
         template: templateResponse.data,
         generations: generationsResponse.data || [],
-        linkedProducts: linkedProductsResponse.data || []
+        linkedProducts: products,
+        totalFum: totalFum
       };
     } catch (err: any) {
       // Don't log canceled errors as they're normal behavior

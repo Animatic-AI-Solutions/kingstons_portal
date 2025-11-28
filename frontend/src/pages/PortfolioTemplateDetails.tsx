@@ -6,6 +6,7 @@ import DynamicPageContainer from '../components/DynamicPageContainer';
 import StandardTable, { ColumnConfig } from '../components/StandardTable';
 import { Button, DeleteButton, ActionButton, AddButton, EditButton } from '../components/ui';
 import { generateProductDisplayName } from '../utils/productTitleUtils';
+import { formatMoney } from '../utils/formatMoney';
 import toast from 'react-hot-toast';
 
 interface PortfolioTemplate {
@@ -63,6 +64,8 @@ interface LinkedProduct {
   template_generation_id?: number;
   link_type: 'portfolio' | 'direct';
   provider_name?: string;
+  latest_valuation?: number;
+  valuation_date?: string;
   product_owners?: Array<{
     id: number;
     firstname?: string;
@@ -108,6 +111,7 @@ const PortfolioTemplateDetails: React.FC = () => {
   const template = portfolioData?.template || null;
   const generations = portfolioData?.generations || [];
   const linkedProducts = portfolioData?.linkedProducts || [];
+  const totalFum = portfolioData?.totalFum || 0;
   
   // Local state for UI interactions
   const [selectedGeneration, setSelectedGeneration] = useState<Generation | null>(null);
@@ -882,7 +886,7 @@ const PortfolioTemplateDetails: React.FC = () => {
       </div>
 
       {/* Priority Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-4">
         {/* Template Name Card */}
         <div className={`bg-white shadow-sm rounded-lg border p-4 ${isEditing ? 'border-indigo-300 ring-1 ring-indigo-300' : 'border-gray-100'}`}>
           <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Template Name</div>
@@ -930,6 +934,14 @@ const PortfolioTemplateDetails: React.FC = () => {
         <div className="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
           <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Linked Products</div>
           <div className="mt-1 text-lg font-semibold text-gray-900">{linkedProducts?.length || 0}</div>
+        </div>
+
+        {/* Total FUM Card (Read-only) */}
+        <div className="bg-white shadow-sm rounded-lg border border-teal-200 p-4">
+          <div className="text-xs font-medium text-teal-700 uppercase tracking-wider">Total FUM</div>
+          <div className="mt-1 text-lg font-semibold text-teal-900">
+            {formatMoney(totalFum, true, true)}
+          </div>
         </div>
       </div>
 
@@ -1163,7 +1175,7 @@ const PortfolioTemplateDetails: React.FC = () => {
                         {linkedProductsForGeneration.map((product) => (
                           <div key={product.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-md bg-gray-50">
                             <div className="flex-1">
-                              <div className="flex items-center space-x-2">
+                              <div className="flex items-center space-x-2 mb-1">
                                 <Link
                                   to={`/products/${product.id}`}
                                   className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
@@ -1171,12 +1183,33 @@ const PortfolioTemplateDetails: React.FC = () => {
                                   {generateProductDisplayName(product)}
                                 </Link>
                                 <span className={`px-2 py-0.5 text-xs rounded ${
-                                  product.status === 'active' 
-                                    ? 'bg-green-100 text-green-800' 
+                                  product.status === 'active'
+                                    ? 'bg-green-100 text-green-800'
                                     : 'bg-red-100 text-red-800'
                                 }`}>
                                   {product.status}
                                 </span>
+                              </div>
+                              {/* Display valuation if available */}
+                              <div className="flex items-center space-x-3 text-xs text-gray-600">
+                                {product.latest_valuation !== undefined && product.latest_valuation > 0 ? (
+                                  <>
+                                    <span className="font-semibold text-teal-700">
+                                      Valuation: {formatMoney(product.latest_valuation, true, true)}
+                                    </span>
+                                    {product.valuation_date && (
+                                      <span className="text-gray-500">
+                                        as of {new Date(product.valuation_date).toLocaleDateString('en-GB', {
+                                          day: '2-digit',
+                                          month: '2-digit',
+                                          year: 'numeric'
+                                        })}
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span className="text-gray-400 italic">No valuation data</span>
+                                )}
                               </div>
                             </div>
                             <div className="ml-4">
