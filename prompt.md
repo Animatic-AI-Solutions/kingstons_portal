@@ -1,7 +1,1 @@
-add a field in the client and fee management section for 'last satisfaction discussion'
-
-also rename fee agreement to full fee agreement
-
-the order fo the fileds in the client fee and maanagement section shoudl be: Advisor → Client Type → Client Start Date → Ongoing Start Date → Client Declaration → Privacy Declaration → Full Fee Agreement -> last satisfactory discussion
-
-bring the noets section above the fee table but below the top data fields
+there i a bug in the monthly activities table inside the product6 irr clauclatio page which I wnat to investigate, the monthlytotals column on the far right of the table for withdrawls does not match the transactions we are seeing in the table (it is 50 pounds too much) introduce some logs in the fronte end to investigate this so that we can have a closer look at thr caluclation itsefl

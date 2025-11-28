@@ -501,17 +501,17 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       months.forEach(month => {
         const key = `${activityType}-${month}`;
         let total = 0;
-        
+
         // Include activities from displayed funds (excluding virtual "Previous Funds" entry)
         funds.forEach(fund => {
           // Skip virtual "Previous Funds" entry to avoid double counting
           // Check both id === -1 and the condition used in cellValuesCache
           if (fund.id === -1 || (fund.isActive === false && fund.inactiveHoldingIds && !fund.isInactiveBreakdown)) return;
-          
+
           const cellKey = `${fund.id}-${month}-${activityType}`;
           const cellValue = cellValuesCache.get(cellKey) || '';
           const numericValue = parseFloat(cellValue.replace(/,/g, '')) || 0;
-          
+
           if (numericValue !== 0) {
             const signType = activityTypeSignMap.get(activityType);
             if (signType === 'inflow') {
@@ -523,7 +523,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
             }
           }
         });
-        
+
         // Also include activities from inactive funds
         if (inactiveFundsForTotals && inactiveFundsForTotals.length > 0) {
           inactiveFundsForTotals.forEach(inactiveFund => {
@@ -539,7 +539,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
               const backendType = convertActivityTypeForBackend(activityType);
               const activityKey = `${inactiveFund.id}-${month}-${backendType}`;
               const activity = activitiesIndex.get(activityKey);
-              
+
               if (activity) {
                 const numericValue = parseFloat(activity.amount);
                 if (!isNaN(numericValue)) {
@@ -583,7 +583,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
           const cellKey = `${fund.id}-${month}-${activityType}`;
           const cellValue = cellValuesCache.get(cellKey) || '';
           const numericValue = parseFloat(cellValue) || 0;
-          
+
           if (numericValue !== 0 && activityType !== 'Current Value') {
             const signType = activityTypeSignMap.get(activityType);
             if (signType === 'inflow') {
@@ -606,9 +606,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       // Skip virtual "Previous Funds" entry to avoid double counting
       // Check both id === -1 and the condition used in cellValuesCache
       if (fund.id === -1 || (fund.isActive === false && fund.inactiveHoldingIds && !fund.isInactiveBreakdown)) return;
-      
+
       let total = 0;
-      
+
       ACTIVITY_TYPES.forEach(activityType => {
         if (activityType !== 'Current Value') {
           // Use allMonths instead of monthsUpToSelectedYear for fund row totals

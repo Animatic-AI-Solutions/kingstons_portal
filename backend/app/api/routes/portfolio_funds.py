@@ -199,9 +199,7 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
     import logging
     
     logger = logging.getLogger(__name__)
-    
-            # Starting IRR calculation
-    
+
     if len(dates) != len(amounts):
         error_msg = f"Dates and amounts must have the same length. Got {len(dates)} dates and {len(amounts)} amounts."
         logger.error(error_msg)
@@ -261,29 +259,7 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
         sorted_flows = sorted(zip(processed_dates, amounts), key=lambda x: x[0])
         dates = [d for d, _ in sorted_flows]
         amounts = [a for _, a in sorted_flows]
-        
-        # Check if all dates are the same
-        if all(d == dates[0] for d in dates):
-            logger.warning("All cash flow dates are identical - using simple return calculation instead of IRR")
-            # Calculate simple return: (ending_value - initial_investment) / initial_investment
-            total_outflow = sum(a for a in amounts if a < 0)  # Sum of all negative cash flows
-            total_inflow = sum(a for a in amounts if a > 0)   # Sum of all positive cash flows
-            
-            if total_outflow == 0:
-                error_msg = "Cannot calculate return: total investment amount is zero"
-                logger.error(error_msg)
-                raise ValueError(error_msg)
-                
-            simple_return = total_inflow / abs(total_outflow) - 1
-            
-            # Since all cash flows are on the same day, the period is effectively 0 days
-            # We'll return the simple return as the IRR
-            return {
-                'period_irr': simple_return,
-                'days_in_period': 0,
-                'is_simple_return': True
-            }
-        
+
         # Get the start and end dates
         start_date = dates[0]
         end_date = dates[-1]
@@ -293,31 +269,15 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
         future_dates = [d for d in dates if d > now]
         if future_dates:
             logger.warning(f"IRR calculation includes {len(future_dates)} future dates. This may affect the result.")
-        
-        # Check if the investment period is too short
-        if (end_date - start_date).days < 1:
-            logger.warning("Investment period is less than 1 day - using simple return calculation")
-            # Calculate simple return: (ending_value - initial_investment) / initial_investment
-            total_outflow = sum(a for a in amounts if a < 0)  # Sum of all negative cash flows
-            total_inflow = sum(a for a in amounts if a > 0)   # Sum of all positive cash flows
-            
-            if total_outflow == 0:
-                error_msg = "Cannot calculate return: total investment amount is zero"
-                logger.error(error_msg)
-                raise ValueError(error_msg)
-                
-            simple_return = total_inflow / abs(total_outflow) - 1
-            
-            return {
-                'period_irr': simple_return,
-                'days_in_period': (end_date - start_date).days,
-                'is_simple_return': True
-            }
-        
+
         # Calculate total number of months between start and end (inclusive)
         # For IRR calculation, we need the inclusive count of months in the period
         # Example: Jan to May = 5 months (Jan=0, Feb=1, Mar=2, Apr=3, May=4)
+        # Note: The array may grow by 1 if the final valuation is placed in a separate month
         total_months = ((end_date.year - start_date.year) * 12) + (end_date.month - start_date.month) + 1
+
+        logger.info(f"[IRR DEBUG] Start date: {start_date}, End date: {end_date}")
+        logger.info(f"[IRR DEBUG] Initial total_months calculated: {total_months}")
         
         if total_months < 1:
             logger.warning("Investment period is less than one month - using simple IRR calculation")
@@ -344,14 +304,43 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
         monthly_amounts = [0] * total_months
         
         # Map all cash flows to their corresponding months, totaling flows within same month
-        for cash_flow_date, amount in zip(dates, amounts):
-            month_index = ((cash_flow_date.year - start_date.year) * 12) + (cash_flow_date.month - start_date.month)
+        # IMPORTANT: The final valuation (last entry) should be placed in the NEXT month
+        # to properly separate it from any activities in the valuation month
+        logger.info(f"[IRR DEBUG] Processing {len(dates)} cashflows into monthly array of size {len(monthly_amounts)}")
+        for i, (cash_flow_date, amount) in enumerate(zip(dates, amounts)):
+            # Special handling for valuations dated on the 1st of a month
+            # These represent end-of-previous-month valuations
+            is_final_valuation = (i == len(dates) - 1)
+            adjusted_date = cash_flow_date
+
+            if is_final_valuation and cash_flow_date.day == 1:
+                # Valuation dated on 1st of month represents end of previous month
+                from datetime import timedelta
+                adjusted_date = cash_flow_date - timedelta(days=1)
+                logger.info(f"[IRR DEBUG] Valuation dated {cash_flow_date.strftime('%Y-%m-%d')} (1st of month) adjusted to {adjusted_date.strftime('%Y-%m-%d')} (end of previous month)")
+
+            month_index = ((adjusted_date.year - start_date.year) * 12) + (adjusted_date.month - start_date.month)
+            original_month_index = month_index
+
+            # If this is the final valuation (last entry), place it in the next month
+            # to ensure activities and valuation are separated for accurate IRR calculation
+            if is_final_valuation:
+                month_index += 1
+                # Extend array if needed for the final valuation month
+                if month_index >= len(monthly_amounts):
+                    monthly_amounts.append(0)
+                    logger.info(f"[IRR DEBUG] Extended array to size {len(monthly_amounts)} for final valuation")
+
+            logger.info(f"[IRR DEBUG] Cashflow {i}: date={cash_flow_date.strftime('%Y-%m-%d')}, adjusted_date={adjusted_date.strftime('%Y-%m-%d')}, amount={amount}, original_month_index={original_month_index}, final_month_index={month_index}, is_final={is_final_valuation}")
+
             if month_index < 0 or month_index >= len(monthly_amounts):
                 error_msg = f"Invalid month index: {month_index} for date {cash_flow_date.isoformat()}"
                 logger.error(error_msg)
                 raise ValueError(error_msg)
-                
+
             monthly_amounts[month_index] += amount  # Add to any existing amount for that month
+
+        logger.info(f"[IRR DEBUG] Final monthly_amounts array: {monthly_amounts}")
         
         # Round amounts below a pence to zero to handle floating point precision errors
         monthly_amounts = [0.0 if abs(amount) < 0.01 else amount for amount in monthly_amounts]
@@ -396,16 +385,29 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
             error_msg = f"Initial cash flow should be negative (investment), but got {monthly_amounts[0]}"
             logger.warning(error_msg)  # Warning only, as this might work in some cases
         
-        # Monthly cash flows logging (commented out to reduce log volume)
-        # logger.info("\nMonthly cash flows:")
-        # for i, amount in enumerate(monthly_amounts):
-        #     logger.info(f"Month {i}: {amount}")
-        
+        # Monthly cash flows breakdown for IRR calculation
+        logger.info(f"\n{'='*60}")
+        logger.info(f"IRR CALCULATION - CASHFLOW BREAKDOWN")
+        logger.info(f"{'='*60}")
+        logger.info(f"Period: {start_date.strftime('%Y-%m')} to {end_date.strftime('%Y-%m')}")
+        logger.info(f"Total months: {total_months}")
+        logger.info(f"\nMonthly cashflows:")
+
+        for i, amount in enumerate(monthly_amounts):
+            # Calculate the month for this index
+            month_date = datetime(start_date.year + (start_date.month + i - 1) // 12,
+                                 (start_date.month + i - 1) % 12 + 1, 1)
+            flow_type = "Inflow" if amount < 0 else "Outflow" if amount > 0 else "Zero"
+            logger.info(f"  Month {i} ({month_date.strftime('%Y-%m')}): £{amount:,.2f} ({flow_type})")
+
+        logger.info(f"\nTotal negative flows (investments): £{sum(a for a in monthly_amounts if a < 0):,.2f}")
+        logger.info(f"Total positive flows (returns): £{sum(a for a in monthly_amounts if a > 0):,.2f}")
+        logger.info(f"Net cash flow: £{sum(monthly_amounts):,.2f}")
+        logger.info(f"{'='*60}\n")
+
         # Calculate IRR using the monthly cash flows
-        logger.info("Calculating IRR using numpy_financial.irr...")
         try:
             monthly_irr = npf.irr(monthly_amounts)
-            logger.info(f"Raw monthly IRR calculation result: {monthly_irr}")
         except Exception as calc_err:
             error_msg = f"NumPy IRR calculation error: {str(calc_err)}"
             logger.error(error_msg)
@@ -428,22 +430,18 @@ def calculate_excel_style_irr(dates, amounts, guess=0.02):
         
         # Annualize the monthly IRR by multiplying by 12
         annualized_irr = monthly_irr * 12
-        logger.info(f"Annualized IRR (monthly_irr * 12): {annualized_irr}")
-        
+
         # CRITICAL: Final validation of annualized IRR to prevent database corruption
         if np.isnan(annualized_irr) or np.isinf(annualized_irr):
             error_msg = f"Annualized IRR calculation produced invalid value: {annualized_irr}. Cannot save to database."
             logger.error(error_msg)
             raise ValueError(error_msg)
-            
+
         days_in_period = (end_date - start_date).days
-        logger.info(f"Days in period: {days_in_period}")
-            
-        logger.info(f"\nIRR Results:")
-        logger.info(f"Monthly IRR: {monthly_irr * 100:.4f}%")
-        logger.info(f"Annualized IRR: {annualized_irr * 100:.4f}%")
-        logger.info(f"Months in period: {total_months}")
-        logger.info(f"Array size used: {len(monthly_amounts)}")
+
+        # Log IRR result
+        logger.info(f"RESULT: Monthly IRR: {monthly_irr * 100:.4f}% | Annualized IRR: {annualized_irr * 100:.4f}%")
+        logger.info(f"{'='*60}\n")
         
         return {
             'period_irr': annualized_irr,  # Return annualized IRR instead of monthly IRR

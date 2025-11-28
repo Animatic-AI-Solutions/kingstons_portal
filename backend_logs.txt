@@ -1,590 +1,100 @@
-INFO:     ('127.0.0.1', 53850) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-435" [accepted]
-INFO:     connection open
-INFO:     ('127.0.0.1', 52413) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-435" [accepted]
-INFO:     connection open
-2025-11-26 01:09:22,529 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
-2025-11-26 01:09:22,539 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
-2025-11-26 01:12:56,222 - app.api.routes.portfolio_funds - INFO - Updating portfolio fund 2164 with data: {'status': 'active'}
-2025-11-26 01:12:56,238 - app.api.routes.portfolio_funds - INFO - Serialized fund data: {'id': 2164, 'portfolio_id': 448, 'available_funds_id': 35, 'target_weighting': None, 'amount_invested': 0.0, 'start_date': '2023-11-17', 'end_date': None, 'status': 'active', 'created_at': '2025-11-17T11:51:36.761058+00:00'}
-2025-11-26 01:12:56,493 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 3 portfolio funds
-2025-11-26 01:12:56,493 - app.api.routes.portfolio_funds - INFO - No IRR date provided, finding latest valuation date
-2025-11-26 01:12:56,502 - app.api.routes.portfolio_funds - INFO - Using latest valuation date: 2024-04-01
-2025-11-26 01:12:56,507 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2024-04-01
-2025-11-26 01:12:56,507 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 3 funds (eliminates 3 individual requests)
-2025-11-26 01:12:56,512 - app.api.routes.portfolio_funds - WARNING - No valuation found for fund 2162 as of 2024-04-01
-2025-11-26 01:12:56,516 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {2163: 150.0, 2164: 0.0, 2162: None}
-2025-11-26 01:12:56,516 - app.api.routes.portfolio_funds - WARNING - 💰 DEBUG: ⚠️ Excluding 1 funds without valuations from IRR calculatioon: [2162]
-2025-11-26 01:12:56,517 - app.api.routes.portfolio_funds - WARNING - 💰 DEBUG: ✅ Including 2 funds with valuations: [2163, 2164]
-2025-11-26 01:12:56,545 - app.api.routes.portfolio_funds - INFO - 📊 Processing 3 activities across 2 funds
-2025-11-26 01:12:56,546 - app.api.routes.portfolio_funds - ERROR - 
-2025-11-26 01:12:56,546 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:12:56,547 - app.api.routes.portfolio_funds - ERROR - 🔍 IRR CALCULATION DEBUG - Portfolio Funds: [2163, 2164]
-2025-11-26 01:12:56,547 - app.api.routes.portfolio_funds - ERROR - 🔍 Calculation Date: 2024-04-01
-2025-11-26 01:12:56,548 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:12:56,548 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:12:56,548 - app.api.routes.portfolio_funds - ERROR - 📋 ALL TRANSACTIONS INCLUDED IN CALCULATION:
-2025-11-26 01:12:56,548 - app.api.routes.portfolio_funds - ERROR -    Total Activities: 3
-2025-11-26 01:12:56,549 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:12:56,551 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2163: 1 transactions
-2025-11-26 01:12:56,552 - app.api.routes.portfolio_funds - ERROR -         1. 2024-01-01 | £      100.00 | Investment           | NEGATIVE (investment)
-2025-11-26 01:12:56,552 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2164: 2 transactions
-2025-11-26 01:12:56,553 - app.api.routes.portfolio_funds - ERROR -         1. 2024-01-01 | £      100.00 | Investment           | NEGATIVE (investment)
-2025-11-26 01:12:56,553 - app.api.routes.portfolio_funds - ERROR -         2. 2024-03-01 | £      120.00 | Withdrawal           | POSITIVE (withdrawal)
-2025-11-26 01:12:56,553 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:12:56,554 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:12:56,554 - app.api.routes.portfolio_funds - ERROR - 💰 MONTHLY CASH FLOW TOTALS:
-2025-11-26 01:12:56,555 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:12:56,555 - app.api.routes.portfolio_funds - ERROR -      1. 2024-01-01 (activities)                  | £        -200.00 | OUTFLOW (negative)
-2025-11-26 01:12:56,561 - app.api.routes.portfolio_funds - ERROR -      2. 2024-03-01 (activities)                  | £         120.00 | INFLOW (positive)
-2025-11-26 01:12:56,562 - app.api.routes.portfolio_funds - ERROR -      3. 2024-05-01 (FINAL VALUATION)             | £         150.00 | INFLOW (positive)
-2025-11-26 01:12:56,563 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:12:56,563 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:12:56,564 - app.api.routes.portfolio_funds - ERROR - 📊 SUMMARY STATISTICS:
-2025-11-26 01:12:56,564 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:12:56,564 - app.api.routes.portfolio_funds - ERROR -    Total Cash Flow Periods: 3
-2025-11-26 01:12:56,565 - app.api.routes.portfolio_funds - ERROR -    Total Valuation: £150.00
-2025-11-26 01:12:56,565 - app.api.routes.portfolio_funds - ERROR -    Fund Valuations: {2163: 150.0, 2164: 0.0, 2162: None}
-2025-11-26 01:12:56,566 - app.api.routes.portfolio_funds - ERROR -    Period: 2024-01-01 to 2024-05-01
-2025-11-26 01:12:56,566 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:12:56,566 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:12:56,567 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-11-26 01:12:56,568 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: 0.10295745112455168
-2025-11-26 01:12:56,569 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): 1.2354894134946202
-2025-11-26 01:12:56,569 - app.api.routes.portfolio_funds - INFO - Days in period: 121
-2025-11-26 01:12:56,570 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-11-26 01:12:56,570 - app.api.routes.portfolio_funds - INFO - Monthly IRR: 10.2957%
-2025-11-26 01:12:56,571 - app.api.routes.portfolio_funds - INFO - Annualized IRR: 123.5489%
-2025-11-26 01:12:56,572 - app.api.routes.portfolio_funds - INFO - Months in period: 5
-2025-11-26 01:12:56,573 - app.api.routes.portfolio_funds - INFO - Array size used: 5
-2025-11-26 01:12:56,573 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:12:56,574 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:12:56,574 - app.api.routes.portfolio_funds - ERROR - ✅ FINAL IRR CALCULATION RESULT:
-2025-11-26 01:12:56,575 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:12:56,575 - app.api.routes.portfolio_funds - ERROR -    IRR (Decimal): 1.2354894134946202
-2025-11-26 01:12:56,575 - app.api.routes.portfolio_funds - ERROR -    IRR (Percentage): 123.55%
-2025-11-26 01:12:56,576 - app.api.routes.portfolio_funds - ERROR -    Days in Period: 121
-2025-11-26 01:12:56,576 - app.api.routes.portfolio_funds - ERROR -    Cash Flow Periods: 3
-2025-11-26 01:12:56,577 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:12:56,577 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:12:56,578 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: 123.5% over 121 days (3 cash flow periods) 
-2025-11-26 01:12:57,643 - app.api.routes.client_products - INFO - Fetching complete product details for product ID: 435
+tes': ['2024-01-01'], 'activity_dates': ['2024-01-01'], 'earliest_activity_date': '2024-01-01'}
+2025-11-28 15:34:03,068 - app.api.routes.holding_activity_logs - INFO - Sophisticated IRR recalculation result: {'success': True, 'portfolio_fund_id': 2227, 'portfolio_id': 448, 'activity_start_date': '2024-01-01', 'recalculated_existing': 1, 'new_entries_created': 0, 'portfolio_irr_recalculated': 0, 'dates_processed': 1, 'cascade_service_used': True, 'method': 'targeted_activity_batch'}
+2025-11-28 15:34:03,229 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 4 portfolio funds
+2025-11-28 15:34:03,229 - app.api.routes.portfolio_funds - INFO - No IRR date provided, finding latest valuation date
+2025-11-28 15:34:03,233 - app.api.routes.portfolio_funds - INFO - Using latest valuation date: 2024-01-01
+2025-11-28 15:34:03,233 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2024-01-01
+2025-11-28 15:34:03,235 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 4 funds (eliminates 4 individual requests)
+2025-11-28 15:34:03,239 - app.api.routes.portfolio_funds - WARNING - No valuation found for fund 2162 as of 2024-01-01
+2025-11-28 15:34:03,240 - app.api.routes.portfolio_funds - WARNING - No valuation found for fund 2163 as of 2024-01-01
+2025-11-28 15:34:03,240 - app.api.routes.portfolio_funds - WARNING - No valuation found for fund 2164 as of 2024-01-01
+2025-11-28 15:34:03,240 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {2227: 110.0, 2162: None, 2163: None, 2164: None}
+2025-11-28 15:34:03,241 - app.api.routes.portfolio_funds - WARNING - 💰 DEBUG: ⚠️ Excluding 3 funds without valuations from IRR calculatioon: [2162, 2163, 2164]
+2025-11-28 15:34:03,242 - app.api.routes.portfolio_funds - WARNING - 💰 DEBUG: ✅ Including 1 funds with valuations: [2227]
+2025-11-28 15:34:03,250 - app.api.routes.portfolio_funds - INFO - 📊 Processing 1 activities across 1 funds
+2025-11-28 15:34:03,286 - app.api.routes.portfolio_funds - ERROR - 
+2025-11-28 15:34:03,295 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 15:34:03,305 - app.api.routes.portfolio_funds - ERROR - 🔍 IRR CALCULATION DEBUG - Portfolio Funds: [2227]
+2025-11-28 15:34:03,312 - app.api.routes.portfolio_funds - ERROR - 🔍 Calculation Date: 2024-01-01
+2025-11-28 15:34:03,316 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 15:34:03,337 - app.api.routes.portfolio_funds - ERROR - 
+2025-11-28 15:34:03,337 - app.api.routes.portfolio_funds - ERROR - 📋 ALL TRANSACTIONS INCLUDED IN CALCULATION:
+2025-11-28 15:34:03,337 - app.api.routes.portfolio_funds - ERROR -    Total Activities: 1
+2025-11-28 15:34:03,337 - app.api.routes.portfolio_funds - ERROR -
+2025-11-28 15:34:03,338 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2227: 1 transactions
+2025-11-28 15:34:03,339 - app.api.routes.portfolio_funds - ERROR -         1. 2024-01-01 | £      100.00 | Investment           | NEGATIVE (investment)
+2025-11-28 15:34:03,339 - app.api.routes.portfolio_funds - ERROR -
+2025-11-28 15:34:03,339 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 15:34:03,339 - app.api.routes.portfolio_funds - ERROR - 💰 MONTHLY CASH FLOW TOTALS:
+2025-11-28 15:34:03,340 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 15:34:03,340 - app.api.routes.portfolio_funds - ERROR -      1. 2024-01-01 (activities)                  | £        -100.00 | OUTFLOW (negative)
+2025-11-28 15:34:03,340 - app.api.routes.portfolio_funds - ERROR -      2. 2024-02-01 (FINAL VALUATION)             | £         110.00 | INFLOW (positive)
+2025-11-28 15:34:03,340 - app.api.routes.portfolio_funds - ERROR -
+2025-11-28 15:34:03,341 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 15:34:03,341 - app.api.routes.portfolio_funds - ERROR - 📊 SUMMARY STATISTICS:
+2025-11-28 15:34:03,341 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 15:34:03,341 - app.api.routes.portfolio_funds - ERROR -    Total Cash Flow Periods: 2
+2025-11-28 15:34:03,342 - app.api.routes.portfolio_funds - ERROR -    Total Valuation: £110.00
+2025-11-28 15:34:03,342 - app.api.routes.portfolio_funds - ERROR -    Fund Valuations: {2227: 110.0, 2162: None, 2163: None, 2164: None}  
+2025-11-28 15:34:03,342 - app.api.routes.portfolio_funds - ERROR -    Period: 2024-01-01 to 2024-02-01
+2025-11-28 15:34:03,343 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 15:34:03,343 - app.api.routes.portfolio_funds - ERROR -
+2025-11-28 15:34:03,344 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Start date: 2024-01-01 00:00:00, End date: 2024-02-01 00:00:00
+2025-11-28 15:34:03,344 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Initial total_months calculated: 2
+2025-11-28 15:34:03,344 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Processing 2 cashflows into monthly array of size 2
+2025-11-28 15:34:03,344 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 0: date=2024-01-01, amount=-100.0, original_month_index=0, final_month_index=0, is_final=False
+2025-11-28 15:34:03,344 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Extended array to size 3 for final valuation
+2025-11-28 15:34:03,345 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Cashflow 1: date=2024-02-01, amount=110.0, original_month_index=1, final_month_index=2, is_final=True
+2025-11-28 15:34:03,345 - app.api.routes.portfolio_funds - INFO - [IRR DEBUG] Final monthly_amounts array: [-100.0, 0, 110.0]
+2025-11-28 15:34:03,345 - app.api.routes.portfolio_funds - INFO -
+============================================================
+2025-11-28 15:34:03,345 - app.api.routes.portfolio_funds - INFO - IRR CALCULATION - CASHFLOW BREAKDOWN
+2025-11-28 15:34:03,345 - app.api.routes.portfolio_funds - INFO - ============================================================
+2025-11-28 15:34:03,345 - app.api.routes.portfolio_funds - INFO - Period: 2024-01 to 2024-02
+2025-11-28 15:34:03,346 - app.api.routes.portfolio_funds - INFO - Total months: 2
+2025-11-28 15:34:03,346 - app.api.routes.portfolio_funds - INFO -
+Monthly cashflows:
+2025-11-28 15:34:03,346 - app.api.routes.portfolio_funds - INFO -   Month 0 (2024-01): £-100.00 (Inflow)
+2025-11-28 15:34:03,346 - app.api.routes.portfolio_funds - INFO -   Month 1 (2024-02): £0.00 (Zero)
+2025-11-28 15:34:03,346 - app.api.routes.portfolio_funds - INFO -   Month 2 (2024-03): £110.00 (Outflow)
+2025-11-28 15:34:03,347 - app.api.routes.portfolio_funds - INFO -
+Total negative flows (investments): £-100.00
+2025-11-28 15:34:03,347 - app.api.routes.portfolio_funds - INFO - Total positive flows (returns): £110.00
+2025-11-28 15:34:03,347 - app.api.routes.portfolio_funds - INFO - Net cash flow: £10.00
+2025-11-28 15:34:03,347 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 15:34:03,347 - app.api.routes.portfolio_funds - INFO - RESULT: Monthly IRR: 4.8809% | Annualized IRR: 58.5706%
+2025-11-28 15:34:03,347 - app.api.routes.portfolio_funds - INFO - ============================================================
+
+2025-11-28 15:34:03,348 - app.api.routes.portfolio_funds - ERROR -
+2025-11-28 15:34:03,348 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 15:34:03,348 - app.api.routes.portfolio_funds - ERROR - ✅ FINAL IRR CALCULATION RESULT:
+2025-11-28 15:34:03,348 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 15:34:03,349 - app.api.routes.portfolio_funds - ERROR -    IRR (Decimal): 0.5857061780418222
+2025-11-28 15:34:03,349 - app.api.routes.portfolio_funds - ERROR -    IRR (Percentage): 58.57%
+2025-11-28 15:34:03,349 - app.api.routes.portfolio_funds - ERROR -    Days in Period: 31
+2025-11-28 15:34:03,350 - app.api.routes.portfolio_funds - ERROR -    Cash Flow Periods: 2
+2025-11-28 15:34:03,350 - app.api.routes.portfolio_funds - ERROR - ================================================================================
+2025-11-28 15:34:03,350 - app.api.routes.portfolio_funds - ERROR -
+2025-11-28 15:34:03,350 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: 58.6% over 31 days (2 cash flow periods)   
+2025-11-28 15:34:03,351 - app.api.routes.portfolio_funds - INFO - 💾 Storing portfolio IRR result in database (store_result=True)
+2025-11-28 15:34:03,356 - app.api.routes.portfolio_funds - WARNING - Portfolio 448 is incomplete for 2024-01-01 - skipping IRR save (missing valuations for 2 non-cash funds)
+2025-11-28 15:34:03,357 - app.api.routes.portfolio_funds - ERROR - Error saving portfolio IRR to database: Portfolio incomplete - not all non-cash funds have valuations
+Traceback (most recent call last):
+  File "C:\Users\jacob\Documents\kingstons_portal\backend\app\api\routes\portfolio_funds.py", line 2713, in calculate_multiple_portfolio_funds_irr
+    raise ValueError("Portfolio incomplete - not all non-cash funds have valuations")
+ValueError: Portfolio incomplete - not all non-cash funds have valuations
+2025-11-28 15:34:04,412 - app.api.routes.client_products - INFO - Fetching complete product details for product ID: 435
+2025-11-28 15:34:04,415 - app.api.routes.client_products - INFO - Found product: Investment Bond (ID: 435)
 INFO:     connection closed
-2025-11-26 01:12:57,669 - app.api.routes.client_products - INFO - Found product: Investment Bond (ID: 435)
-2025-11-26 01:12:57,681 - app.api.routes.presence - WARNING - Failed to send message to user 3: received 1000 (OK) Component unmounting; then sent 1000 (OK) Component unmounting
-2025-11-26 01:12:57,879 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] ==================== FETCHING LATEST IRR ====================
-2025-11-26 01:12:57,880 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] Portfolio ID: 448
-2025-11-26 01:12:57,884 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] View query result: <Record portfolio_id=448 irr_result=Decimal('123.5000') date=datetime.date(2024, 4, 1)>
-2025-11-26 01:12:57,889 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] Raw table query result: <Record portfolio_id=448 irr_result=Decimal('123.5000') date=datetime.date(2024, 4, 1)>
-INFO:     ('127.0.0.1', 64503) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-435" [accepted]
+2025-11-28 15:34:04,457 - app.api.routes.presence - WARNING - Failed to send message to user 3: received 1000 (OK) Component unmounting; then sent 1000 (OK) Component unmounting
+2025-11-28 15:34:04,585 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] ==================== FETCHING LATEST IRR ====================
+2025-11-28 15:34:04,592 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] Portfolio ID: 448
+2025-11-28 15:34:04,600 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] View query result: None
+2025-11-28 15:34:04,639 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] Raw table query result: None
+INFO:     ('127.0.0.1', 63844) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-435" [accepted]
 INFO:     connection open
-INFO:     ('127.0.0.1', 54533) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-435" [accepted]
+INFO:     ('127.0.0.1', 57128) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-435" [accepted]
 INFO:     connection open
-INFO:     connection closed
-INFO:     connection closed
-2025-11-26 01:13:04,834 - app.api.routes.presence - WARNING - Failed to send message to user 3: received 1000 (OK) Component unmounting; then sent 1000 (OK) Component unmounting
-2025-11-26 01:13:04,836 - app.api.routes.presence - WARNING - Failed to send message to user 3: received 1000 (OK) Component unmounting; then sent 1000 (OK) Component unmounting
-2025-11-26 01:13:04,844 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
-2025-11-26 01:13:04,846 - app.api.routes.client_products - INFO - Fetching complete product details for product ID: 435
-2025-11-26 01:13:04,855 - app.api.routes.client_products - INFO - Found product: Investment Bond (ID: 435)
-2025-11-26 01:13:04,859 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
-2025-11-26 01:13:04,907 - app.api.routes.client_products - INFO - Fetching complete product details for product ID: 435
-2025-11-26 01:13:04,910 - app.api.routes.client_products - INFO - Found product: Investment Bond (ID: 435)
-2025-11-26 01:13:05,187 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 435 (limit: 1000)
-2025-11-26 01:13:05,241 - app.api.routes.historical_irr - INFO - Found 6 fund IRR records for product 435
-2025-11-26 01:13:05,254 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 435 (limit: 1000)
-2025-11-26 01:13:05,290 - app.api.routes.historical_irr - INFO - Found 6 fund IRR records for product 435
-2025-11-26 01:13:05,304 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 435 (limit: 1000)
-2025-11-26 01:13:05,329 - app.api.routes.historical_irr - INFO - Found 6 fund IRR records for product 435
-2025-11-26 01:13:05,349 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 435 (limit: 1000)
-2025-11-26 01:13:05,356 - app.api.routes.historical_irr - INFO - Fetching stored portfolio IRR values for portfolio 448
-2025-11-26 01:13:05,373 - app.api.routes.historical_irr - INFO - Found 6 fund IRR records for product 435
-2025-11-26 01:13:05,377 - app.api.routes.historical_irr - INFO - Found 3 stored portfolio IRR values for portfolio 448
-2025-11-26 01:13:05,393 - app.api.routes.historical_irr - INFO - Fetching stored portfolio IRR values for portfolio 448
-2025-11-26 01:13:05,398 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 435 (limit: 1000)
-2025-11-26 01:13:05,398 - app.api.routes.historical_irr - INFO - Found 3 stored portfolio IRR values for portfolio 448
-2025-11-26 01:13:05,425 - app.api.routes.historical_irr - INFO - Found 6 fund IRR records for product 435
-2025-11-26 01:13:05,436 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 435 (limit: 1000)
-2025-11-26 01:13:05,472 - app.api.routes.historical_irr - INFO - Found 6 fund IRR records for product 435
-2025-11-26 01:13:07,836 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
-2025-11-26 01:13:07,839 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
-2025-11-26 01:13:07,842 - app.api.routes.client_products - INFO - Fetching complete product details for product ID: 435
-2025-11-26 01:13:07,842 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
-2025-11-26 01:13:07,846 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
-2025-11-26 01:13:07,848 - app.api.routes.client_products - INFO - Found product: Investment Bond (ID: 435)
-2025-11-26 01:13:07,863 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True    
-2025-11-26 01:13:07,870 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
-2025-11-26 01:13:07,873 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
-2025-11-26 01:13:07,874 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
-2025-11-26 01:13:07,900 - app.api.routes.client_products - INFO - Fetching complete product details for product ID: 435
-2025-11-26 01:13:07,902 - app.api.routes.client_products - INFO - Found product: Investment Bond (ID: 435)
-2025-11-26 01:13:07,914 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
-2025-11-26 01:13:07,916 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
-2025-11-26 01:13:07,944 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] ==================== FETCHING LATEST IRR ====================
-2025-11-26 01:13:07,945 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] Portfolio ID: 448
-2025-11-26 01:13:07,948 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] View query result: <Record portfolio_id=448 irr_result=Decimal('123.5000') date=datetime.date(2024, 4, 1)>
-2025-11-26 01:13:07,952 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] Raw table query result: <Record portfolio_id=448 irr_result=Decimal('123.5000') date=datetime.date(2024, 4, 1)>
-INFO:     ('127.0.0.1', 58530) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-435" [accepted]
-INFO:     connection open
-INFO:     ('127.0.0.1', 54762) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-435" [accepted]
-INFO:     connection open
-INFO:     ('127.0.0.1', 58845) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-435" [accepted]
-INFO:     connection open
-INFO:     ('127.0.0.1', 57676) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-435" [accepted]
-INFO:     connection open
-2025-11-26 01:13:21,060 - app.api.routes.portfolio_funds - INFO - Updating portfolio fund 2164 with data: {'status': 'inactive'}
-2025-11-26 01:13:21,060 - app.api.routes.portfolio_funds - INFO - Serialized fund data: {'id': 2164, 'portfolio_id': 448, 'available_funds_id': 35, 'target_weighting': None, 'amount_invested': 0.0, 'start_date': '2023-11-17', 'end_date': None, 'status': 'inactive', 'created_at': '2025-11-17T11:51:36.761058+00:00'}
-2025-11-26 01:13:21,162 - app.api.routes.client_products - INFO - Fetching complete product details for product ID: 435
-2025-11-26 01:13:21,165 - app.api.routes.client_products - INFO - Found product: Investment Bond (ID: 435)
-INFO:     connection closed
-2025-11-26 01:13:21,188 - app.api.routes.presence - WARNING - Failed to send message to user 3: received 1000 (OK) Component unmounting; then sent 1000 (OK) Component unmounting
-2025-11-26 01:13:21,367 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-11-26 01:13:21,368 - app.api.routes.portfolio_funds - INFO - No IRR date provided, finding latest valuation date
-2025-11-26 01:13:21,369 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-11-26 01:13:21,370 - app.api.routes.portfolio_funds - INFO - No IRR date provided, finding latest valuation date
-2025-11-26 01:13:21,373 - app.api.routes.portfolio_funds - INFO - Using latest valuation date: 2024-04-01
-2025-11-26 01:13:21,373 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2024-04-01
-2025-11-26 01:13:21,374 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 1 funds (eliminates 1 individual requests)
-2025-11-26 01:13:21,375 - app.api.routes.portfolio_funds - INFO - Using latest valuation date: 2024-04-01
-2025-11-26 01:13:21,376 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2024-04-01
-2025-11-26 01:13:21,376 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 1 funds (eliminates 1 individual requests)
-2025-11-26 01:13:21,381 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {2164: 0.0} 
-2025-11-26 01:13:21,560 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {2164: 0.0}
-2025-11-26 01:13:21,566 - app.api.routes.portfolio_funds - INFO - 📊 Processing 2 activities across 1 funds
-2025-11-26 01:13:21,568 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:21,570 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:21,579 - app.api.routes.portfolio_funds - ERROR - 🔍 IRR CALCULATION DEBUG - Portfolio Funds: [2164]
-2025-11-26 01:13:21,579 - app.api.routes.portfolio_funds - ERROR - 🔍 Calculation Date: 2024-04-01
-2025-11-26 01:13:21,580 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:21,581 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:21,582 - app.api.routes.portfolio_funds - ERROR - 📋 ALL TRANSACTIONS INCLUDED IN CALCULATION:
-2025-11-26 01:13:21,583 - app.api.routes.portfolio_funds - ERROR -    Total Activities: 2
-2025-11-26 01:13:21,585 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:21,588 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2164: 2 transactions
-2025-11-26 01:13:21,591 - app.api.routes.portfolio_funds - ERROR -         1. 2024-01-01 | £      100.00 | Investment           | NEGATIVE (investment)
-2025-11-26 01:13:21,594 - app.api.routes.portfolio_funds - ERROR -         2. 2024-03-01 | £      120.00 | Withdrawal           | POSITIVE (withdrawal)
-2025-11-26 01:13:21,595 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:21,595 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:21,595 - app.api.routes.portfolio_funds - ERROR - 💰 MONTHLY CASH FLOW TOTALS:
-2025-11-26 01:13:21,596 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:21,597 - app.api.routes.portfolio_funds - ERROR -      1. 2024-01-01 (activities)                  | £        -100.00 | OUTFLOW (negative)
-2025-11-26 01:13:21,597 - app.api.routes.portfolio_funds - ERROR -      2. 2024-03-01 (FINAL VALUATION)             | £         120.00 | INFLOW (positive)
-2025-11-26 01:13:21,599 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:21,599 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:21,600 - app.api.routes.portfolio_funds - ERROR - 📊 SUMMARY STATISTICS:
-2025-11-26 01:13:21,600 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:21,600 - app.api.routes.portfolio_funds - ERROR -    Total Cash Flow Periods: 2
-2025-11-26 01:13:21,601 - app.api.routes.portfolio_funds - ERROR -    Total Valuation: £0.00
-2025-11-26 01:13:21,601 - app.api.routes.portfolio_funds - ERROR -    Fund Valuations: {2164: 0.0}
-2025-11-26 01:13:21,601 - app.api.routes.portfolio_funds - ERROR -    Period: 2024-01-01 to 2024-03-01
-2025-11-26 01:13:21,602 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:21,602 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:21,602 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-11-26 01:13:21,603 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: 0.09544511501033237
-2025-11-26 01:13:21,604 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): 1.1453413801239885
-2025-11-26 01:13:21,604 - app.api.routes.portfolio_funds - INFO - Days in period: 60
-2025-11-26 01:13:21,605 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-11-26 01:13:21,605 - app.api.routes.portfolio_funds - INFO - Monthly IRR: 9.5445%
-2025-11-26 01:13:21,605 - app.api.routes.portfolio_funds - INFO - Annualized IRR: 114.5341%
-2025-11-26 01:13:21,606 - app.api.routes.portfolio_funds - INFO - Months in period: 3
-2025-11-26 01:13:21,606 - app.api.routes.portfolio_funds - INFO - Array size used: 3
-2025-11-26 01:13:21,606 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:21,607 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:21,607 - app.api.routes.portfolio_funds - ERROR - ✅ FINAL IRR CALCULATION RESULT:
-2025-11-26 01:13:21,607 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:21,608 - app.api.routes.portfolio_funds - ERROR -    IRR (Decimal): 1.1453413801239885
-2025-11-26 01:13:21,609 - app.api.routes.portfolio_funds - ERROR -    IRR (Percentage): 114.53%
-2025-11-26 01:13:21,609 - app.api.routes.portfolio_funds - ERROR -    Days in Period: 60
-2025-11-26 01:13:21,609 - app.api.routes.portfolio_funds - ERROR -    Cash Flow Periods: 2
-2025-11-26 01:13:21,609 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:21,610 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:21,610 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: 114.5% over 60 days (2 cash flow periods)  
-2025-11-26 01:13:21,620 - app.api.routes.portfolio_funds - INFO - 📊 Processing 2 activities across 1 funds
-2025-11-26 01:13:21,620 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:21,621 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:21,621 - app.api.routes.portfolio_funds - ERROR - 🔍 IRR CALCULATION DEBUG - Portfolio Funds: [2164]
-2025-11-26 01:13:21,622 - app.api.routes.portfolio_funds - ERROR - 🔍 Calculation Date: 2024-04-01
-2025-11-26 01:13:21,623 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:21,624 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:21,625 - app.api.routes.portfolio_funds - ERROR - 📋 ALL TRANSACTIONS INCLUDED IN CALCULATION:
-2025-11-26 01:13:21,626 - app.api.routes.portfolio_funds - ERROR -    Total Activities: 2
-2025-11-26 01:13:21,628 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:21,628 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2164: 2 transactions
-2025-11-26 01:13:21,628 - app.api.routes.portfolio_funds - ERROR -         1. 2024-01-01 | £      100.00 | Investment           | NEGATIVE (investment)
-2025-11-26 01:13:21,629 - app.api.routes.portfolio_funds - ERROR -         2. 2024-03-01 | £      120.00 | Withdrawal           | POSITIVE (withdrawal)
-2025-11-26 01:13:21,629 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:21,630 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:21,630 - app.api.routes.portfolio_funds - ERROR - 💰 MONTHLY CASH FLOW TOTALS:
-2025-11-26 01:13:21,631 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:21,631 - app.api.routes.portfolio_funds - ERROR -      1. 2024-01-01 (activities)                  | £        -100.00 | OUTFLOW (negative)
-2025-11-26 01:13:21,632 - app.api.routes.portfolio_funds - ERROR -      2. 2024-03-01 (FINAL VALUATION)             | £         120.00 | INFLOW (positive)
-2025-11-26 01:13:21,632 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:21,632 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:21,633 - app.api.routes.portfolio_funds - ERROR - 📊 SUMMARY STATISTICS:
-2025-11-26 01:13:21,633 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:21,634 - app.api.routes.portfolio_funds - ERROR -    Total Cash Flow Periods: 2
-2025-11-26 01:13:21,634 - app.api.routes.portfolio_funds - ERROR -    Total Valuation: £0.00
-2025-11-26 01:13:21,634 - app.api.routes.portfolio_funds - ERROR -    Fund Valuations: {2164: 0.0}
-2025-11-26 01:13:21,634 - app.api.routes.portfolio_funds - ERROR -    Period: 2024-01-01 to 2024-03-01
-2025-11-26 01:13:21,635 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:21,635 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:21,636 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-11-26 01:13:21,636 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: 0.09544511501033237
-2025-11-26 01:13:21,637 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): 1.1453413801239885
-2025-11-26 01:13:21,637 - app.api.routes.portfolio_funds - INFO - Days in period: 60
-2025-11-26 01:13:21,637 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-11-26 01:13:21,638 - app.api.routes.portfolio_funds - INFO - Monthly IRR: 9.5445%
-2025-11-26 01:13:21,638 - app.api.routes.portfolio_funds - INFO - Annualized IRR: 114.5341%
-2025-11-26 01:13:21,638 - app.api.routes.portfolio_funds - INFO - Months in period: 3
-2025-11-26 01:13:21,639 - app.api.routes.portfolio_funds - INFO - Array size used: 3
-2025-11-26 01:13:21,639 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:21,639 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:21,639 - app.api.routes.portfolio_funds - ERROR - ✅ FINAL IRR CALCULATION RESULT:
-2025-11-26 01:13:21,640 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:21,640 - app.api.routes.portfolio_funds - ERROR -    IRR (Decimal): 1.1453413801239885
-2025-11-26 01:13:21,640 - app.api.routes.portfolio_funds - ERROR -    IRR (Percentage): 114.53%
-2025-11-26 01:13:21,640 - app.api.routes.portfolio_funds - ERROR -    Days in Period: 60
-2025-11-26 01:13:21,641 - app.api.routes.portfolio_funds - ERROR -    Cash Flow Periods: 2
-2025-11-26 01:13:21,641 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:21,641 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:21,641 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: 114.5% over 60 days (2 cash flow periods)  
-INFO:     ('127.0.0.1', 60450) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-435" [accepted]
-INFO:     connection open
-INFO:     ('127.0.0.1', 55103) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-435" [accepted]
-INFO:     connection open
-INFO:     connection closed
-INFO:     connection closed
-2025-11-26 01:13:25,949 - app.api.routes.presence - WARNING - Failed to send message to user 3: received 1000 (OK) Component unmounting; then sent 1000 (OK) Component unmounting
-2025-11-26 01:13:25,952 - app.api.routes.presence - WARNING - Failed to send message to user 3: received 1000 (OK) Component unmounting; then sent 1000 (OK) Component unmounting
-2025-11-26 01:13:25,967 - app.api.routes.client_products - INFO - Fetching complete product details for product ID: 435
-2025-11-26 01:13:25,969 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
-2025-11-26 01:13:25,972 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
-2025-11-26 01:13:25,990 - app.api.routes.client_products - INFO - Found product: Investment Bond (ID: 435)
-2025-11-26 01:13:26,075 - app.api.routes.client_products - INFO - Fetching complete product details for product ID: 435
-2025-11-26 01:13:26,078 - app.api.routes.client_products - INFO - Found product: Investment Bond (ID: 435)
-2025-11-26 01:13:26,145 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 435 (limit: 1000)
-2025-11-26 01:13:26,200 - app.api.routes.historical_irr - INFO - Found 3 fund IRR records for product 435
-2025-11-26 01:13:26,212 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 435 (limit: 1000)
-2025-11-26 01:13:26,242 - app.api.routes.historical_irr - INFO - Found 3 fund IRR records for product 435
-2025-11-26 01:13:26,254 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 435 (limit: 1000)
-2025-11-26 01:13:26,288 - app.api.routes.historical_irr - INFO - Found 3 fund IRR records for product 435
-2025-11-26 01:13:26,302 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 435 (limit: 1000)
-2025-11-26 01:13:26,308 - app.api.routes.historical_irr - INFO - Fetching stored portfolio IRR values for portfolio 448
-2025-11-26 01:13:26,310 - app.api.routes.historical_irr - INFO - Found 3 stored portfolio IRR values for portfolio 448
-2025-11-26 01:13:26,328 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-11-26 01:13:26,328 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: 114.5%
-2025-11-26 01:13:26,331 - app.api.routes.historical_irr - INFO - Found 3 fund IRR records for product 435
-2025-11-26 01:13:26,347 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-11-26 01:13:26,348 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2024-03-01
-2025-11-26 01:13:26,349 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 1 funds (eliminates 1 individual requests)
-2025-11-26 01:13:26,354 - app.api.routes.historical_irr - INFO - Fetching stored portfolio IRR values for portfolio 448
-2025-11-26 01:13:26,356 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {2164: 0.0} 
-2025-11-26 01:13:26,357 - app.api.routes.historical_irr - INFO - Found 3 stored portfolio IRR values for portfolio 448
-2025-11-26 01:13:26,361 - app.api.routes.portfolio_funds - INFO - 📊 Processing 2 activities across 1 funds
-2025-11-26 01:13:26,362 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,362 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,363 - app.api.routes.portfolio_funds - ERROR - 🔍 IRR CALCULATION DEBUG - Portfolio Funds: [2164]
-2025-11-26 01:13:26,364 - app.api.routes.portfolio_funds - ERROR - 🔍 Calculation Date: 2024-03-01
-2025-11-26 01:13:26,365 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,365 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,366 - app.api.routes.portfolio_funds - ERROR - 📋 ALL TRANSACTIONS INCLUDED IN CALCULATION:
-2025-11-26 01:13:26,366 - app.api.routes.portfolio_funds - ERROR -    Total Activities: 2
-2025-11-26 01:13:26,367 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,368 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2164: 2 transactions
-2025-11-26 01:13:26,368 - app.api.routes.portfolio_funds - ERROR -         1. 2024-01-01 | £      100.00 | Investment           | NEGATIVE (investment)
-2025-11-26 01:13:26,368 - app.api.routes.portfolio_funds - ERROR -         2. 2024-03-01 | £      120.00 | Withdrawal           | POSITIVE (withdrawal)
-2025-11-26 01:13:26,369 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,369 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,370 - app.api.routes.portfolio_funds - ERROR - 💰 MONTHLY CASH FLOW TOTALS:
-2025-11-26 01:13:26,371 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,371 - app.api.routes.portfolio_funds - ERROR -      1. 2024-01-01 (activities)                  | £        -100.00 | OUTFLOW (negative)
-2025-11-26 01:13:26,371 - app.api.routes.portfolio_funds - ERROR -      2. 2024-03-01 (FINAL VALUATION)             | £         120.00 | INFLOW (positive)
-2025-11-26 01:13:26,371 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,373 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,374 - app.api.routes.portfolio_funds - ERROR - 📊 SUMMARY STATISTICS:
-2025-11-26 01:13:26,377 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,377 - app.api.routes.portfolio_funds - ERROR -    Total Cash Flow Periods: 2
-2025-11-26 01:13:26,378 - app.api.routes.portfolio_funds - ERROR -    Total Valuation: £0.00
-2025-11-26 01:13:26,379 - app.api.routes.portfolio_funds - ERROR -    Fund Valuations: {2164: 0.0}
-2025-11-26 01:13:26,379 - app.api.routes.portfolio_funds - ERROR -    Period: 2024-01-01 to 2024-03-01
-2025-11-26 01:13:26,380 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,380 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,381 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-11-26 01:13:26,382 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: 0.09544511501033237
-2025-11-26 01:13:26,382 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): 1.1453413801239885
-2025-11-26 01:13:26,383 - app.api.routes.portfolio_funds - INFO - Days in period: 60
-2025-11-26 01:13:26,383 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-11-26 01:13:26,383 - app.api.routes.portfolio_funds - INFO - Monthly IRR: 9.5445%
-2025-11-26 01:13:26,384 - app.api.routes.portfolio_funds - INFO - Annualized IRR: 114.5341%
-2025-11-26 01:13:26,384 - app.api.routes.portfolio_funds - INFO - Months in period: 3
-2025-11-26 01:13:26,384 - app.api.routes.portfolio_funds - INFO - Array size used: 3
-2025-11-26 01:13:26,384 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,385 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,385 - app.api.routes.portfolio_funds - ERROR - ✅ FINAL IRR CALCULATION RESULT:
-2025-11-26 01:13:26,385 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,386 - app.api.routes.portfolio_funds - ERROR -    IRR (Decimal): 1.1453413801239885
-2025-11-26 01:13:26,386 - app.api.routes.portfolio_funds - ERROR -    IRR (Percentage): 114.53%
-2025-11-26 01:13:26,386 - app.api.routes.portfolio_funds - ERROR -    Days in Period: 60
-2025-11-26 01:13:26,386 - app.api.routes.portfolio_funds - ERROR -    Cash Flow Periods: 2
-2025-11-26 01:13:26,386 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,387 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,387 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: 114.5% over 60 days (2 cash flow periods)  
-2025-11-26 01:13:26,389 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-11-26 01:13:26,390 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: 114.5%
-2025-11-26 01:13:26,402 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-11-26 01:13:26,402 - app.api.routes.portfolio_funds - INFO - 📊 Returning cached IRR result: 114.5%
-2025-11-26 01:13:26,419 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-11-26 01:13:26,420 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2024-02-01
-2025-11-26 01:13:26,421 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 1 funds (eliminates 1 individual requests)
-2025-11-26 01:13:26,423 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {2164: 110.0}
-2025-11-26 01:13:26,427 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-11-26 01:13:26,428 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2024-02-01
-2025-11-26 01:13:26,429 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 1 funds (eliminates 1 individual requests)
-2025-11-26 01:13:26,430 - app.api.routes.portfolio_funds - INFO - 📊 Processing 1 activities across 1 funds
-2025-11-26 01:13:26,431 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,431 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,432 - app.api.routes.portfolio_funds - ERROR - 🔍 IRR CALCULATION DEBUG - Portfolio Funds: [2164]
-2025-11-26 01:13:26,432 - app.api.routes.portfolio_funds - ERROR - 🔍 Calculation Date: 2024-02-01
-2025-11-26 01:13:26,432 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,432 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,433 - app.api.routes.portfolio_funds - ERROR - 📋 ALL TRANSACTIONS INCLUDED IN CALCULATION:
-2025-11-26 01:13:26,433 - app.api.routes.portfolio_funds - ERROR -    Total Activities: 1
-2025-11-26 01:13:26,433 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,433 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2164: 1 transactions
-2025-11-26 01:13:26,433 - app.api.routes.portfolio_funds - ERROR -         1. 2024-01-01 | £      100.00 | Investment           | NEGATIVE (investment)
-2025-11-26 01:13:26,434 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,434 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,434 - app.api.routes.portfolio_funds - ERROR - 💰 MONTHLY CASH FLOW TOTALS:
-2025-11-26 01:13:26,434 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,434 - app.api.routes.portfolio_funds - ERROR -      1. 2024-01-01 (activities)                  | £        -100.00 | OUTFLOW (negative)
-2025-11-26 01:13:26,435 - app.api.routes.portfolio_funds - ERROR -      2. 2024-03-01 (FINAL VALUATION)             | £         110.00 | INFLOW (positive)
-2025-11-26 01:13:26,435 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,436 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,437 - app.api.routes.portfolio_funds - ERROR - 📊 SUMMARY STATISTICS:
-2025-11-26 01:13:26,437 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,438 - app.api.routes.portfolio_funds - ERROR -    Total Cash Flow Periods: 2
-2025-11-26 01:13:26,438 - app.api.routes.portfolio_funds - ERROR -    Total Valuation: £110.00
-2025-11-26 01:13:26,438 - app.api.routes.portfolio_funds - ERROR -    Fund Valuations: {2164: 110.0}
-2025-11-26 01:13:26,439 - app.api.routes.portfolio_funds - ERROR -    Period: 2024-01-01 to 2024-03-01
-2025-11-26 01:13:26,439 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,440 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,440 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-11-26 01:13:26,441 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: 0.04880884817015185
-2025-11-26 01:13:26,441 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): 0.5857061780418222
-2025-11-26 01:13:26,442 - app.api.routes.portfolio_funds - INFO - Days in period: 60
-2025-11-26 01:13:26,442 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-11-26 01:13:26,443 - app.api.routes.portfolio_funds - INFO - Monthly IRR: 4.8809%
-2025-11-26 01:13:26,443 - app.api.routes.portfolio_funds - INFO - Annualized IRR: 58.5706%
-2025-11-26 01:13:26,443 - app.api.routes.portfolio_funds - INFO - Months in period: 3
-2025-11-26 01:13:26,443 - app.api.routes.portfolio_funds - INFO - Array size used: 3
-2025-11-26 01:13:26,444 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,444 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,445 - app.api.routes.portfolio_funds - ERROR - ✅ FINAL IRR CALCULATION RESULT:
-2025-11-26 01:13:26,445 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,445 - app.api.routes.portfolio_funds - ERROR -    IRR (Decimal): 0.5857061780418222
-2025-11-26 01:13:26,446 - app.api.routes.portfolio_funds - ERROR -    IRR (Percentage): 58.57%
-2025-11-26 01:13:26,446 - app.api.routes.portfolio_funds - ERROR -    Days in Period: 60
-2025-11-26 01:13:26,447 - app.api.routes.portfolio_funds - ERROR -    Cash Flow Periods: 2
-2025-11-26 01:13:26,447 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,447 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,448 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: 58.6% over 60 days (2 cash flow periods)   
-2025-11-26 01:13:26,450 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {2164: 110.0}
-2025-11-26 01:13:26,479 - app.api.routes.portfolio_funds - INFO - Fetching IRR values for portfolio_fund_id: 2164
-2025-11-26 01:13:26,484 - app.api.routes.portfolio_funds - INFO - 📊 Processing 1 activities across 1 funds
-2025-11-26 01:13:26,485 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,487 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,488 - app.api.routes.portfolio_funds - ERROR - 🔍 IRR CALCULATION DEBUG - Portfolio Funds: [2164]
-2025-11-26 01:13:26,488 - app.api.routes.portfolio_funds - ERROR - 🔍 Calculation Date: 2024-02-01
-2025-11-26 01:13:26,489 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,489 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,490 - app.api.routes.portfolio_funds - ERROR - 📋 ALL TRANSACTIONS INCLUDED IN CALCULATION:
-2025-11-26 01:13:26,490 - app.api.routes.portfolio_funds - ERROR -    Total Activities: 1
-2025-11-26 01:13:26,491 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,491 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2164: 1 transactions
-2025-11-26 01:13:26,492 - app.api.routes.portfolio_funds - ERROR -         1. 2024-01-01 | £      100.00 | Investment           | NEGATIVE (investment)
-2025-11-26 01:13:26,493 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,493 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,494 - app.api.routes.portfolio_funds - ERROR - 💰 MONTHLY CASH FLOW TOTALS:
-2025-11-26 01:13:26,494 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,495 - app.api.routes.portfolio_funds - ERROR -      1. 2024-01-01 (activities)                  | £        -100.00 | OUTFLOW (negative)
-2025-11-26 01:13:26,495 - app.api.routes.portfolio_funds - ERROR -      2. 2024-03-01 (FINAL VALUATION)             | £         110.00 | INFLOW (positive)
-2025-11-26 01:13:26,496 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,496 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,497 - app.api.routes.portfolio_funds - ERROR - 📊 SUMMARY STATISTICS:
-2025-11-26 01:13:26,497 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,498 - app.api.routes.portfolio_funds - ERROR -    Total Cash Flow Periods: 2
-2025-11-26 01:13:26,498 - app.api.routes.portfolio_funds - ERROR -    Total Valuation: £110.00
-2025-11-26 01:13:26,498 - app.api.routes.portfolio_funds - ERROR -    Fund Valuations: {2164: 110.0}
-2025-11-26 01:13:26,502 - app.api.routes.portfolio_funds - ERROR -    Period: 2024-01-01 to 2024-03-01
-2025-11-26 01:13:26,502 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,503 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,504 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-11-26 01:13:26,505 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: 0.04880884817015185
-2025-11-26 01:13:26,506 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): 0.5857061780418222
-2025-11-26 01:13:26,506 - app.api.routes.portfolio_funds - INFO - Days in period: 60
-2025-11-26 01:13:26,507 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-11-26 01:13:26,507 - app.api.routes.portfolio_funds - INFO - Monthly IRR: 4.8809%
-2025-11-26 01:13:26,508 - app.api.routes.portfolio_funds - INFO - Annualized IRR: 58.5706%
-2025-11-26 01:13:26,508 - app.api.routes.portfolio_funds - INFO - Months in period: 3
-2025-11-26 01:13:26,509 - app.api.routes.portfolio_funds - INFO - Array size used: 3
-2025-11-26 01:13:26,509 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,510 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,510 - app.api.routes.portfolio_funds - ERROR - ✅ FINAL IRR CALCULATION RESULT:
-2025-11-26 01:13:26,511 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,512 - app.api.routes.portfolio_funds - ERROR -    IRR (Decimal): 0.5857061780418222
-2025-11-26 01:13:26,512 - app.api.routes.portfolio_funds - ERROR -    IRR (Percentage): 58.57%
-2025-11-26 01:13:26,513 - app.api.routes.portfolio_funds - ERROR -    Days in Period: 60
-2025-11-26 01:13:26,513 - app.api.routes.portfolio_funds - ERROR -    Cash Flow Periods: 2
-2025-11-26 01:13:26,513 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:26,514 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:26,514 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: 58.6% over 60 days (2 cash flow periods)   
-2025-11-26 01:13:26,539 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 435 (limit: 1000)
-2025-11-26 01:13:26,557 - app.api.routes.portfolio_funds - INFO - Fetching IRR values for portfolio_fund_id: 2164
-2025-11-26 01:13:26,575 - app.api.routes.historical_irr - INFO - Found 3 fund IRR records for product 435
-2025-11-26 01:13:26,586 - app.api.routes.historical_irr - INFO - Fetching funds historical IRR for product 435 (limit: 1000)
-2025-11-26 01:13:26,608 - app.api.routes.historical_irr - INFO - Found 3 fund IRR records for product 435
-2025-11-26 01:13:29,714 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
-2025-11-26 01:13:29,716 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
-2025-11-26 01:13:29,716 - app.api.routes.client_products - INFO - Fetching complete product details for product ID: 435
-2025-11-26 01:13:29,722 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
-2025-11-26 01:13:29,731 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
-2025-11-26 01:13:29,742 - app.api.routes.client_products - INFO - Found product: Investment Bond (ID: 435)
-2025-11-26 01:13:29,756 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
-2025-11-26 01:13:29,761 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True    
-2025-11-26 01:13:29,762 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
-2025-11-26 01:13:29,763 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
-2025-11-26 01:13:29,787 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
-2025-11-26 01:13:29,789 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
-2025-11-26 01:13:29,802 - app.api.routes.client_products - INFO - Fetching complete product details for product ID: 435
-2025-11-26 01:13:29,805 - app.api.routes.client_products - INFO - Found product: Investment Bond (ID: 435)
-2025-11-26 01:13:29,838 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] ==================== FETCHING LATEST IRR ====================
-2025-11-26 01:13:29,838 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] Portfolio ID: 448
-2025-11-26 01:13:29,859 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] View query result: <Record portfolio_id=448 irr_result=Decimal('114.5000') date=datetime.date(2024, 4, 1)>
-2025-11-26 01:13:29,863 - app.api.routes.portfolios - INFO - 🔍 [IRR FETCH DEBUG] Raw table query result: <Record portfolio_id=448 irr_result=Decimal('114.5000') date=datetime.date(2024, 4, 1)>
-INFO:     ('127.0.0.1', 49383) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-435" [accepted]
-INFO:     connection open
-2025-11-26 01:13:30,073 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-11-26 01:13:30,073 - app.api.routes.portfolio_funds - INFO - No IRR date provided, finding latest valuation date
-2025-11-26 01:13:30,076 - app.api.routes.portfolio_funds - INFO - Calculating aggregated IRR for 1 portfolio funds
-2025-11-26 01:13:30,076 - app.api.routes.portfolio_funds - INFO - No IRR date provided, finding latest valuation date
-2025-11-26 01:13:30,079 - app.api.routes.portfolio_funds - INFO - Using latest valuation date: 2024-04-01
-2025-11-26 01:13:30,079 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2024-04-01
-2025-11-26 01:13:30,079 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 1 funds (eliminates 1 individual requests)
-2025-11-26 01:13:30,082 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {2164: 0.0}
-2025-11-26 01:13:30,094 - app.api.routes.portfolio_funds - INFO - 📊 Processing 2 activities across 1 funds
-2025-11-26 01:13:30,094 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:30,095 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:30,095 - app.api.routes.portfolio_funds - ERROR - 🔍 IRR CALCULATION DEBUG - Portfolio Funds: [2164]
-2025-11-26 01:13:30,096 - app.api.routes.portfolio_funds - ERROR - 🔍 Calculation Date: 2024-04-01
-2025-11-26 01:13:30,096 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:30,097 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:30,097 - app.api.routes.portfolio_funds - ERROR - 📋 ALL TRANSACTIONS INCLUDED IN CALCULATION:
-2025-11-26 01:13:30,097 - app.api.routes.portfolio_funds - ERROR -    Total Activities: 2
-2025-11-26 01:13:30,097 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:30,098 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2164: 2 transactions
-2025-11-26 01:13:30,098 - app.api.routes.portfolio_funds - ERROR -         1. 2024-01-01 | £      100.00 | Investment           | NEGATIVE (investment)
-2025-11-26 01:13:30,098 - app.api.routes.portfolio_funds - ERROR -         2. 2024-03-01 | £      120.00 | Withdrawal           | POSITIVE (withdrawal)
-2025-11-26 01:13:30,099 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:30,100 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:30,100 - app.api.routes.portfolio_funds - ERROR - 💰 MONTHLY CASH FLOW TOTALS:
-2025-11-26 01:13:30,100 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:30,100 - app.api.routes.portfolio_funds - ERROR -      1. 2024-01-01 (activities)                  | £        -100.00 | OUTFLOW (negative)
-2025-11-26 01:13:30,101 - app.api.routes.portfolio_funds - ERROR -      2. 2024-03-01 (FINAL VALUATION)             | £         120.00 | INFLOW (positive)
-2025-11-26 01:13:30,101 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:30,101 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:30,102 - app.api.routes.portfolio_funds - ERROR - 📊 SUMMARY STATISTICS:
-2025-11-26 01:13:30,103 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:30,104 - app.api.routes.portfolio_funds - ERROR -    Total Cash Flow Periods: 2
-2025-11-26 01:13:30,104 - app.api.routes.portfolio_funds - ERROR -    Total Valuation: £0.00
-2025-11-26 01:13:30,104 - app.api.routes.portfolio_funds - ERROR -    Fund Valuations: {2164: 0.0}
-2025-11-26 01:13:30,105 - app.api.routes.portfolio_funds - ERROR -    Period: 2024-01-01 to 2024-03-01
-2025-11-26 01:13:30,105 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:30,105 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:30,106 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-11-26 01:13:30,107 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: 0.09544511501033237
-2025-11-26 01:13:30,107 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): 1.1453413801239885
-2025-11-26 01:13:30,107 - app.api.routes.portfolio_funds - INFO - Days in period: 60
-2025-11-26 01:13:30,108 - app.api.routes.portfolio_funds - INFO - 
-IRR Results:
-2025-11-26 01:13:30,109 - app.api.routes.portfolio_funds - INFO - Monthly IRR: 9.5445%
-2025-11-26 01:13:30,109 - app.api.routes.portfolio_funds - INFO - Annualized IRR: 114.5341%
-2025-11-26 01:13:30,113 - app.api.routes.portfolio_funds - INFO - Months in period: 3
-2025-11-26 01:13:30,114 - app.api.routes.portfolio_funds - INFO - Array size used: 3
-2025-11-26 01:13:30,114 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:30,115 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:30,125 - app.api.routes.portfolio_funds - ERROR - ✅ FINAL IRR CALCULATION RESULT:
-2025-11-26 01:13:30,126 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:30,126 - app.api.routes.portfolio_funds - ERROR -    IRR (Decimal): 1.1453413801239885
-2025-11-26 01:13:30,127 - app.api.routes.portfolio_funds - ERROR -    IRR (Percentage): 114.53%
-2025-11-26 01:13:30,127 - app.api.routes.portfolio_funds - ERROR -    Days in Period: 60
-2025-11-26 01:13:30,127 - app.api.routes.portfolio_funds - ERROR -    Cash Flow Periods: 2
-2025-11-26 01:13:30,127 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:30,128 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:30,128 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: 114.5% over 60 days (2 cash flow periods)  
-INFO:     ('127.0.0.1', 51677) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-435" [accepted]
-INFO:     connection open
-2025-11-26 01:13:30,539 - app.api.routes.portfolio_funds - INFO - Using latest valuation date: 2024-04-01
-2025-11-26 01:13:30,540 - app.api.routes.portfolio_funds - INFO - IRR calculation date: 2024-04-01
-2025-11-26 01:13:30,540 - app.api.routes.portfolio_funds - INFO - 🚀 Batch fetching valuations for 1 funds (eliminates 1 individual requests)
-2025-11-26 01:13:30,702 - app.api.routes.portfolio_funds - INFO - ✅ Batch valuation optimization complete - Fund valuations: {2164: 0.0}
-2025-11-26 01:13:30,754 - app.api.routes.portfolio_funds - INFO - 📊 Processing 2 activities across 1 funds
-2025-11-26 01:13:30,755 - app.api.routes.portfolio_funds - ERROR - 
-2025-11-26 01:13:30,755 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:30,756 - app.api.routes.portfolio_funds - ERROR - 🔍 IRR CALCULATION DEBUG - Portfolio Funds: [2164]
-2025-11-26 01:13:30,757 - app.api.routes.portfolio_funds - ERROR - 🔍 Calculation Date: 2024-04-01
-2025-11-26 01:13:30,757 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:30,757 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:30,758 - app.api.routes.portfolio_funds - ERROR - 📋 ALL TRANSACTIONS INCLUDED IN CALCULATION:
-2025-11-26 01:13:30,758 - app.api.routes.portfolio_funds - ERROR -    Total Activities: 2
-2025-11-26 01:13:30,759 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:30,759 - app.api.routes.portfolio_funds - ERROR -    📁 Fund ID 2164: 2 transactions
-2025-11-26 01:13:30,759 - app.api.routes.portfolio_funds - ERROR -         1. 2024-01-01 | £      100.00 | Investment           | NEGATIVE (investment)
-2025-11-26 01:13:30,760 - app.api.routes.portfolio_funds - ERROR -         2. 2024-03-01 | £      120.00 | Withdrawal           | POSITIVE (withdrawal)
-2025-11-26 01:13:30,761 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:30,761 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:30,762 - app.api.routes.portfolio_funds - ERROR - 💰 MONTHLY CASH FLOW TOTALS:
-2025-11-26 01:13:30,762 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:30,763 - app.api.routes.portfolio_funds - ERROR -      1. 2024-01-01 (activities)                  | £        -100.00 | OUTFLOW (negative)
-2025-11-26 01:13:30,764 - app.api.routes.portfolio_funds - ERROR -      2. 2024-03-01 (FINAL VALUATION)             | £         120.00 | INFLOW (positive)
-2025-11-26 01:13:30,765 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:30,765 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:30,766 - app.api.routes.portfolio_funds - ERROR - 📊 SUMMARY STATISTICS:
-2025-11-26 01:13:30,766 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:30,766 - app.api.routes.portfolio_funds - ERROR -    Total Cash Flow Periods: 2
-2025-11-26 01:13:30,767 - app.api.routes.portfolio_funds - ERROR -    Total Valuation: £0.00
-2025-11-26 01:13:30,767 - app.api.routes.portfolio_funds - ERROR -    Fund Valuations: {2164: 0.0}
-2025-11-26 01:13:30,768 - app.api.routes.portfolio_funds - ERROR -    Period: 2024-01-01 to 2024-03-01
-2025-11-26 01:13:30,768 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:30,768 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:30,769 - app.api.routes.portfolio_funds - INFO - Calculating IRR using numpy_financial.irr...
-2025-11-26 01:13:30,770 - app.api.routes.portfolio_funds - INFO - Raw monthly IRR calculation result: 0.09544511501033237
-2025-11-26 01:13:30,770 - app.api.routes.portfolio_funds - INFO - Annualized IRR (monthly_irr * 12): 1.1453413801239885
-2025-11-26 01:13:30,771 - app.api.routes.portfolio_funds - INFO - Days in period: 60
-2025-11-26 01:13:30,771 - app.api.routes.portfolio_funds - INFO -
-IRR Results:
-2025-11-26 01:13:30,771 - app.api.routes.portfolio_funds - INFO - Monthly IRR: 9.5445%
-2025-11-26 01:13:30,772 - app.api.routes.portfolio_funds - INFO - Annualized IRR: 114.5341%
-2025-11-26 01:13:30,772 - app.api.routes.portfolio_funds - INFO - Months in period: 3
-2025-11-26 01:13:30,773 - app.api.routes.portfolio_funds - INFO - Array size used: 3
-2025-11-26 01:13:30,773 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:30,774 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:30,774 - app.api.routes.portfolio_funds - ERROR - ✅ FINAL IRR CALCULATION RESULT:
-2025-11-26 01:13:30,775 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:30,775 - app.api.routes.portfolio_funds - ERROR -    IRR (Decimal): 1.1453413801239885
-2025-11-26 01:13:30,776 - app.api.routes.portfolio_funds - ERROR -    IRR (Percentage): 114.53%
-2025-11-26 01:13:30,776 - app.api.routes.portfolio_funds - ERROR -    Days in Period: 60
-2025-11-26 01:13:30,777 - app.api.routes.portfolio_funds - ERROR -    Cash Flow Periods: 2
-2025-11-26 01:13:30,781 - app.api.routes.portfolio_funds - ERROR - ================================================================================
-2025-11-26 01:13:30,781 - app.api.routes.portfolio_funds - ERROR -
-2025-11-26 01:13:30,782 - app.api.routes.portfolio_funds - INFO - 📊 IRR Calculation Complete: 114.5% over 60 days (2 cash flow periods)  
-INFO:     ('127.0.0.1', 51506) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-435" [accepted]
-INFO:     connection open
-INFO:     ('127.0.0.1', 54429) - "WebSocket /api/ws/presence/irr-calculation%3Aproduct-435" [accepted]
-INFO:     connection open
-2025-11-26 01:13:34,009 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
-2025-11-26 01:13:34,011 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
+2025-11-28 15:34:08,749 - app.api.routes.auth - INFO - Authentication attempt - Cookie Token: True, Header Token: False, Session: True
+2025-11-28 15:34:08,769 - app.api.routes.auth - INFO - User authenticated via cookie token: 3
