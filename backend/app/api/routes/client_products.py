@@ -1202,22 +1202,30 @@ async def update_client_product(client_product_id: int, client_product_update: C
 @router.delete("/client_products/{client_product_id}", response_model=dict)
 async def delete_client_product(client_product_id: int, db = Depends(get_db)):
     """
-    What it does: Deletes a client product and all its associated records from the database.
+    What it does: Deletes a client product and conditionally deletes its associated portfolio records.
     Why it's needed: Allows removing client products that are no longer relevant to the business.
     How it works:
         1. Verifies the client product exists
         2. Gets the portfolio_id directly from the client product
-        3. For the linked portfolio:
+        3. Checks if other products are using the same portfolio (typically 1:1 relationship)
+        4. If this is the LAST product using the portfolio:
            a. Gets all portfolio_funds for this portfolio
            b. For each portfolio fund:
-              - Deletes all IRR values associated with the fund first (to remove foreign key dependency)
-              - Deletes all fund_valuations associated with the fund
-              - Deletes all holding_activity_log entries associated with the fund
+              - Deletes all fund IRR values (portfolio_fund_irr_values)
+              - Deletes all fund valuations (portfolio_fund_valuations)
+              - Deletes all activity logs (holding_activity_log)
            c. Deletes all portfolio_funds for this portfolio
-        4. Deletes the client product record
-        5. Deletes the portfolio itself
-        6. Returns a success message with deletion counts
-    Expected output: A JSON object with a success message confirmation and deletion counts
+           d. Deletes portfolio-level IRR values (portfolio_irr_values)
+           e. Deletes portfolio-level valuations (portfolio_valuations)
+           f. Deletes the portfolio itself
+        5. If other products are STILL using the portfolio (edge case):
+           - Keeps the portfolio and all its data intact
+        6. Deletes product-specific data:
+           - Product owner relationships (product_owner_products)
+           - Provider switch logs (provider_switch_log)
+        7. Deletes the client product record
+        8. Returns a success message with deletion counts
+    Expected output: A JSON object with a success message confirmation and detailed deletion counts
     """
     try:
         # Check if client product exists
@@ -1237,11 +1245,34 @@ async def delete_client_product(client_product_id: int, db = Depends(get_db)):
         activity_logs_deleted = 0
         portfolio_irr_deleted = 0
         portfolio_val_deleted = 0
-        
-        # Process the portfolio if it exists
+        product_owner_deleted = 0
+        provider_switch_deleted = 0
+
+        # IMPORTANT: Check if other products are using this portfolio
+        # We should ONLY delete the portfolio if this is the LAST product using it
+        portfolio_can_be_deleted = False
+
         if portfolio_id:
-            logger.info(f"Processing portfolio with ID {portfolio_id}")
-            
+            # Count how many products (including this one) use this portfolio
+            products_using_portfolio = await db.fetchrow(
+                "SELECT COUNT(*) as count FROM client_products WHERE portfolio_id = $1",
+                portfolio_id
+            )
+            product_count = products_using_portfolio['count'] if products_using_portfolio else 0
+
+            logger.info(f"Portfolio {portfolio_id} is used by {product_count} product(s)")
+
+            # Only delete portfolio if this is the last product using it
+            if product_count <= 1:
+                portfolio_can_be_deleted = True
+                logger.info(f"This is the last product using portfolio {portfolio_id} - portfolio will be deleted")
+            else:
+                logger.info(f"Portfolio {portfolio_id} is still used by {product_count - 1} other product(s) - portfolio will be kept")
+
+        # Process the portfolio if it exists AND will be deleted
+        if portfolio_id and portfolio_can_be_deleted:
+            logger.info(f"Processing portfolio with ID {portfolio_id} for deletion")
+
             # Get all portfolio funds for this portfolio
             portfolio_funds_result = await db.fetch("SELECT id FROM portfolio_funds WHERE portfolio_id = $1", portfolio_id)
             
@@ -1288,36 +1319,58 @@ async def delete_client_product(client_product_id: int, db = Depends(get_db)):
                 await db.execute("DELETE FROM portfolio_funds WHERE portfolio_id = $1", portfolio_id)
                 logger.info(f"Deleted {portfolio_funds_count} portfolio funds for portfolio {portfolio_id}")
         
+        # Delete product owner relationships (links to product owners)
+        product_owner_result = await db.execute("DELETE FROM product_owner_products WHERE product_id = $1", client_product_id)
+        product_owner_deleted = int(product_owner_result.split()[-1]) if isinstance(product_owner_result, str) and 'DELETE' in product_owner_result else 0
+        logger.info(f"Deleted {product_owner_deleted} product owner relationships for product {client_product_id}")
+
+        # Delete provider switch logs (provider switch history)
+        provider_switch_result = await db.execute("DELETE FROM provider_switch_log WHERE client_product_id = $1", client_product_id)
+        provider_switch_deleted = int(provider_switch_result.split()[-1]) if isinstance(provider_switch_result, str) and 'DELETE' in provider_switch_result else 0
+        logger.info(f"Deleted {provider_switch_deleted} provider switch log entries for product {client_product_id}")
+
         # Delete the client product
         await db.execute("DELETE FROM client_products WHERE id = $1", client_product_id)
         logger.info(f"Deleted client product {client_product_id}")
-        
+
         # Now clean up portfolio-level records before deleting the portfolio
-        if portfolio_id:
+        # IMPORTANT: Only delete these if no other products are using this portfolio
+        if portfolio_id and portfolio_can_be_deleted:
             # Delete portfolio IRR values
             portfolio_irr_result = await db.execute("DELETE FROM portfolio_irr_values WHERE portfolio_id = $1", portfolio_id)
             portfolio_irr_deleted = int(portfolio_irr_result.split()[-1]) if isinstance(portfolio_irr_result, str) and 'DELETE' in portfolio_irr_result else 0
             logger.info(f"Deleted {portfolio_irr_deleted} portfolio IRR values for portfolio {portfolio_id}")
-            
+
             # Delete portfolio valuations (this was the missing step causing the foreign key error)
             portfolio_val_result = await db.execute("DELETE FROM portfolio_valuations WHERE portfolio_id = $1", portfolio_id)
             portfolio_val_deleted = int(portfolio_val_result.split()[-1]) if isinstance(portfolio_val_result, str) and 'DELETE' in portfolio_val_result else 0
             logger.info(f"Deleted {portfolio_val_deleted} portfolio valuations for portfolio {portfolio_id}")
-            
+
             # Now it's safe to delete the portfolio
             await db.execute("DELETE FROM portfolios WHERE id = $1", portfolio_id)
             logger.info(f"Deleted portfolio {portfolio_id}")
+        elif portfolio_id and not portfolio_can_be_deleted:
+            logger.info(f"Portfolio {portfolio_id} NOT deleted - still in use by other products")
         
+        # Create response message
+        if portfolio_id and not portfolio_can_be_deleted:
+            message = f"Client product with ID {client_product_id} deleted successfully. Portfolio {portfolio_id} was kept (still in use by other products)."
+        else:
+            message = f"Client product with ID {client_product_id} and all associated records deleted successfully"
+
         return {
-            "message": f"Client product with ID {client_product_id} and all associated records deleted successfully",
+            "message": message,
             "details": {
-                "portfolio_deleted": 1 if portfolio_id else 0,
+                "portfolio_deleted": 1 if (portfolio_id and portfolio_can_be_deleted) else 0,
+                "portfolio_kept": 1 if (portfolio_id and not portfolio_can_be_deleted) else 0,
                 "portfolio_funds_deleted": portfolio_funds_deleted,
                 "fund_valuations_deleted": fund_valuations_deleted,
-                "irr_values_deleted": irr_values_deleted,
+                "fund_irr_values_deleted": irr_values_deleted,
                 "activity_logs_deleted": activity_logs_deleted,
-                "portfolio_irr_values_deleted": portfolio_irr_deleted if portfolio_id else 0,
-                "portfolio_valuations_deleted": portfolio_val_deleted if portfolio_id else 0
+                "portfolio_irr_values_deleted": portfolio_irr_deleted,
+                "portfolio_valuations_deleted": portfolio_val_deleted,
+                "product_owner_relationships_deleted": product_owner_deleted,
+                "provider_switches_deleted": provider_switch_deleted
             }
         }
     except HTTPException:
