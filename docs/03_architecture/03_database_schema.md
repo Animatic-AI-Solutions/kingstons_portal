@@ -45,12 +45,34 @@ erDiagram
         text status
     }
 
+    addresses {
+        bigserial id PK
+        timestamptz created_at
+        text line_1
+        text line_2
+        text line_3
+        text line_4
+        text line_5
+    }
+
     product_owners {
         bigint id PK
         text firstname
         text surname
         text known_as
         text status
+        text gender
+        date dob
+        int age
+        text email_1
+        text email_2
+        text phone_1
+        text phone_2
+        text employment_status
+        text occupation
+        text aml_result
+        date aml_date
+        bigint address_id FK
     }
 
     client_group_product_owners {
@@ -175,6 +197,7 @@ erDiagram
     profiles ||--o{ session : "has many"
     client_groups ||--o{ client_group_product_owners : "links to"
     product_owners ||--o{ client_group_product_owners : "links to"
+    addresses ||--o| product_owners : "linked to"
     client_groups ||--o{ client_products : "has many"
     available_providers ||--o{ client_products : "provides"
     portfolios ||--o{ client_products : "assigned to"
@@ -204,7 +227,8 @@ These tables represent the foundational entities of the system.
 -   **`authentication`**: Manages user credentials, linked directly to `profiles`.
 -   **`session`**: Stores active user login sessions.
 -   **`client_groups`**: The central table for client entities. A group can represent a family, an individual, or a trust.
--   **`product_owners`**: Represents individuals who are owners or beneficiaries of financial products.
+-   **`product_owners`**: Represents individuals who are owners or beneficiaries of financial products. Includes comprehensive personal information (gender, DOB, place of birth), contact details (email_1, email_2, phone_1, phone_2), employment information (employment_status, occupation), KYC/AML compliance fields (passport_expiry_date, ni_number, aml_result, aml_date), and residential data (moved_in_date, address_id foreign key).
+-   **`addresses`**: Stores physical address information for product owners with five address lines (line_1 through line_5). Linked to `product_owners` via one-to-one relationship through the `address_id` foreign key.
 -   **`available_providers`**: A catalog of all investment providers (e.g., Zurich, Aviva).
 -   **`available_funds`**: A master list of all investment funds that can be held in a portfolio.
 -   **`available_portfolios`**: A list of master portfolio templates (e.g., "Conservative Growth").

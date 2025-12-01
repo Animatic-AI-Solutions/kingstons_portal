@@ -33,6 +33,19 @@
 -- 2. TABLES
 -- ============================================================================
 
+-- Table: addresses
+-- Stores address information for product owners
+-- One-to-one relationship: Each product owner can have one address
+CREATE TABLE addresses (
+    id bigserial NOT NULL -- PRIMARY KEY,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    line_1 text,
+    line_2 text,
+    line_3 text,
+    line_4 text,
+    line_5 text
+);
+
 -- Table: authentication
 CREATE TABLE authentication (
     auth_id bigint(64) NOT NULL -- PRIMARY KEY,
@@ -200,13 +213,46 @@ CREATE TABLE product_owner_products (
 );
 
 -- Table: product_owners
+-- Represents individuals who are owners or beneficiaries of financial products
+-- Includes comprehensive personal information, contact details, and KYC/AML compliance fields
 CREATE TABLE product_owners (
     id bigint(64) NOT NULL -- PRIMARY KEY,
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     status text DEFAULT 'active'::text,
     firstname text DEFAULT ''::text,
     surname text,
-    known_as text
+    known_as text,
+
+    -- Personal Information
+    gender text,
+    previous_names text,
+    dob date,
+    age integer,
+    place_of_birth text,
+
+    -- Contact Information
+    email_1 text,
+    email_2 text,
+    phone_1 text,
+    phone_2 text,
+
+    -- Residential Information
+    moved_in_date date,
+    address_id bigint -- FOREIGN KEY -> addresses.id,
+
+    -- Client Profiling
+    three_words text,
+    share_data_with text,
+
+    -- Employment Information
+    employment_status text,
+    occupation text,
+
+    -- Identity & Compliance - KYC/AML
+    passport_expiry_date date,
+    ni_number text,
+    aml_result text,
+    aml_date date
 );
 
 -- Table: profiles

@@ -126,11 +126,43 @@ After applying this migration:
 4. **Update UI Components** - Modify forms and displays to show/edit new fields
 5. **Update Tests** - Add test coverage for new fields
 
+## Addresses Table Migration
+
+### Overview
+This migration creates an addresses table to store product owner addresses and establishes a one-to-one relationship with product_owners via foreign key.
+
+### Files
+- `add_addresses_table.sql` - Forward migration (creates addresses table and foreign key)
+- `rollback_add_addresses_table.sql` - Rollback migration (removes table and foreign key)
+- `test_addresses_migration.sql` - Comprehensive test script
+
+### Schema
+
+**addresses table:**
+- `id` (BIGSERIAL, PRIMARY KEY) - Unique address identifier
+- `created_at` (TIMESTAMP WITH TIME ZONE) - Record creation timestamp
+- `line_1` (TEXT) - Address line 1
+- `line_2` (TEXT) - Address line 2
+- `line_3` (TEXT) - Address line 3
+- `line_4` (TEXT) - Address line 4
+- `line_5` (TEXT) - Address line 5 (typically postcode)
+
+**product_owners changes:**
+- `address_id` (BIGINT, NULLABLE) - Foreign key to addresses table
+- Foreign key constraint with `ON DELETE SET NULL`
+- Index on `address_id` for join performance
+
+### Relationship
+- **One-to-One**: Each product owner can have only one address
+- **Optional**: address_id is nullable (existing records won't have addresses)
+- **Cascade Behavior**: If an address is deleted, product_owner.address_id is set to NULL
+
 ## Migration History
 
 | Date | Migration | Description | Status |
 |------|-----------|-------------|--------|
-| 2024-12-01 | `add_product_owners_phase2_fields` | Add Phase 2 fields to product_owners | Pending |
+| 2024-12-01 | `add_product_owners_phase2_fields` | Add Phase 2 fields to product_owners | Completed |
+| 2024-12-01 | `add_addresses_table` | Create addresses table with foreign key | Pending |
 
 ## Best Practices
 
