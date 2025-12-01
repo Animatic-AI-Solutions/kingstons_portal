@@ -286,6 +286,94 @@ This migration creates a vulnerabilities table for tracking vulnerabilities, dis
 - `idx_vulnerabilities_diagnosed` - For filtering by diagnosis status
 - `idx_vulnerabilities_date_recorded` - For tracking when records were added
 
+## Risk Assessment Tables Migration
+
+### Overview
+This migration creates two tables for tracking financial risk assessments and capacity for loss for product owners. These tables support comprehensive financial planning and compliance requirements.
+
+### Files
+- `add_risk_assessment_tables.sql` - Forward migration (creates both tables)
+- `rollback_add_risk_assessment_tables.sql` - Rollback migration (removes both tables)
+- `test_risk_assessment_tables_migration.sql` - Comprehensive test script
+
+### Schema
+
+**risk_assessments table:**
+- `id` (BIGSERIAL, PRIMARY KEY) - Unique risk assessment identifier
+- `created_at` (TIMESTAMP WITH TIME ZONE) - Record creation timestamp
+- `product_owner_id` (BIGINT, NOT NULL) - Foreign key to product_owners table
+- `type` (TEXT) - Assessment type: "FinaMetrica" or "Manual"
+- `actual_score` (NUMERIC(5,2)) - Actual risk score (0-100)
+- `category_score` (INTEGER) - Risk category score (1-7)
+- `risk_group` (TEXT) - Risk group classification (e.g., Conservative, Balanced, Growth)
+- `date` (DATE) - Date of assessment
+- `status` (TEXT) - Current status (e.g., active, superseded)
+
+**capacity_for_loss table:**
+- `id` (BIGSERIAL, PRIMARY KEY) - Unique capacity for loss identifier
+- `created_at` (TIMESTAMP WITH TIME ZONE) - Record creation timestamp
+- `product_owner_id` (BIGINT, NOT NULL) - Foreign key to product_owners table
+- `score` (INTEGER) - Capacity score (1-10)
+- `category` (TEXT) - Capacity category (e.g., Low, Medium, High)
+- `date_assessed` (DATE) - Date of assessment
+- `status` (TEXT) - Current status
+
+### Relationships
+- **One-to-Many**: Each product owner can have multiple risk assessments over time
+- **One-to-Many**: Each product owner can have multiple capacity for loss assessments
+- **Cascade Behavior**: ON DELETE CASCADE - deleting a product owner removes all their assessments
+
+### Score Constraints
+- **risk_assessments.actual_score**: Must be between 0 and 100
+- **risk_assessments.category_score**: Must be between 1 and 7
+- **capacity_for_loss.score**: Must be between 1 and 10
+
+### Indexes Created
+**risk_assessments:**
+- `idx_risk_assessments_product_owner_id` - For finding assessments by product owner
+- `idx_risk_assessments_type` - For filtering by assessment type
+- `idx_risk_assessments_date` - For date-based queries and sorting
+- `idx_risk_assessments_status` - For filtering by status
+
+**capacity_for_loss:**
+- `idx_capacity_for_loss_product_owner_id` - For finding assessments by product owner
+- `idx_capacity_for_loss_date_assessed` - For date-based queries
+- `idx_capacity_for_loss_status` - For filtering by status
+
+## Client Groups Fields Migration
+
+### Overview
+This migration adds compliance tracking and relationship management fields to the client_groups table to support regulatory requirements and ongoing client management.
+
+### Files
+- `add_client_groups_fields.sql` - Forward migration (adds fields)
+- `rollback_add_client_groups_fields.sql` - Rollback migration (removes fields)
+- `test_client_groups_fields_migration.sql` - Comprehensive test script
+
+### New Fields Added
+
+**Compliance Tracking:**
+- `ongoing_start` (DATE) - Date when ongoing services commenced
+- `client_declaration` (DATE) - Date of client declaration/agreement
+- `privacy_declaration` (DATE) - Date of privacy policy acceptance
+- `full_fee_agreement` (DATE) - Date of fee agreement signed
+
+**Relationship Management:**
+- `last_satisfactory_discussion` (DATE) - Date of last satisfactory client discussion
+- `notes` (TEXT) - General notes for client group management
+
+### Indexes Created
+- `idx_client_groups_ongoing_start` - For date-based queries
+- `idx_client_groups_client_declaration` - For compliance reporting
+- `idx_client_groups_privacy_declaration` - For privacy compliance
+- `idx_client_groups_full_fee_agreement` - For fee tracking
+- `idx_client_groups_last_satisfactory_discussion` - For relationship management queries
+
+### Notes
+- All new fields are nullable to support existing records
+- Date fields support compliance and regulatory tracking requirements
+- Indexes improve query performance for compliance reporting
+
 ## Migration History
 
 | Date | Migration | Description | Status |
@@ -294,7 +382,9 @@ This migration creates a vulnerabilities table for tracking vulnerabilities, dis
 | 2024-12-01 | `add_addresses_table` | Create addresses table with foreign key | Completed |
 | 2024-12-01 | `add_special_relationships_table` | Create special_relationships and junction table | Completed |
 | 2024-12-01 | `add_health_table` | Create health table for medical records | Completed |
-| 2024-12-01 | `add_vulnerabilities_table` | Create vulnerabilities table for accessibility tracking | Pending |
+| 2024-12-01 | `add_vulnerabilities_table` | Create vulnerabilities table for accessibility tracking | Completed |
+| 2024-12-01 | `add_risk_assessment_tables` | Create risk_assessments and capacity_for_loss tables | Completed |
+| 2024-12-01 | `add_client_groups_fields` | Add compliance and tracking fields to client_groups | Pending |
 
 ## Best Practices
 

@@ -108,7 +108,15 @@ CREATE TABLE client_groups (
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     name text,
     type text DEFAULT 'Family'::text,
-    advisor_id bigint(64)
+    advisor_id bigint(64),
+
+    -- Compliance and tracking fields
+    ongoing_start date,
+    client_declaration date,
+    privacy_declaration date,
+    full_fee_agreement date,
+    last_satisfactory_discussion date,
+    notes text
 );
 
 -- Table: client_products
@@ -347,6 +355,34 @@ CREATE TABLE vulnerabilities (
     status text,
     notes text
     -- CONSTRAINT: Exactly one of product_owner_id or special_relationship_id must be populated
+);
+
+-- Table: risk_assessments
+-- Stores financial risk assessment results for product owners
+CREATE TABLE risk_assessments (
+    id bigserial NOT NULL -- PRIMARY KEY,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    product_owner_id bigint NOT NULL -- FOREIGN KEY -> product_owners.id,
+    type text,
+    actual_score numeric(5,2),
+    category_score integer,
+    risk_group text,
+    date date,
+    status text
+    -- CONSTRAINTS: actual_score 0-100, category_score 1-7
+);
+
+-- Table: capacity_for_loss
+-- Stores capacity for loss assessments for product owners
+CREATE TABLE capacity_for_loss (
+    id bigserial NOT NULL -- PRIMARY KEY,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    product_owner_id bigint NOT NULL -- FOREIGN KEY -> product_owners.id,
+    score integer,
+    category text,
+    date_assessed date,
+    status text
+    -- CONSTRAINT: score 1-10
 );
 
 -- Table: template_portfolio_generations
