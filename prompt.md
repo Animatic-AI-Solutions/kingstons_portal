@@ -1,1 +1,3 @@
-in the assets and liabilities section of the phase2 prototype, the assest tabel is a little hard to read especially when there are many item sfor each asset type, the purples for the asset type row and the total clash
+Reason:
+SQL Error [42601]: ERROR: syntax error at or near "\"
+  Position: 248
