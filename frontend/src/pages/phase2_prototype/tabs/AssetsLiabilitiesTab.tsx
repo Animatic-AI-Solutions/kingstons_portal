@@ -373,8 +373,8 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
               {Object.entries(groupedAssets).map(([category, categoryAssets], categoryIndex) => (
                 <React.Fragment key={category}>
                   {/* Subsection Header */}
-                  <tr className={`bg-primary-100 ${categoryIndex === 0 ? 'border-t-2 border-gray-300' : ''}`}>
-                    <td colSpan={clientType === 'business' ? 2 : displayedPeople.length + (displayedPeople.length > 1 ? 3 : 2)} className="px-2 py-0.5 text-xs font-bold text-primary-900 uppercase">
+                  <tr className={`bg-purple-200 ${categoryIndex === 0 ? 'border-t-2 border-gray-300' : ''}`}>
+                    <td colSpan={clientType === 'business' ? 2 : displayedPeople.length + (displayedPeople.length > 1 ? 3 : 2)} className="px-2 py-0.5 text-xs font-bold text-purple-900 uppercase">
                       {category}
                     </td>
                   </tr>
@@ -422,7 +422,7 @@ const AssetsLiabilitiesTab: React.FC<AssetsLiabilitiesTabProps> = ({
                   ))}
 
                   {/* Subsection Total Row */}
-                  <tr className="bg-primary-50 font-semibold">
+                  <tr className="bg-gray-100 font-semibold">
                     <td className="px-2 py-0.5 text-xs text-gray-900 italic">Total {category}</td>
                     {/* Only show person columns in family mode */}
                     {clientType === 'family' && displayedPeople.map((person) => {
