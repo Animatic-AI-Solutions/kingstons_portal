@@ -168,10 +168,22 @@ erDiagram
         numeric valuation
     }
 
-    health {
+    health_product_owners {
         bigserial id PK
         timestamptz created_at
         bigint product_owner_id FK
+        text condition
+        text name
+        date date_of_diagnosis
+        text status
+        text medication
+        timestamptz date_recorded
+        text notes
+    }
+
+    health_special_relationships {
+        bigserial id PK
+        timestamptz created_at
         bigint special_relationship_id FK
         text condition
         text name
@@ -236,10 +248,21 @@ erDiagram
         bigint special_relationship_id FK
     }
 
-    vulnerabilities {
+    vulnerabilities_product_owners {
         bigserial id PK
         timestamptz created_at
         bigint product_owner_id FK
+        text description
+        text adjustments
+        boolean diagnosed
+        timestamptz date_recorded
+        text status
+        text notes
+    }
+
+    vulnerabilities_special_relationships {
+        bigserial id PK
+        timestamptz created_at
         bigint special_relationship_id FK
         text description
         text adjustments
@@ -317,6 +340,57 @@ erDiagram
         text status
     }
 
+    income {
+        bigserial id PK
+        timestamptz created_at
+        bigint client_group_id FK
+        text category
+        text source
+        bigint product_owner_id FK
+        text frequency
+        numeric annual_amount
+        timestamptz last_updated
+        text notes
+    }
+
+    expenditure {
+        bigserial id PK
+        timestamptz created_at
+        bigint client_group_id FK
+        text category
+        text description
+        text frequency
+        numeric annual_amount
+        timestamptz last_updated
+        text notes
+    }
+
+    other_products {
+        bigserial id PK
+        timestamptz created_at
+        bigint provider_id FK
+        text policy_number
+        text cover_type
+        text term_type
+        numeric sum_assured
+        text duration
+        date start_date
+        numeric monthly_payment
+        date end_date
+        boolean investment_element
+        numeric surrender_value
+        boolean in_trust
+        text trust_notes
+        text notes
+    }
+
+    product_owner_other_products {
+        bigserial id PK
+        timestamptz created_at
+        bigint product_owner_id FK
+        bigint other_product_id FK
+    }
+
     profiles ||--o{ authentication : "has one"
     profiles ||--o{ session : "has many"
     client_groups ||--o{ client_group_product_owners : "links to"
@@ -327,10 +401,10 @@ erDiagram
     portfolios ||--o{ client_products : "assigned to"
     client_products ||--o{ product_owner_products : "owned by"
     product_owners ||--o{ product_owner_products : "owns"
-    product_owners ||--o{ health : "has health records"
-    special_relationships ||--o{ health : "has health records"
-    product_owners ||--o{ vulnerabilities : "has vulnerabilities"
-    special_relationships ||--o{ vulnerabilities : "has vulnerabilities"
+    product_owners ||--o{ health_product_owners : "has health records"
+    special_relationships ||--o{ health_special_relationships : "has health records"
+    product_owners ||--o{ vulnerabilities_product_owners : "has vulnerabilities"
+    special_relationships ||--o{ vulnerabilities_special_relationships : "has vulnerabilities"
     product_owners ||--o{ risk_assessments : "has risk assessments"
     product_owners ||--o{ capacity_for_loss : "has capacity for loss"
     client_products ||--o{ holding_activity_log : "has"
@@ -354,6 +428,12 @@ erDiagram
     client_groups ||--o{ aims : "has aims"
     client_groups ||--o{ actions : "has actions"
     profiles ||--o{ actions : "assigned to"
+    client_groups ||--o{ income : "has income"
+    product_owners ||--o{ income : "earns"
+    client_groups ||--o{ expenditure : "has expenditure"
+    available_providers ||--o{ other_products : "provides"
+    product_owners ||--o{ product_owner_other_products : "owns"
+    other_products ||--o{ product_owner_other_products : "owned by"
 }
 ```
 
@@ -368,14 +448,20 @@ These tables represent the foundational entities of the system.
 -   **`product_owners`**: Represents individuals who are owners or beneficiaries of financial products. Includes comprehensive personal information (gender, DOB, place of birth), contact details (email_1, email_2, phone_1, phone_2), employment information (employment_status, occupation), KYC/AML compliance fields (passport_expiry_date, ni_number, aml_result, aml_date), and residential data (moved_in_date, address_id foreign key).
 -   **`addresses`**: Stores physical address information for product owners with five address lines (line_1 through line_5). Linked to `product_owners` via one-to-one relationship through the `address_id` foreign key.
 -   **`special_relationships`**: Stores information about personal and professional relationships associated with product owners. Includes relationship type (personal/professional), demographic information (name, DOB, age), dependency status, contact details, address linkage, and notes. Supports tracking of family members, dependents, business partners, and other significant relationships.
--   **`health`**: Stores health conditions and medical information. Uses a polymorphic relationship pattern - each health record can be associated with either a product owner OR a special relationship (but not both). Tracks condition names, diagnosis dates, current status, medications, and notes. A CHECK constraint ensures exactly one foreign key is populated. Supports comprehensive health record management for both product owners and their related individuals (dependents, family members, etc.).
--   **`vulnerabilities`**: Stores vulnerability information and required adjustments. Uses a polymorphic relationship pattern - each vulnerability record can be associated with either a product owner OR a special relationship (but not both). Tracks vulnerability descriptions, necessary adjustments, diagnosis status, and notes. A CHECK constraint ensures exactly one foreign key is populated. Supports tracking of vulnerabilities, disabilities, and accessibility requirements for product owners and their related individuals.
+-   **`health_product_owners`**: Stores health conditions and medical information for product owners. Each record links directly to a product owner and tracks condition names, diagnosis dates, current status, medications, and notes. Linked to product_owners via foreign key with CASCADE DELETE behavior. Normalized design with dedicated table instead of polymorphic relationship.
+-   **`health_special_relationships`**: Stores health conditions and medical information for related individuals. Each record links directly to a special relationship and tracks condition names, diagnosis dates, current status, medications, and notes. Linked to special_relationships via foreign key with CASCADE DELETE behavior. Enables comprehensive health tracking for dependents, family members, and other related individuals.
+-   **`vulnerabilities_product_owners`**: Stores vulnerability information and required adjustments for product owners. Each record links directly to a product owner and tracks vulnerability descriptions, necessary adjustments, diagnosis status, and notes. Linked to product_owners via foreign key with CASCADE DELETE behavior. Supports tracking of vulnerabilities, disabilities, and accessibility requirements in a normalized design.
+-   **`vulnerabilities_special_relationships`**: Stores vulnerability information and required adjustments for related individuals. Each record links directly to a special relationship and tracks vulnerability descriptions, necessary adjustments, diagnosis status, and notes. Linked to special_relationships via foreign key with CASCADE DELETE behavior. Enables comprehensive vulnerability and accessibility tracking for dependents, family members, and other related individuals.
 -   **`risk_assessments`**: Stores financial risk assessment results for product owners. Tracks assessment type (FinaMetrica or Manual), actual score (0-100), category score (1-7), risk group classification, and assessment date. Supports multiple assessments over time to track changes in risk profile. CHECK constraints enforce valid score ranges.
 -   **`capacity_for_loss`**: Stores capacity for loss assessments for product owners. Tracks score (1-10), category classification, assessment date, and status. Helps determine appropriate investment strategies based on financial capacity to absorb losses. CHECK constraint enforces valid score range.
 -   **`assigned_meetings`**: Stores expected client meetings for planning purposes. Each record defines a meeting type that a client group should have annually, with an expected month (1-12 validated by CHECK constraint), current status, and notes. Linked to client_groups via foreign key with CASCADE DELETE behavior.
 -   **`meeting_history`**: Records actual meeting occurrences for tracking and compliance purposes. Each record captures a specific instance of a meeting, including dates booked and actually held, status, year, and notes. Linked to assigned_meetings via foreign key with CASCADE DELETE behavior, maintaining a complete audit trail of all meetings.
 -   **`aims`**: Stores client goals and objectives for long-term planning. Each aim includes a title, description, target year, focus area, current status, and notes. Linked to client_groups via foreign key with CASCADE DELETE behavior. Helps advisors track and work towards client aspirations and financial goals.
 -   **`actions`**: Stores actionable tasks and to-do items for client management. Each action includes title, description, optional assigned advisor (foreign key to profiles), due date, priority level, notes, and status. Linked to client_groups via foreign key with CASCADE DELETE behavior. When an assigned advisor is deleted, the action remains but assigned_advisor_id is set to NULL. Enables task management and delegation within the advisory team.
+-   **`income`**: Stores client income sources for financial planning and cash flow analysis. Each income record includes category, source description, optional product owner (foreign key to product_owners), frequency, annual amount, last updated timestamp, and notes. Linked to client_groups via foreign key with CASCADE DELETE behavior. When a product owner is deleted, the income record remains but product_owner_id is set to NULL. Supports tracking of salaries, rental income, investment income, pensions, and other income sources.
+-   **`expenditure`**: Stores client expenditure items for budgeting and cash flow analysis. Each expenditure record includes category, description, frequency, annual amount, last updated timestamp, and notes. Linked to client_groups via foreign key with CASCADE DELETE behavior. Categories include Home, Personal, Pets, Children, Financial, Rental & Second Homes, Car(s) and Travel, and Discretionary spending.
+-   **`other_products`**: Stores protection policies and other non-investment financial products. Each product includes provider (foreign key to available_providers), policy number, cover type (e.g., Life Cover, Critical Illness), term type, sum assured, duration, start/end dates, monthly payment, investment element flag, surrender value, trust information (in_trust flag and trust_notes), and general notes. Linked to available_providers via foreign key with SET NULL behavior. Supports tracking of life insurance, critical illness cover, income protection, and other protection policies.
+-   **`product_owner_other_products`**: Junction table creating many-to-many relationships between product_owners and other_products. Each record links a product owner to a protection policy, enabling joint ownership and multiple owners per policy. Includes unique constraint to prevent duplicate relationships. Linked to both product_owners and other_products via foreign keys with CASCADE DELETE behavior.
 -   **`available_providers`**: A catalog of all investment providers (e.g., Zurich, Aviva).
 -   **`available_funds`**: A master list of all investment funds that can be held in a portfolio.
 -   **`available_portfolios`**: A list of master portfolio templates (e.g., "Conservative Growth").
@@ -397,6 +483,7 @@ These tables create many-to-many links between core entities.
 -   **`client_group_product_owners`**: Links `product_owners` to `client_groups`, allowing multiple people to be part of a single client entity.
 -   **`product_owner_products`**: Links `product_owners` to the `client_products` they own, enabling shared ownership of a financial product.
 -   **`product_owner_special_relationships`**: Links `product_owners` to `special_relationships`, enabling tracking of multiple relationships per product owner and allowing the same relationship to be associated with multiple product owners (e.g., shared dependents).
+-   **`product_owner_other_products`**: Links `product_owners` to `other_products`, enabling tracking of protection policy ownership. Supports joint ownership scenarios where multiple product owners share a single protection policy. Unique constraint prevents duplicate relationships.
 
 ## 5. Financial & Transactional Data
 

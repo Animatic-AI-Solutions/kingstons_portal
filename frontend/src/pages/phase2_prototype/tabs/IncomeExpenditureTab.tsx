@@ -19,6 +19,38 @@ const IncomeExpenditureTab: React.FC<IncomeExpenditureTabProps> = ({
   // Track which expenditure categories are expanded (default: all collapsed)
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
+  // Define category order
+  const categoryOrder: Array<Expenditure['type']> = [
+    'Home',
+    'Personal',
+    'Pets',
+    'Children',
+    'Financial',
+    'Rental & Second Homes',
+    'Car(s) and Travel',
+    'Discretionary'
+  ];
+
+  // Group expenditure by category and calculate totals
+  const expenditureByCategory: Record<string, { items: Expenditure[]; total: number; lastUpdated: string }> = {};
+
+  expenditure.forEach((exp) => {
+    if (!expenditureByCategory[exp.type]) {
+      expenditureByCategory[exp.type] = { items: [], total: 0, lastUpdated: exp.lastUpdated };
+    }
+    expenditureByCategory[exp.type].items.push(exp);
+    // Convert to annual for consistent totaling
+    const annualAmount = exp.frequency === 'Monthly' ? exp.amount * 12 : exp.amount;
+    expenditureByCategory[exp.type].total += annualAmount;
+
+    // Update lastUpdated to the most recent date
+    const currentDate = new Date(exp.lastUpdated.split('/').reverse().join('-'));
+    const categoryDate = new Date(expenditureByCategory[exp.type].lastUpdated.split('/').reverse().join('-'));
+    if (currentDate > categoryDate) {
+      expenditureByCategory[exp.type].lastUpdated = exp.lastUpdated;
+    }
+  });
+
   // Toggle category expansion
   const toggleCategory = (category: string) => {
     const newExpanded = new Set(expandedCategories);
@@ -57,38 +89,6 @@ const IncomeExpenditureTab: React.FC<IncomeExpenditureTabProps> = ({
     console.log('Add new expenditure for category:', category);
     // TODO: Implement add expenditure logic
   };
-
-  // Group expenditure by category and calculate totals
-  const expenditureByCategory: Record<string, { items: Expenditure[]; total: number; lastUpdated: string }> = {};
-
-  expenditure.forEach((exp) => {
-    if (!expenditureByCategory[exp.type]) {
-      expenditureByCategory[exp.type] = { items: [], total: 0, lastUpdated: exp.lastUpdated };
-    }
-    expenditureByCategory[exp.type].items.push(exp);
-    // Convert to annual for consistent totaling
-    const annualAmount = exp.frequency === 'Monthly' ? exp.amount * 12 : exp.amount;
-    expenditureByCategory[exp.type].total += annualAmount;
-
-    // Update lastUpdated to the most recent date
-    const currentDate = new Date(exp.lastUpdated.split('/').reverse().join('-'));
-    const categoryDate = new Date(expenditureByCategory[exp.type].lastUpdated.split('/').reverse().join('-'));
-    if (currentDate > categoryDate) {
-      expenditureByCategory[exp.type].lastUpdated = exp.lastUpdated;
-    }
-  });
-
-  // Define category order
-  const categoryOrder: Array<Expenditure['type']> = [
-    'Home',
-    'Personal',
-    'Pets',
-    'Children',
-    'Financial',
-    'Rental & Second Homes',
-    'Car(s) and Travel',
-    'Discretionary'
-  ];
 
   // Calculate total income (normalize to annual)
   const totalIncome = income.reduce((sum, inc) => {

@@ -484,6 +484,121 @@ This migration creates tables for tracking client goals/aims (long-term objectiv
 - `idx_actions_status` - For filtering by status
 - `idx_actions_priority` - For filtering by priority level
 
+## Income and Expenditure Tables Migration
+
+### Overview
+This migration creates tables for tracking client income sources and expenditure items. Supports comprehensive cash flow analysis and financial planning with categorized income and expenditure tracking.
+
+### Files
+- `add_income_expenditure_tables.sql` - Forward migration (creates both tables)
+- `rollback_add_income_expenditure_tables.sql` - Rollback migration (removes both tables)
+- `test_income_expenditure_tables_migration.sql` - Comprehensive test script
+
+### Schema
+
+**income table:**
+- `id` (BIGSERIAL, PRIMARY KEY) - Unique income identifier
+- `created_at` (TIMESTAMP WITH TIME ZONE) - Record creation timestamp
+- `client_group_id` (BIGINT, NOT NULL) - Foreign key to client_groups table
+- `category` (TEXT) - Income category (e.g., "Salary", "Rental Income", "Investment Income")
+- `source` (TEXT) - Description of income source
+- `product_owner_id` (BIGINT, NULLABLE) - Foreign key to product_owners table (can be NULL)
+- `frequency` (TEXT) - Frequency (e.g., "Monthly", "Annual")
+- `annual_amount` (NUMERIC(15,2)) - Annual income amount
+- `last_updated` (TIMESTAMP WITH TIME ZONE) - Last update timestamp (default: NOW())
+- `notes` (TEXT) - Additional notes
+
+**expenditure table:**
+- `id` (BIGSERIAL, PRIMARY KEY) - Unique expenditure identifier
+- `created_at` (TIMESTAMP WITH TIME ZONE) - Record creation timestamp
+- `client_group_id` (BIGINT, NOT NULL) - Foreign key to client_groups table
+- `category` (TEXT) - Expenditure category (e.g., "Home", "Personal", "Children", "Financial")
+- `description` (TEXT) - Description of expenditure item
+- `frequency` (TEXT) - Frequency (e.g., "Monthly", "Annual")
+- `annual_amount` (NUMERIC(15,2)) - Annual expenditure amount
+- `last_updated` (TIMESTAMP WITH TIME ZONE) - Last update timestamp (default: NOW())
+- `notes` (TEXT) - Additional notes
+
+### Relationships
+- **One-to-Many**: Each client group can have multiple income sources
+- **One-to-Many**: Each client group can have multiple expenditure items
+- **Optional Owner**: Income can optionally be assigned to a product owner
+- **Cascade Behavior**:
+  - ON DELETE CASCADE on client_groups - deleting a client removes all income and expenditure records
+  - ON DELETE SET NULL on product_owners - deleting a product owner keeps income but removes ownership assignment
+
+### Indexes Created
+**income:**
+- `idx_income_client_group_id` - For finding income by client group
+- `idx_income_product_owner_id` - For finding income by product owner
+- `idx_income_category` - For filtering by income category
+- `idx_income_frequency` - For filtering by frequency
+- `idx_income_last_updated` - For sorting by update date
+
+**expenditure:**
+- `idx_expenditure_client_group_id` - For finding expenditure by client group
+- `idx_expenditure_category` - For filtering by expenditure category
+- `idx_expenditure_frequency` - For filtering by frequency
+- `idx_expenditure_last_updated` - For sorting by update date
+
+## Other Products Tables Migration
+
+### Overview
+This migration creates tables for tracking protection policies and other non-investment financial products. Includes a junction table for many-to-many relationships between product owners and protection policies, supporting joint ownership scenarios.
+
+### Files
+- `add_other_products_tables.sql` - Forward migration (creates both tables)
+- `rollback_add_other_products_tables.sql` - Rollback migration (removes both tables)
+- `test_other_products_tables_migration.sql` - Comprehensive test script
+
+### Schema
+
+**other_products table:**
+- `id` (BIGSERIAL, PRIMARY KEY) - Unique product identifier
+- `created_at` (TIMESTAMP WITH TIME ZONE) - Record creation timestamp
+- `provider_id` (BIGINT, NULLABLE) - Foreign key to available_providers table (can be NULL)
+- `policy_number` (TEXT) - Policy or contract number
+- `cover_type` (TEXT) - Type of cover (e.g., "Life Cover", "Critical Illness", "Income Protection")
+- `term_type` (TEXT) - Term type (e.g., "Term", "Whole of Life")
+- `sum_assured` (NUMERIC(15,2)) - Sum assured amount
+- `duration` (TEXT) - Duration of policy (e.g., "25 years", "To age 65")
+- `start_date` (DATE) - Policy start date
+- `monthly_payment` (NUMERIC(15,2)) - Monthly premium payment
+- `end_date` (DATE) - Policy end date
+- `investment_element` (BOOLEAN) - Whether policy has investment element (default: false)
+- `surrender_value` (NUMERIC(15,2)) - Current surrender value
+- `in_trust` (BOOLEAN) - Whether policy is held in trust (default: false)
+- `trust_notes` (TEXT) - Notes about trust arrangement
+- `notes` (TEXT) - General notes
+
+**product_owner_other_products junction table:**
+- `id` (BIGSERIAL, PRIMARY KEY) - Unique junction record identifier
+- `created_at` (TIMESTAMP WITH TIME ZONE) - Record creation timestamp
+- `product_owner_id` (BIGINT, NOT NULL) - Foreign key to product_owners table
+- `other_product_id` (BIGINT, NOT NULL) - Foreign key to other_products table
+- Unique constraint on (product_owner_id, other_product_id) combination
+
+### Relationships
+- **Many-to-Many**: Product owners can have multiple protection policies, and policies can be owned by multiple product owners (joint policies)
+- **Optional Provider**: other_products can optionally link to available_providers table
+- **Cascade Behavior**:
+  - ON DELETE CASCADE on junction table foreign keys (deleting either side removes the link)
+  - ON DELETE SET NULL for provider_id (deleting a provider doesn't delete the product)
+
+### Indexes Created
+**other_products:**
+- `idx_other_products_provider_id` - For finding products by provider
+- `idx_other_products_policy_number` - For policy number searches
+- `idx_other_products_cover_type` - For filtering by cover type
+- `idx_other_products_start_date` - For date-based queries
+- `idx_other_products_end_date` - For finding expiring policies
+- `idx_other_products_in_trust` - For filtering trust products
+- `idx_other_products_investment_element` - For filtering investment products
+
+**product_owner_other_products:**
+- `idx_product_owner_other_products_product_owner_id` - For finding products by owner
+- `idx_product_owner_other_products_other_product_id` - For finding owners by product
+
 ## Migration History
 
 | Date | Migration | Description | Status |
@@ -497,6 +612,74 @@ This migration creates tables for tracking client goals/aims (long-term objectiv
 | 2024-12-01 | `add_client_groups_fields` | Add compliance and tracking fields to client_groups | Completed |
 | 2024-12-01 | `add_meeting_tables` | Create assigned_meetings and meeting_history tables | Completed |
 | 2024-12-01 | `add_aims_actions_tables` | Create aims and actions tables | Completed |
+| 2024-12-01 | `add_income_expenditure_tables` | Create income and expenditure tables | Completed |
+| 2024-12-01 | `add_other_products_tables` | Create other_products and junction table | Completed |
+| 2024-12-01 | `refactor_health_tables` | Refactor health into separate normalized tables | Completed |
+| 2024-12-01 | `refactor_vulnerabilities_tables` | Refactor vulnerabilities into separate normalized tables | Completed |
+
+## Health Tables Refactoring
+
+### Overview
+This migration refactors the polymorphic health table into two normalized tables: `health_product_owners` and `health_special_relationships`. This eliminates the mutually exclusive foreign key pattern and creates a cleaner, more intuitive database design.
+
+### Files
+- `refactor_health_tables.sql` - Forward migration (replaces polymorphic table with two tables)
+- `rollback_refactor_health_tables.sql` - Rollback migration (restores polymorphic table)
+- `test_refactor_health_tables_migration.sql` - Comprehensive test script
+
+### Changes
+**Before:** Single `health` table with two nullable foreign keys and a CHECK constraint ensuring exactly one is populated.
+
+**After:** Two dedicated tables:
+- `health_product_owners` - Health records for product owners only
+- `health_special_relationships` - Health records for special relationships only
+
+### Benefits
+- **Cleaner Design**: No mutually exclusive foreign keys or CHECK constraints
+- **Better Normalized**: Follows standard normalization principles
+- **Easier Queries**: No need to check which FK is populated
+- **More Intuitive**: Clearer relationship between entities
+- **Simpler Application Code**: Can query each table independently
+
+### Schema
+Both tables share the same column structure:
+- `id`, `created_at` (standard fields)
+- `product_owner_id` OR `special_relationship_id` (single, required FK)
+- `condition`, `name`, `date_of_diagnosis`, `status`, `medication`, `date_recorded`, `notes`
+
+### Indexes
+8 total indexes (4 per table) on foreign keys, status, diagnosis date, and recorded date.
+
+## Vulnerabilities Tables Refactoring
+
+### Overview
+This migration refactors the polymorphic vulnerabilities table into two normalized tables: `vulnerabilities_product_owners` and `vulnerabilities_special_relationships`. Matches the same pattern as the health tables refactoring.
+
+### Files
+- `refactor_vulnerabilities_tables.sql` - Forward migration (replaces polymorphic table with two tables)
+- `rollback_refactor_vulnerabilities_tables.sql` - Rollback migration (restores polymorphic table)
+- `test_refactor_vulnerabilities_tables_migration.sql` - Comprehensive test script
+
+### Changes
+**Before:** Single `vulnerabilities` table with two nullable foreign keys and a CHECK constraint ensuring exactly one is populated.
+
+**After:** Two dedicated tables:
+- `vulnerabilities_product_owners` - Vulnerability records for product owners only
+- `vulnerabilities_special_relationships` - Vulnerability records for special relationships only
+
+### Benefits
+Same benefits as health tables refactoring: cleaner design, better normalized, easier queries, more intuitive, simpler application code.
+
+### Schema
+Both tables share the same column structure:
+- `id`, `created_at` (standard fields)
+- `product_owner_id` OR `special_relationship_id` (single, required FK)
+- `description`, `adjustments`, `diagnosed`, `date_recorded`, `status`, `notes`
+
+### Indexes
+8 total indexes (4 per table) on foreign keys, status, diagnosed flag, and recorded date.
+
+**Note:** Index names use abbreviated format (e.g., `idx_vuln_*`) to stay within PostgreSQL's 63-character identifier limit.
 
 ## Best Practices
 
