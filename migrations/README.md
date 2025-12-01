@@ -374,6 +374,116 @@ This migration adds compliance tracking and relationship management fields to th
 - Date fields support compliance and regulatory tracking requirements
 - Indexes improve query performance for compliance reporting
 
+## Meeting Tables Migration
+
+### Overview
+This migration creates tables for tracking expected client meetings (planning) and recording actual meeting occurrences (history). Supports annual meeting planning and comprehensive meeting audit trails.
+
+### Files
+- `add_meeting_tables.sql` - Forward migration (creates both tables)
+- `rollback_add_meeting_tables.sql` - Rollback migration (removes both tables)
+- `test_meeting_tables_migration.sql` - Comprehensive test script
+
+### Schema
+
+**assigned_meetings table:**
+- `id` (BIGSERIAL, PRIMARY KEY) - Unique assigned meeting identifier
+- `created_at` (TIMESTAMP WITH TIME ZONE) - Record creation timestamp
+- `client_group_id` (BIGINT, NOT NULL) - Foreign key to client_groups table
+- `meeting_type` (TEXT) - Type of meeting (e.g., "Annual Review", "Quarterly Check-in")
+- `expected_month` (INTEGER) - Month when meeting is expected (1-12)
+- `status` (TEXT) - Current status
+- `notes` (TEXT) - Additional notes
+
+**meeting_history table:**
+- `id` (BIGSERIAL, PRIMARY KEY) - Unique meeting history identifier
+- `created_at` (TIMESTAMP WITH TIME ZONE) - Record creation timestamp
+- `assigned_meeting_id` (BIGINT, NOT NULL) - Foreign key to assigned_meetings table
+- `date_booked_for` (DATE) - Date meeting was scheduled for
+- `date_actually_held` (DATE) - Date meeting actually occurred
+- `status` (TEXT) - Meeting status (e.g., "Completed", "Cancelled", "Rescheduled")
+- `year` (INTEGER) - Year of meeting
+- `notes` (TEXT) - Additional notes about the meeting
+
+### Relationships
+- **One-to-Many**: Each client group can have multiple assigned meetings
+- **One-to-Many**: Each assigned meeting can have multiple history records (rescheduling, annual recurrence)
+- **Cascade Behavior**: ON DELETE CASCADE - deleting a client group removes all assigned meetings and their history; deleting an assigned meeting removes all its history records
+
+### Constraints
+- **assigned_meetings.expected_month**: Must be between 1 and 12 (CHECK constraint)
+
+### Indexes Created
+**assigned_meetings:**
+- `idx_assigned_meetings_client_group_id` - For finding meetings by client group
+- `idx_assigned_meetings_meeting_type` - For filtering by meeting type
+- `idx_assigned_meetings_expected_month` - For monthly planning queries
+- `idx_assigned_meetings_status` - For filtering by status
+
+**meeting_history:**
+- `idx_meeting_history_assigned_meeting_id` - For finding history by assigned meeting
+- `idx_meeting_history_date_booked_for` - For date-based queries
+- `idx_meeting_history_date_actually_held` - For tracking completed meetings
+- `idx_meeting_history_year` - For annual reporting
+- `idx_meeting_history_status` - For filtering by status
+
+## Aims and Actions Tables Migration
+
+### Overview
+This migration creates tables for tracking client goals/aims (long-term objectives) and actionable tasks. Supports comprehensive client relationship management with goal tracking and task delegation to advisors.
+
+### Files
+- `add_aims_actions_tables.sql` - Forward migration (creates both tables)
+- `rollback_add_aims_actions_tables.sql` - Rollback migration (removes both tables)
+- `test_aims_actions_tables_migration.sql` - Comprehensive test script
+
+### Schema
+
+**aims table:**
+- `id` (BIGSERIAL, PRIMARY KEY) - Unique aim identifier
+- `created_at` (TIMESTAMP WITH TIME ZONE) - Record creation timestamp
+- `client_group_id` (BIGINT, NOT NULL) - Foreign key to client_groups table
+- `title` (TEXT) - Title of the aim/goal
+- `description` (TEXT) - Detailed description of the aim
+- `target_date` (INTEGER) - Target year for achieving the aim
+- `focus` (TEXT) - Focus area (e.g., "Retirement", "Education", "Wealth Transfer")
+- `status` (TEXT) - Current status (e.g., "Active", "Achieved", "Deferred")
+- `notes` (TEXT) - Additional notes
+
+**actions table:**
+- `id` (BIGSERIAL, PRIMARY KEY) - Unique action identifier
+- `created_at` (TIMESTAMP WITH TIME ZONE) - Record creation timestamp
+- `client_group_id` (BIGINT, NOT NULL) - Foreign key to client_groups table
+- `title` (TEXT) - Title of the action/task
+- `description` (TEXT) - Detailed description of the action
+- `assigned_advisor_id` (BIGINT, NULLABLE) - Foreign key to profiles table (can be NULL)
+- `due_date` (DATE) - Due date for the action
+- `priority` (TEXT) - Priority level (e.g., "High", "Medium", "Low")
+- `notes` (TEXT) - Additional notes
+- `status` (TEXT) - Current status (e.g., "Pending", "In Progress", "Completed", "Cancelled")
+
+### Relationships
+- **One-to-Many**: Each client group can have multiple aims
+- **One-to-Many**: Each client group can have multiple actions
+- **Optional Assignment**: Actions can optionally be assigned to an advisor (profiles table)
+- **Cascade Behavior**:
+  - ON DELETE CASCADE on client_groups - deleting a client removes all aims and actions
+  - ON DELETE SET NULL on profiles - deleting an advisor keeps the action but removes assignment
+
+### Indexes Created
+**aims:**
+- `idx_aims_client_group_id` - For finding aims by client group
+- `idx_aims_status` - For filtering by status
+- `idx_aims_target_date` - For date-based queries and reporting
+- `idx_aims_focus` - For filtering by focus area
+
+**actions:**
+- `idx_actions_client_group_id` - For finding actions by client group
+- `idx_actions_assigned_advisor_id` - For finding actions assigned to specific advisors
+- `idx_actions_due_date` - For date-based queries and deadline tracking
+- `idx_actions_status` - For filtering by status
+- `idx_actions_priority` - For filtering by priority level
+
 ## Migration History
 
 | Date | Migration | Description | Status |
@@ -384,7 +494,9 @@ This migration adds compliance tracking and relationship management fields to th
 | 2024-12-01 | `add_health_table` | Create health table for medical records | Completed |
 | 2024-12-01 | `add_vulnerabilities_table` | Create vulnerabilities table for accessibility tracking | Completed |
 | 2024-12-01 | `add_risk_assessment_tables` | Create risk_assessments and capacity_for_loss tables | Completed |
-| 2024-12-01 | `add_client_groups_fields` | Add compliance and tracking fields to client_groups | Pending |
+| 2024-12-01 | `add_client_groups_fields` | Add compliance and tracking fields to client_groups | Completed |
+| 2024-12-01 | `add_meeting_tables` | Create assigned_meetings and meeting_history tables | Completed |
+| 2024-12-01 | `add_aims_actions_tables` | Create aims and actions tables | Completed |
 
 ## Best Practices
 

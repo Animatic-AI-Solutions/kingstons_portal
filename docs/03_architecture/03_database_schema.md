@@ -271,6 +271,52 @@ erDiagram
         text status
     }
 
+    assigned_meetings {
+        bigserial id PK
+        timestamptz created_at
+        bigint client_group_id FK
+        text meeting_type
+        int expected_month
+        text status
+        text notes
+    }
+
+    meeting_history {
+        bigserial id PK
+        timestamptz created_at
+        bigint assigned_meeting_id FK
+        date date_booked_for
+        date date_actually_held
+        text status
+        int year
+        text notes
+    }
+
+    aims {
+        bigserial id PK
+        timestamptz created_at
+        bigint client_group_id FK
+        text title
+        text description
+        int target_date
+        text focus
+        text status
+        text notes
+    }
+
+    actions {
+        bigserial id PK
+        timestamptz created_at
+        bigint client_group_id FK
+        text title
+        text description
+        bigint assigned_advisor_id FK
+        date due_date
+        text priority
+        text notes
+        text status
+    }
+
     profiles ||--o{ authentication : "has one"
     profiles ||--o{ session : "has many"
     client_groups ||--o{ client_group_product_owners : "links to"
@@ -303,6 +349,11 @@ erDiagram
     addresses ||--o| special_relationships : "linked to"
     product_owners ||--o{ product_owner_special_relationships : "has relationships"
     special_relationships ||--o{ product_owner_special_relationships : "linked to owners"
+    client_groups ||--o{ assigned_meetings : "has meetings"
+    assigned_meetings ||--o{ meeting_history : "has history"
+    client_groups ||--o{ aims : "has aims"
+    client_groups ||--o{ actions : "has actions"
+    profiles ||--o{ actions : "assigned to"
 }
 ```
 
@@ -321,6 +372,10 @@ These tables represent the foundational entities of the system.
 -   **`vulnerabilities`**: Stores vulnerability information and required adjustments. Uses a polymorphic relationship pattern - each vulnerability record can be associated with either a product owner OR a special relationship (but not both). Tracks vulnerability descriptions, necessary adjustments, diagnosis status, and notes. A CHECK constraint ensures exactly one foreign key is populated. Supports tracking of vulnerabilities, disabilities, and accessibility requirements for product owners and their related individuals.
 -   **`risk_assessments`**: Stores financial risk assessment results for product owners. Tracks assessment type (FinaMetrica or Manual), actual score (0-100), category score (1-7), risk group classification, and assessment date. Supports multiple assessments over time to track changes in risk profile. CHECK constraints enforce valid score ranges.
 -   **`capacity_for_loss`**: Stores capacity for loss assessments for product owners. Tracks score (1-10), category classification, assessment date, and status. Helps determine appropriate investment strategies based on financial capacity to absorb losses. CHECK constraint enforces valid score range.
+-   **`assigned_meetings`**: Stores expected client meetings for planning purposes. Each record defines a meeting type that a client group should have annually, with an expected month (1-12 validated by CHECK constraint), current status, and notes. Linked to client_groups via foreign key with CASCADE DELETE behavior.
+-   **`meeting_history`**: Records actual meeting occurrences for tracking and compliance purposes. Each record captures a specific instance of a meeting, including dates booked and actually held, status, year, and notes. Linked to assigned_meetings via foreign key with CASCADE DELETE behavior, maintaining a complete audit trail of all meetings.
+-   **`aims`**: Stores client goals and objectives for long-term planning. Each aim includes a title, description, target year, focus area, current status, and notes. Linked to client_groups via foreign key with CASCADE DELETE behavior. Helps advisors track and work towards client aspirations and financial goals.
+-   **`actions`**: Stores actionable tasks and to-do items for client management. Each action includes title, description, optional assigned advisor (foreign key to profiles), due date, priority level, notes, and status. Linked to client_groups via foreign key with CASCADE DELETE behavior. When an assigned advisor is deleted, the action remains but assigned_advisor_id is set to NULL. Enables task management and delegation within the advisory team.
 -   **`available_providers`**: A catalog of all investment providers (e.g., Zurich, Aviva).
 -   **`available_funds`**: A master list of all investment funds that can be held in a portfolio.
 -   **`available_portfolios`**: A list of master portfolio templates (e.g., "Conservative Growth").
