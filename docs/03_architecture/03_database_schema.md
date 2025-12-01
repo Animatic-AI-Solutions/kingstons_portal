@@ -193,6 +193,29 @@ erDiagram
         numeric irr_result
     }
 
+    special_relationships {
+        bigserial id PK
+        timestamptz created_at
+        text type
+        date dob
+        text name
+        int age
+        boolean dependency
+        bigint address_id FK
+        text status
+        text email
+        text phone
+        text relationship
+        text notes
+    }
+
+    product_owner_special_relationships {
+        bigserial id PK
+        timestamptz created_at
+        bigint product_owner_id FK
+        bigint special_relationship_id FK
+    }
+
     profiles ||--o{ authentication : "has one"
     profiles ||--o{ session : "has many"
     client_groups ||--o{ client_group_product_owners : "links to"
@@ -216,6 +239,9 @@ erDiagram
     portfolio_funds ||--o{ portfolio_fund_irr_values : "has IRR for"
     portfolios ||--o{ portfolio_valuations : "has valuations"
     portfolios ||--o{ portfolio_irr_values : "has IRR"
+    addresses ||--o| special_relationships : "linked to"
+    product_owners ||--o{ product_owner_special_relationships : "has relationships"
+    special_relationships ||--o{ product_owner_special_relationships : "linked to owners"
 }
 ```
 
@@ -229,6 +255,7 @@ These tables represent the foundational entities of the system.
 -   **`client_groups`**: The central table for client entities. A group can represent a family, an individual, or a trust.
 -   **`product_owners`**: Represents individuals who are owners or beneficiaries of financial products. Includes comprehensive personal information (gender, DOB, place of birth), contact details (email_1, email_2, phone_1, phone_2), employment information (employment_status, occupation), KYC/AML compliance fields (passport_expiry_date, ni_number, aml_result, aml_date), and residential data (moved_in_date, address_id foreign key).
 -   **`addresses`**: Stores physical address information for product owners with five address lines (line_1 through line_5). Linked to `product_owners` via one-to-one relationship through the `address_id` foreign key.
+-   **`special_relationships`**: Stores information about personal and professional relationships associated with product owners. Includes relationship type (personal/professional), demographic information (name, DOB, age), dependency status, contact details, address linkage, and notes. Supports tracking of family members, dependents, business partners, and other significant relationships.
 -   **`available_providers`**: A catalog of all investment providers (e.g., Zurich, Aviva).
 -   **`available_funds`**: A master list of all investment funds that can be held in a portfolio.
 -   **`available_portfolios`**: A list of master portfolio templates (e.g., "Conservative Growth").
@@ -249,6 +276,7 @@ These tables create many-to-many links between core entities.
 
 -   **`client_group_product_owners`**: Links `product_owners` to `client_groups`, allowing multiple people to be part of a single client entity.
 -   **`product_owner_products`**: Links `product_owners` to the `client_products` they own, enabling shared ownership of a financial product.
+-   **`product_owner_special_relationships`**: Links `product_owners` to `special_relationships`, enabling tracking of multiple relationships per product owner and allowing the same relationship to be associated with multiple product owners (e.g., shared dependents).
 
 ## 5. Financial & Transactional Data
 

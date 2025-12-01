@@ -1,14 +1,10 @@
-ok now I wnat ti create a table called special relationships with columns
+now we need to create the health table  with columns
 
-type (this can be personal or professional)
-DOB
+product owner ID
+condition (text)
 name
-age
-dependency (true or false)
-address (forign key to addresses table)
+date of diagnosis  (date)
 status
-contact details (text field)
-relationship (text)
-notes (text)
-
-We also need to add a link table for special relationships and product owners as there is a many to many rleationhsip between specila relationships and product owners
+medication (text)
+date recorded
+notes

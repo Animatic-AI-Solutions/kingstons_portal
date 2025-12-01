@@ -157,12 +157,62 @@ This migration creates an addresses table to store product owner addresses and e
 - **Optional**: address_id is nullable (existing records won't have addresses)
 - **Cascade Behavior**: If an address is deleted, product_owner.address_id is set to NULL
 
+## Special Relationships Tables Migration
+
+### Overview
+This migration creates tables for tracking personal and professional relationships associated with product owners, including a many-to-many junction table.
+
+### Files
+- `add_special_relationships_table.sql` - Forward migration (creates both tables)
+- `rollback_add_special_relationships_table.sql` - Rollback migration (removes both tables)
+- `test_special_relationships_migration.sql` - Comprehensive test script
+
+### Schema
+
+**special_relationships table:**
+- `id` (BIGSERIAL, PRIMARY KEY) - Unique relationship identifier
+- `created_at` (TIMESTAMP WITH TIME ZONE) - Record creation timestamp
+- `type` (TEXT) - Relationship type (personal/professional)
+- `dob` (DATE) - Date of birth
+- `name` (TEXT) - Name of the related individual
+- `age` (INTEGER) - Age
+- `dependency` (BOOLEAN) - Whether this is a dependent relationship
+- `address_id` (BIGINT, NULLABLE) - Foreign key to addresses table
+- `status` (TEXT) - Status (default: 'active')
+- `email` (TEXT) - Email address
+- `phone` (TEXT) - Phone number
+- `relationship` (TEXT) - Description of relationship (e.g., "Daughter", "Business Partner")
+- `notes` (TEXT) - Additional notes
+
+**product_owner_special_relationships junction table:**
+- `id` (BIGSERIAL, PRIMARY KEY) - Unique junction record identifier
+- `created_at` (TIMESTAMP WITH TIME ZONE) - Record creation timestamp
+- `product_owner_id` (BIGINT, NOT NULL) - Foreign key to product_owners table
+- `special_relationship_id` (BIGINT, NOT NULL) - Foreign key to special_relationships table
+- Unique constraint on (product_owner_id, special_relationship_id) combination
+
+### Relationships
+- **Many-to-Many**: Product owners can have multiple special relationships, and special relationships can be associated with multiple product owners
+- **Optional Address**: special_relationships can optionally link to addresses table
+- **Cascade Behavior**:
+  - ON DELETE CASCADE on junction table foreign keys (deleting either side removes the link)
+  - ON DELETE SET NULL for address_id (deleting an address doesn't delete the relationship)
+
+### Indexes Created
+- `idx_special_relationships_type` - For filtering by relationship type
+- `idx_special_relationships_name` - For name searches
+- `idx_special_relationships_address_id` - For joins with addresses
+- `idx_special_relationships_status` - For filtering by status
+- `idx_product_owner_special_relationships_product_owner_id` - For finding relationships by owner
+- `idx_product_owner_special_relationships_special_relationship_id` - For finding owners by relationship
+
 ## Migration History
 
 | Date | Migration | Description | Status |
 |------|-----------|-------------|--------|
 | 2024-12-01 | `add_product_owners_phase2_fields` | Add Phase 2 fields to product_owners | Completed |
-| 2024-12-01 | `add_addresses_table` | Create addresses table with foreign key | Pending |
+| 2024-12-01 | `add_addresses_table` | Create addresses table with foreign key | Completed |
+| 2024-12-01 | `add_special_relationships_table` | Create special_relationships and junction table | Pending |
 
 ## Best Practices
 

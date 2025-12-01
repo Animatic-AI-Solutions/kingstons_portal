@@ -287,6 +287,33 @@ CREATE TABLE session (
     last_activity text
 );
 
+-- Table: special_relationships
+-- Stores personal and professional relationships associated with product owners
+CREATE TABLE special_relationships (
+    id bigserial NOT NULL -- PRIMARY KEY,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    type text,
+    dob date,
+    name text,
+    age integer,
+    dependency boolean DEFAULT false,
+    address_id bigint -- FOREIGN KEY -> addresses.id,
+    status text DEFAULT 'active'::text,
+    email text,
+    phone text,
+    relationship text,
+    notes text
+);
+
+-- Table: product_owner_special_relationships
+-- Junction table for many-to-many relationship between product owners and special relationships
+CREATE TABLE product_owner_special_relationships (
+    id bigserial NOT NULL -- PRIMARY KEY,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    product_owner_id bigint NOT NULL -- FOREIGN KEY -> product_owners.id,
+    special_relationship_id bigint NOT NULL -- FOREIGN KEY -> special_relationships.id
+);
+
 -- Table: template_portfolio_generations
 CREATE TABLE template_portfolio_generations (
     id bigint(64) NOT NULL -- PRIMARY KEY,
