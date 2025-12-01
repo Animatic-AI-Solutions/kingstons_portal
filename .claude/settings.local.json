@@ -6,7 +6,11 @@
       "Bash(for:*)",
       "Bash(do)",
       "Bash(echo:*)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(ls -la \"C:\\Users\\jacob\\Documents\\kingstons_portal\\frontend\\src\\services\"\" | grep -E \"api.ts)",
+      "Bash(auth.ts)",
+      "Bash(profile.ts)",
+      "Bash(providerColors.ts \")"
     ],
     "deny": [],
     "ask": []
