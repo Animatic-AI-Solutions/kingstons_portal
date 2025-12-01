@@ -206,13 +206,95 @@ This migration creates tables for tracking personal and professional relationshi
 - `idx_product_owner_special_relationships_product_owner_id` - For finding relationships by owner
 - `idx_product_owner_special_relationships_special_relationship_id` - For finding owners by relationship
 
+## Health Table Migration
+
+### Overview
+This migration creates a health table for tracking health conditions and medical information. Uses a polymorphic relationship pattern where health records can be associated with either product owners OR special relationships (but not both).
+
+### Files
+- `add_health_table.sql` - Forward migration (creates health table)
+- `rollback_add_health_table.sql` - Rollback migration (removes health table)
+- `test_health_migration.sql` - Comprehensive test script
+
+### Schema
+
+**health table:**
+- `id` (BIGSERIAL, PRIMARY KEY) - Unique health record identifier
+- `created_at` (TIMESTAMP WITH TIME ZONE) - Record creation timestamp
+- `product_owner_id` (BIGINT, NULLABLE) - Foreign key to product_owners table
+- `special_relationship_id` (BIGINT, NULLABLE) - Foreign key to special_relationships table
+- `condition` (TEXT) - Medical condition description
+- `name` (TEXT) - Name/title of the condition
+- `date_of_diagnosis` (DATE) - Date when condition was diagnosed
+- `status` (TEXT) - Current status of condition (e.g., active, managed, resolved)
+- `medication` (TEXT) - Current medications for this condition
+- `date_recorded` (TIMESTAMP WITH TIME ZONE) - Date this record was created (default: NOW())
+- `notes` (TEXT) - Additional notes about the condition
+
+### Polymorphic Relationship
+- **Pattern**: Each health record belongs to either a product_owner OR a special_relationship
+- **Constraint**: CHECK constraint ensures exactly one foreign key is populated (not both, not neither)
+- **Use Cases**:
+  - Track health conditions for product owners themselves
+  - Track health conditions for dependents, family members, or related individuals
+- **Cascade Behavior**: ON DELETE CASCADE on both foreign keys - deleting either owner removes their health records
+
+### Indexes Created
+- `idx_health_product_owner_id` - For finding health records by product owner
+- `idx_health_special_relationship_id` - For finding health records by special relationship
+- `idx_health_status` - For filtering health records by status
+- `idx_health_date_of_diagnosis` - For date-based queries and sorting
+- `idx_health_date_recorded` - For tracking when records were added
+
+## Vulnerabilities Table Migration
+
+### Overview
+This migration creates a vulnerabilities table for tracking vulnerabilities, disabilities, and accessibility requirements. Uses a polymorphic relationship pattern where vulnerability records can be associated with either product owners OR special relationships (but not both).
+
+### Files
+- `add_vulnerabilities_table.sql` - Forward migration (creates vulnerabilities table)
+- `rollback_add_vulnerabilities_table.sql` - Rollback migration (removes vulnerabilities table)
+- `test_vulnerabilities_migration.sql` - Comprehensive test script
+
+### Schema
+
+**vulnerabilities table:**
+- `id` (BIGSERIAL, PRIMARY KEY) - Unique vulnerability record identifier
+- `created_at` (TIMESTAMP WITH TIME ZONE) - Record creation timestamp
+- `product_owner_id` (BIGINT, NULLABLE) - Foreign key to product_owners table
+- `special_relationship_id` (BIGINT, NULLABLE) - Foreign key to special_relationships table
+- `description` (TEXT) - Description of the vulnerability or disability
+- `adjustments` (TEXT) - Required adjustments or accommodations
+- `diagnosed` (BOOLEAN) - Whether the vulnerability has been formally diagnosed (default: false)
+- `date_recorded` (TIMESTAMP WITH TIME ZONE) - Date this record was created (default: NOW())
+- `status` (TEXT) - Current status (e.g., active, managed, resolved)
+- `notes` (TEXT) - Additional notes about the vulnerability
+
+### Polymorphic Relationship
+- **Pattern**: Each vulnerability record belongs to either a product_owner OR a special_relationship
+- **Constraint**: CHECK constraint ensures exactly one foreign key is populated (not both, not neither)
+- **Use Cases**:
+  - Track vulnerabilities for product owners themselves
+  - Track vulnerabilities for dependents, family members, or related individuals
+  - Support accessibility planning and compliance requirements
+- **Cascade Behavior**: ON DELETE CASCADE on both foreign keys - deleting either owner removes their vulnerability records
+
+### Indexes Created
+- `idx_vulnerabilities_product_owner_id` - For finding vulnerability records by product owner
+- `idx_vulnerabilities_special_relationship_id` - For finding vulnerability records by special relationship
+- `idx_vulnerabilities_status` - For filtering vulnerability records by status
+- `idx_vulnerabilities_diagnosed` - For filtering by diagnosis status
+- `idx_vulnerabilities_date_recorded` - For tracking when records were added
+
 ## Migration History
 
 | Date | Migration | Description | Status |
 |------|-----------|-------------|--------|
 | 2024-12-01 | `add_product_owners_phase2_fields` | Add Phase 2 fields to product_owners | Completed |
 | 2024-12-01 | `add_addresses_table` | Create addresses table with foreign key | Completed |
-| 2024-12-01 | `add_special_relationships_table` | Create special_relationships and junction table | Pending |
+| 2024-12-01 | `add_special_relationships_table` | Create special_relationships and junction table | Completed |
+| 2024-12-01 | `add_health_table` | Create health table for medical records | Completed |
+| 2024-12-01 | `add_vulnerabilities_table` | Create vulnerabilities table for accessibility tracking | Pending |
 
 ## Best Practices
 

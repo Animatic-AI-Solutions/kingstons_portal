@@ -1,10 +1,10 @@
-now we need to create the health table  with columns
+now we need to create the vulnerabilities table with columns
 
 product owner ID
-condition (text)
-name
-date of diagnosis  (date)
-status
-medication (text)
+special relationship ID
+description
+adjustments
+diagnosed (true or false)
 date recorded
+status
 notes

@@ -131,6 +131,24 @@ CREATE TABLE client_products (
     percentage_fee_facilitated text
 );
 
+-- Table: health
+-- Stores health conditions and medical information
+-- Can be associated with either a product owner OR a special relationship (but not both)
+CREATE TABLE health (
+    id bigserial NOT NULL -- PRIMARY KEY,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    product_owner_id bigint -- FOREIGN KEY -> product_owners.id,
+    special_relationship_id bigint -- FOREIGN KEY -> special_relationships.id,
+    condition text,
+    name text,
+    date_of_diagnosis date,
+    status text,
+    medication text,
+    date_recorded timestamp with time zone DEFAULT now(),
+    notes text
+    -- CONSTRAINT: Exactly one of product_owner_id or special_relationship_id must be populated
+);
+
 -- Table: holding_activity_log
 CREATE TABLE holding_activity_log (
     id bigint(64) NOT NULL -- PRIMARY KEY,
@@ -312,6 +330,23 @@ CREATE TABLE product_owner_special_relationships (
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     product_owner_id bigint NOT NULL -- FOREIGN KEY -> product_owners.id,
     special_relationship_id bigint NOT NULL -- FOREIGN KEY -> special_relationships.id
+);
+
+-- Table: vulnerabilities
+-- Stores vulnerability information for product owners and special relationships
+-- Can be associated with either a product owner OR a special relationship (but not both)
+CREATE TABLE vulnerabilities (
+    id bigserial NOT NULL -- PRIMARY KEY,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    product_owner_id bigint -- FOREIGN KEY -> product_owners.id,
+    special_relationship_id bigint -- FOREIGN KEY -> special_relationships.id,
+    description text,
+    adjustments text,
+    diagnosed boolean DEFAULT false,
+    date_recorded timestamp with time zone DEFAULT now(),
+    status text,
+    notes text
+    -- CONSTRAINT: Exactly one of product_owner_id or special_relationship_id must be populated
 );
 
 -- Table: template_portfolio_generations

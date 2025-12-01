@@ -162,6 +162,20 @@ erDiagram
         numeric valuation
     }
 
+    health {
+        bigserial id PK
+        timestamptz created_at
+        bigint product_owner_id FK
+        bigint special_relationship_id FK
+        text condition
+        text name
+        date date_of_diagnosis
+        text status
+        text medication
+        timestamptz date_recorded
+        text notes
+    }
+
     holding_activity_log {
         bigint id PK
         bigint product_id FK
@@ -216,6 +230,19 @@ erDiagram
         bigint special_relationship_id FK
     }
 
+    vulnerabilities {
+        bigserial id PK
+        timestamptz created_at
+        bigint product_owner_id FK
+        bigint special_relationship_id FK
+        text description
+        text adjustments
+        boolean diagnosed
+        timestamptz date_recorded
+        text status
+        text notes
+    }
+
     profiles ||--o{ authentication : "has one"
     profiles ||--o{ session : "has many"
     client_groups ||--o{ client_group_product_owners : "links to"
@@ -226,6 +253,10 @@ erDiagram
     portfolios ||--o{ client_products : "assigned to"
     client_products ||--o{ product_owner_products : "owned by"
     product_owners ||--o{ product_owner_products : "owns"
+    product_owners ||--o{ health : "has health records"
+    special_relationships ||--o{ health : "has health records"
+    product_owners ||--o{ vulnerabilities : "has vulnerabilities"
+    special_relationships ||--o{ vulnerabilities : "has vulnerabilities"
     client_products ||--o{ holding_activity_log : "has"
     client_products ||--o{ provider_switch_log : "logs switches for"
     available_portfolios ||--o{ template_portfolio_generations : "has versions"
@@ -256,6 +287,8 @@ These tables represent the foundational entities of the system.
 -   **`product_owners`**: Represents individuals who are owners or beneficiaries of financial products. Includes comprehensive personal information (gender, DOB, place of birth), contact details (email_1, email_2, phone_1, phone_2), employment information (employment_status, occupation), KYC/AML compliance fields (passport_expiry_date, ni_number, aml_result, aml_date), and residential data (moved_in_date, address_id foreign key).
 -   **`addresses`**: Stores physical address information for product owners with five address lines (line_1 through line_5). Linked to `product_owners` via one-to-one relationship through the `address_id` foreign key.
 -   **`special_relationships`**: Stores information about personal and professional relationships associated with product owners. Includes relationship type (personal/professional), demographic information (name, DOB, age), dependency status, contact details, address linkage, and notes. Supports tracking of family members, dependents, business partners, and other significant relationships.
+-   **`health`**: Stores health conditions and medical information. Uses a polymorphic relationship pattern - each health record can be associated with either a product owner OR a special relationship (but not both). Tracks condition names, diagnosis dates, current status, medications, and notes. A CHECK constraint ensures exactly one foreign key is populated. Supports comprehensive health record management for both product owners and their related individuals (dependents, family members, etc.).
+-   **`vulnerabilities`**: Stores vulnerability information and required adjustments. Uses a polymorphic relationship pattern - each vulnerability record can be associated with either a product owner OR a special relationship (but not both). Tracks vulnerability descriptions, necessary adjustments, diagnosis status, and notes. A CHECK constraint ensures exactly one foreign key is populated. Supports tracking of vulnerabilities, disabilities, and accessibility requirements for product owners and their related individuals.
 -   **`available_providers`**: A catalog of all investment providers (e.g., Zurich, Aviva).
 -   **`available_funds`**: A master list of all investment funds that can be held in a portfolio.
 -   **`available_portfolios`**: A list of master portfolio templates (e.g., "Conservative Growth").
