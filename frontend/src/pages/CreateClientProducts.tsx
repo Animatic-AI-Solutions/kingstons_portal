@@ -434,23 +434,24 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       // Check if the click was outside a dropdown
       const dropdowns = document.querySelectorAll('.product-dropdown-container');
       let clickedOutside = true;
-      
+
       dropdowns.forEach(dropdown => {
         if (dropdown.contains(event.target as Node)) {
           clickedOutside = false;
         }
       });
-      
-      if (clickedOutside) {
+
+      // Only update state if there are actually open dropdowns to close
+      if (clickedOutside && Object.keys(showProductDropdowns).length > 0) {
         setShowProductDropdowns({});
       }
     };
-    
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []);
+  }, [showProductDropdowns]);
 
   // Fetch necessary data on component mount
   useEffect(() => {
@@ -2182,12 +2183,20 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
     const selectedClient = clients.find(c => c.id === selectedClientId);
     
     return (
-      <nav className="mb-4 flex" aria-label="Breadcrumb">
+      <nav className="mb-4 flex relative z-50" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
           <li className="inline-flex items-center">
-            <button 
-              onClick={navigateToClientGroups}
-              className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 rounded"
+            <button
+              type="button"
+              onMouseEnter={() => console.log('🟢 Mouse entered "Clients" button')}
+              onMouseDown={() => console.log('🟡 Mouse DOWN on "Clients" button')}
+              onMouseUp={() => console.log('🟠 Mouse UP on "Clients" button')}
+              onClick={(e) => {
+                console.log('🔵 Breadcrumb: Clicking "Clients" button', e);
+                e.stopPropagation();
+                navigateToClientGroups();
+              }}
+              className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 rounded cursor-pointer"
             >
               <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
@@ -2202,8 +2211,17 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                   <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
                 </svg>
                 <button
-                  onClick={() => navigate(`/client-groups/${selectedClient.id}`)}
-                  className="ml-1 text-sm font-medium text-gray-500 hover:text-primary-700 md:ml-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 rounded"
+                  type="button"
+                  onMouseEnter={() => console.log(`🟢 Mouse entered client "${selectedClient.name}"`)}
+                  onMouseDown={() => console.log(`🟡 Mouse DOWN on client "${selectedClient.name}"`)}
+                  onMouseUp={() => console.log(`🟠 Mouse UP on client "${selectedClient.name}"`)}
+                  onClick={(e) => {
+                    console.log(`🔵 Breadcrumb: Clicking client "${selectedClient.name}" (ID: ${selectedClient.id})`);
+                    console.log(`🔵 Navigating to: /client-groups/${selectedClient.id}`);
+                    e.stopPropagation();
+                    navigate(`/client-groups/${selectedClient.id}`);
+                  }}
+                  className="ml-1 text-sm font-medium text-gray-500 hover:text-primary-700 md:ml-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 rounded cursor-pointer"
                 >
                   {selectedClient.name}
                 </button>

@@ -346,7 +346,7 @@ async def create_available_portfolio(portfolio_data: PortfolioCreate, db=Depends
                             logger.warning(f'Failed to add fund {fund.fund_id} to portfolio generation {new_generation_id}')
             except Exception as fund_error:
                 logger.error(f'Failed to add funds to portfolio generation {new_generation_id}: {str(fund_error)}')
-        return {'id': new_portfolio_id, 'created_at': portfolio_response['created_at'], 'name': portfolio_data.name}
+        return {'id': new_portfolio_id, 'created_at': portfolio_response['created_at'].isoformat(), 'name': portfolio_data.name}
     except Exception as e:
         logger.error(f'Error creating portfolio template: {str(e)}')
         raise HTTPException(status_code=500, detail=str(e))
@@ -600,9 +600,19 @@ async def create_portfolio_generation(portfolio_id: int, generation_data: Genera
         if not portfolio_response:
             raise HTTPException(status_code=404, detail=f'Portfolio template with ID {portfolio_id} not found')
         new_generation = {'available_portfolio_id': portfolio_id, 'generation_name': generation_data.generation_name, 'description': generation_data.description, 'status': 'draft'}
+
+        # Conditionally include created_at in the INSERT only if provided
         if generation_data.created_at:
-            new_generation['created_at'] = generation_data.created_at.isoformat()
-        generation_response = await db.fetchrow('INSERT INTO template_portfolio_generations (available_portfolio_id, generation_name, description, status, created_at) VALUES ($1, $2, $3, $4, $5) RETURNING *', new_generation['available_portfolio_id'], new_generation['generation_name'], new_generation['description'], new_generation['status'], new_generation.get('created_at'))
+            generation_response = await db.fetchrow(
+                'INSERT INTO template_portfolio_generations (available_portfolio_id, generation_name, description, status, created_at) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+                portfolio_id, generation_data.generation_name, generation_data.description, 'draft', generation_data.created_at
+            )
+        else:
+            # Let database default handle created_at
+            generation_response = await db.fetchrow(
+                'INSERT INTO template_portfolio_generations (available_portfolio_id, generation_name, description, status) VALUES ($1, $2, $3, $4) RETURNING *',
+                portfolio_id, generation_data.generation_name, generation_data.description, 'draft'
+            )
         if not generation_response:
             raise HTTPException(status_code=500, detail='Failed to create new generation')
         new_generation_id = generation_response['id']
