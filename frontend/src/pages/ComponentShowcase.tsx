@@ -77,7 +77,7 @@ const ExampleCard: React.FC<{ title: string; description: string; children: Reac
   </div>
 );
 
-const Components: React.FC = () => {
+const ComponentShowcase: React.FC = () => {
   // State for examples
   const [textValue, setTextValue] = useState('');
   const [emailValue, setEmailValue] = useState('');
@@ -1617,4 +1617,4 @@ const Components: React.FC = () => {
   );
 };
 
-export default Components; 
+export default ComponentShowcase; 

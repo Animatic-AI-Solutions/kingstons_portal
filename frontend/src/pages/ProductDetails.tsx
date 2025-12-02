@@ -3,8 +3,8 @@ import { useParams, useNavigate, Routes, Route, NavLink, Link, useLocation, Navi
 import { useAuth } from '../context/AuthContext';
 import DynamicPageContainer from '../components/DynamicPageContainer';
 import AccountOverview from './ProductOverview';
-import AccountIRRCalculation from './ProductIRRCalculation';
-import AccountIRRHistory from './ProductIRRHistory';
+import AccountIRRCalculation from './AccountIRRCalculation';
+import AccountIRRHistory from './AccountIRRHistory';
 import { generateProductDisplayName } from '../utils/productTitleUtils';
 
 interface Account {

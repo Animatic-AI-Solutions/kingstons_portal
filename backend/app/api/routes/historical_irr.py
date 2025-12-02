@@ -25,7 +25,7 @@ def _generate_request_key(request: IRRHistorySummaryRequest) -> str:
     """Generate a unique key for request deduplication"""
     return f"summary_{sorted(request.product_ids)}_{sorted(request.selected_dates)}_{request.client_group_ids}"
 
-@router.get("/portfolio/{product_id}")
+@router.get("/product/{product_id}/portfolio-historical-irr")
 async def get_portfolio_historical_irr(
     product_id: int,
     limit: Optional[int] = Query(default=12, description="Maximum number of historical IRR records to return"),
@@ -212,7 +212,7 @@ async def get_funds_historical_irr(
         logger.error(f"Error fetching funds historical IRR for product {product_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch funds historical IRR: {str(e)}")
 
-@router.post("/summary")
+@router.post("/irr-history-summary")
 async def get_irr_history_summary(
     request: IRRHistorySummaryRequest,
     db = Depends(get_db)

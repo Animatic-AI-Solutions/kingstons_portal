@@ -130,7 +130,7 @@ class IRRHistoryRequestManager {
   }
 
   private async performActualRequest(request: IRRHistorySummaryRequest): Promise<any> {
-    const response = await api.post('/historical-irr/summary', request);
+    const response = await api.post('/historical-irr/irr-history-summary', request);
     
     if (response.data && response.data.success) {
       return response.data.data; // Return just the data portion

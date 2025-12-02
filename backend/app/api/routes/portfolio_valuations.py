@@ -162,10 +162,10 @@ async def get_portfolio_valuation(valuation_id: int, db = Depends(get_db)):
         logger.error(f"Error fetching portfolio valuation: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-@router.put("/portfolio_valuations/{valuation_id}", response_model=PortfolioValuation)
+@router.patch("/portfolio_valuations/{valuation_id}", response_model=PortfolioValuation)
 async def update_portfolio_valuation(
-    valuation_id: int, 
-    valuation_update: PortfolioValuationUpdate, 
+    valuation_id: int,
+    valuation_update: PortfolioValuationUpdate,
     db = Depends(get_db)
 ):
     """

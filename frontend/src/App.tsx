@@ -34,8 +34,8 @@ import ProductOwners from './pages/ProductOwners';
 import ProductOwnerDetails from './pages/ProductOwnerDetails';
 
 // Definitions Pages - System configuration and reference data management
-import Funds from './pages/Funds';
-import Providers from './pages/Providers';
+import DefinitionsFunds from './pages/DefinitionsFunds';
+import DefinitionsProviders from './pages/DefinitionsProviders';
 import PortfolioTemplates from './pages/PortfolioTemplates';
 import PortfolioTemplatesWithTabs from './pages/PortfolioTemplatesWithTabs';
 import ProviderDetails from './pages/ProviderDetails';
@@ -58,7 +58,7 @@ import Revenue from './pages/Revenue';
 
 
 // Component Testing Page - UI/UX design finalization
-import Components from './pages/Components';
+import ComponentShowcase from './pages/ComponentShowcase';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -161,8 +161,8 @@ const AppContent: React.FC = () => {
           
           {/* Definitions Section - System setup and configuration */}
           {/* Separate definition pages */}
-          <Route path="/definitions/funds" element={<AppLayout><Funds /></AppLayout>} />
-          <Route path="/definitions/providers" element={<AppLayout><Providers /></AppLayout>} />
+          <Route path="/definitions/funds" element={<AppLayout><DefinitionsFunds /></AppLayout>} />
+          <Route path="/definitions/providers" element={<AppLayout><DefinitionsProviders /></AppLayout>} />
           <Route path="/definitions/portfolio-templates" element={<AppLayout><PortfolioTemplatesWithTabs /></AppLayout>} />
           
           {/* Legacy unified definitions page (redirect to funds by default) */}
@@ -197,7 +197,7 @@ const AppContent: React.FC = () => {
           <Route path="/report-display" element={<AppLayout><ReportDisplayPage /></AppLayout>} />
           
           {/* Component Testing - UI/UX design finalization */}
-          <Route path="/components" element={<AppLayout><Components /></AppLayout>} />
+          <Route path="/components" element={<AppLayout><ComponentShowcase /></AppLayout>} />
         </Route>
         
         {/* Default route - redirect to login */}

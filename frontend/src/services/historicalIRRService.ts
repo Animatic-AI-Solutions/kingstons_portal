@@ -80,7 +80,7 @@ class HistoricalIRRService {
   async getPortfolioHistoricalIRR(productId: number, limit: number = 12): Promise<PortfolioHistoricalIRRResponse> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/api/historical-irr/portfolio/${productId}?limit=${limit}`,
+        `${this.baseUrl}/api/historical-irr/product/${productId}/portfolio-historical-irr?limit=${limit}`,
         {
           method: 'GET',
           headers: {

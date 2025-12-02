@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field, ConfigDict, validator
 from datetime import date, datetime
 from typing import Optional, Dict, Any
 
-class ClientproductBase(BaseModel):
+class ClientProductBase(BaseModel):
     client_id: int
     client_name: Optional[str] = None  # Added client_name field
     product_name: Optional[str] = None
@@ -32,10 +32,10 @@ class ClientproductBase(BaseModel):
         from_attributes=True
     )
 
-class ClientproductCreate(ClientproductBase):
+class ClientProductCreate(ClientProductBase):
     skip_portfolio_creation: Optional[bool] = False
 
-class ClientproductUpdate(BaseModel):
+class ClientProductUpdate(BaseModel):
     client_id: Optional[int] = None
     product_name: Optional[str] = None
     status: Optional[str] = None
@@ -55,7 +55,7 @@ class ClientproductUpdate(BaseModel):
         from_attributes=True
     )
 
-class Clientproduct(ClientproductBase):
+class ClientProduct(ClientProductBase):
     id: int
     created_at: Optional[datetime] = None
 

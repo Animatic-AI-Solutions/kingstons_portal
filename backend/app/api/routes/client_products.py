@@ -3,7 +3,7 @@ from typing import List, Optional
 import logging
 from datetime import date, datetime
 
-from app.models.client_product import Clientproduct, ClientproductCreate, ClientproductUpdate, ProductRevenueCalculation
+from app.models.client_product import ClientProduct, ClientProductCreate, ClientProductUpdate, ProductRevenueCalculation
 from app.db.database import get_db
 from app.api.routes.portfolio_funds import calculate_excel_style_irr, calculate_multiple_portfolio_funds_irr
 from app.utils.product_owner_utils import get_product_owner_display_name
@@ -531,7 +531,7 @@ async def get_portfolio_types(db = Depends(get_db)):
         logger.error(f"Error fetching portfolio types: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-@router.get("/client_products", response_model=List[Clientproduct])
+@router.get("/client_products", response_model=List[ClientProduct])
 async def get_client_products(
     skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
     limit: int = Query(100000, ge=1, le=100000, description="Max number of records to return"),
@@ -548,7 +548,7 @@ async def get_client_products(
         2. Builds a query to the 'client_products' table with optional filters
         3. Separately fetches provider data, client data, and template data
         4. Combines the data in Python 
-        5. Returns the data as a list of Clientproduct objects
+        5. Returns the data as a list of ClientProduct objects
     Expected output: A JSON array of client product objects with all their details including provider theme colors and template info
     """
     try:
@@ -888,8 +888,8 @@ async def get_client_products(
         logger.error(f"Error fetching client products: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-@router.post("/client_products", response_model=Clientproduct)
-async def create_client_product(client_product: ClientproductCreate, db = Depends(get_db)):
+@router.post("/client_products", response_model=ClientProduct)
+async def create_client_product(client_product: ClientProductCreate, db = Depends(get_db)):
     """
     What it does: Creates a new client product in the database.
     Why it's needed: Allows users to create new products for clients.
@@ -1005,7 +1005,7 @@ async def create_client_product(client_product: ClientproductCreate, db = Depend
         logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-@router.get("/client_products/{client_product_id}", response_model=Clientproduct)
+@router.get("/client_products/{client_product_id}", response_model=ClientProduct)
 async def get_client_product(client_product_id: int, db = Depends(get_db)):
     """
     What it does: Retrieves a single client product by ID.
@@ -1111,13 +1111,13 @@ async def get_client_product(client_product_id: int, db = Depends(get_db)):
         logger.error(f"Error fetching client product: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-@router.patch("/client_products/{client_product_id}", response_model=Clientproduct)
-async def update_client_product(client_product_id: int, client_product_update: ClientproductUpdate, db = Depends(get_db)):
+@router.patch("/client_products/{client_product_id}", response_model=ClientProduct)
+async def update_client_product(client_product_id: int, client_product_update: ClientProductUpdate, db = Depends(get_db)):
     """
     What it does: Updates an existing client product's information.
     Why it's needed: Allows modifying client product details when they change.
     How it works:
-        1. Validates the update data using the ClientproductUpdate model
+        1. Validates the update data using the ClientProductUpdate model
         2. Removes any None values from the input (fields that aren't being updated)
         3. Verifies the client product exists
         4. Validates that referenced client_id exists if provided

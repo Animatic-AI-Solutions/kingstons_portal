@@ -71,9 +71,6 @@ export type { InputErrorProps } from './inputs/InputError';
 export { default as InputGroup, InputWithButton, InputWithAddon, InputRow, InputColumn } from './inputs/InputGroup';
 export type { InputGroupProps } from './inputs/InputGroup';
 
-// Demo Components (Development Only)
-export { default as SearchInputDemo } from './SearchInputDemo';
-
 // Existing UI Components
 export { default as Button } from './buttons/Button';
 export { default as Card } from './card/Card';
