@@ -104,7 +104,7 @@ const AddProviderModal: React.FC<AddProviderModalProps> = ({
     try {
       setIsSubmitting(true);
       setError(null);
-      const response = await api.post('/api/available_providers', formData);
+      const response = await api.post('/available-providers', formData);
       onSuccess(response.data);
       onClose();
     } catch (err: any) {

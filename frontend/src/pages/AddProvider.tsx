@@ -124,7 +124,7 @@ const AddProvider: React.FC = () => {
     try {
       setIsSubmitting(true);
       setError(null);
-      await api.post('/available_providers', formData);
+      await api.post('/available-providers', formData);
       navigate('/definitions?tab=providers');
     } catch (err: any) {
       console.error('Error creating provider:', err);

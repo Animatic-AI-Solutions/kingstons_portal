@@ -228,7 +228,7 @@ const InactiveFundIRRDisplay: React.FC<{
     setIsLoading(true);
     try {
       console.log(`Fetching IRR for portfolio fund ${portfolioFundId}`);
-      const response = await api.get(`/portfolio_funds/${portfolioFundId}/latest-irr`);
+      const response = await api.get(`/portfolio-funds/${portfolioFundId}/latest-irr`);
       
       if (response.data && response.data.irr !== null && response.data.irr !== undefined) {
         console.log(`Found IRR for fund ${portfolioFundId}:`, response.data);
@@ -436,9 +436,9 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
     const fetchFormOptions = async () => {
       try {
         const [providersRes, portfoliosRes, templatesRes] = await Promise.all([
-          api.get('/available_providers'),
+          api.get('/available-providers'),
           api.get('/portfolios'),
-          api.get('/api/available_portfolios/template-portfolio-generations/active')
+          api.get('/available-portfolios/template-portfolio-generations/active')
         ]);
         
         setProviders(providersRes.data || []);
@@ -459,7 +459,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       setIsLoading(true);
       setError(null);
       
-      const response = await api.get(`/api/client_products/${accountId}/complete`);
+      const response = await api.get(`/client-products/${accountId}/complete`);
       const completeData = response.data;
 
       // Set product owners for this specific product
@@ -469,7 +469,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
 
       // Fetch all available product owners for editing
       try {
-        const allOwnersResponse = await api.get('/product_owners');
+        const allOwnersResponse = await api.get('/product-owners');
         setAllProductOwners(allOwnersResponse.data);
       } catch (err) {
         console.error('Error fetching all product owners:', err);
@@ -516,7 +516,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             console.log('🚀 Fetching fresh template data using batch endpoint for generation:', completeData.template_generation_id);
             
             // Use the new batch endpoint to get both generation and funds in a single call
-            const batchResponse = await api.get(`/api/available_portfolios/batch/generation-with-funds/${completeData.template_generation_id}`);
+            const batchResponse = await api.get(`/available-portfolios/batch/generation-with-funds/${completeData.template_generation_id}`);
             
             if (batchResponse.data && batchResponse.data.template_weightings) {
               // Convert the template_weightings object to a Map
@@ -539,7 +539,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         }
       }
       
-      // Process holdings from portfolio_funds
+      // Process holdings from portfolio-funds
       if (completeData.portfolio_funds && completeData.portfolio_funds.length > 0) {
         const processedHoldings = completeData.portfolio_funds.map((pf: any) => {
           // Standardize weighting value - no conversion needed since database stores percentages
@@ -726,7 +726,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           console.log('📊 [PRODUCT OVERVIEW] Timestamp:', new Date().toISOString());
 
           // Use the optimized endpoint to get stored IRR from latest_portfolio_irr_values view
-          const irrResponse = await api.get(`/api/portfolios/${completeData.portfolio_id}/latest-irr`);
+          const irrResponse = await api.get(`/portfolios/${completeData.portfolio_id}/latest-irr`);
 
           console.log('📊 [PRODUCT OVERVIEW] Full IRR response:', irrResponse.data);
 
@@ -1160,8 +1160,8 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       setIsSavingFunds(true);
       setFundError(null);
       
-      // Add fund to portfolio using the portfolio_funds endpoint
-      await api.post('/portfolio_funds', {
+      // Add fund to portfolio using the portfolio-funds endpoint
+      await api.post('/portfolio-funds', {
         portfolio_id: account?.portfolio_id,
         available_funds_id: fundId,
         target_weighting: weighting,
@@ -1174,7 +1174,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       if (account?.portfolio_id) {
         try {
           console.log('🔄 Triggering portfolio IRR recalculation after adding fund...');
-          await api.post(`/api/portfolios/${account.portfolio_id}/calculate-irr`);
+          await api.post(`/portfolios/${account.portfolio_id}/calculate-irr`);
           console.log('✅ Portfolio IRR recalculation completed');
         } catch (irrErr) {
           console.warn('⚠️ IRR recalculation failed, but continuing with data refresh:', irrErr);
@@ -1203,7 +1203,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         throw new Error('Portfolio fund not found');
       }
       
-      await api.patch(`/portfolio_funds/${portfolioFund.id}`, {
+      await api.patch(`/portfolio-funds/${portfolioFund.id}`, {
         weighting: newWeighting
       });
       
@@ -1211,7 +1211,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       if (account?.portfolio_id) {
         try {
           console.log('🔄 Triggering portfolio IRR recalculation after updating fund weighting...');
-          await api.post(`/api/portfolios/${account.portfolio_id}/calculate-irr`);
+          await api.post(`/portfolios/${account.portfolio_id}/calculate-irr`);
           console.log('✅ Portfolio IRR recalculation completed');
         } catch (irrErr) {
           console.warn('⚠️ IRR recalculation failed, but continuing with data refresh:', irrErr);
@@ -1245,7 +1245,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         }
         
         // Active fund: permanently delete it (changed from soft delete to permanent delete)
-        await api.delete(`/portfolio_funds/${activePortfolioFund.id}`);
+        await api.delete(`/portfolio-funds/${activePortfolioFund.id}`);
         
         // Immediately update local state to completely remove the fund
         setHoldings(prevHoldings => 
@@ -1260,7 +1260,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         
         if (inactivePortfolioFund) {
           // Inactive fund: permanently delete it
-          await api.delete(`/portfolio_funds/${inactivePortfolioFund.id}`);
+          await api.delete(`/portfolio-funds/${inactivePortfolioFund.id}`);
           
           // Immediately update local state to remove the inactive fund
           setHoldings(prevHoldings => 
@@ -1283,7 +1283,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       if (account?.portfolio_id) {
         try {
           console.log('🔄 Triggering portfolio IRR recalculation after removing fund...');
-          await api.post(`/api/portfolios/${account.portfolio_id}/calculate-irr`);
+          await api.post(`/portfolios/${account.portfolio_id}/calculate-irr`);
           console.log('✅ Portfolio IRR recalculation completed');
         } catch (irrErr) {
           console.warn('⚠️ IRR recalculation failed, but continuing with data refresh:', irrErr);
@@ -1314,7 +1314,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       }
       
       // Reactivate by setting status to active and clearing end_date
-      await api.patch(`/portfolio_funds/${portfolioFund.id}`, {
+      await api.patch(`/portfolio-funds/${portfolioFund.id}`, {
         status: 'active',
         end_date: null,
         target_weighting: 0 // Start with 0% weighting, user can adjust
@@ -1324,7 +1324,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       if (account?.portfolio_id) {
         try {
           console.log('🔄 Triggering portfolio IRR recalculation after reactivating fund...');
-          await api.post(`/api/portfolios/${account.portfolio_id}/calculate-irr`);
+          await api.post(`/portfolios/${account.portfolio_id}/calculate-irr`);
           console.log('✅ Portfolio IRR recalculation completed');
         } catch (irrErr) {
           console.warn('⚠️ IRR recalculation failed, but continuing with data refresh:', irrErr);
@@ -1425,7 +1425,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         .filter(h => !h.isVirtual && h.fund_id && h.status === 'active')
         .map(holding => {
           const weighting = parseFloat(holding.target_weighting || '0');
-          return api.patch(`/portfolio_funds/${holding.id}`, {
+          return api.patch(`/portfolio-funds/${holding.id}`, {
             target_weighting: weighting
           });
         });
@@ -1436,7 +1436,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       if (account?.portfolio_id) {
         try {
           console.log('🔄 Triggering portfolio IRR recalculation after fund weightings update...');
-          await api.post(`/api/portfolios/${account.portfolio_id}/calculate-irr`);
+          await api.post(`/portfolios/${account.portfolio_id}/calculate-irr`);
           console.log('✅ Portfolio IRR recalculation completed');
         } catch (irrErr) {
           console.warn('⚠️ IRR recalculation failed, but continuing with data refresh:', irrErr);
@@ -1506,7 +1506,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       // First try to delete all product owner associations for this product
       try {
         // Using the new endpoint to delete all associations in one go
-        await api.delete(`/api/product_owner_products/product/${accountId}`);
+        await api.delete(`/product-owner-products/product/${accountId}`);
         console.log('Successfully deleted all product owner associations');
       } catch (assocErr) {
         console.error('Error deleting product owner associations:', assocErr);
@@ -1514,7 +1514,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
       }
       
       // Now try to delete the product itself
-      await api.delete(`/api/client_products/${accountId}`);
+      await api.delete(`/client-products/${accountId}`);
       console.log('Product deleted successfully');
       
       // Navigate back using smart breadcrumb-aware navigation
@@ -1992,7 +1992,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
         }
       });
 
-      const response = await api.patch(`/api/client_products/${accountId}`, updateData);
+      const response = await api.patch(`/client-products/${accountId}`, updateData);
       console.log('✅ Fee save response:', response.data);
       
       // Handle portfolio template change if changed
@@ -2004,7 +2004,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
           const templateUpdateData = {
             template_generation_id: newTemplateId ? parseInt(newTemplateId) : null
           };
-          await api.patch(`/api/portfolios/${account.portfolio_id}/template`, templateUpdateData);
+          await api.patch(`/portfolios/${account.portfolio_id}/template`, templateUpdateData);
         } catch (templateErr: any) {
           console.error('Error updating portfolio template:', templateErr);
           // Don't fail the whole update if template change fails
@@ -2020,7 +2020,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
             selected_owner_ids: editOwnersFormData.selected_owner_ids
           };
 
-          await api.patch(`/api/client_products/${accountId}/owners`, ownersUpdateData);
+          await api.patch(`/client-products/${accountId}/owners`, ownersUpdateData);
         } catch (ownersErr: any) {
           console.error('Error updating product owners:', ownersErr);
           // Don't fail the whole update if only owners update fails
@@ -2059,7 +2059,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
 
   //     // Update product details if portfolio changed
   //     if (Object.keys(updateData).length > 0) {
-  //       await api.patch(`/api/client_products/${accountId}`, updateData);
+  //       await api.patch(`/client-products/${accountId}`, updateData);
   //     }
 
   //     // Update product owners associations
@@ -2071,7 +2071,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   //     const ownersToRemove = currentOwnerIds.filter(id => !newOwnerIds.includes(id));
   //     for (const ownerId of ownersToRemove) {
   //       try {
-  //         await api.delete(`/api/product_owner_products/${ownerId}/${accountId}`);
+  //         await api.delete(`/product-owner-products/${ownerId}/${accountId}`);
   //       } catch (err) {
   //         console.error(`Error removing product owner ${ownerId}:`, err);
   //       }
@@ -2081,7 +2081,7 @@ const ProductOverview: React.FC<ProductOverviewProps> = ({ accountId: propAccoun
   //     const ownersToAdd = newOwnerIds.filter(id => !currentOwnerIds.includes(id));
   //     for (const ownerId of ownersToAdd) {
   //       try {
-  //         await api.post('/api/product_owner_products', {
+  //         await api.post('/product-owner-products', {
   //           product_owner_id: ownerId,
   //           product_id: parseInt(accountId)
   //         });

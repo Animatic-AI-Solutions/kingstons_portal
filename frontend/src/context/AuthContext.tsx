@@ -120,7 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       sessionStorage.setItem('hasRedirected', 'true');
       
       // Valid landing pages - fallback to home if user has invalid preference
-      const validLandingPages = ['/', '/client_groups'];
+      const validLandingPages = ['/', '/client-groups'];
       const landingPage = validLandingPages.includes(user.preferred_landing_page) 
         ? user.preferred_landing_page 
         : '/';

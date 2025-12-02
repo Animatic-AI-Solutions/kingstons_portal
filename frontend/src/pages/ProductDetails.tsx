@@ -94,9 +94,9 @@ const ProductDetails: React.FC = () => {
         const fromLabel = location.state.from.label || 'Back';
         
         // Build trail based on the previous page
-        if (fromPath.startsWith('/client_groups/')) {
+        if (fromPath.startsWith('/client-groups/')) {
           // Coming from client details page
-          trail.push({ path: '/client_groups', label: 'Client Groups' });
+          trail.push({ path: '/client-groups', label: 'Client Groups' });
           trail.push({ path: fromPath, label: fromLabel });
         } else if (fromPath.startsWith('/portfolios/')) {
           // Coming from portfolio details page  
@@ -130,9 +130,9 @@ const ProductDetails: React.FC = () => {
     const portfolioName = searchParams.get('portfolioName');
     
     if (fromParam === 'client-details' && clientId) {
-      trail.push({ path: '/client_groups', label: 'Client Groups' });
+      trail.push({ path: '/client-groups', label: 'Client Groups' });
       trail.push({ 
-        path: `/client_groups/${clientId}`, 
+        path: `/client-groups/${clientId}`, 
         label: clientName ? decodeURIComponent(clientName) : 'Client Details' 
       });
       return trail;
@@ -149,11 +149,11 @@ const ProductDetails: React.FC = () => {
     
     // Default fallback - determine based on current URL structure
     const currentPath = location.pathname;
-    if (currentPath.includes('/client_groups/')) {
+    if (currentPath.includes('/client-groups/')) {
       // If we came from a client details page
-      const clientIdFromPath = currentPath.split('/client_groups/')[1]?.split('/')[0];
-      trail.push({ path: '/client_groups', label: 'Client Groups' });
-      trail.push({ path: `/client_groups/${clientIdFromPath}`, label: 'Client Details' });
+      const clientIdFromPath = currentPath.split('/client-groups/')[1]?.split('/')[0];
+      trail.push({ path: '/client-groups', label: 'Client Groups' });
+      trail.push({ path: `/client-groups/${clientIdFromPath}`, label: 'Client Details' });
       return trail;
     }
     
@@ -185,7 +185,7 @@ const ProductDetails: React.FC = () => {
       
       try {
         setIsLoading(true);
-        const response = await api.get(`/api/client_products/${productId}/complete`);
+        const response = await api.get(`/client-products/${productId}/complete`);
         setAccount(response.data);
       } catch (err) {
         console.error('Error fetching product data:', err);

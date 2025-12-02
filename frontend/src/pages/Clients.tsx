@@ -93,11 +93,11 @@ const Clients: React.FC = () => {
   const error = queryError ? (queryError as any).response?.data?.detail || 'Failed to fetch client groups' : null;
 
   const handleAddClient = () => {
-    navigate('/client_groups/add');
+    navigate('/client-groups/add');
   };
 
   const handleClientClick = (clientId: string) => {
-    navigate(`/client_groups/${clientId}`);
+    navigate(`/client-groups/${clientId}`);
   };
 
 

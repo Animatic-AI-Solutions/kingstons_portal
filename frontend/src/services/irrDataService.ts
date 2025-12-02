@@ -41,7 +41,7 @@ export class IRRDataService {
    */
   async getStoredPortfolioIRR(portfolioId: number): Promise<number | null> {
     try {
-      const response = await this.api.get(`/api/portfolios/${portfolioId}/latest-irr`);
+      const response = await this.api.get(`/portfolios/${portfolioId}/latest-irr`);
 
       // Fix: Properly handle zero values - only convert undefined/null to null
       const irrResult = response.data?.irr_result !== undefined ? response.data.irr_result : null;
@@ -64,10 +64,10 @@ export class IRRDataService {
    */
   async getStoredFundIRRs(portfolioFundIds: number[]): Promise<FundIRR[]> {
     try {
-      const response = await this.api.get('/api/portfolio-funds/latest-irr', {
+      const response = await this.api.get('/portfolio-funds/latest-irr', {
         params: { fund_ids: portfolioFundIds.join(',') }
       });
-      return response.data || [];
+      return response.data?.fund_irrs || [];
     } catch (error) {
       console.warn('Could not fetch stored fund IRRs:', error);
       return [];

@@ -661,7 +661,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       setIsLoadingValuations(true);
       try {
         // Get all valuations (no filter, we'll filter in memory)
-        const response = await api.get('fund_valuations'); // API interceptor will add the /api prefix
+        const response = await api.get('/fund-valuations'); // API interceptor will add the /api prefix
         
         // Check if data is an array, otherwise handle appropriately
         if (Array.isArray(response.data)) {
@@ -1643,9 +1643,9 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       // Handle deletions
       for (const edit of deletions) {
         if (edit.activityType === 'Current Value') {
-          await api.delete(`fund_valuations/${edit.originalActivityId}`);
+          await api.delete(`/fund-valuations/${edit.originalActivityId}`);
         } else {
-          await api.delete(`holding_activity_logs/${edit.originalActivityId}`);
+          await api.delete(`/holding-activity-logs/${edit.originalActivityId}`);
         }
       }
 
@@ -2282,7 +2282,7 @@ const EditableMonthlyActivitiesTable: React.FC<EditableMonthlyActivitiesTablePro
       setReactivatingFunds(prev => new Set(prev).add(portfolioFundId));
       
       // Call API to reactivate the fund
-      await api.patch(`portfolio_funds/${portfolioFundId}`, {
+      await api.patch(`/portfolio-funds/${portfolioFundId}`, {
         status: 'active'
       });
 

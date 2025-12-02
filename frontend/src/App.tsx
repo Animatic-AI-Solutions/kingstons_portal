@@ -147,17 +147,17 @@ const AppContent: React.FC = () => {
           <Route path="/user-guide" element={<AppLayout><UserGuide /></AppLayout>} />
           
           {/* Client Management Section - CRUD operations for clients */}
-          <Route path="/client_groups" element={<AppLayout><Clients /></AppLayout>} />
-          <Route path="/client_groups/add" element={<AppLayout><AddClient /></AppLayout>} />
-          <Route path="/client_groups/:clientId" element={<AppLayout><ClientDetails /></AppLayout>} />
-          <Route path="/client_groups_phase2" element={<AppLayout><ClientGroupPhase2 /></AppLayout>} />
-          <Route path="/create_client_group_prototype" element={<AppLayout><CreateClientGroupPrototype /></AppLayout>} />
+          <Route path="/client-groups" element={<AppLayout><Clients /></AppLayout>} />
+          <Route path="/client-groups/add" element={<AppLayout><AddClient /></AppLayout>} />
+          <Route path="/client-groups/:clientId" element={<AppLayout><ClientDetails /></AppLayout>} />
+          <Route path="/client-groups-phase2" element={<AppLayout><ClientGroupPhase2 /></AppLayout>} />
+          <Route path="/create-client-group-prototype" element={<AppLayout><CreateClientGroupPrototype /></AppLayout>} />
           
           {/* Product Management Section - Managing client products */}
           <Route path="/products" element={<AppLayout><Products /></AppLayout>} />
           <Route path="/products/:productId/*" element={<AppLayout><ProductDetails /></AppLayout>} />
-          <Route path="/product_owners" element={<AppLayout><ProductOwners /></AppLayout>} />
-          <Route path="/product_owners/:productOwnerId" element={<AppLayout><ProductOwnerDetails /></AppLayout>} />
+          <Route path="/product-owners" element={<AppLayout><ProductOwners /></AppLayout>} />
+          <Route path="/product-owners/:productOwnerId" element={<AppLayout><ProductOwnerDetails /></AppLayout>} />
           
           {/* Definitions Section - System setup and configuration */}
           {/* Separate definition pages */}

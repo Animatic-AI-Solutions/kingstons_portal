@@ -41,8 +41,8 @@ const ProductOwners: React.FC = () => {
       setIsLoading(true);
       try {
         const [productOwnersResponse, productsResponse] = await Promise.all([
-          api.get('/api/product_owners'),
-          api.get('/api/client_products')
+          api.get('/product-owners'),
+          api.get('/client-products')
         ]);
 
         const owners = productOwnersResponse.data || [];
@@ -82,7 +82,7 @@ const ProductOwners: React.FC = () => {
   }, [api]);
 
   const handleRowClick = (productOwner: ProductOwner) => {
-    navigate(`/product_owners/${productOwner.id}`);
+    navigate(`/product-owners/${productOwner.id}`);
   };
 
   const handleCreateProductOwner = async () => {
@@ -101,7 +101,7 @@ const ProductOwners: React.FC = () => {
       });
 
       // Create the product owner
-      const response = await api.post('/api/product_owners', {
+      const response = await api.post('/product-owners', {
         firstname: newProductOwnerData.firstname.trim() || null,
         surname: newProductOwnerData.surname.trim() || null,
         known_as: newProductOwnerData.known_as.trim(),
@@ -120,7 +120,7 @@ const ProductOwners: React.FC = () => {
         console.log('Assigning to products:', newProductOwnerData.selectedProducts);
         const assignmentPromises = newProductOwnerData.selectedProducts.map(productId => {
           console.log(`Assigning product owner ${newProductOwner.id} to product ${productId}`);
-          return api.post('/api/product_owner_products', {
+          return api.post('/product-owner-products', {
             product_owner_id: newProductOwner.id,
             product_id: productId
           });

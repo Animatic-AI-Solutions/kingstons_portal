@@ -1098,7 +1098,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       console.log('ProductIRRCalculation: Starting optimized data fetch for account ID:', accountId);
       
       // First fetch the account/product to get the portfolio_id
-      const accountResponse = await api.get(`/api/client_products/${accountId}/complete`);
+      const accountResponse = await api.get(`/client-products/${accountId}/complete`);
       console.log('ProductIRRCalculation: Account/product data received:', accountResponse.data);
       
       // Get the portfolio_id from the account
@@ -1134,7 +1134,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       
       const [completePortfolioResponse, activityLogsResponse] = await Promise.all([
         api.get(`/portfolios/${portfolioId}/complete`),
-        api.get(`/portfolios/${portfolioId}/activity_logs`)
+        api.get(`/portfolios/${portfolioId}/activity-logs`)
       ]);
       
       const completeData = completePortfolioResponse.data;
@@ -1506,7 +1506,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       }
       
       // Update the portfolio fund status to 'inactive'
-      await api.patch(`/portfolio_funds/${portfolioFundId}`, {
+      await api.patch(`/portfolio-funds/${portfolioFundId}`, {
         status: 'inactive'
       });
       
@@ -1543,7 +1543,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       
       // Deactivate all selected funds in parallel
       const deactivationPromises = fundIds.map(fundId =>
-        api.patch(`/portfolio_funds/${fundId}`, { status: 'inactive' })
+        api.patch(`/portfolio-funds/${fundId}`, { status: 'inactive' })
       );
       
       await Promise.all(deactivationPromises);
@@ -1609,7 +1609,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
   // Add this after the fetchData function
   const fetchAvailableProviders = async () => {
     try {
-      const response = await api.get('/available_providers');
+      const response = await api.get('/available-providers');
       setAvailableProviders(response.data);
     } catch (error) {
       console.error('Error fetching providers:', error);
@@ -1627,7 +1627,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       const previousProviderId = account.provider_id;
       
       // First, update the client_product with the new provider
-      await api.patch(`/client_products/${account.id}`, {
+      await api.patch(`/client-products/${account.id}`, {
         provider_id: selectedProvider
       });
       
@@ -1636,7 +1636,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
       const switchDateObj = new Date(year, month - 1, 1); // JavaScript months are 0-indexed
       
       // Then create an entry in the provider_switch_log table
-      await api.post('/provider_switch_log', {
+      await api.post('/provider-switch-log', {
         client_product_id: account.id,
         switch_date: switchDateObj.toISOString(),
         previous_provider_id: previousProviderId,
@@ -1667,7 +1667,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
   // Add a function to fetch provider switches
   const fetchProviderSwitches = async (productId: string) => {
     try {
-      const response = await api.get(`/client_products/${productId}/provider_switches`);
+      const response = await api.get(`/client-products/${productId}/provider-switches`);
       setProviderSwitches(response.data || []);
       console.log('Provider switches loaded:', response.data);
     } catch (error) {
@@ -1698,7 +1698,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
 
     try {
       setIsSavingNotes(true);
-      await api.patch(`/api/client_products/${account.id}`, { notes: account.notes });
+      await api.patch(`/client-products/${account.id}`, { notes: account.notes });
       setInitialNotes(account.notes || '');
       setHasUnsavedNotes(false);
       

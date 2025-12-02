@@ -68,7 +68,7 @@ export class ReportDataService {
     
     try {
       // Use a single query with IN clause instead of multiple individual requests
-      const response = await this.api.get('/client_products', {
+      const response = await this.api.get('/client-products', {
         params: { 
           ids: productIds.join(','),
           include_provider: true,
@@ -95,7 +95,7 @@ export class ReportDataService {
 
     try {
       // Get all portfolios for the products first
-      const productsResponse = await this.api.get('/client_products', {
+      const productsResponse = await this.api.get('/client-products', {
         params: { ids: productIds.join(',') }
       });
       
@@ -108,7 +108,7 @@ export class ReportDataService {
       if (portfolioIds.length === 0) return portfolioFundsMap;
 
       // Batch fetch portfolio funds for all portfolios
-      const fundsResponse = await this.api.get('/portfolio_funds', {
+      const fundsResponse = await this.api.get('/portfolio-funds', {
         params: {
           portfolio_ids: portfolioIds.join(','),
           limit: 100000
@@ -153,13 +153,13 @@ export class ReportDataService {
       const irrRequests = await Promise.all(
         productIds.map(async (productId) => {
           // Get portfolio info for the product
-          const productResponse = await this.api.get(`/client_products/${productId}`);
+          const productResponse = await this.api.get(`/client-products/${productId}`);
           const portfolioId = productResponse.data?.portfolio_id;
           
           if (!portfolioId) return null;
 
           // Get portfolio fund IDs
-          const fundsResponse = await this.api.get('/portfolio_funds', {
+          const fundsResponse = await this.api.get('/portfolio-funds', {
             params: { portfolio_id: portfolioId }
           });
           

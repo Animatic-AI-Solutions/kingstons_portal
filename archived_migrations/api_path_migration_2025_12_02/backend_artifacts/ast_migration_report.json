@@ -1,0 +1,1176 @@
+{
+  "migration_timestamp": "unknown",
+  "total_transformations": 167,
+  "files_modified": 17,
+  "transformations": [
+    {
+      "file": "analytics.py",
+      "function": "get_fund_distribution",
+      "line": 34,
+      "original": "/analytics/fund_distribution",
+      "converted": "/analytics/fund-distribution"
+    },
+    {
+      "file": "analytics.py",
+      "function": "get_provider_distribution",
+      "line": 141,
+      "original": "/analytics/provider_distribution",
+      "converted": "/analytics/provider-distribution"
+    },
+    {
+      "file": "analytics.py",
+      "function": "get_dashboard_stats",
+      "line": 273,
+      "original": "/analytics/dashboard_stats",
+      "converted": "/analytics/dashboard-stats"
+    },
+    {
+      "file": "analytics.py",
+      "function": "get_performance_data",
+      "line": 339,
+      "original": "/analytics/performance_data",
+      "converted": "/analytics/performance-data"
+    },
+    {
+      "file": "analytics.py",
+      "function": "get_product_client_counts",
+      "line": 975,
+      "original": "/analytics/product_client_counts",
+      "converted": "/analytics/product-client-counts"
+    },
+    {
+      "file": "analytics.py",
+      "function": "get_portfolio_performance",
+      "line": 1045,
+      "original": "/analytics/portfolio/{portfolio_id}/performance",
+      "converted": "/analytics/portfolio/{portfolio-id}/performance"
+    },
+    {
+      "file": "analytics.py",
+      "function": "calculate_client_irr",
+      "line": 1269,
+      "original": "/analytics/client/{client_id}/irr",
+      "converted": "/analytics/client/{client-id}/irr"
+    },
+    {
+      "file": "analytics.py",
+      "function": "calculate_product_irr",
+      "line": 1340,
+      "original": "/analytics/product/{product_id}/irr",
+      "converted": "/analytics/product/{product-id}/irr"
+    },
+    {
+      "file": "analytics.py",
+      "function": "get_client_risks",
+      "line": 1427,
+      "original": "/analytics/client_risks",
+      "converted": "/analytics/client-risks"
+    },
+    {
+      "file": "analytics.py",
+      "function": "get_portfolio_irr",
+      "line": 1568,
+      "original": "/analytics/portfolio/{portfolio_id}/irr",
+      "converted": "/analytics/portfolio/{portfolio-id}/irr"
+    },
+    {
+      "file": "analytics.py",
+      "function": "get_portfolio_template_distribution",
+      "line": 1649,
+      "original": "/analytics/portfolio_template_distribution",
+      "converted": "/analytics/portfolio-template-distribution"
+    },
+    {
+      "file": "analytics.py",
+      "function": "get_dashboard_all_data",
+      "line": 1813,
+      "original": "/analytics/dashboard_all",
+      "converted": "/analytics/dashboard-all"
+    },
+    {
+      "file": "analytics.py",
+      "function": "get_products_risk_differences",
+      "line": 2047,
+      "original": "/analytics/risk_differences",
+      "converted": "/analytics/risk-differences"
+    },
+    {
+      "file": "available_portfolios.py",
+      "function": "get_available_portfolio_details",
+      "line": 300,
+      "original": "/{portfolio_id}",
+      "converted": "/{portfolio-id}"
+    },
+    {
+      "file": "available_portfolios.py",
+      "function": "delete_available_portfolio",
+      "line": 625,
+      "original": "/{portfolio_id}",
+      "converted": "/{portfolio-id}"
+    },
+    {
+      "file": "available_portfolios.py",
+      "function": "update_portfolio_template",
+      "line": 786,
+      "original": "/{portfolio_id}",
+      "converted": "/{portfolio-id}"
+    },
+    {
+      "file": "available_portfolios.py",
+      "function": "get_available_portfolio_funds",
+      "line": 838,
+      "original": "/available_portfolio_funds",
+      "converted": "/available-portfolio-funds"
+    },
+    {
+      "file": "available_portfolios.py",
+      "function": "get_portfolio_funds_by_fund_id",
+      "line": 897,
+      "original": "/available_portfolio_funds/by-fund/{fund_id}",
+      "converted": "/available-portfolio-funds/by-fund/{fund-id}"
+    },
+    {
+      "file": "available_portfolios.py",
+      "function": "get_portfolio_generations",
+      "line": 930,
+      "original": "/{portfolio_id}/generations",
+      "converted": "/{portfolio-id}/generations"
+    },
+    {
+      "file": "available_portfolios.py",
+      "function": "create_portfolio_generation",
+      "line": 954,
+      "original": "/{portfolio_id}/generations",
+      "converted": "/{portfolio-id}/generations"
+    },
+    {
+      "file": "available_portfolios.py",
+      "function": "update_generation",
+      "line": 1073,
+      "original": "/{portfolio_id}/generations/{generation_id}",
+      "converted": "/{portfolio-id}/generations/{generation-id}"
+    },
+    {
+      "file": "available_portfolios.py",
+      "function": "delete_generation",
+      "line": 1279,
+      "original": "/{portfolio_id}/generations/{generation_id}",
+      "converted": "/{portfolio-id}/generations/{generation-id}"
+    },
+    {
+      "file": "available_portfolios.py",
+      "function": "get_generation_by_id",
+      "line": 1356,
+      "original": "/generations/{generation_id}",
+      "converted": "/generations/{generation-id}"
+    },
+    {
+      "file": "available_portfolios.py",
+      "function": "get_available_portfolio_funds_by_generation",
+      "line": 1374,
+      "original": "/available_portfolio_funds/generation/{generation_id}",
+      "converted": "/available-portfolio-funds/generation/{generation-id}"
+    },
+    {
+      "file": "available_portfolios.py",
+      "function": "get_generation_with_funds_batch",
+      "line": 1456,
+      "original": "/batch/generation-with-funds/{generation_id}",
+      "converted": "/batch/generation-with-funds/{generation-id}"
+    },
+    {
+      "file": "available_portfolios.py",
+      "function": "get_products_linked_to_template",
+      "line": 1510,
+      "original": "/{portfolio_id}/linked-products",
+      "converted": "/{portfolio-id}/linked-products"
+    },
+    {
+      "file": "available_providers.py",
+      "function": "get_available_providers",
+      "line": 38,
+      "original": "/available_providers",
+      "converted": "/available-providers"
+    },
+    {
+      "file": "available_providers.py",
+      "function": "create_available_provider",
+      "line": 89,
+      "original": "/available_providers",
+      "converted": "/available-providers"
+    },
+    {
+      "file": "available_providers.py",
+      "function": "get_provider_theme_colors",
+      "line": 133,
+      "original": "/available_providers/theme-colors",
+      "converted": "/available-providers/theme-colors"
+    },
+    {
+      "file": "available_providers.py",
+      "function": "get_available_colors",
+      "line": 154,
+      "original": "/available_providers/available-colors",
+      "converted": "/available-providers/available-colors"
+    },
+    {
+      "file": "available_providers.py",
+      "function": "get_available_provider",
+      "line": 186,
+      "original": "/available_providers/{provider_id}",
+      "converted": "/available-providers/{provider-id}"
+    },
+    {
+      "file": "available_providers.py",
+      "function": "update_available_provider",
+      "line": 211,
+      "original": "/available_providers/{provider_id}",
+      "converted": "/available-providers/{provider-id}"
+    },
+    {
+      "file": "available_providers.py",
+      "function": "delete_available_provider",
+      "line": 276,
+      "original": "/available_providers/{provider_id}",
+      "converted": "/available-providers/{provider-id}"
+    },
+    {
+      "file": "available_providers.py",
+      "function": "update_provider_theme_colors",
+      "line": 309,
+      "original": "/available_providers/update-theme-colors",
+      "converted": "/available-providers/update-theme-colors"
+    },
+    {
+      "file": "available_providers.py",
+      "function": "get_available_providers_with_product_count",
+      "line": 392,
+      "original": "/available_providers_with_count",
+      "converted": "/available-providers-with-count"
+    },
+    {
+      "file": "client_groups.py",
+      "function": "get_bulk_client_data",
+      "line": 43,
+      "original": "/client_groups/bulk_client_data",
+      "converted": "/client-groups/bulk-client-data"
+    },
+    {
+      "file": "client_groups.py",
+      "function": "get_bulk_client_data_optimized",
+      "line": 194,
+      "original": "/client_groups/bulk_client_data_optimized",
+      "converted": "/client-groups/bulk-client-data-optimized"
+    },
+    {
+      "file": "client_groups.py",
+      "function": "get_client_groups",
+      "line": 335,
+      "original": "/client_groups",
+      "converted": "/client-groups"
+    },
+    {
+      "file": "client_groups.py",
+      "function": "get_dormant_client_groups",
+      "line": 429,
+      "original": "/client_groups/dormant",
+      "converted": "/client-groups/dormant"
+    },
+    {
+      "file": "client_groups.py",
+      "function": "create_client_group",
+      "line": 501,
+      "original": "/client_groups",
+      "converted": "/client-groups"
+    },
+    {
+      "file": "client_groups.py",
+      "function": "get_client_group",
+      "line": 534,
+      "original": "/client_groups/{client_group_id}",
+      "converted": "/client-groups/{client-group-id}"
+    },
+    {
+      "file": "client_groups.py",
+      "function": "update_client_group",
+      "line": 556,
+      "original": "/client_groups/{client_group_id}",
+      "converted": "/client-groups/{client-group-id}"
+    },
+    {
+      "file": "client_groups.py",
+      "function": "patch_client_group",
+      "line": 612,
+      "original": "/client_groups/{client_group_id}",
+      "converted": "/client-groups/{client-group-id}"
+    },
+    {
+      "file": "client_groups.py",
+      "function": "delete_client_group",
+      "line": 666,
+      "original": "/client_groups/{client_group_id}",
+      "converted": "/client-groups/{client-group-id}"
+    },
+    {
+      "file": "client_groups.py",
+      "function": "update_client_group_status",
+      "line": 716,
+      "original": "/client_groups/{client_group_id}/status",
+      "converted": "/client-groups/{client-group-id}/status"
+    },
+    {
+      "file": "client_groups.py",
+      "function": "create_client_group_version",
+      "line": 762,
+      "original": "/client_group_versions",
+      "converted": "/client-group-versions"
+    },
+    {
+      "file": "client_groups.py",
+      "function": "delete_client_group_products",
+      "line": 815,
+      "original": "/client_groups/{client_group_id}/products",
+      "converted": "/client-groups/{client-group-id}/products"
+    },
+    {
+      "file": "client_groups.py",
+      "function": "get_client_group_products",
+      "line": 963,
+      "original": "/client_groups/{client_group_id}/products",
+      "converted": "/client-groups/{client-group-id}/products"
+    },
+    {
+      "file": "client_groups.py",
+      "function": "get_client_group_fum_summary",
+      "line": 1036,
+      "original": "/client_group_fum_summary",
+      "converted": "/client-group-fum-summary"
+    },
+    {
+      "file": "client_groups.py",
+      "function": "get_client_group_fum_by_id",
+      "line": 1110,
+      "original": "/client_group_fum_summary/{client_group_id}",
+      "converted": "/client-group-fum-summary/{client-group-id}"
+    },
+    {
+      "file": "client_groups.py",
+      "function": "get_complete_client_group_details",
+      "line": 1172,
+      "original": "/client_groups/{client_group_id}/complete",
+      "converted": "/client-groups/{client-group-id}/complete"
+    },
+    {
+      "file": "client_groups.py",
+      "function": "get_client_group_irr",
+      "line": 1600,
+      "original": "/client_groups/{client_group_id}/irr",
+      "converted": "/client-groups/{client-group-id}/irr"
+    },
+    {
+      "file": "client_group_product_owners.py",
+      "function": "get_client_group_product_owners",
+      "line": 15,
+      "original": "/client_group_product_owners",
+      "converted": "/client-group-product-owners"
+    },
+    {
+      "file": "client_group_product_owners.py",
+      "function": "create_client_group_product_owner",
+      "line": 56,
+      "original": "/client_group_product_owners",
+      "converted": "/client-group-product-owners"
+    },
+    {
+      "file": "client_group_product_owners.py",
+      "function": "delete_client_group_product_owner",
+      "line": 115,
+      "original": "/client_group_product_owners/{association_id}",
+      "converted": "/client-group-product-owners/{association-id}"
+    },
+    {
+      "file": "client_group_product_owners.py",
+      "function": "delete_client_group_product_owner_by_ids",
+      "line": 149,
+      "original": "/client_group_product_owners",
+      "converted": "/client-group-product-owners"
+    },
+    {
+      "file": "client_products.py",
+      "function": "get_client_products_with_owners",
+      "line": 17,
+      "original": "/client_products_with_owners",
+      "converted": "/client-products-with-owners"
+    },
+    {
+      "file": "client_products.py",
+      "function": "get_products_display",
+      "line": 246,
+      "original": "/products_display",
+      "converted": "/products-display"
+    },
+    {
+      "file": "client_products.py",
+      "function": "get_portfolio_types",
+      "line": 481,
+      "original": "/portfolio_types",
+      "converted": "/portfolio-types"
+    },
+    {
+      "file": "client_products.py",
+      "function": "get_client_products",
+      "line": 534,
+      "original": "/client_products",
+      "converted": "/client-products"
+    },
+    {
+      "file": "client_products.py",
+      "function": "create_client_product",
+      "line": 891,
+      "original": "/client_products",
+      "converted": "/client-products"
+    },
+    {
+      "file": "client_products.py",
+      "function": "get_client_product",
+      "line": 1008,
+      "original": "/client_products/{client_product_id}",
+      "converted": "/client-products/{client-product-id}"
+    },
+    {
+      "file": "client_products.py",
+      "function": "update_client_product",
+      "line": 1114,
+      "original": "/client_products/{client_product_id}",
+      "converted": "/client-products/{client-product-id}"
+    },
+    {
+      "file": "client_products.py",
+      "function": "delete_client_product",
+      "line": 1202,
+      "original": "/client_products/{client_product_id}",
+      "converted": "/client-products/{client-product-id}"
+    },
+    {
+      "file": "client_products.py",
+      "function": "get_product_fum",
+      "line": 1329,
+      "original": "/client_products/{product_id}/fum",
+      "converted": "/client-products/{product-id}/fum"
+    },
+    {
+      "file": "client_products.py",
+      "function": "get_product_irr",
+      "line": 1385,
+      "original": "/client_products/{product_id}/irr",
+      "converted": "/client-products/{product-id}/irr"
+    },
+    {
+      "file": "client_products.py",
+      "function": "get_complete_product_details",
+      "line": 1588,
+      "original": "/client_products/{client_product_id}/complete",
+      "converted": "/client-products/{client-product-id}/complete"
+    },
+    {
+      "file": "client_products.py",
+      "function": "update_product_notes",
+      "line": 1833,
+      "original": "/client_products/{client_product_id}/notes",
+      "converted": "/client-products/{client-product-id}/notes"
+    },
+    {
+      "file": "client_products.py",
+      "function": "lapse_product",
+      "line": 1866,
+      "original": "/client_products/{product_id}/lapse",
+      "converted": "/client-products/{product-id}/lapse"
+    },
+    {
+      "file": "client_products.py",
+      "function": "reactivate_product",
+      "line": 1963,
+      "original": "/client_products/{product_id}/reactivate",
+      "converted": "/client-products/{product-id}/reactivate"
+    },
+    {
+      "file": "client_products.py",
+      "function": "calculate_product_revenue",
+      "line": 2010,
+      "original": "/client_products/{product_id}/revenue",
+      "converted": "/client-products/{product-id}/revenue"
+    },
+    {
+      "file": "client_products.py",
+      "function": "update_product_owners",
+      "line": 2170,
+      "original": "/client_products/{product_id}/owners",
+      "converted": "/client-products/{product-id}/owners"
+    },
+    {
+      "file": "funds.py",
+      "function": "get_fund",
+      "line": 85,
+      "original": "/funds/{fund_id}",
+      "converted": "/funds/{fund-id}"
+    },
+    {
+      "file": "funds.py",
+      "function": "update_fund",
+      "line": 141,
+      "original": "/funds/{fund_id}",
+      "converted": "/funds/{fund-id}"
+    },
+    {
+      "file": "funds.py",
+      "function": "delete_fund",
+      "line": 193,
+      "original": "/funds/{fund_id}",
+      "converted": "/funds/{fund-id}"
+    },
+    {
+      "file": "funds.py",
+      "function": "get_fund_products_with_owners",
+      "line": 233,
+      "original": "/funds/{fund_id}/products-with-owners",
+      "converted": "/funds/{fund-id}/products-with-owners"
+    },
+    {
+      "file": "funds.py",
+      "function": "check_isin_duplicate",
+      "line": 396,
+      "original": "/funds/check-isin/{isin_number}",
+      "converted": "/funds/check-isin/{isin-number}"
+    },
+    {
+      "file": "fund_valuations.py",
+      "function": "create_fund_valuation",
+      "line": 94,
+      "original": "/fund_valuations",
+      "converted": "/fund-valuations"
+    },
+    {
+      "file": "fund_valuations.py",
+      "function": "get_fund_valuations",
+      "line": 241,
+      "original": "/fund_valuations",
+      "converted": "/fund-valuations"
+    },
+    {
+      "file": "fund_valuations.py",
+      "function": "get_latest_fund_valuation",
+      "line": 263,
+      "original": "/fund_valuations/latest/{portfolio_fund_id}",
+      "converted": "/fund-valuations/latest/{portfolio-fund-id}"
+    },
+    {
+      "file": "fund_valuations.py",
+      "function": "get_all_latest_fund_valuations_from_view",
+      "line": 287,
+      "original": "/all_latest_fund_valuations",
+      "converted": "/all-latest-fund-valuations"
+    },
+    {
+      "file": "fund_valuations.py",
+      "function": "check_fund_valuation_exists",
+      "line": 306,
+      "original": "/fund_valuations/exists/{portfolio_fund_id}",
+      "converted": "/fund-valuations/exists/{portfolio-fund-id}"
+    },
+    {
+      "file": "fund_valuations.py",
+      "function": "get_fund_valuation",
+      "line": 345,
+      "original": "/fund_valuations/{valuation_id}",
+      "converted": "/fund-valuations/{valuation-id}"
+    },
+    {
+      "file": "fund_valuations.py",
+      "function": "update_fund_valuation",
+      "line": 366,
+      "original": "/fund_valuations/{valuation_id}",
+      "converted": "/fund-valuations/{valuation-id}"
+    },
+    {
+      "file": "fund_valuations.py",
+      "function": "delete_fund_valuation",
+      "line": 502,
+      "original": "/fund_valuations/{valuation_id}",
+      "converted": "/fund-valuations/{valuation-id}"
+    },
+    {
+      "file": "fund_valuations.py",
+      "function": "get_latest_valuation_date",
+      "line": 580,
+      "original": "/fund_valuations/latest-date",
+      "converted": "/fund-valuations/latest-date"
+    },
+    {
+      "file": "fund_valuations.py",
+      "function": "get_latest_fund_valuations",
+      "line": 590,
+      "original": "/latest_fund_valuations",
+      "converted": "/latest-fund-valuations"
+    },
+    {
+      "file": "fund_valuations.py",
+      "function": "test_cascade_deletion",
+      "line": 629,
+      "original": "/fund_valuations/test_cascade_deletion",
+      "converted": "/fund-valuations/test-cascade-deletion"
+    },
+    {
+      "file": "fund_valuations.py",
+      "function": "debug_api_calls",
+      "line": 749,
+      "original": "/fund_valuations/debug_api_calls",
+      "converted": "/fund-valuations/debug-api-calls"
+    },
+    {
+      "file": "fund_valuations.py",
+      "function": "debug_portfolio_irrs",
+      "line": 782,
+      "original": "/fund_valuations/debug_portfolio_irrs",
+      "converted": "/fund-valuations/debug-portfolio-irrs"
+    },
+    {
+      "file": "historical_irr.py",
+      "function": "get_portfolio_historical_irr",
+      "line": 28,
+      "original": "/product/{product_id}/portfolio-historical-irr",
+      "converted": "/product/{product-id}/portfolio-historical-irr"
+    },
+    {
+      "file": "historical_irr.py",
+      "function": "get_portfolio_irr_values",
+      "line": 90,
+      "original": "/portfolio-irr-values/{portfolio_id}",
+      "converted": "/portfolio-irr-values/{portfolio-id}"
+    },
+    {
+      "file": "historical_irr.py",
+      "function": "get_funds_historical_irr",
+      "line": 136,
+      "original": "/funds/{product_id}",
+      "converted": "/funds/{product-id}"
+    },
+    {
+      "file": "historical_irr.py",
+      "function": "get_combined_historical_irr",
+      "line": 639,
+      "original": "/combined/{product_id}",
+      "converted": "/combined/{product-id}"
+    },
+    {
+      "file": "holding_activity_logs.py",
+      "function": "get_holding_activity_logs",
+      "line": 463,
+      "original": "/holding_activity_logs",
+      "converted": "/holding-activity-logs"
+    },
+    {
+      "file": "holding_activity_logs.py",
+      "function": "create_holding_activity_log",
+      "line": 546,
+      "original": "/holding_activity_logs",
+      "converted": "/holding-activity-logs"
+    },
+    {
+      "file": "holding_activity_logs.py",
+      "function": "get_earliest_activity_date",
+      "line": 628,
+      "original": "/holding_activity_logs/earliest_date",
+      "converted": "/holding-activity-logs/earliest-date"
+    },
+    {
+      "file": "holding_activity_logs.py",
+      "function": "get_holding_activity_log",
+      "line": 669,
+      "original": "/holding_activity_logs/{holding_activity_log_id}",
+      "converted": "/holding-activity-logs/{holding-activity-log-id}"
+    },
+    {
+      "file": "holding_activity_logs.py",
+      "function": "update_holding_activity_log",
+      "line": 687,
+      "original": "/holding_activity_logs/{activity_id}",
+      "converted": "/holding-activity-logs/{activity-id}"
+    },
+    {
+      "file": "holding_activity_logs.py",
+      "function": "delete_holding_activity_log",
+      "line": 799,
+      "original": "/holding_activity_logs/{holding_activity_log_id}",
+      "converted": "/holding-activity-logs/{holding-activity-log-id}"
+    },
+    {
+      "file": "holding_activity_logs.py",
+      "function": "test_sophisticated_irr_recalculation",
+      "line": 857,
+      "original": "/holding_activity_logs/test_sophisticated_irr_recalculation",
+      "converted": "/holding-activity-logs/test-sophisticated-irr-recalculation"
+    },
+    {
+      "file": "holding_activity_logs.py",
+      "function": "compare_irr_performance",
+      "line": 956,
+      "original": "/holding_activity_logs/compare_irr_performance",
+      "converted": "/holding-activity-logs/compare-irr-performance"
+    },
+    {
+      "file": "holding_activity_logs.py",
+      "function": "recalculate_all_portfolio_irr",
+      "line": 1058,
+      "original": "/holding_activity_logs/recalculate_all_portfolio_irr",
+      "converted": "/holding-activity-logs/recalculate-all-portfolio-irr"
+    },
+    {
+      "file": "holding_activity_logs.py",
+      "function": "create_bulk_holding_activity_logs",
+      "line": 1144,
+      "original": "/holding_activity_logs/bulk",
+      "converted": "/holding-activity-logs/bulk"
+    },
+    {
+      "file": "portfolios.py",
+      "function": "get_portfolio",
+      "line": 290,
+      "original": "/portfolios/{portfolio_id}",
+      "converted": "/portfolios/{portfolio-id}"
+    },
+    {
+      "file": "portfolios.py",
+      "function": "update_portfolio",
+      "line": 326,
+      "original": "/portfolios/{portfolio_id}",
+      "converted": "/portfolios/{portfolio-id}"
+    },
+    {
+      "file": "portfolios.py",
+      "function": "update_portfolio_template",
+      "line": 382,
+      "original": "/portfolios/{portfolio_id}/template",
+      "converted": "/portfolios/{portfolio-id}/template"
+    },
+    {
+      "file": "portfolios.py",
+      "function": "delete_portfolio",
+      "line": 429,
+      "original": "/portfolios/{portfolio_id}",
+      "converted": "/portfolios/{portfolio-id}"
+    },
+    {
+      "file": "portfolios.py",
+      "function": "create_portfolio_from_template",
+      "line": 501,
+      "original": "/portfolios/from_template",
+      "converted": "/portfolios/from-template"
+    },
+    {
+      "file": "portfolios.py",
+      "function": "calculate_portfolio_irr",
+      "line": 694,
+      "original": "/portfolios/{portfolio_id}/calculate-irr",
+      "converted": "/portfolios/{portfolio-id}/calculate-irr"
+    },
+    {
+      "file": "portfolios.py",
+      "function": "calculate_portfolio_irr_for_date",
+      "line": 1104,
+      "original": "/portfolios/{portfolio_id}/calculate-irr-for-date",
+      "converted": "/portfolios/{portfolio-id}/calculate-irr-for-date"
+    },
+    {
+      "file": "portfolios.py",
+      "function": "calculate_portfolio_total_irr",
+      "line": 1306,
+      "original": "/portfolios/{portfolio_id}/calculate-total-irr",
+      "converted": "/portfolios/{portfolio-id}/calculate-total-irr"
+    },
+    {
+      "file": "portfolios.py",
+      "function": "get_complete_portfolio",
+      "line": 1364,
+      "original": "/portfolios/{portfolio_id}/complete",
+      "converted": "/portfolios/{portfolio-id}/complete"
+    },
+    {
+      "file": "portfolios.py",
+      "function": "get_latest_portfolio_irr",
+      "line": 1504,
+      "original": "/portfolios/{portfolio_id}/latest-irr",
+      "converted": "/portfolios/{portfolio-id}/latest-irr"
+    },
+    {
+      "file": "portfolios.py",
+      "function": "get_portfolio_irr_history",
+      "line": 1557,
+      "original": "/portfolios/{portfolio_id}/irr-history",
+      "converted": "/portfolios/{portfolio-id}/irr-history"
+    },
+    {
+      "file": "portfolios.py",
+      "function": "get_portfolio_activity_logs",
+      "line": 1583,
+      "original": "/portfolios/{portfolio_id}/activity_logs",
+      "converted": "/portfolios/{portfolio-id}/activity-logs"
+    },
+    {
+      "file": "portfolio_funds.py",
+      "function": "get_portfolio_funds",
+      "line": 483,
+      "original": "/portfolio_funds",
+      "converted": "/portfolio-funds"
+    },
+    {
+      "file": "portfolio_funds.py",
+      "function": "create_portfolio_fund",
+      "line": 575,
+      "original": "/portfolio_funds",
+      "converted": "/portfolio-funds"
+    },
+    {
+      "file": "portfolio_funds.py",
+      "function": "get_portfolio_fund",
+      "line": 670,
+      "original": "/portfolio_funds/{portfolio_fund_id}",
+      "converted": "/portfolio-funds/{portfolio-fund-id}"
+    },
+    {
+      "file": "portfolio_funds.py",
+      "function": "update_portfolio_fund",
+      "line": 709,
+      "original": "/portfolio_funds/{portfolio_fund_id}",
+      "converted": "/portfolio-funds/{portfolio-fund-id}"
+    },
+    {
+      "file": "portfolio_funds.py",
+      "function": "delete_portfolio_fund",
+      "line": 804,
+      "original": "/portfolio_funds/{portfolio_fund_id}",
+      "converted": "/portfolio-funds/{portfolio-fund-id}"
+    },
+    {
+      "file": "portfolio_funds.py",
+      "function": "get_latest_irr",
+      "line": 901,
+      "original": "/portfolio_funds/{portfolio_fund_id}/latest-irr",
+      "converted": "/portfolio-funds/{portfolio-fund-id}/latest-irr"
+    },
+    {
+      "file": "portfolio_funds.py",
+      "function": "recalculate_all_irr_values",
+      "line": 983,
+      "original": "/portfolio_funds/{portfolio_fund_id}/recalculate-all-irr",
+      "converted": "/portfolio-funds/{portfolio-fund-id}/recalculate-all-irr"
+    },
+    {
+      "file": "portfolio_funds.py",
+      "function": "get_fund_irr_values",
+      "line": 1111,
+      "original": "/portfolio_funds/{portfolio_fund_id}/irr-values",
+      "converted": "/portfolio-funds/{portfolio-fund-id}/irr-values"
+    },
+    {
+      "file": "portfolio_funds.py",
+      "function": "get_batch_irr_values",
+      "line": 1159,
+      "original": "/portfolio_funds/batch/irr-values",
+      "converted": "/portfolio-funds/batch/irr-values"
+    },
+    {
+      "file": "portfolio_funds.py",
+      "function": "get_batch_irr_values_by_date",
+      "line": 1234,
+      "original": "/portfolio_funds/batch/irr-values-by-date",
+      "converted": "/portfolio-funds/batch/irr-values-by-date"
+    },
+    {
+      "file": "portfolio_funds.py",
+      "function": "get_aggregated_irr_history",
+      "line": 1326,
+      "original": "/portfolio_funds/aggregated-irr-history",
+      "converted": "/portfolio-funds/aggregated-irr-history"
+    },
+    {
+      "file": "portfolio_funds.py",
+      "function": "update_irr_value",
+      "line": 1566,
+      "original": "/irr-values/{irr_value_id}",
+      "converted": "/irr-values/{irr-value-id}"
+    },
+    {
+      "file": "portfolio_funds.py",
+      "function": "delete_irr_value",
+      "line": 1746,
+      "original": "/irr-values/{irr_value_id}",
+      "converted": "/irr-values/{irr-value-id}"
+    },
+    {
+      "file": "portfolio_funds.py",
+      "function": "calculate_multiple_portfolio_funds_irr",
+      "line": 2158,
+      "original": "/portfolio_funds/multiple/irr",
+      "converted": "/portfolio-funds/multiple/irr"
+    },
+    {
+      "file": "portfolio_funds.py",
+      "function": "calculate_single_portfolio_fund_irr",
+      "line": 2780,
+      "original": "/portfolio_funds/{portfolio_fund_id}/irr",
+      "converted": "/portfolio-funds/{portfolio-fund-id}/irr"
+    },
+    {
+      "file": "portfolio_funds.py",
+      "function": "recalculate_irr_after_activity",
+      "line": 3503,
+      "original": "/portfolio_funds/{portfolio_fund_id}/recalculate-irr",
+      "converted": "/portfolio-funds/{portfolio-fund-id}/recalculate-irr"
+    },
+    {
+      "file": "portfolio_funds.py",
+      "function": "get_enhanced_portfolio_funds",
+      "line": 3550,
+      "original": "/portfolio_funds/enhanced/{product_id}",
+      "converted": "/portfolio-funds/enhanced/{product-id}"
+    },
+    {
+      "file": "portfolio_funds.py",
+      "function": "calculate_multiple_portfolio_funds_historical_irr",
+      "line": 3665,
+      "original": "/portfolio_funds/multiple/historical_irr",
+      "converted": "/portfolio-funds/multiple/historical-irr"
+    },
+    {
+      "file": "portfolio_valuations.py",
+      "function": "get_portfolio_valuations",
+      "line": 18,
+      "original": "/portfolio_valuations",
+      "converted": "/portfolio-valuations"
+    },
+    {
+      "file": "portfolio_valuations.py",
+      "function": "get_latest_portfolio_valuations",
+      "line": 56,
+      "original": "/latest_portfolio_valuations",
+      "converted": "/latest-portfolio-valuations"
+    },
+    {
+      "file": "portfolio_valuations.py",
+      "function": "create_portfolio_valuation",
+      "line": 98,
+      "original": "/portfolio_valuations",
+      "converted": "/portfolio-valuations"
+    },
+    {
+      "file": "portfolio_valuations.py",
+      "function": "get_portfolio_valuation",
+      "line": 143,
+      "original": "/portfolio_valuations/{valuation_id}",
+      "converted": "/portfolio-valuations/{valuation-id}"
+    },
+    {
+      "file": "portfolio_valuations.py",
+      "function": "update_portfolio_valuation",
+      "line": 165,
+      "original": "/portfolio_valuations/{valuation_id}",
+      "converted": "/portfolio-valuations/{valuation-id}"
+    },
+    {
+      "file": "portfolio_valuations.py",
+      "function": "delete_portfolio_valuation",
+      "line": 220,
+      "original": "/portfolio_valuations/{valuation_id}",
+      "converted": "/portfolio-valuations/{valuation-id}"
+    },
+    {
+      "file": "portfolio_valuations.py",
+      "function": "get_portfolio_valuations_by_portfolio",
+      "line": 328,
+      "original": "/portfolios/{portfolio_id}/valuations",
+      "converted": "/portfolios/{portfolio-id}/valuations"
+    },
+    {
+      "file": "portfolio_valuations.py",
+      "function": "get_latest_portfolio_valuation",
+      "line": 365,
+      "original": "/portfolios/{portfolio_id}/latest_valuation",
+      "converted": "/portfolios/{portfolio-id}/latest-valuation"
+    },
+    {
+      "file": "portfolio_valuations.py",
+      "function": "calculate_and_store_portfolio_valuation",
+      "line": 397,
+      "original": "/portfolios/{portfolio_id}/calculate_valuation",
+      "converted": "/portfolios/{portfolio-id}/calculate-valuation"
+    },
+    {
+      "file": "portfolio_valuations.py",
+      "function": "get_current_portfolio_value",
+      "line": 538,
+      "original": "/portfolios/{portfolio_id}/current_value",
+      "converted": "/portfolios/{portfolio-id}/current-value"
+    },
+    {
+      "file": "presence.py",
+      "function": "get_presence",
+      "line": 227,
+      "original": "/presence/{page_identifier}",
+      "converted": "/presence/{page-identifier}"
+    },
+    {
+      "file": "presence.py",
+      "function": "enter_page",
+      "line": 241,
+      "original": "/presence/{page_identifier}/enter",
+      "converted": "/presence/{page-identifier}/enter"
+    },
+    {
+      "file": "presence.py",
+      "function": "exit_page",
+      "line": 280,
+      "original": "/presence/{page_identifier}/exit",
+      "converted": "/presence/{page-identifier}/exit"
+    },
+    {
+      "file": "products.py",
+      "function": "get_products",
+      "line": 14,
+      "original": "/available_products",
+      "converted": "/available-products"
+    },
+    {
+      "file": "products.py",
+      "function": "create_product",
+      "line": 37,
+      "original": "/available_products",
+      "converted": "/available-products"
+    },
+    {
+      "file": "products.py",
+      "function": "get_product",
+      "line": 53,
+      "original": "/available_products/{product_id}",
+      "converted": "/available-products/{product-id}"
+    },
+    {
+      "file": "products.py",
+      "function": "update_product",
+      "line": 69,
+      "original": "/available_products/{product_id}",
+      "converted": "/available-products/{product-id}"
+    },
+    {
+      "file": "products.py",
+      "function": "delete_product",
+      "line": 85,
+      "original": "/available_products/{product_id}",
+      "converted": "/available-products/{product-id}"
+    },
+    {
+      "file": "products.py",
+      "function": "get_product_value_irr_summary",
+      "line": 101,
+      "original": "/product_value_irr_summary",
+      "converted": "/product-value-irr-summary"
+    },
+    {
+      "file": "product_owners.py",
+      "function": "get_product_owners_list",
+      "line": 12,
+      "original": "/product_owners",
+      "converted": "/product-owners"
+    },
+    {
+      "file": "product_owners.py",
+      "function": "get_product_owner",
+      "line": 95,
+      "original": "/product_owners/{product_owner_id}",
+      "converted": "/product-owners/{product-owner-id}"
+    },
+    {
+      "file": "product_owners.py",
+      "function": "create_product_owner",
+      "line": 119,
+      "original": "/product_owners",
+      "converted": "/product-owners"
+    },
+    {
+      "file": "product_owners.py",
+      "function": "update_product_owner",
+      "line": 167,
+      "original": "/product_owners/{product_owner_id}",
+      "converted": "/product-owners/{product-owner-id}"
+    },
+    {
+      "file": "product_owners.py",
+      "function": "delete_product_owner",
+      "line": 216,
+      "original": "/product_owners/{product_owner_id}",
+      "converted": "/product-owners/{product-owner-id}"
+    },
+    {
+      "file": "product_owners.py",
+      "function": "get_product_owner_client_groups",
+      "line": 269,
+      "original": "/product_owners/{product_owner_id}/client_groups",
+      "converted": "/product-owners/{product-owner-id}/client-groups"
+    },
+    {
+      "file": "product_owners.py",
+      "function": "get_product_owner_products",
+      "line": 304,
+      "original": "/product_owners/{product_owner_id}/products",
+      "converted": "/product-owners/{product-owner-id}/products"
+    },
+    {
+      "file": "product_owners.py",
+      "function": "create_product_owner_product",
+      "line": 385,
+      "original": "/product_owner_products",
+      "converted": "/product-owner-products"
+    },
+    {
+      "file": "product_owners.py",
+      "function": "delete_product_owner_products_by_product",
+      "line": 442,
+      "original": "/product_owner_products/product/{product_id}",
+      "converted": "/product-owner-products/product/{product-id}"
+    },
+    {
+      "file": "product_owners.py",
+      "function": "delete_specific_product_owner_product_association",
+      "line": 472,
+      "original": "/product_owner_products/{product_owner_id}/{product_id}",
+      "converted": "/product-owner-products/{product-owner-id}/{product-id}"
+    },
+    {
+      "file": "provider_switch_log.py",
+      "function": "create_provider_switch_log",
+      "line": 15,
+      "original": "/provider_switch_log",
+      "converted": "/provider-switch-log"
+    },
+    {
+      "file": "provider_switch_log.py",
+      "function": "get_provider_switch_logs",
+      "line": 109,
+      "original": "/provider_switch_log",
+      "converted": "/provider-switch-log"
+    },
+    {
+      "file": "provider_switch_log.py",
+      "function": "get_provider_switches_for_product",
+      "line": 186,
+      "original": "/client_products/{client_product_id}/provider_switches",
+      "converted": "/client-products/{client-product-id}/provider-switches"
+    },
+    {
+      "file": "provider_switch_log.py",
+      "function": "get_provider_switch_log",
+      "line": 246,
+      "original": "/provider_switch_log/{log_id}",
+      "converted": "/provider-switch-log/{log-id}"
+    }
+  ]
+}

@@ -78,7 +78,7 @@ const EditPortfolioGeneration: React.FC = () => {
   const fetchPortfolioDetails = async () => {
     try {
       setIsLoadingPortfolio(true);
-      const response = await api.get(`/available_portfolios/${portfolioId}`);
+      const response = await api.get(`/available-portfolios/${portfolioId}`);
       setPortfolio(response.data);
     } catch (err: any) {
       console.error('Error fetching portfolio details:', err);
@@ -93,7 +93,7 @@ const EditPortfolioGeneration: React.FC = () => {
       setIsLoadingGeneration(true);
       
       // Fetch the generation details
-      const genResponse = await api.get(`/available_portfolios/${portfolioId}/generations`);
+      const genResponse = await api.get(`/available-portfolios/${portfolioId}/generations`);
       const generations = genResponse.data;
       const currentGeneration = generations.find((gen: Generation) => gen.id === parseInt(generationId || '0'));
       
@@ -106,7 +106,7 @@ const EditPortfolioGeneration: React.FC = () => {
         });
         
         // Fetch funds for this specific generation
-        const fundsResponse = await api.get(`/available_portfolios/${portfolioId}`, {
+        const fundsResponse = await api.get(`/available-portfolios/${portfolioId}`, {
           params: { generation_id: generationId }
         });
         
@@ -294,7 +294,7 @@ const EditPortfolioGeneration: React.FC = () => {
         }));
         
         // Update the generation details
-        await api.patch(`/available_portfolios/${portfolioId}/generations/${generationId}`, {
+        await api.patch(`/available-portfolios/${portfolioId}/generations/${generationId}`, {
           generation_name: formData.generation_name,
           description: formData.description,
           created_at: formData.created_at, // Include creation date in update

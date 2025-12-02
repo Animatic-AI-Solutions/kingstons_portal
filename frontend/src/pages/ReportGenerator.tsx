@@ -619,7 +619,7 @@ const ReportGenerator: React.FC = () => {
         const clientGroupsStart = Date.now();
         setIsLoadingClientGroups(true);
         
-        const clientGroupsRes = await api.get('/client_groups');
+        const clientGroupsRes = await api.get('/client-groups');
         const clientGroupsTime = Date.now() - clientGroupsStart;
         
         setClientGroups(clientGroupsRes.data || []);
@@ -635,7 +635,7 @@ const ReportGenerator: React.FC = () => {
         setIsLoadingAllProducts(true);
         
         try {
-          const allProductsRes = await api.get('/client_products_with_owners?limit=100000');
+          const allProductsRes = await api.get('/client-products-with-owners?limit=100000');
           const productsTime = Date.now() - productsStart;
           const totalTime = Date.now() - startTime;
           
@@ -751,7 +751,7 @@ const ReportGenerator: React.FC = () => {
             const clientGroupPromises = uncachedClientGroups.map(async (scg) => {
               const clientGroupId = Number(scg);
               try {
-                const response = await api.get(`/client_products_with_owners?client_id=${clientGroupId}&limit=100000`);
+                const response = await api.get(`/client-products-with-owners?client_id=${clientGroupId}&limit=100000`);
                 const clientGroupProducts = (response.data || []) as Product[];
                 
                 // Cache the results immediately
@@ -909,7 +909,7 @@ const ReportGenerator: React.FC = () => {
         
         // Original logic continues below for edge cases
         // Get portfolio funds for all portfolios
-        const portfolioFundsResponse = await api.get('/api/portfolio-funds/batch', {
+        const portfolioFundsResponse = await api.get('/portfolio-funds/batch', {
           params: { portfolio_ids: portfolioIds.join(',') }
         });
         
@@ -1559,7 +1559,7 @@ const ReportGenerator: React.FC = () => {
         // Get activity logs for all fund IDs
         console.log(`Fetching activity logs for ${productPortfolioFunds.length} portfolio funds:`, productPortfolioFunds.map(pf => pf.id));
         const activityLogsPromises = productPortfolioFunds.map(pf =>
-          api.get(`/holding_activity_logs?portfolio_fund_id=${pf.id}&limit=100000`)
+          api.get(`/holding-activity-logs?portfolio_fund_id=${pf.id}&limit=100000`)
       );
       const activityResponses = await Promise.all(activityLogsPromises);
       const allActivityLogs = activityResponses.flatMap(res => res.data);
@@ -1568,7 +1568,7 @@ const ReportGenerator: React.FC = () => {
       console.log('Sample activities:', allActivityLogs.slice(0, 3));
 
         // Get latest valuations
-      // Instead of using the all_latest_fund_valuations endpoint which only provides the latest valuation,
+      // Instead of using the all_latest_fund-valuations endpoint which only provides the latest valuation,
       // we need to get all historical valuations for each fund to support historical reports
       const latestValuationFromViewMap = new Map<number, { value: number, valuation_date: string }>();
       
@@ -1833,7 +1833,7 @@ const ReportGenerator: React.FC = () => {
             // Fetch IRR values for specific date
             const [year, month] = selectedValuationDate.split('-').map(part => parseInt(part));
 
-            const irrResponse = await api.post('/portfolio_funds/batch/irr-values-by-date', {
+            const irrResponse = await api.post('/portfolio-funds/batch/irr-values-by-date', {
               fund_ids: allFundIdsList,
               target_month: month,
               target_year: year

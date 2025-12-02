@@ -93,7 +93,7 @@ export class ClientCacheService {
   prefetchClientDetails(clientId: string) {
     return this.queryClient.prefetchQuery({
       queryKey: ['clients', clientId],
-      queryFn: () => import('../services/api').then(api => api.default.get(`/client_groups/${clientId}/complete`)),
+      queryFn: () => import('../services/api').then(api => api.default.get(`/client-groups/${clientId}/complete`)),
       staleTime: 10 * 60 * 1000, // 10 minutes
     });
   }

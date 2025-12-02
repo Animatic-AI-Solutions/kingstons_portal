@@ -710,7 +710,7 @@ export const IRRHistoryTab: React.FC<IRRHistoryTabProps> = ({ reportData }) => {
 
         try {
           // Use the same API call as ProductIRRHistory
-      const response = await api.post('/portfolio_funds/multiple/irr', {
+      const response = await api.post('/portfolio-funds/multiple/irr', {
         portfolio_fund_ids: inactiveFundIds,
             irr_date: fullDate
           });

@@ -223,7 +223,7 @@ const AddPortfolioTemplate: React.FC = () => {
         }));
         
         // Create the portfolio template
-        const portfolioResponse = await api.post('/available_portfolios', {
+        const portfolioResponse = await api.post('/available-portfolios', {
           name: formData.name,
           generation_name: formData.generation_name,
           description: formData.description,

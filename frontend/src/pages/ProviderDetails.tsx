@@ -198,11 +198,11 @@ const ProviderDetails: React.FC = () => {
     try {
       setIsLoading(true);
       // Get provider details
-      const providerResponse = await api.get(`/available_providers/${providerId}`);
+      const providerResponse = await api.get(`/available-providers/${providerId}`);
       
       try {
         // Get products for this provider (using client_products table now)
-        const productsResponse = await api.get(`/client_products`, {
+        const productsResponse = await api.get(`/client-products`, {
           params: { provider_id: providerId }
         });
         
@@ -256,7 +256,7 @@ const ProviderDetails: React.FC = () => {
     try {
       setIsSaving(true);
       setError(null);
-      await api.patch(`/available_providers/${providerId}`, formData);
+      await api.patch(`/available-providers/${providerId}`, formData);
       await fetchProvider();
       setIsEditing(false);
       setFormData({});
@@ -290,7 +290,7 @@ const ProviderDetails: React.FC = () => {
 
     try {
       setIsDeleting(true);
-      await api.delete(`/available_providers/${providerId}`);
+      await api.delete(`/available-providers/${providerId}`);
       navigate('/definitions/providers', { replace: true });
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to delete provider');

@@ -80,7 +80,7 @@ const CreateProductOwnerModal: React.FC<CreateProductOwnerModalProps> = ({
 
   const fetchAvailableProducts = async () => {
     try {
-      const response = await api.get('/client_products');
+      const response = await api.get('/client-products');
       setAvailableProducts(response.data || []);
     } catch (err: any) {
       console.error('Error fetching products:', err);
@@ -161,13 +161,13 @@ const CreateProductOwnerModal: React.FC<CreateProductOwnerModalProps> = ({
         status: 'active'
       };
 
-      const response = await api.post('/product_owners', productOwnerData);
+      const response = await api.post('/product-owners', productOwnerData);
       const newProductOwner = response.data;
 
       // If products are selected, create associations
       if (includeProductSelection && selectedProductIds.length > 0) {
         const associationPromises = selectedProductIds.map(productId =>
-          api.post('/product_owner_products', {
+          api.post('/product-owner-products', {
             product_owner_id: newProductOwner.id,
             product_id: productId
           }).catch(err => {

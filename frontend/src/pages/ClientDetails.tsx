@@ -49,7 +49,7 @@ interface ClientProductOwner {
   known_as?: string;
   status: string;
   created_at: string;
-  association_id?: number; // ID of the client_group_product_owners record
+  association_id?: number; // ID of the client-group-product-owners record
 }
 
 interface ClientFormData {
@@ -1161,7 +1161,7 @@ const ClientDetails: React.FC = () => {
     if (queryError && (queryError as any).response?.status === 404) {
       console.warn(`⚠️ Client ${clientId} not found - redirecting to client groups`);
       navigateWithSuccessMessage(
-        '/client_groups',
+        '/client-groups',
         'Client not found - it may have been deleted'
       );
     }
@@ -1369,7 +1369,7 @@ const ClientDetails: React.FC = () => {
   }, [clientAccounts]);
 
   const handleBack = () => {
-    navigate('/client_groups');
+    navigate('/client-groups');
   };
 
   const handleMakeDormant = async () => {
@@ -1512,7 +1512,7 @@ const ClientDetails: React.FC = () => {
     deleteClient.mutate(clientId, {
       onSuccess: () => {
       navigateWithSuccessMessage(
-        '/client_groups', 
+        '/client-groups', 
         `Client group "${client.name}" and all associated data deleted successfully`
       );
       },
@@ -1526,7 +1526,7 @@ const ClientDetails: React.FC = () => {
   const handleReactivateProduct = async (productId: number, productName: string) => {
     try {
       if (window.confirm(`Are you sure you want to reactivate the product "${productName}"? This will change its status back to active.`)) {
-        const response = await api.patch(`client_products/${productId}/reactivate`);
+        const response = await api.patch(`/client-products/${productId}/reactivate`);
         if (response.data) {
           // Refresh client data to show the reactivated product
           invalidateClient();
@@ -1547,7 +1547,7 @@ const ClientDetails: React.FC = () => {
     try {
       // Call API to update products with revenue data
       for (const [productId, data] of Object.entries(updates)) {
-        await api.patch(`/api/client_products/${productId}`, data);
+        await api.patch(`/client-products/${productId}`, data);
       }
       
       // Refresh client data to show updated values using React Query
@@ -1720,7 +1720,7 @@ const ClientDetails: React.FC = () => {
             </button>
             
             <Link
-              to={`/create-client-group-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.name}`)}&returnTo=${encodeURIComponent(`/client_groups/${clientId}`)}`}
+              to={`/create-client-group-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.name}`)}&returnTo=${encodeURIComponent(`/client-groups/${clientId}`)}`}
             >
               <AddButton
                 context="Product"
@@ -1802,7 +1802,7 @@ const ClientDetails: React.FC = () => {
               <div className="text-gray-500 mb-4">No products found for this client.</div>
               <div className="flex justify-center">
                 <Link 
-                  to={`/create-client-group-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.name}`)}&returnTo=${encodeURIComponent(`/client_groups/${clientId}`)}`}
+                  to={`/create-client-group-products?client_id=${clientId}&client_name=${encodeURIComponent(`${client?.name}`)}&returnTo=${encodeURIComponent(`/client-groups/${clientId}`)}`}
                 >
                   <AddButton
                     context="Product"

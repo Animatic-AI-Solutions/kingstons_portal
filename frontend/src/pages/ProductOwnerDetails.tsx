@@ -75,7 +75,7 @@ const ProductOwnerDetails: React.FC = () => {
 
       setIsLoading(true);
       
-      const response = await api.get(`/api/product_owners/${numericId}`);
+      const response = await api.get(`/product-owners/${numericId}`);
       const ownerData = response.data;
       
       setProductOwner(ownerData);
@@ -110,7 +110,7 @@ const ProductOwnerDetails: React.FC = () => {
 
   const fetchAssociatedProducts = async (ownerId: number) => {
     try {
-      const response = await api.get(`/api/product_owners/${ownerId}/products`);
+      const response = await api.get(`/product-owners/${ownerId}/products`);
       setAssociatedProducts(response.data || []);
     } catch (err: any) {
       console.error('Error fetching associated products:', err);
@@ -121,7 +121,7 @@ const ProductOwnerDetails: React.FC = () => {
   const fetchAvailableProducts = async () => {
     try {
       setIsLoadingProducts(true);
-      const response = await api.get('/api/client_products_with_owners');
+      const response = await api.get('/client-products-with-owners');
       
       // Filter out products that are already associated with this product owner
       const currentProductIds = associatedProducts.map(p => p.id);
@@ -146,7 +146,7 @@ const ProductOwnerDetails: React.FC = () => {
       
       // Create associations for each selected product
       const promises = selectedProductIds.map(productId =>
-        api.post('/api/product_owner_products', {
+        api.post('/product-owner-products', {
           product_owner_id: productOwner.id,
           product_id: productId
         })
@@ -185,7 +185,7 @@ const ProductOwnerDetails: React.FC = () => {
       setRemovingProductId(productId);
       
       // Call the new specific endpoint to delete the association
-      await api.delete(`/api/product_owner_products/${productOwner.id}/${productId}`);
+      await api.delete(`/product-owner-products/${productOwner.id}/${productId}`);
       
       // Refresh the associated products list
       await fetchAssociatedProducts(productOwner.id);
@@ -229,7 +229,7 @@ const ProductOwnerDetails: React.FC = () => {
   }, [productOwnerId, api]);
 
   const handleBack = () => {
-    navigate('/product_owners');
+    navigate('/product-owners');
   };
 
   const handleEdit = () => {
@@ -260,7 +260,7 @@ const ProductOwnerDetails: React.FC = () => {
         status: formData.status
       };
       
-      const response = await api.patch(`/api/product_owners/${productOwner.id}`, updateData);
+      const response = await api.patch(`/product-owners/${productOwner.id}`, updateData);
       
       setProductOwner(response.data);
       
@@ -290,10 +290,10 @@ const ProductOwnerDetails: React.FC = () => {
     
     try {
       setIsDeleting(true);
-      await api.delete(`/api/product_owners/${productOwner.id}`);
+      await api.delete(`/product-owners/${productOwner.id}`);
       
       console.log('Product owner deleted successfully');
-      navigate('/product_owners');
+      navigate('/product-owners');
     } catch (error: any) {
       console.error('Error deleting product owner:', error);
       alert('Failed to delete product owner. Please try again.');

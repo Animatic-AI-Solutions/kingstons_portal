@@ -126,7 +126,7 @@ const FundDetails: React.FC = () => {
 
   const fetchPortfolios = async () => {
     try {
-      const response = await api.get('/available_portfolios');
+      const response = await api.get('/available-portfolios');
       setPortfolios(response.data);
     } catch (err: any) {
       console.error('Error fetching portfolios:', err);
@@ -143,7 +143,7 @@ const FundDetails: React.FC = () => {
       
       try {
         // Use the path parameter endpoint
-        const portfolioFundsResponse = await api.get(`/available_portfolios/available_portfolio_funds/by-fund/${numericFundId}`);
+        const portfolioFundsResponse = await api.get(`/available-portfolios/available-portfolio-funds/by-fund/${numericFundId}`);
         
         if (portfolioFundsResponse.data && portfolioFundsResponse.data.length > 0) {
           const portfolioIds = portfolioFundsResponse.data.map((pf: any) => pf.portfolio_id);
@@ -167,7 +167,7 @@ const FundDetails: React.FC = () => {
   const fetchProductsWithOwners = async (fundId: number) => {
     try {
       // Use the correct API endpoint from our services
-      const response = await api.get(`funds/${fundId}/products-with-owners`);
+      const response = await api.get(`/funds/${fundId}/products-with-owners`);
       
       if (response.data) {
         // Transform the data to match our ProductWithOwner interface

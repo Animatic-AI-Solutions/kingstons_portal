@@ -6,7 +6,7 @@ import { Card, Button, ProfileAvatar } from '../components/ui';
 
 const landingPageOptions = [
   { value: '/', label: 'Home' },
-  { value: '/client_groups', label: 'Client Groups' }
+  { value: '/client-groups', label: 'Client Groups' }
 ];
 
 const Profile: React.FC = () => {
@@ -27,7 +27,7 @@ const Profile: React.FC = () => {
   useEffect(() => {
     if (user) {
       // Validate landing page - fallback to home if invalid
-      const validLandingPages = ['/', '/client_groups'];
+      const validLandingPages = ['/', '/client-groups'];
       const landingPage = user.preferred_landing_page && validLandingPages.includes(user.preferred_landing_page)
         ? user.preferred_landing_page
         : '/';

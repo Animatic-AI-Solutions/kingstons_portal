@@ -71,7 +71,7 @@ describe('useSmartNavigation', () => {
       const destination = result.current.determineBackDestination(context);
 
       expect(destination).toEqual({
-        path: '/client_groups/123',
+        path: '/client-groups/123',
         state: undefined
       });
     });
@@ -115,8 +115,8 @@ describe('useSmartNavigation', () => {
       const context = {
         state: {
           breadcrumb: [
-            { path: '/client_groups', name: 'Client Groups' },
-            { path: '/client_groups/123', name: 'ABC Company' }
+            { path: '/client-groups', name: 'Client Groups' },
+            { path: '/client-groups/123', name: 'ABC Company' }
           ]
         }
       };
@@ -125,7 +125,7 @@ describe('useSmartNavigation', () => {
       const destination = result.current.determineBackDestination(context);
 
       expect(destination).toEqual({
-        path: '/client_groups/123',
+        path: '/client-groups/123',
         state: undefined
       });
     });
@@ -138,7 +138,7 @@ describe('useSmartNavigation', () => {
       const destination = result.current.determineBackDestination(context, fallbackClientId);
 
       expect(destination).toEqual({
-        path: '/client_groups/456',
+        path: '/client-groups/456',
         state: undefined
       });
     });
@@ -171,7 +171,7 @@ describe('useSmartNavigation', () => {
       const notification = { type: 'success', message: 'Product deleted successfully' };
       result.current.navigateBack(notification);
 
-      expect(mockNavigate).toHaveBeenCalledWith('/client_groups/123', {
+      expect(mockNavigate).toHaveBeenCalledWith('/client-groups/123', {
         state: { notification }
       });
     });
@@ -205,7 +205,7 @@ describe('useSmartNavigation', () => {
       const { result } = renderHook(() => useSmartNavigation());
       result.current.navigateBack(undefined, 789);
 
-      expect(mockNavigate).toHaveBeenCalledWith('/client_groups/789', {
+      expect(mockNavigate).toHaveBeenCalledWith('/client-groups/789', {
         state: undefined
       });
     });
@@ -225,8 +225,8 @@ describe('useSmartNavigation', () => {
       const trail = result.current.getBreadcrumbTrail();
 
       expect(trail).toEqual([
-        { path: '/client_groups', label: 'Client Groups' },
-        { path: '/client_groups/123', label: 'ABC Company' }
+        { path: '/client-groups', label: 'Client Groups' },
+        { path: '/client-groups/123', label: 'ABC Company' }
       ]);
     });
 
@@ -267,8 +267,8 @@ describe('useSmartNavigation', () => {
 
     it('should use provided breadcrumb array from state', () => {
       const breadcrumbArray = [
-        { path: '/client_groups', name: 'Client Groups' },
-        { path: '/client_groups/123', label: 'ABC Company' }
+        { path: '/client-groups', name: 'Client Groups' },
+        { path: '/client-groups/123', label: 'ABC Company' }
       ];
 
       mockUseLocation.mockReturnValue({
@@ -283,8 +283,8 @@ describe('useSmartNavigation', () => {
       const trail = result.current.getBreadcrumbTrail();
 
       expect(trail).toEqual([
-        { path: '/client_groups', label: 'Client Groups' },
-        { path: '/client_groups/123', label: 'ABC Company' }
+        { path: '/client-groups', label: 'Client Groups' },
+        { path: '/client-groups/123', label: 'ABC Company' }
       ]);
     });
 

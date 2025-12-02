@@ -1,0 +1,413 @@
+{
+  "endpoint": "/portfolio_valuations",
+  "test_endpoint": "/portfolio_valuations",
+  "params": {
+    "id": 1,
+    "client_group_id": 1
+  },
+  "timestamp": "2025-12-02T12:03:22.992488",
+  "status_code": 200,
+  "response_body": [
+    {
+      "portfolio_id": 48,
+      "valuation_date": "2025-04-01T00:00:00",
+      "valuation": 310.0,
+      "id": 2,
+      "created_at": "2025-06-04T09:01:22.897543Z"
+    },
+    {
+      "portfolio_id": 48,
+      "valuation_date": "2025-02-01T00:00:00",
+      "valuation": 150.0,
+      "id": 1,
+      "created_at": "2025-06-02T14:32:08.247857Z"
+    },
+    {
+      "portfolio_id": 55,
+      "valuation_date": "2025-06-01T00:00:00",
+      "valuation": 110.0,
+      "id": 6,
+      "created_at": "2025-06-09T15:01:55.667542Z"
+    },
+    {
+      "portfolio_id": 62,
+      "valuation_date": "2024-07-01T00:00:00",
+      "valuation": 201.0,
+      "id": 5,
+      "created_at": "2025-06-09T11:03:12.401546Z"
+    },
+    {
+      "portfolio_id": 80,
+      "valuation_date": "2025-06-01T00:00:00",
+      "valuation": 2000.0,
+      "id": 18,
+      "created_at": "2025-06-18T12:28:25.823263Z"
+    },
+    {
+      "portfolio_id": 138,
+      "valuation_date": "2025-07-01T00:00:00",
+      "valuation": 97875.01,
+      "id": 157,
+      "created_at": "2025-07-18T11:09:24.387496Z"
+    },
+    {
+      "portfolio_id": 138,
+      "valuation_date": "2024-06-01T00:00:00",
+      "valuation": 98544.56,
+      "id": 96,
+      "created_at": "2025-07-15T14:27:05.936341Z"
+    },
+    {
+      "portfolio_id": 138,
+      "valuation_date": "2023-05-01T00:00:00",
+      "valuation": 253671.28,
+      "id": 212,
+      "created_at": "2025-07-23T13:48:38.507472Z"
+    },
+    {
+      "portfolio_id": 138,
+      "valuation_date": "2022-07-01T00:00:00",
+      "valuation": 258736.06,
+      "id": 211,
+      "created_at": "2025-07-23T13:48:38.257012Z"
+    },
+    {
+      "portfolio_id": 138,
+      "valuation_date": "2021-07-01T00:00:00",
+      "valuation": 247549.88,
+      "id": 210,
+      "created_at": "2025-07-23T13:48:37.970721Z"
+    },
+    {
+      "portfolio_id": 138,
+      "valuation_date": "2020-06-01T00:00:00",
+      "valuation": 225775.57,
+      "id": 213,
+      "created_at": "2025-07-23T13:48:38.770931Z"
+    },
+    {
+      "portfolio_id": 145,
+      "valuation_date": "2025-07-01T00:00:00",
+      "valuation": 19989.98,
+      "id": 136,
+      "created_at": "2025-07-17T13:32:05.680801Z"
+    },
+    {
+      "portfolio_id": 145,
+      "valuation_date": "2024-07-01T00:00:00",
+      "valuation": 19132.99,
+      "id": 135,
+      "created_at": "2025-07-17T13:28:29.082040Z"
+    },
+    {
+      "portfolio_id": 145,
+      "valuation_date": "2023-06-01T00:00:00",
+      "valuation": 17928.72,
+      "id": 134,
+      "created_at": "2025-07-17T13:22:23.774036Z"
+    },
+    {
+      "portfolio_id": 145,
+      "valuation_date": "2022-07-01T00:00:00",
+      "valuation": 18957.09,
+      "id": 133,
+      "created_at": "2025-07-17T13:19:06.927779Z"
+    },
+    {
+      "portfolio_id": 146,
+      "valuation_date": "2025-07-01T00:00:00",
+      "valuation": 22402.73,
+      "id": 139,
+      "created_at": "2025-07-17T13:49:44.686611Z"
+    },
+    {
+      "portfolio_id": 146,
+      "valuation_date": "2024-07-01T00:00:00",
+      "valuation": 21292.54,
+      "id": 138,
+      "created_at": "2025-07-17T13:43:47.838641Z"
+    },
+    {
+      "portfolio_id": 148,
+      "valuation_date": "2025-07-01T00:00:00",
+      "valuation": 92203.4,
+      "id": 163,
+      "created_at": "2025-07-21T09:04:24.612899Z"
+    },
+    {
+      "portfolio_id": 148,
+      "valuation_date": "2024-07-01T00:00:00",
+      "valuation": 91293.67,
+      "id": 162,
+      "created_at": "2025-07-21T09:02:38.473575Z"
+    },
+    {
+      "portfolio_id": 148,
+      "valuation_date": "2022-08-01T00:00:00",
+      "valuation": 96808.75,
+      "id": 161,
+      "created_at": "2025-07-21T09:00:21.182042Z"
+    },
+    {
+      "portfolio_id": 148,
+      "valuation_date": "2021-07-01T00:00:00",
+      "valuation": 92696.99,
+      "id": 160,
+      "created_at": "2025-07-21T08:56:27.884408Z"
+    },
+    {
+      "portfolio_id": 148,
+      "valuation_date": "2020-08-01T00:00:00",
+      "valuation": 84579.04,
+      "id": 159,
+      "created_at": "2025-07-21T08:55:01.402590Z"
+    },
+    {
+      "portfolio_id": 148,
+      "valuation_date": "2019-08-01T00:00:00",
+      "valuation": 95765.01,
+      "id": 158,
+      "created_at": "2025-07-21T08:46:01.215605Z"
+    },
+    {
+      "portfolio_id": 153,
+      "valuation_date": "2025-07-01T00:00:00",
+      "valuation": 20994.02,
+      "id": 166,
+      "created_at": "2025-07-21T15:33:40.038629Z"
+    },
+    {
+      "portfolio_id": 154,
+      "valuation_date": "2025-07-01T00:00:00",
+      "valuation": 20994.02,
+      "id": 167,
+      "created_at": "2025-07-21T15:46:38.614695Z"
+    },
+    {
+      "portfolio_id": 157,
+      "valuation_date": "2025-07-01T00:00:00",
+      "valuation": 4708.62,
+      "id": 175,
+      "created_at": "2025-07-22T10:22:12.864462Z"
+    },
+    {
+      "portfolio_id": 157,
+      "valuation_date": "2024-08-01T00:00:00",
+      "valuation": 4376.7,
+      "id": 173,
+      "created_at": "2025-07-22T10:11:32.211403Z"
+    },
+    {
+      "portfolio_id": 157,
+      "valuation_date": "2021-08-01T00:00:00",
+      "valuation": 3742.12,
+      "id": 171,
+      "created_at": "2025-07-22T09:43:25.133276Z"
+    },
+    {
+      "portfolio_id": 165,
+      "valuation_date": "2025-07-01T00:00:00",
+      "valuation": 104592.08,
+      "id": 180,
+      "created_at": "2025-07-22T11:35:26.285263Z"
+    },
+    {
+      "portfolio_id": 166,
+      "valuation_date": "2025-07-01T00:00:00",
+      "valuation": 67126.1,
+      "id": 181,
+      "created_at": "2025-07-22T11:42:12.707707Z"
+    },
+    {
+      "portfolio_id": 168,
+      "valuation_date": "2025-07-01T00:00:00",
+      "valuation": 27053.85,
+      "id": 202,
+      "created_at": "2025-07-23T08:45:09.048619Z"
+    },
+    {
+      "portfolio_id": 168,
+      "valuation_date": "2024-06-01T00:00:00",
+      "valuation": 25878.06,
+      "id": 201,
+      "created_at": "2025-07-23T08:45:05.911315Z"
+    },
+    {
+      "portfolio_id": 169,
+      "valuation_date": "2025-07-01T00:00:00",
+      "valuation": 70679.36,
+      "id": 208,
+      "created_at": "2025-07-23T13:44:58.686656Z"
+    },
+    {
+      "portfolio_id": 169,
+      "valuation_date": "2024-06-01T00:00:00",
+      "valuation": 71202.99,
+      "id": 200,
+      "created_at": "2025-07-23T08:26:30.194240Z"
+    },
+    {
+      "portfolio_id": 169,
+      "valuation_date": "2023-06-01T00:00:00",
+      "valuation": 72643.78,
+      "id": 199,
+      "created_at": "2025-07-23T08:24:47.400326Z"
+    },
+    {
+      "portfolio_id": 169,
+      "valuation_date": "2022-06-01T00:00:00",
+      "valuation": 74992.33,
+      "id": 198,
+      "created_at": "2025-07-23T08:19:11.583803Z"
+    },
+    {
+      "portfolio_id": 169,
+      "valuation_date": "2021-06-01T00:00:00",
+      "valuation": 71248.26,
+      "id": 197,
+      "created_at": "2025-07-23T08:19:06.595270Z"
+    },
+    {
+      "portfolio_id": 169,
+      "valuation_date": "2020-07-01T00:00:00",
+      "valuation": 66183.73,
+      "id": 220,
+      "created_at": "2025-07-23T13:48:40.620549Z"
+    },
+    {
+      "portfolio_id": 169,
+      "valuation_date": "2019-06-01T00:00:00",
+      "valuation": 73639.9,
+      "id": 196,
+      "created_at": "2025-07-23T08:19:02.425191Z"
+    },
+    {
+      "portfolio_id": 169,
+      "valuation_date": "2018-06-01T00:00:00",
+      "valuation": 74199.0,
+      "id": 195,
+      "created_at": "2025-07-23T08:18:59.446400Z"
+    },
+    {
+      "portfolio_id": 170,
+      "valuation_date": "2025-07-01T00:00:00",
+      "valuation": 55018.6,
+      "id": 194,
+      "created_at": "2025-07-23T08:04:08.977627Z"
+    },
+    {
+      "portfolio_id": 170,
+      "valuation_date": "2024-06-01T00:00:00",
+      "valuation": 57977.49,
+      "id": 193,
+      "created_at": "2025-07-23T08:02:33.573470Z"
+    },
+    {
+      "portfolio_id": 170,
+      "valuation_date": "2023-06-01T00:00:00",
+      "valuation": 29106.44,
+      "id": 192,
+      "created_at": "2025-07-23T08:00:59.600965Z"
+    },
+    {
+      "portfolio_id": 170,
+      "valuation_date": "2022-06-01T00:00:00",
+      "valuation": 28561.62,
+      "id": 191,
+      "created_at": "2025-07-23T08:00:02.611977Z"
+    },
+    {
+      "portfolio_id": 170,
+      "valuation_date": "2021-06-01T00:00:00",
+      "valuation": 26196.1,
+      "id": 190,
+      "created_at": "2025-07-23T07:59:04.007167Z"
+    },
+    {
+      "portfolio_id": 170,
+      "valuation_date": "2020-07-01T00:00:00",
+      "valuation": 25245.06,
+      "id": 189,
+      "created_at": "2025-07-23T07:57:52.120813Z"
+    },
+    {
+      "portfolio_id": 170,
+      "valuation_date": "2019-06-01T00:00:00",
+      "valuation": 25476.06,
+      "id": 188,
+      "created_at": "2025-07-23T07:57:49.535712Z"
+    },
+    {
+      "portfolio_id": 170,
+      "valuation_date": "2018-06-01T00:00:00",
+      "valuation": 24253.01,
+      "id": 187,
+      "created_at": "2025-07-23T07:56:28.067990Z"
+    },
+    {
+      "portfolio_id": 171,
+      "valuation_date": "2025-07-01T00:00:00",
+      "valuation": 21808.51,
+      "id": 186,
+      "created_at": "2025-07-22T15:26:16.790010Z"
+    },
+    {
+      "portfolio_id": 171,
+      "valuation_date": "2024-07-01T00:00:00",
+      "valuation": 20861.86,
+      "id": 219,
+      "created_at": "2025-07-23T13:48:40.334450Z"
+    },
+    {
+      "portfolio_id": 171,
+      "valuation_date": "2023-08-01T00:00:00",
+      "valuation": 18607.31,
+      "id": 184,
+      "created_at": "2025-07-22T15:21:02.008541Z"
+    },
+    {
+      "portfolio_id": 171,
+      "valuation_date": "2022-07-01T00:00:00",
+      "valuation": 18324.75,
+      "id": 218,
+      "created_at": "2025-07-23T13:48:40.049871Z"
+    },
+    {
+      "portfolio_id": 173,
+      "valuation_date": "2025-07-01T00:00:00",
+      "valuation": 36118.35,
+      "id": 225,
+      "created_at": "2025-07-23T15:24:22.544170Z"
+    },
+    {
+      "portfolio_id": 173,
+      "valuation_date": "2024-12-01T00:00:00",
+      "valuation": 43399.85,
+      "id": 224,
+      "created_at": "2025-07-23T14:22:27.096493Z"
+    },
+    {
+      "portfolio_id": 173,
+      "valuation_date": "2024-08-01T00:00:00",
+      "valuation": 48285.68,
+      "id": 223,
+      "created_at": "2025-07-23T14:12:43.060814Z"
+    },
+    {
+      "portfolio_id": 173,
+      "valuation_date": "2023-12-01T00:00:00",
+      "valuation": 43015.18,
+      "id": 222,
+      "created_at": "2025-07-23T14:02:44.370623Z"
+    },
+    {
+      "portfolio_id": 173,
+      "valuation_date": "2023-01-01T00:00:00",
+      "valuation": 41488.19,
+      "id": 221,
+      "created_at": "2025-07-23T13:56:47.248454Z"
+    }
+  ],
+  "error": null,
+  "content_hash": "53a97126682032282bc605b9b166d2aef82e2105852bb88f0b30efd3301e8dda"
+}

@@ -26,7 +26,7 @@ export const usePortfolioTemplates = (): UsePortfolioTemplatesResult => {
 
   const fetchPortfolios = useCallback(async ({ signal }: { signal?: AbortSignal } = {}) => {
     try {
-      const response = await api.get('/available_portfolios/bulk-with-counts', { signal });
+      const response = await api.get('/available-portfolios/bulk-with-counts', { signal });
 
       return response.data as PortfolioTemplate[];
     } catch (err: any) {
@@ -77,9 +77,9 @@ export const usePortfolioTemplateDetails = (portfolioId: string | undefined) => 
     try {
       // Fetch all required data in parallel
       const [templateResponse, generationsResponse, linkedProductsResponse] = await Promise.all([
-        api.get(`/available_portfolios/${portfolioId}`, { signal }),
-        api.get(`/available_portfolios/${portfolioId}/generations`, { signal }),
-        api.get(`/available_portfolios/${portfolioId}/linked-products`, { signal }).catch(() => ({ data: [] }))
+        api.get(`/available-portfolios/${portfolioId}`, { signal }),
+        api.get(`/available-portfolios/${portfolioId}/generations`, { signal }),
+        api.get(`/available-portfolios/${portfolioId}/linked-products`, { signal }).catch(() => ({ data: [] }))
       ]);
 
 

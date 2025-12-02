@@ -1,0 +1,636 @@
+{
+  "endpoint": "/analytics/dashboard_all",
+  "test_endpoint": "/analytics/dashboard_all",
+  "params": {
+    "id": 1,
+    "client_group_id": 1
+  },
+  "timestamp": "2025-12-02T12:03:22.260263",
+  "status_code": 200,
+  "response_body": {
+    "metrics": {
+      "totalFUM": 24792854.78,
+      "companyIRR": 4.1,
+      "totalClients": 97,
+      "totalAccounts": 239,
+      "totalActiveHoldings": 1463
+    },
+    "funds": [
+      {
+        "id": "70",
+        "name": "PruFund Growth S2",
+        "amount": 4889194.69
+      },
+      {
+        "id": "21",
+        "name": "PruFund Growth Series E",
+        "amount": 2481233.25
+      },
+      {
+        "id": "55",
+        "name": "PruFund Growth ISA",
+        "amount": 1867237.68
+      },
+      {
+        "id": "29",
+        "name": "Wesleyan With Profit Growth Pension",
+        "amount": 1467029.11
+      },
+      {
+        "id": "13",
+        "name": "Stewart Investors Worldwide Leaders ",
+        "amount": 1078892.66
+      },
+      {
+        "id": "31",
+        "name": "Wesleyan With Profit Growth ISA",
+        "amount": 884844.75
+      },
+      {
+        "id": "89",
+        "name": "PruFund Growth Ser A ",
+        "amount": 809683.06
+      },
+      {
+        "id": "12",
+        "name": "RL Sustainable World Trust",
+        "amount": 772186.94
+      },
+      {
+        "id": "9",
+        "name": "BNY Mellon Multi-Asset Balanced",
+        "amount": 737739.39
+      },
+      {
+        "id": "18",
+        "name": "Vgd FTSE Developed World ex UK Eq Index",
+        "amount": 722939.14
+      },
+      {
+        "id": "11",
+        "name": "FTF ClearBridge UK Rising Dividends",
+        "amount": 586184.12
+      },
+      {
+        "id": "10",
+        "name": "Fidelity UK Smaller Companies",
+        "amount": 530958.13
+      },
+      {
+        "id": "8",
+        "name": "BNY Mellon Global Income",
+        "amount": 482670.56
+      },
+      {
+        "id": "5",
+        "name": "Cash",
+        "amount": 470391.99
+      },
+      {
+        "id": "63",
+        "name": "PruFund Growth (Sterling)",
+        "amount": 455194.94
+      },
+      {
+        "id": "67",
+        "name": "Royal London Sustainable World Trust C ",
+        "amount": 448076.8
+      },
+      {
+        "id": "140",
+        "name": "Discretionary Portfolio - Medium High",
+        "amount": 436191.49
+      },
+      {
+        "id": "28",
+        "name": "LV= Smoothed Managed Balanced",
+        "amount": 357579.08
+      },
+      {
+        "id": "68",
+        "name": "Vanguard LifeStrategy 40% Equity A Acc",
+        "amount": 346076.57
+      },
+      {
+        "id": "22",
+        "name": "LV= Balanced Index",
+        "amount": 336500.8
+      },
+      {
+        "id": "78",
+        "name": "Discretionary Portfolio Medium-Low",
+        "amount": 286234.77
+      },
+      {
+        "id": "73",
+        "name": "LV= FGB Balanced S2 ",
+        "amount": 273912.19
+      },
+      {
+        "id": "82",
+        "name": "Optimum Return ",
+        "amount": 239516.3
+      },
+      {
+        "id": "84",
+        "name": "PruFund Growth Series D ",
+        "amount": 206556.05
+      },
+      {
+        "id": "64",
+        "name": "LV= Balanced ISA",
+        "amount": 202764.62
+      },
+      {
+        "id": "30",
+        "name": "M&G Global Dividend",
+        "amount": 202515.27
+      },
+      {
+        "id": "124",
+        "name": "Aviva With-Profit 2 S4",
+        "amount": 150611.15
+      },
+      {
+        "id": "100",
+        "name": "Liontrust Sus Fut Liontst Sust Futr MgD Gth 2 ",
+        "amount": 146679.32
+      },
+      {
+        "id": "79",
+        "name": "Vanguard LifeStrategy 60% Equity ",
+        "amount": 120841.88
+      },
+      {
+        "id": "69",
+        "name": "Vanguard LifeStrategy 80% Equity A Acc",
+        "amount": 114792.69
+      },
+      {
+        "id": "65",
+        "name": "PruFund Risk Managed 5 ISA",
+        "amount": 113401.16
+      },
+      {
+        "id": "98",
+        "name": "Aviva Life Mixed Investments (40-85%) S4",
+        "amount": 100253.0
+      },
+      {
+        "id": "76",
+        "name": "PruFund Cautious S2",
+        "amount": 94713.16
+      },
+      {
+        "id": "101",
+        "name": "QUILTER INVRS CIR QI CIRLUM DYNM PASSV PTF R",
+        "amount": 90380.82
+      },
+      {
+        "id": "16",
+        "name": "Invesco Global Emerging Markets",
+        "amount": 88429.81
+      },
+      {
+        "id": "131",
+        "name": "Lazard Emerging Markets A Acc GBP",
+        "amount": 83311.37
+      },
+      {
+        "id": "1",
+        "name": "FGF Balanced S2",
+        "amount": 81809.3
+      },
+      {
+        "id": "134",
+        "name": "Quilter Investors Cirilium Moderate Blend Portfolio U1 Acc G",
+        "amount": 80927.72
+      },
+      {
+        "id": "127",
+        "name": "AXA Framlington American Growth Z Acc",
+        "amount": 80736.43
+      },
+      {
+        "id": "128",
+        "name": "AXA Global Sustainable Managed Z Acc",
+        "amount": 80682.54
+      },
+      {
+        "id": "23",
+        "name": "Aviva BNY Multi-Asset Balanced S2",
+        "amount": 79732.56
+      },
+      {
+        "id": "59",
+        "name": "Artemis Income",
+        "amount": 76886.39
+      },
+      {
+        "id": "17",
+        "name": "L&G All Stock Index Link Gilt Index Tst",
+        "amount": 75992.85
+      },
+      {
+        "id": "2",
+        "name": "Sterling Managed Equity Income S",
+        "amount": 69462.34
+      },
+      {
+        "id": "97",
+        "name": "Aviva Liontrust Sustainable Future Managed S4",
+        "amount": 69333.19
+      },
+      {
+        "id": "99",
+        "name": "Liontrust INV FDS1 Liontst GBL ALPHA C GBP Acc ",
+        "amount": 68168.58
+      },
+      {
+        "id": "90",
+        "name": "Unicorn Mastertrust B Inc",
+        "amount": 65575.99
+      },
+      {
+        "id": "95",
+        "name": "Aviva With-Profit Guaranteed (NU)",
+        "amount": 64643.37
+      },
+      {
+        "id": "122",
+        "name": "Aviva M&G Global Dividend S4",
+        "amount": 63916.32
+      },
+      {
+        "id": "126",
+        "name": "abrdn American Equity I Acc",
+        "amount": 60116.93
+      },
+      {
+        "id": "44",
+        "name": "M&G Global Themes",
+        "amount": 59122.67
+      },
+      {
+        "id": "120",
+        "name": "Aviva Asia Pacific ex Japan Equity S4",
+        "amount": 56965.5
+      },
+      {
+        "id": "74",
+        "name": "Octopus IHT Funds",
+        "amount": 55018.6
+      },
+      {
+        "id": "125",
+        "name": "Aviva BNY Mellon Multi-Asset Growth S4",
+        "amount": 54610.38
+      },
+      {
+        "id": "60",
+        "name": "Invesco Pacific (UK)",
+        "amount": 54389.44
+      },
+      {
+        "id": "20",
+        "name": "Stewart Investors Asia Pacific Leaders",
+        "amount": 54213.74
+      },
+      {
+        "id": "121",
+        "name": "Aviva BNY Mellon Global Income S4",
+        "amount": 53673.47
+      },
+      {
+        "id": "94",
+        "name": "Sterling Monthly Extra Income 2",
+        "amount": 53331.36
+      },
+      {
+        "id": "81",
+        "name": "Optimum Bonus ",
+        "amount": 51365.84
+      },
+      {
+        "id": "93",
+        "name": "Sterling BNY Mellon Global Income 2",
+        "amount": 49660.58
+      },
+      {
+        "id": "133",
+        "name": "M&G Strategic Corporate Bond I Acc GBP",
+        "amount": 42658.58
+      },
+      {
+        "id": "129",
+        "name": "CT Emerging Market Bond ZNI GBP",
+        "amount": 42537.07
+      },
+      {
+        "id": "80",
+        "name": "PruFund Risk Managed 4 S2",
+        "amount": 40827.83
+      },
+      {
+        "id": "14",
+        "name": "Vgd LifeStrategy 40% Equity",
+        "amount": 38793.86
+      },
+      {
+        "id": "88",
+        "name": "LV = Smoothed Managed Growth ",
+        "amount": 36401.22
+      },
+      {
+        "id": "130",
+        "name": "FTF ClearBridge UK Mid Cap W Inc",
+        "amount": 31592.66
+      },
+      {
+        "id": "3",
+        "name": "Landseer Global Artificial Intelligence",
+        "amount": 31199.13
+      },
+      {
+        "id": "123",
+        "name": "Aviva Life Mixed Investment (20-60%) S4",
+        "amount": 29355.72
+      },
+      {
+        "id": "132",
+        "name": "Liontrust Special Situations I Inc",
+        "amount": 28499.18
+      },
+      {
+        "id": "111",
+        "name": "Aviva Smooth Managed Bond S4",
+        "amount": 28319.03
+      },
+      {
+        "id": "135",
+        "name": "Stewart Investors Worldwide All Cap B Acc GBP",
+        "amount": 22412.88
+      },
+      {
+        "id": "37",
+        "name": "Historical Funds",
+        "amount": 17736.37
+      },
+      {
+        "id": "107",
+        "name": "Pru - M&G Global Themes S4",
+        "amount": 16187.07
+      },
+      {
+        "id": "83",
+        "name": "Polar Capital Global Technology I Inc",
+        "amount": 15927.31
+      },
+      {
+        "id": "77",
+        "name": "Janus Henderson Global Tech Ldrs I Acc",
+        "amount": 14178.14
+      },
+      {
+        "id": "85",
+        "name": "Pictet Robotics I GBP",
+        "amount": 11698.79
+      },
+      {
+        "id": "105",
+        "name": "Invesco Global Income Fund (UK) Z (Acc)",
+        "amount": 11541.63
+      },
+      {
+        "id": "103",
+        "name": "HSBC FTSE 100 Index Fund Accumulation C",
+        "amount": 10994.38
+      },
+      {
+        "id": "86",
+        "name": "M&G Managed Growth PP Acc",
+        "amount": 10991.08
+      },
+      {
+        "id": "104",
+        "name": "HSBC FTSE 250 Index Accumulation C",
+        "amount": 9327.48
+      },
+      {
+        "id": "110",
+        "name": "Aviva BNY Mellon Multi Asset Balanced S4 ",
+        "amount": 9091.96
+      },
+      {
+        "id": "108",
+        "name": "Pru - Risk Managed Passive 3 S4",
+        "amount": 8358.71
+      },
+      {
+        "id": "109",
+        "name": "PruFund Risk Managed 5 Ser E",
+        "amount": 7066.22
+      },
+      {
+        "id": "91",
+        "name": "Prudential Risk Managed Passive 1 P Acc",
+        "amount": 6714.42
+      },
+      {
+        "id": "102",
+        "name": "Fidelity China Special Situations Ord",
+        "amount": 5784.08
+      },
+      {
+        "id": "26",
+        "name": "LV= Schroder QEP Global Core 2",
+        "amount": 5021.87
+      },
+      {
+        "id": "24",
+        "name": "LV= Invesco Asian (UK)",
+        "amount": 4869.85
+      },
+      {
+        "id": "62",
+        "name": "LV= BNY Mellon Multi Asset Balanced",
+        "amount": 4504.02
+      },
+      {
+        "id": "27",
+        "name": "LV= Vanguard LifeStrategy 40% Equity",
+        "amount": 4446.15
+      },
+      {
+        "id": "36",
+        "name": "L&G US Index Trust ",
+        "amount": 3889.6
+      },
+      {
+        "id": "106",
+        "name": "Royal London Index Linked Fund M Inc",
+        "amount": 1951.22
+      },
+      {
+        "id": "75",
+        "name": "LF Equity Income ",
+        "amount": 1399.27
+      },
+      {
+        "id": "15",
+        "name": "Vgd LifeStrategy 80% Equity",
+        "amount": 1323.2
+      },
+      {
+        "id": "54",
+        "name": "Pru Baillie Gifford American",
+        "amount": 1000.0
+      },
+      {
+        "id": "43",
+        "name": "Baillie Gifford Emerging Markets Growth",
+        "amount": 200.0
+      }
+    ],
+    "providers": [
+      {
+        "id": "17",
+        "name": "Prudential",
+        "amount": 12862314.06
+      },
+      {
+        "id": "2",
+        "name": "Wealthtime",
+        "amount": 3932618.24
+      },
+      {
+        "id": "16",
+        "name": "Fidelity",
+        "amount": 2361258.46
+      },
+      {
+        "id": "1",
+        "name": "AJ Bell",
+        "amount": 1676993.24
+      },
+      {
+        "id": "19",
+        "name": "LV",
+        "amount": 1308370.0
+      },
+      {
+        "id": "18",
+        "name": "Aviva",
+        "amount": 804122.92
+      },
+      {
+        "id": "35",
+        "name": "Charles Stanley",
+        "amount": 731540.43
+      },
+      {
+        "id": "20",
+        "name": "Transact",
+        "amount": 730334.23
+      },
+      {
+        "id": "33",
+        "name": "Sterling",
+        "amount": 172454.28
+      },
+      {
+        "id": "30",
+        "name": "Quilter",
+        "amount": 115577.13
+      },
+      {
+        "id": "31",
+        "name": "Octopus Investments",
+        "amount": 55018.6
+      },
+      {
+        "id": "unassigned_provider",
+        "name": "Unassigned Provider",
+        "amount": 27311.0
+      },
+      {
+        "id": "21",
+        "name": "Aegon",
+        "amount": 14942.19
+      }
+    ],
+    "templates": [
+      {
+        "id": "bespoke",
+        "name": "Bespoke Portfolios",
+        "amount": 18629739.02
+      },
+      {
+        "id": "48",
+        "name": "Medium Plus - November 2024",
+        "amount": 1544972.96
+      },
+      {
+        "id": "39",
+        "name": "Wealthtime Smoothing Plus Growth - Pension - 50/50 - November 2024",
+        "amount": 1107193.89
+      },
+      {
+        "id": "49",
+        "name": "More Adventurous - November 2024",
+        "amount": 833730.81
+      },
+      {
+        "id": "45",
+        "name": "Wealthtime Smoothing Plus Growth - ISA - 50/50 - November 2024",
+        "amount": 650474.77
+      },
+      {
+        "id": "47",
+        "name": "PRA Medium Plus Smoothing - Pension - 50/50 - May 2025",
+        "amount": 648082.64
+      },
+      {
+        "id": "42",
+        "name": "Wealthtime Smoothing Plus Growth - pension - 70/30 - November 2024",
+        "amount": 635326.43
+      },
+      {
+        "id": "44",
+        "name": "Wealthtime Smoothing Plus Growth - ISA - 50/50 - November 2024",
+        "amount": 258634.84
+      },
+      {
+        "id": "58",
+        "name": "More Adventurous - 2% Cash - November 2024",
+        "amount": 221493.03
+      },
+      {
+        "id": "41",
+        "name": "Wealthtime Smoothing Plus Growth - Pension - 60/40 - November 2024",
+        "amount": 175376.33
+      },
+      {
+        "id": "43",
+        "name": "Wealthtime Smoothing Plus Growth - ISA - 50/50 - November 2024",
+        "amount": 52186.92
+      },
+      {
+        "id": "50",
+        "name": "Medium Plus - 2% Cash - November 2024",
+        "amount": 35643.14
+      }
+    ],
+    "performance": {
+      "optimization_stats": {
+        "total_db_queries": 6,
+        "total_portfolio_funds": 1463,
+        "total_valuations": 1336,
+        "valuations_used": 1336,
+        "fum_source": "valuations"
+      }
+    }
+  },
+  "error": null,
+  "content_hash": "e8c3765738bed7382c5abc0d720b3f9a16282fff867b1bcd6b7ec04e70b2c864"
+}

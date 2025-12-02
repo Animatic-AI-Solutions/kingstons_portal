@@ -280,7 +280,7 @@ const PortfolioTemplateDetails: React.FC = () => {
     try {
       // This will update the template state with the funds for the selected generation
       console.log(`Fetching funds for generation ${generationId}`);
-      const response = await api.get(`/available_portfolios/${portfolioId}`, {
+      const response = await api.get(`/available-portfolios/${portfolioId}`, {
         params: { generation_id: generationId }
       });
       
@@ -352,7 +352,7 @@ const PortfolioTemplateDetails: React.FC = () => {
       console.log(`📊 Template has ${generations.length} generation(s) and ${linkedProducts.length} linked product(s)`);
       
       // Let the backend handle all cascade deletion logic safely
-      const response = await api.delete(`/available_portfolios/${portfolioId}`);
+      const response = await api.delete(`/available-portfolios/${portfolioId}`);
       
       console.log('✅ Template deletion completed successfully:', response.data);
       
@@ -421,7 +421,7 @@ const PortfolioTemplateDetails: React.FC = () => {
       setIsSaving(true);
       setError(null);
       
-      const response = await api.put(`/available_portfolios/${portfolioId}`, formData);
+      const response = await api.put(`/available-portfolios/${portfolioId}`, formData);
       
       if (response.data) {
         // Refresh the data to get the updated template
@@ -471,7 +471,7 @@ const PortfolioTemplateDetails: React.FC = () => {
       setError(null);
       
       // Call the API to activate the generation
-      await api.patch(`/available_portfolios/${portfolioId}/generations/${generationId}`, {
+      await api.patch(`/available-portfolios/${portfolioId}/generations/${generationId}`, {
         status: 'active'
       });
       
@@ -641,7 +641,7 @@ const PortfolioTemplateDetails: React.FC = () => {
       );
 
       // 5. Background API call
-      await api.delete(`/available_portfolios/${portfolioId}/generations/${generation.id}`);
+      await api.delete(`/available-portfolios/${portfolioId}/generations/${generation.id}`);
       
       // 6. Success - remove from deleting set and sync with server
       setDeletingGenerationIds(prev => {

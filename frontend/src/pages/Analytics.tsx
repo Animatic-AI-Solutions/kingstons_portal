@@ -320,7 +320,7 @@ const Analytics: React.FC = () => {
   // Check IRR calculation status
   const checkIrrStatus = async () => {
     try {
-      const response = await api.get('/api/analytics/irr-status');
+      const response = await api.get('/analytics/irr-status');
       setIrrStatus(response.data);
     } catch (err) {
       console.warn('Could not fetch IRR status:', err);
@@ -332,7 +332,7 @@ const Analytics: React.FC = () => {
     setBackgroundRefreshing(true);
     try {
       console.log('🔄 Starting background IRR refresh...');
-      const response = await api.post('/api/analytics/company/irr/refresh-background');
+      const response = await api.post('/analytics/company/irr/refresh-background');
       console.log('✅ Background IRR refresh completed:', response.data);
       
       // Update status after refresh

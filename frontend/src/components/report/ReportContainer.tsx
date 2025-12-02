@@ -266,7 +266,7 @@ export const ReportContainer: React.FC<ReportContainerProps> = React.memo(({
                 {clientGroups.map((clientGroup) => (
                   <button
                     key={clientGroup.id}
-                    onClick={() => navigate(`/client_groups/${clientGroup.id}`, {
+                    onClick={() => navigate(`/client-groups/${clientGroup.id}`, {
                       state: {
                         from: 'report-display',
                         clientGroupName: clientGroup.name,

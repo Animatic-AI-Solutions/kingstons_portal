@@ -197,7 +197,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
       console.log('AccountIRRHistory: Making API request to complete endpoint for product data');
       
       // Use the same optimized endpoint as ProductOverview that returns all data in one request
-      const completeProductResponse = await api.get(`/api/client_products/${accountId}/complete`);
+      const completeProductResponse = await api.get(`/client-products/${accountId}/complete`);
       const completeData = completeProductResponse.data;
       
       console.log('AccountIRRHistory: Complete product data received:', completeData);
@@ -269,7 +269,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
         
         for (const fund of portfolioFunds) {
           try {
-            const valuationResponse = await api.get(`/fund_valuations?portfolio_fund_id=${fund.id}&order=valuation_date.desc&limit=100000`);
+            const valuationResponse = await api.get(`/fund-valuations?portfolio_fund_id=${fund.id}&order=valuation_date.desc&limit=100000`);
             const valuations = valuationResponse.data || [];
             
             const fundDates = valuations.map((v: any) => v.valuation_date.split('T')[0]); // Extract YYYY-MM-DD
@@ -357,7 +357,7 @@ const AccountIRRHistory: React.FC<AccountIRRHistoryProps> = ({ accountId: propAc
                 // Import api service to get correct base URL for production
                 const { default: api } = await import('../services/api');
                 
-                const response = await api.get(`/api/historical-irr/portfolio-irr-values/${portfolioIdForIRR}`);
+                const response = await api.get(`/historical-irr/portfolio-irr-values/${portfolioIdForIRR}`);
                 console.log(`📡 Successfully fetched portfolio IRR data for portfolio ${portfolioIdForIRR}`);
 
                 const portfolioIRRData = response.data;

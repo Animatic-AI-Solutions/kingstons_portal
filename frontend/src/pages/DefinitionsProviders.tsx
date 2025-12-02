@@ -28,14 +28,14 @@ const DefinitionsProviders: React.FC = () => {
 
   // Data fetching
   const fetchProviders = useCallback(async () => {
-    const response = await api.get('/available_providers');
+    const response = await api.get('/available-providers');
     const providers = response.data;
     
     // Fetch product count for each provider
     const providersWithCounts = await Promise.all(
       providers.map(async (provider: Provider) => {
         try {
-          const productsResponse = await api.get('/client_products', {
+          const productsResponse = await api.get('/client-products', {
             params: { provider_id: provider.id }
           });
           return {

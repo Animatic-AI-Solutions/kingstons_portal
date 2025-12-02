@@ -218,10 +218,10 @@ const GlobalSearch: React.FC = () => {
 
   const handleResultClick = (result: SearchResult) => {
     const routes = {
-      client_group: `/client_groups/${result.entity_id}`,
+      client_group: `/client-groups/${result.entity_id}`,
       product: `/products/${result.entity_id}`,
       client_product: `/products/${result.entity_id}`, // Handle client_product as product
-      product_owner: `/product_owners/${result.entity_id}`,
+      product_owner: `/product-owners/${result.entity_id}`,
       fund: `/definitions/funds/${result.entity_id}`,
       provider: `/definitions/providers/${result.entity_id}`,
       portfolio: `/definitions/portfolio-templates/${result.entity_id}`

@@ -435,7 +435,7 @@ const Revenue: React.FC = () => {
                       <tr 
                         key={client.id} 
                         className="hover:bg-gray-50 cursor-pointer transition-colors"
-                        onClick={() => navigate(`/client_groups/${client.id}`)}
+                        onClick={() => navigate(`/client-groups/${client.id}`)}
                       >
                         <td className="px-4 py-2 whitespace-nowrap">
                           <div className="flex items-center">

@@ -48,7 +48,7 @@ export const useSmartNavigation = () => {
     // Priority 1: URL parameter navigation (from ClientDetails)
     if (context.from === 'client-details' && context.clientId) {
       return {
-        path: `/client_groups/${context.clientId}`,
+        path: `/client-groups/${context.clientId}`,
         state: undefined
       };
     }
@@ -95,7 +95,7 @@ export const useSmartNavigation = () => {
     // Priority 5: Fallback to client group if client ID is available
     if (fallbackClientId) {
       return {
-        path: `/client_groups/${fallbackClientId}`,
+        path: `/client-groups/${fallbackClientId}`,
         state: undefined
       };
     }
@@ -133,9 +133,9 @@ export const useSmartNavigation = () => {
 
     // Build breadcrumb trail based on navigation context
     if (context.from === 'client-details' && context.clientId) {
-      trail.push({ path: '/client_groups', label: 'Client Groups' });
+      trail.push({ path: '/client-groups', label: 'Client Groups' });
       trail.push({ 
-        path: `/client_groups/${context.clientId}`, 
+        path: `/client-groups/${context.clientId}`, 
         label: context.clientName ? decodeURIComponent(context.clientName) : 'Client Details' 
       });
     } else if (context.from === 'portfolio-details' && context.portfolioId) {

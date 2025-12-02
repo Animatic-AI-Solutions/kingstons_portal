@@ -66,7 +66,7 @@ const Products: React.FC = () => {
       setIsLoading(true);
       console.log("Fetching products data with optimized endpoint...");
       
-      const productsWithOwnersRes = await api.get('/products_display');
+      const productsWithOwnersRes = await api.get('/products-display');
       
       // Set products directly from the optimized endpoint response
       const productsData = productsWithOwnersRes.data || [];

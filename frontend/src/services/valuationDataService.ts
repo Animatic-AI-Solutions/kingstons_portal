@@ -68,7 +68,7 @@ export class ValuationDataService {
   ): Promise<BatchValuationResponse> {
     try {
       // First get all fund IDs for the portfolio
-      const portfolioFundsResponse = await this.api.get('/portfolio_funds', {
+      const portfolioFundsResponse = await this.api.get('/portfolio-funds', {
         params: { portfolio_id: portfolioId }
       });
 
@@ -102,7 +102,7 @@ export class ValuationDataService {
   static toValuationMap(batchResponse: BatchValuationResponse): Record<number, number> {
     const valuationMap: Record<number, number> = {};
     
-    for (const [fundId, valuationData] of Object.entries(batchResponse.fund_valuations)) {
+    for (const [fundId, valuationData] of Object.entries(batchResponse.fund-valuations)) {
       valuationMap[parseInt(fundId)] = valuationData.valuation;
     }
     
@@ -116,7 +116,7 @@ export class ValuationDataService {
     try {
       const batchResponse = await this.getBatchFundValuations(fundIds);
       
-      const dates = Object.values(batchResponse.fund_valuations)
+      const dates = Object.values(batchResponse.fund-valuations)
         .map(valuation => valuation.valuation_date)
         .filter((date): date is string => date !== null)
         .sort((a, b) => b.localeCompare(a)); // Sort descending
@@ -162,7 +162,7 @@ export class ValuationDataService {
       // Graceful fallback to individual requests if batch fails
       const requests = fundIds.map(async (fundId) => {
         try {
-          const response = await this.api.get(`/fund_valuations`, {
+          const response = await this.api.get(`/fund-valuations`, {
             params: { portfolio_fund_id: fundId, limit: 100000 }
           });
           return { fundId, data: response.data || [] };

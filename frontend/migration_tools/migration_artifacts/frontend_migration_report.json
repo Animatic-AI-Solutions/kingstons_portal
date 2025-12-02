@@ -1,0 +1,206 @@
+{
+  "files_modified": 10,
+  "total_changes": 40,
+  "transformations": [
+    {
+      "file": "src\\components\\AddProviderModal.tsx",
+      "original": "'/api/available_providers'",
+      "converted": "'/api/available-providers'"
+    },
+    {
+      "file": "src\\pages\\AccountIRRCalculation.tsx",
+      "original": "`/api/client_products/${accountId}/complete`",
+      "converted": "`/api/client-products/${accountId}/complete`"
+    },
+    {
+      "file": "src\\pages\\AccountIRRCalculation.tsx",
+      "original": "`/api/client_products/${account.id}`",
+      "converted": "`/api/client-products/${account.id}`"
+    },
+    {
+      "file": "src\\pages\\AccountIRRHistory.tsx",
+      "original": "`/api/client_products/${accountId}/complete`",
+      "converted": "`/api/client-products/${accountId}/complete`"
+    },
+    {
+      "file": "src\\pages\\ClientDetails.tsx",
+      "original": "`/api/client_products/${productId}`",
+      "converted": "`/api/client-products/${productId}`"
+    },
+    {
+      "file": "src\\pages\\CreateClientProducts.tsx",
+      "original": "'/api/client_groups'",
+      "converted": "'/api/client-groups'"
+    },
+    {
+      "file": "src\\pages\\CreateClientProducts.tsx",
+      "original": "'/api/available_providers'",
+      "converted": "'/api/available-providers'"
+    },
+    {
+      "file": "src\\pages\\CreateClientProducts.tsx",
+      "original": "'/api/available_portfolios'",
+      "converted": "'/api/available-portfolios'"
+    },
+    {
+      "file": "src\\pages\\CreateClientProducts.tsx",
+      "original": "'/api/product_owners'",
+      "converted": "'/api/product-owners'"
+    },
+    {
+      "file": "src\\pages\\CreateClientProducts.tsx",
+      "original": "'/api/portfolios/from_template'",
+      "converted": "'/api/portfolios/from-template'"
+    },
+    {
+      "file": "src\\pages\\CreateClientProducts.tsx",
+      "original": "'/api/portfolio_funds'",
+      "converted": "'/api/portfolio-funds'"
+    },
+    {
+      "file": "src\\pages\\CreateClientProducts.tsx",
+      "original": "'/api/client_products'",
+      "converted": "'/api/client-products'"
+    },
+    {
+      "file": "src\\pages\\CreateClientProducts.tsx",
+      "original": "'/api/product_owner_products'",
+      "converted": "'/api/product-owner-products'"
+    },
+    {
+      "file": "src\\pages\\CreateClientProducts.tsx",
+      "original": "`/api/available_portfolios/${templateId}/generations`",
+      "converted": "`/api/available-portfolios/${templateId}/generations`"
+    },
+    {
+      "file": "src\\pages\\CreateClientProducts.tsx",
+      "original": "`/api/available_portfolios/${product.portfolio.templateId}?generation_id=${generationId}`",
+      "converted": "`/api/available-portfolios/${product.portfolio.templateId}?generation_id=${generationId}`"
+    },
+    {
+      "file": "src\\pages\\CreateClientProducts.tsx",
+      "original": "`/api/portfolio_funds`",
+      "converted": "`/api/portfolio-funds`"
+    },
+    {
+      "file": "src\\pages\\CreateClientProducts.tsx",
+      "original": "`/api/portfolio_funds/${cashFundEntry.id}`",
+      "converted": "`/api/portfolio-funds/${cashFundEntry.id}`"
+    },
+    {
+      "file": "src\\pages\\ProductDetails.tsx",
+      "original": "`/api/client_products/${productId}/complete`",
+      "converted": "`/api/client-products/${productId}/complete`"
+    },
+    {
+      "file": "src\\pages\\ProductOverview.tsx",
+      "original": "'/api/available_portfolios/template-portfolio-generations/active'",
+      "converted": "'/api/available-portfolios/template-portfolio-generations/active'"
+    },
+    {
+      "file": "src\\pages\\ProductOverview.tsx",
+      "original": "'/api/product_owner_products'",
+      "converted": "'/api/product-owner-products'"
+    },
+    {
+      "file": "src\\pages\\ProductOverview.tsx",
+      "original": "`/api/client_products/${accountId}/complete`",
+      "converted": "`/api/client-products/${accountId}/complete`"
+    },
+    {
+      "file": "src\\pages\\ProductOverview.tsx",
+      "original": "`/api/available_portfolios/batch/generation-with-funds/${completeData.template_generation_id}`",
+      "converted": "`/api/available-portfolios/batch/generation-with-funds/${completeData.template_generation_id}`"
+    },
+    {
+      "file": "src\\pages\\ProductOverview.tsx",
+      "original": "`/api/product_owner_products/product/${accountId}`",
+      "converted": "`/api/product-owner-products/product/${accountId}`"
+    },
+    {
+      "file": "src\\pages\\ProductOverview.tsx",
+      "original": "`/api/client_products/${accountId}`",
+      "converted": "`/api/client-products/${accountId}`"
+    },
+    {
+      "file": "src\\pages\\ProductOverview.tsx",
+      "original": "`/api/client_products/${accountId}`",
+      "converted": "`/api/client-products/${accountId}`"
+    },
+    {
+      "file": "src\\pages\\ProductOverview.tsx",
+      "original": "`/api/client_products/${accountId}/owners`",
+      "converted": "`/api/client-products/${accountId}/owners`"
+    },
+    {
+      "file": "src\\pages\\ProductOverview.tsx",
+      "original": "`/api/client_products/${accountId}`",
+      "converted": "`/api/client-products/${accountId}`"
+    },
+    {
+      "file": "src\\pages\\ProductOverview.tsx",
+      "original": "`/api/product_owner_products/${ownerId}/${accountId}`",
+      "converted": "`/api/product-owner-products/${ownerId}/${accountId}`"
+    },
+    {
+      "file": "src\\pages\\ProductOwnerDetails.tsx",
+      "original": "'/api/client_products_with_owners'",
+      "converted": "'/api/client-products-with-owners'"
+    },
+    {
+      "file": "src\\pages\\ProductOwnerDetails.tsx",
+      "original": "'/api/product_owner_products'",
+      "converted": "'/api/product-owner-products'"
+    },
+    {
+      "file": "src\\pages\\ProductOwnerDetails.tsx",
+      "original": "`/api/product_owners/${numericId}`",
+      "converted": "`/api/product-owners/${numericId}`"
+    },
+    {
+      "file": "src\\pages\\ProductOwnerDetails.tsx",
+      "original": "`/api/product_owners/${ownerId}/products`",
+      "converted": "`/api/product-owners/${ownerId}/products`"
+    },
+    {
+      "file": "src\\pages\\ProductOwnerDetails.tsx",
+      "original": "`/api/product_owner_products/${productOwner.id}/${productId}`",
+      "converted": "`/api/product-owner-products/${productOwner.id}/${productId}`"
+    },
+    {
+      "file": "src\\pages\\ProductOwnerDetails.tsx",
+      "original": "`/api/product_owners/${productOwner.id}`",
+      "converted": "`/api/product-owners/${productOwner.id}`"
+    },
+    {
+      "file": "src\\pages\\ProductOwnerDetails.tsx",
+      "original": "`/api/product_owners/${productOwner.id}`",
+      "converted": "`/api/product-owners/${productOwner.id}`"
+    },
+    {
+      "file": "src\\pages\\ProductOwners.tsx",
+      "original": "'/api/product_owners'",
+      "converted": "'/api/product-owners'"
+    },
+    {
+      "file": "src\\pages\\ProductOwners.tsx",
+      "original": "'/api/client_products'",
+      "converted": "'/api/client-products'"
+    },
+    {
+      "file": "src\\pages\\ProductOwners.tsx",
+      "original": "'/api/product_owners'",
+      "converted": "'/api/product-owners'"
+    },
+    {
+      "file": "src\\pages\\ProductOwners.tsx",
+      "original": "'/api/product_owner_products'",
+      "converted": "'/api/product-owner-products'"
+    },
+    {
+      "file": "src\\pages\\ReportDisplayPage.tsx",
+      "original": "`/api/client_groups/${id}`",
+      "converted": "`/api/client-groups/${id}`"
+    }
+  ]
+}

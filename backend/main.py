@@ -61,9 +61,6 @@ from app.api.routes import (
 # Import database functions for connection management
 from app.db.database import create_db_pool, close_db_pool, check_database_health
 
-# Import dual-path middleware for API migration support
-from app.middleware.path_compatibility import DualPathMiddleware, get_middleware_config
-
 # Load environment variables from .env file
 load_dotenv()
 
@@ -196,17 +193,6 @@ app.add_middleware(
     # How long browsers should cache CORS response (in seconds)
     max_age=3600,
 )
-
-# Add dual-path compatibility middleware for API migration
-# This middleware allows the API to accept both underscore and hyphen path formats
-# during the migration period, ensuring zero downtime
-middleware_config = get_middleware_config()
-app.add_middleware(
-    DualPathMiddleware,
-    enable_legacy_paths=middleware_config["enable_legacy_paths"],
-    log_usage=middleware_config["log_usage"]
-)
-logger.info(f"Dual-Path Middleware enabled. Legacy paths: {middleware_config['enable_legacy_paths']}")
 
 # API URL Structure Standard
 # All endpoints follow this pattern: /api/{resource}/{action}

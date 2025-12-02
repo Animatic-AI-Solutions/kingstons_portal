@@ -85,7 +85,7 @@ const ReportDisplayPage: React.FC = () => {
         try {
           const clientGroupData = await Promise.all(
             clientGroupIds.map(async (id) => {
-              const response = await api.get(`/api/client_groups/${id}`);
+              const response = await api.get(`/client-groups/${id}`);
               return {
                 id: Number(id),
                 name: response.data.name

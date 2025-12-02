@@ -52,7 +52,7 @@ export const useDashboardData = () => {
 
   // Define the async fetch function
   const fetchDashboardData = async (): Promise<DashboardAllResponse> => {
-    const { data } = await api.get<DashboardAllResponse>('/analytics/dashboard_all', {
+    const { data } = await api.get<DashboardAllResponse>('/analytics/dashboard-all', {
       params: {
         fund_limit: 100000,  // GROWTH-READY: Support up to 100,000 funds
         provider_limit: 100000,  // GROWTH-READY: Support up to 100,000 providers

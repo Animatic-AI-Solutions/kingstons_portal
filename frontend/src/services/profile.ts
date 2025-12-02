@@ -34,7 +34,7 @@ export const profileService = {
         validData.preferred_client_view = profileData.preferred_client_view;
       }
 
-      const response = await api.put('/api/auth/update-profile', validData);
+      const response = await api.put('/auth/update-profile', validData);
       return response.data;
     } catch (error) {
       console.error('Error updating profile:', error);

@@ -28,7 +28,7 @@ export const usePortfolioGenerations = (): UsePortfolioGenerationsResult => {
   const fetchGenerations = useCallback(async ({ signal }: { signal?: AbortSignal } = {}) => {
     try {
       // Use the existing endpoint for template portfolio generations (now with product counts)
-      const response = await api.get('/available_portfolios/template-portfolio-generations/active', { signal });
+      const response = await api.get('/available-portfolios/template-portfolio-generations/active', { signal });
 
       // Transform the data to match our expected interface
       const transformedData: PortfolioGeneration[] = await Promise.all(
@@ -36,7 +36,7 @@ export const usePortfolioGenerations = (): UsePortfolioGenerationsResult => {
           // Get the template name from available_portfolios
           let templateName = 'Unknown Template';
           try {
-            const templateResponse = await api.get(`/available_portfolios/${gen.available_portfolio_id}`, { signal });
+            const templateResponse = await api.get(`/available-portfolios/${gen.available_portfolio_id}`, { signal });
             templateName = templateResponse.data.name || 'Unknown Template';
           } catch (error) {
             console.warn(`Could not fetch template name for portfolio ${gen.available_portfolio_id}`);
@@ -102,10 +102,10 @@ export const usePortfolioGenerationDetails = (generationId: string | undefined) 
 
     try {
       // Use the existing endpoint for getting a single generation by ID
-      const generationResponse = await api.get(`/available_portfolios/generations/${generationId}`, { signal });
+      const generationResponse = await api.get(`/available-portfolios/generations/${generationId}`, { signal });
 
       // Get linked products for this generation using products_list_view
-      const productsResponse = await api.get('/client_products', { signal });
+      const productsResponse = await api.get('/client-products', { signal });
       const linkedProducts = productsResponse.data.filter((product: any) =>
         product.effective_template_generation_id === parseInt(generationId)
       );

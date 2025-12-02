@@ -98,7 +98,7 @@ const PortfolioDetails: React.FC = () => {
 
   const fetchPortfolioFunds = async () => {
     try {
-      const response = await api.get(`/portfolio_funds`, {
+      const response = await api.get(`/portfolio-funds`, {
         params: { portfolio_id: portfolioId }
       });
       
@@ -137,22 +137,22 @@ const PortfolioDetails: React.FC = () => {
     try {
       try {
         // First try the dedicated endpoint
-        const response = await api.get(`/portfolios/${portfolioId}/assigned_accounts`);
+        const response = await api.get(`/portfolios/${portfolioId}/assigned-accounts`);
         
         if (response.data && response.data.length > 0) {
           const accountsWithDetails = await Promise.all(
             response.data.map(async (assignment: any) => {
               try {
                 // Fetch account details
-                const accountResponse = await api.get(`/client_products/${assignment.client_product_id}`);
+                const accountResponse = await api.get(`/client-products/${assignment.client_product_id}`);
                 const account = accountResponse.data;
                 
                 // Fetch client details
-                const clientResponse = await api.get(`/client_groups/${account.client_id}`);
+                const clientResponse = await api.get(`/client-groups/${account.client_id}`);
                 const client = clientResponse.data;
                 
                 // Fetch product details
-                const productResponse = await api.get(`/available_products/${account.available_products_id}`);
+                const productResponse = await api.get(`/available-products/${account.available_products_id}`);
                 const product = productResponse.data;
                 
                 return {
@@ -182,7 +182,7 @@ const PortfolioDetails: React.FC = () => {
         
         try {
           // Attempt to find assignments using the product_portfolio_assignments endpoint
-          const response = await api.get('/product_portfolio_assignments', {
+          const response = await api.get('/product-portfolio-assignments', {
             params: {
                 portfolio_id: portfolioId,
                 active_only: true
@@ -194,15 +194,15 @@ const PortfolioDetails: React.FC = () => {
               response.data.map(async (assignment: any) => {
                 try {
                   // Fetch account details
-                  const accountResponse = await api.get(`/client_products/${assignment.client_product_id}`);
+                  const accountResponse = await api.get(`/client-products/${assignment.client_product_id}`);
                   const account = accountResponse.data;
                   
                   // Fetch client details
-                  const clientResponse = await api.get(`/client_groups/${account.client_id}`);
+                  const clientResponse = await api.get(`/client-groups/${account.client_id}`);
                   const client = clientResponse.data;
                   
                   // Fetch product details
-                  const productResponse = await api.get(`/available_products/${account.available_products_id}`);
+                  const productResponse = await api.get(`/available-products/${account.available_products_id}`);
                   const product = productResponse.data;
                   
                   return {

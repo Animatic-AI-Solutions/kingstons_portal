@@ -15,7 +15,7 @@ export const useNavigationRefresh = () => {
    */
   const navigateToClientGroups = () => {
     queryClient.invalidateQueries({ queryKey: ['client-bulk-data'] });
-    navigate('/client_groups');
+    navigate('/client-groups');
   };
 
   /**

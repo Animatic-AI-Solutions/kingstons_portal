@@ -64,8 +64,8 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Add logging for fund_valuations errors
-    if (error.config?.url && error.config.url.includes('fund_valuations')) {
+    // Add logging for fund-valuations errors
+    if (error.config?.url && error.config.url.includes('fund-valuations')) {
       console.error('🔍 API ERROR: Error response from', error.config.url);
       console.error('🔍 API ERROR: Status:', error.response?.status);
       console.error('🔍 API ERROR: Data:', error.response?.data);
@@ -86,7 +86,7 @@ api.interceptors.response.use(
  * @returns {Promise} - API response with portfolio templates
  */
 export const getAvailablePortfolios = () => {
-  return api.get('available_portfolios');
+  return api.get('/available-portfolios');
 };
 
 /**
@@ -95,7 +95,7 @@ export const getAvailablePortfolios = () => {
  * @returns {Promise} - API response with portfolio template details
  */
 export const getAvailablePortfolioDetails = (id: number) => {
-  return api.get(`available_portfolios/${id}`);
+  return api.get(`/available-portfolios/${id}`);
 };
 
 /**
@@ -103,7 +103,7 @@ export const getAvailablePortfolioDetails = (id: number) => {
  * @returns {Promise} - API response with active template portfolio generations
  */
 export const getActiveTemplatePortfolioGenerations = () => {
-  return api.get('available_portfolios/template-portfolio-generations/active');
+  return api.get('/available-portfolios/template-portfolio-generations/active');
 };
 
 /**
@@ -122,7 +122,7 @@ export const createAvailablePortfolio = (data: {
     target_weighting: number;
   }>;
 }) => {
-  return api.post('available_portfolios', data);
+  return api.post('/available-portfolios', data);
 };
 
 /**
@@ -136,7 +136,7 @@ export const createPortfolioFromTemplate = (data: {
   template_id: number;
   portfolio_name: string;
 }) => {
-  return api.post('available_portfolios/from-template', data);
+  return api.post('/available-portfolios/from-template', data);
 };
 
 /**
@@ -151,7 +151,7 @@ export const createPortfolioFromTemplate = (data: {
  * @returns {Promise} - API response with IRR values
  */
 export const getFundIRRValues = (portfolioFundId: number) => {
-  return api.get(`portfolio_funds/${portfolioFundId}/irr-values`);
+  return api.get(`/portfolio-funds/${portfolioFundId}/irr-values`);
 };
 
 /**
@@ -160,7 +160,7 @@ export const getFundIRRValues = (portfolioFundId: number) => {
  * @returns {Promise} - API response with the latest IRR value
  */
 export const getLatestFundIRR = (portfolioFundId: number) => {
-  return api.get(`portfolio_funds/${portfolioFundId}/latest-irr`);
+  return api.get(`/portfolio-funds/${portfolioFundId}/latest-irr`);
 };
 
 /**
@@ -170,7 +170,7 @@ export const getLatestFundIRR = (portfolioFundId: number) => {
  */
 export const getLatestFundIRRs = (fundIds: number[]) => {
   const fundIdsString = fundIds.join(',');
-  return api.get(`portfolio-funds/latest-irr?fund_ids=${fundIdsString}`);
+  return api.get(`/portfolio-funds/latest-irr?fund_ids=${fundIdsString}`);
 };
 
 /**
@@ -179,7 +179,7 @@ export const getLatestFundIRRs = (fundIds: number[]) => {
  * @returns {Promise} - API response with IRR values grouped by fund ID
  */
 export const getBatchFundIRRValues = (fundIds: number[]) => {
-  return api.post('portfolio_funds/batch/irr-values', {
+  return api.post('/portfolio-funds/batch/irr-values', {
     fund_ids: fundIds
   });
 };
@@ -192,7 +192,7 @@ export const getBatchFundIRRValues = (fundIds: number[]) => {
  * @returns {Promise} - API response with IRR values for the specified date
  */
 export const getBatchFundIRRValuesByDate = (fundIds: number[], month: number, year: number) => {
-  return api.post('portfolio_funds/batch/irr-values-by-date', {
+  return api.post('/portfolio-funds/batch/irr-values-by-date', {
     fund_ids: fundIds,
     target_month: month,
     target_year: year
@@ -232,7 +232,7 @@ export const getAggregatedIRRHistory = (params: {
     payload.include_portfolio_irr = params.includePortfolioIRR;
   }
   
-  return api.post('portfolio_funds/aggregated-irr-history', payload);
+  return api.post('/portfolio-funds/aggregated-irr-history', payload);
 };
 
 /**
@@ -247,7 +247,7 @@ export const updateIRRValue = (irrValueId: number, data: {
   date?: string;
   valuation?: number;
 }) => {
-  return api.patch(`irr-values/${irrValueId}`, data);
+  return api.patch(`/irr-values/${irrValueId}`, data);
 };
 
 /**
@@ -256,7 +256,7 @@ export const updateIRRValue = (irrValueId: number, data: {
  * @returns {Promise} - API response confirming deletion
  */
 export const deleteIRRValue = (irrValueId: number) => {
-  return api.delete(`irr-values/${irrValueId}`);
+  return api.delete(`/irr-values/${irrValueId}`);
 };
 
 /**
@@ -272,7 +272,7 @@ export const deleteIRRValue = (irrValueId: number) => {
  */
 export const getFundValuations = (portfolioFundId?: number) => {
   const params = portfolioFundId ? { portfolio_fund_id: portfolioFundId } : {};
-  return api.get('fund_valuations', { params });
+  return api.get('/fund-valuations', { params });
 };
 
 /**
@@ -281,7 +281,7 @@ export const getFundValuations = (portfolioFundId?: number) => {
  * @returns {Promise} - API response with latest fund valuation
  */
 export const getLatestFundValuation = (portfolioFundId: number) => {
-  return api.get(`fund_valuations/latest/${portfolioFundId}`);
+  return api.get(`/fund-valuations/latest/${portfolioFundId}`);
 };
 
 /**
@@ -297,7 +297,7 @@ export const createFundValuation = (data: {
   valuation_date: string;
   valuation: number;
 }) => {
-  return api.post('fund_valuations', data);
+  return api.post('/fund-valuations', data);
 };
 
 /**
@@ -314,7 +314,7 @@ export const updateFundValuation = (valuationId: number, data: {
   valuation_date?: string;
   valuation?: number;
 }) => {
-  return api.patch(`fund_valuations/${valuationId}`, data);
+  return api.patch(`/fund-valuations/${valuationId}`, data);
 };
 
 /**
@@ -323,7 +323,7 @@ export const updateFundValuation = (valuationId: number, data: {
  * @returns {Promise} - API response confirming deletion
  */
 export const deleteFundValuation = (valuationId: number) => {
-  return api.delete(`fund_valuations/${valuationId}`);
+  return api.delete(`/fund-valuations/${valuationId}`);
 };
 
 /**
@@ -332,7 +332,7 @@ export const deleteFundValuation = (valuationId: number) => {
  * @returns {Promise} - API response with calculation results
  */
 export const calculatePortfolioIRR = (portfolioId: number) => {
-  return api.post(`portfolios/${portfolioId}/calculate-irr`);
+  return api.post(`/portfolios/${portfolioId}/calculate-irr`);
 };
 
 /**
@@ -341,7 +341,7 @@ export const calculatePortfolioIRR = (portfolioId: number) => {
  * @returns {Promise} - API response with the latest portfolio IRR
  */
 export const getLatestPortfolioIRR = (portfolioId: number) => {
-  return api.get(`portfolios/${portfolioId}/latest-irr`);
+  return api.get(`/portfolios/${portfolioId}/latest-irr`);
 };
 
 /**
@@ -353,7 +353,7 @@ export const getLatestPortfolioIRR = (portfolioId: number) => {
 export const getPortfolioHistoricalIRR = (productId: number, limit: number = 1000) => {
   // Fixed: Use funds endpoint instead of portfolio endpoint to get fund-level IRR history
   // The portfolio endpoint was returning empty data, while funds endpoint has the actual IRR data
-  return api.get(`historical-irr/funds/${productId}?limit=${limit}`);
+  return api.get(`/historical-irr/funds/${productId}?limit=${limit}`);
 };
 
 /**
@@ -363,7 +363,7 @@ export const getPortfolioHistoricalIRR = (productId: number, limit: number = 100
  * @returns {Promise} - API response with calculation results
  */
 export const calculatePortfolioIRRForDate = (portfolioId: number, date: string) => {
-  return api.post(`portfolios/${portfolioId}/calculate-irr-for-date?date=${encodeURIComponent(date)}`);
+  return api.post(`/portfolios/${portfolioId}/calculate-irr-for-date?date=${encodeURIComponent(date)}`);
 };
 
 /**
@@ -373,7 +373,7 @@ export const calculatePortfolioIRRForDate = (portfolioId: number, date: string) 
  * @returns {Promise} - API response with the total IRR calculation result
  */
 export const calculatePortfolioTotalIRR = (portfolioId: number, year: number) => {
-  return api.post(`portfolios/${portfolioId}/calculate-total-irr?year=${year}`);
+  return api.post(`/portfolios/${portfolioId}/calculate-total-irr?year=${year}`);
 };
 
 /**
@@ -388,10 +388,10 @@ export const calculatePortfolioTotalIRR = (portfolioId: number, year: number) =>
  */
 export const getProviderThemeColors = async () => {
   try {
-    // Use the /api/available_providers endpoint which we know is working
+    // Use the /api/available-providers endpoint which we know is working
     const response = await axios({
       method: 'get',
-      url: `${getApiBaseUrl()}/api/available_providers`,
+      url: `${getApiBaseUrl()}/api/available-providers`,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
@@ -434,7 +434,7 @@ export const initializeProviderThemeColors = () => {
   // Use axios directly without any interceptors
   return axios({
     method: 'post',
-    url: `${getApiBaseUrl()}/api/available_providers/update-theme-colors`,
+    url: `${getApiBaseUrl()}/api/available-providers/update-theme-colors`,
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json'
@@ -448,7 +448,7 @@ export const initializeProviderThemeColors = () => {
  * @returns {Promise} - API response with available colors
  */
 export const getAvailableColors = () => {
-  return api.get('available_providers/available-colors');
+  return api.get('/available-providers/available-colors');
 };
 
 /**
@@ -470,7 +470,7 @@ export const getPortfoliosWithTemplate = (params?: {
   limit?: number;
   status?: string;
 }) => {
-  return api.get('portfolios/with-template', { params });
+  return api.get('/portfolios/with-template', { params });
 };
 
 /**
@@ -479,7 +479,7 @@ export const getPortfoliosWithTemplate = (params?: {
  * @returns {Promise} - API response with portfolio including template info
  */
 export const getPortfolioWithTemplate = (portfolioId: number) => {
-  return api.get(`portfolios/${portfolioId}`);
+  return api.get(`/portfolios/${portfolioId}`);
 };
 
 /**
@@ -487,7 +487,7 @@ export const getPortfolioWithTemplate = (portfolioId: number) => {
  * @returns {Promise} - API response with client group FUM data
  */
 export const getClientGroupFUMSummary = () => {
-  return api.get('client_group_fum_summary');
+  return api.get('/client-group-fum-summary');
 };
 
 /**
@@ -495,17 +495,17 @@ export const getClientGroupFUMSummary = () => {
  * @returns {Promise} - API response with client groups including products, FUM, and metadata
  */
 export const getBulkClientData = () => {
-  return api.get('client_groups/bulk_client_data');
+  return api.get('/client-groups/bulk-client-data');
 };
 
 /**
- * OPTIMIZED: Fetches bulk client data using the new client_groups_summary view
+ * OPTIMIZED: Fetches bulk client data using the new client-groups_summary view
  * Performance improvement: ~70-80% faster than getBulkClientData
  * Use case: Clients.tsx page that only needs summary information
  * @returns {Promise} - API response with aggregated client groups data
  */
 export const getBulkClientDataOptimized = () => {
-  return api.get('client_groups/bulk_client_data_optimized');
+  return api.get('/client-groups/bulk-client-data-optimized');
 };
 
 /**
@@ -514,7 +514,7 @@ export const getBulkClientDataOptimized = () => {
  * @returns {Promise} - API response with client groups data
  */
 export const getBulkClientDataWithOption = (useOptimized: boolean = false) => {
-  return api.get(`client_groups/bulk_client_data?use_optimized=${useOptimized}`);
+  return api.get(`/client-groups/bulk-client-data?use_optimized=${useOptimized}`);
 };
 
 /**
@@ -523,7 +523,7 @@ export const getBulkClientDataWithOption = (useOptimized: boolean = false) => {
  * @returns {Promise} - API response with client group FUM data
  */
 export const getClientGroupFUMById = (clientGroupId: number) => {
-  return api.get(`client_group_fum_summary/${clientGroupId}`);
+  return api.get(`/client-group-fum-summary/${clientGroupId}`);
 };
 
 /**
@@ -532,12 +532,12 @@ export const getClientGroupFUMById = (clientGroupId: number) => {
  * @returns {Promise} - API response with client group IRR data
  */
 export const getClientGroupIRR = (clientGroupId: number) => {
-  return api.get(`client_groups/${clientGroupId}/irr`);
+  return api.get(`/client-groups/${clientGroupId}/irr`);
 };
 
 // Add new standardized client IRR function
 export const getStandardizedClientIRR = (clientId: number) => {
-  return api.get(`analytics/client/${clientId}/irr`);
+  return api.get(`/analytics/client/${clientId}/irr`);
 };
 
 /**
@@ -546,7 +546,7 @@ export const getStandardizedClientIRR = (clientId: number) => {
  * @returns {Promise} - API response with product FUM data
  */
 export const getProductFUM = (productId: number) => {
-  return api.get(`client_products/${productId}/fum`);
+  return api.get(`/client-products/${productId}/fum`);
 };
 
 /**
@@ -555,7 +555,7 @@ export const getProductFUM = (productId: number) => {
  * @returns {Promise} - API response with product IRR data
  */
 export const getProductIRR = (productId: number) => {
-  return api.get(`client_products/${productId}/irr`);
+  return api.get(`/client-products/${productId}/irr`);
 };
 
 /**
@@ -564,7 +564,7 @@ export const getProductIRR = (productId: number) => {
  * @returns {Promise} - API response with updated product
  */
 export const lapseProduct = (productId: number) => {
-  return api.patch(`client_products/${productId}/lapse`);
+  return api.patch(`/client-products/${productId}/lapse`);
 };
 
 /**
@@ -573,7 +573,7 @@ export const lapseProduct = (productId: number) => {
  * @returns {Promise} - API response with updated product
  */
 export const reactivateProduct = (productId: number) => {
-  return api.patch(`client_products/${productId}/reactivate`);
+  return api.patch(`/client-products/${productId}/reactivate`);
 };
 
 /**
@@ -589,7 +589,7 @@ export const calculateStandardizedMultipleFundsIRR = (params: {
   irrDate?: string;
   storeResult?: boolean;
 }) => {
-  return api.post('portfolio_funds/multiple/irr', {
+  return api.post('/portfolio-funds/multiple/irr', {
     portfolio_fund_ids: params.portfolioFundIds,
     irr_date: params.irrDate || null,
     store_result: params.storeResult !== undefined ? params.storeResult : true
@@ -607,7 +607,7 @@ export const calculateStandardizedSingleFundIRR = (params: {
   portfolioFundId: number;
   irrDate?: string;
 }) => {
-  return api.post(`portfolio_funds/${params.portfolioFundId}/irr`, {
+  return api.post(`/portfolio-funds/${params.portfolioFundId}/irr`, {
     irr_date: params.irrDate || null
   });
 };
@@ -627,7 +627,7 @@ export const createIRRValue = (params: {
   date: string;
   fundValuationId?: number;
 }) => {
-  return api.post('irr-values', {
+  return api.post('/irr-values', {
     fund_id: params.fundId,
     irr_result: params.irrResult,
     date: params.date,
@@ -645,7 +645,7 @@ export const createIRRValue = (params: {
  * @returns {Promise} - API response with products and their owners
  */
 export const getFundProductsWithOwners = (fundId: number) => {
-  return api.get(`funds/${fundId}/products-with-owners`);
+  return api.get(`/funds/${fundId}/products-with-owners`);
 };
 
 /**
@@ -676,7 +676,7 @@ export const getClientGroups = (params?: {
   if (params?.search) queryParams.append('search', params.search);
   
   const queryString = queryParams.toString();
-  return api.get(`client_groups${queryString ? `?${queryString}` : ''}`);
+  return api.get(`/client-groups${queryString ? `?${queryString}` : ''}`);
 };
 
 /**
@@ -710,7 +710,7 @@ export const getClientProducts = (params?: {
   if (params?.status) queryParams.append('status', params.status);
   
   const queryString = queryParams.toString();
-  return api.get(`client_products${queryString ? `?${queryString}` : ''}`);
+  return api.get(`/client-products${queryString ? `?${queryString}` : ''}`);
 };
 
 /**
@@ -725,7 +725,7 @@ export const getClientProducts = (params?: {
  * @returns {Promise} - API response with portfolio funds
  */
 export const getPortfolioFundsByProduct = (productId: number) => {
-  return api.get(`client_products/${productId}/complete`);
+  return api.get(`/client-products/${productId}/complete`);
 };
 
 /**
@@ -746,7 +746,7 @@ export const globalSearch = async (query: string) => {
 };
 
 export const getRiskDifferences = async (limit: number = 10) => {
-  return api.get(`/analytics/risk_differences?limit=${limit}`);
+  return api.get(`/analytics/risk-differences?limit=${limit}`);
 };
 
 // Activity API functions
@@ -763,27 +763,27 @@ export const createActivity = async (activityData: {
 
 // Product Owners API endpoints
 export const getProductOwners = async () => {
-  return api.get('product_owners');
+  return api.get('/product-owners');
 };
 
 export const getClientGroupProductOwners = async (clientGroupId: number) => {
-  return api.get(`client_group_product_owners?client_group_id=${clientGroupId}`);
+  return api.get(`/client-group-product-owners?client_group_id=${clientGroupId}`);
 };
 
 export const addClientGroupProductOwner = async (clientGroupId: number, productOwnerId: number) => {
-  return api.post('client_group_product_owners', {
+  return api.post('/client-group-product-owners', {
     client_group_id: clientGroupId,
     product_owner_id: productOwnerId
   });
 };
 
 export const removeClientGroupProductOwner = async (associationId: number) => {
-  return api.delete(`client_group_product_owners/${associationId}`);
+  return api.delete(`/client-group-product-owners/${associationId}`);
 };
 
 export const getProductOwnersForProducts = async (clientId: number) => {
   // Get all client products with their associated product owners
-  const associations = await api.get(`client_products_with_owners?client_id=${clientId}`);
+  const associations = await api.get(`/client-products-with-owners?client_id=${clientId}`);
   return associations;
 };
 
@@ -887,7 +887,7 @@ export const getOptimizedAnalyticsDashboard = async (
 
     // Fallback to original optimized endpoint
     try {
-      const response = await api.get('/analytics/dashboard_all', {
+      const response = await api.get('/analytics/dashboard-all', {
         params: {
           fund_limit: fundLimit,
           provider_limit: providerLimit,
@@ -923,16 +923,16 @@ export const getFallbackAnalyticsDashboard = async (
     performanceResponse,
     clientRisksResponse
   ] = await Promise.all([
-    api.get('/analytics/dashboard_all', {
+    api.get('/analytics/dashboard-all', {
       params: { fund_limit: fundLimit, provider_limit: providerLimit, template_limit: templateLimit }
     }),
-    api.get('/analytics/performance_data', {
+    api.get('/analytics/performance-data', {
       params: { entity_type: 'overview', sort_order: 'highest', limit: 100000 }
     }).catch(err => {
       console.warn('Performance data failed, continuing without it:', err);
       return { data: { performanceData: [] } };
     }),
-    api.get('/analytics/client_risks')
+    api.get('/analytics/client-risks')
   ]);
 
   return {

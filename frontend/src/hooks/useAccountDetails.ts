@@ -131,7 +131,7 @@ export function useAccountDetails(accountId: string | undefined) {
   const accountQuery = useQuery({
     queryKey: ['account', accountId],
     queryFn: async () => {
-      const response = await api.get(`/client_products/${accountId}`);
+      const response = await api.get(`/client-products/${accountId}`);
       return response.data;
     },
     enabled,
@@ -144,7 +144,7 @@ export function useAccountDetails(accountId: string | undefined) {
       {
         queryKey: ['clients'],
         queryFn: async () => {
-          const response = await api.get('/client_groups');
+          const response = await api.get('/client-groups');
           return response.data;
         },
         enabled,
@@ -153,7 +153,7 @@ export function useAccountDetails(accountId: string | undefined) {
       {
         queryKey: ['products'],
         queryFn: async () => {
-          const response = await api.get('/available_products');
+          const response = await api.get('/available-products');
           return response.data;
         },
         enabled,
@@ -162,7 +162,7 @@ export function useAccountDetails(accountId: string | undefined) {
       {
         queryKey: ['providers'],
         queryFn: async () => {
-          const response = await api.get('/available_providers');
+          const response = await api.get('/available-providers');
           return response.data;
         },
         enabled,
@@ -187,9 +187,9 @@ export function useAccountDetails(accountId: string | undefined) {
         staleTime: 10 * 60 * 1000,
       },
       {
-        queryKey: ['portfolio_funds'],
+        queryKey: ['portfolio-funds'],
         queryFn: async () => {
-          const response = await api.get('/portfolio_funds');
+          const response = await api.get('/portfolio-funds');
           return response.data;
         },
         enabled,
@@ -204,7 +204,7 @@ export function useAccountDetails(accountId: string | undefined) {
       {
         queryKey: ['account_holdings', accountId],
         queryFn: async () => {
-          const response = await api.get(`/product_holdings?client_product_id=${accountId}`);
+          const response = await api.get(`/product-holdings?client_product_id=${accountId}`);
           return response.data;
         },
         enabled,
@@ -213,7 +213,7 @@ export function useAccountDetails(accountId: string | undefined) {
       {
         queryKey: ['account_activities', accountId],
         queryFn: async () => {
-          const response = await api.get(`/holding_activity_logs?product_holding_id=${accountId}`);
+          const response = await api.get(`/holding-activity-logs?product_holding_id=${accountId}`);
           return response.data;
         },
         enabled,

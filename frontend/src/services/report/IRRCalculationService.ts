@@ -109,7 +109,7 @@ export class IRRCalculationService implements IIRRCalculationService {
   private async fetchSingleProductIRR(productId: number): Promise<{ productId: number; irr: number | null }> {
     try {
       // First, get the portfolio_id for this product from client_products
-      const clientProductResponse = await this.api.get(`/client_products/${productId}`);
+      const clientProductResponse = await this.api.get(`/client-products/${productId}`);
 
       if (!clientProductResponse.data) {
         console.warn(`No client product found for product ${productId}`);
@@ -124,7 +124,7 @@ export class IRRCalculationService implements IIRRCalculationService {
       }
 
       // Use the correct endpoint (hyphen, not underscore)
-      const response = await this.api.get(`/api/portfolios/${portfolioId}/latest-irr`);
+      const response = await this.api.get(`/portfolios/${portfolioId}/latest-irr`);
       // Fix: Properly handle zero values - only convert undefined to null
       const irrValue = response.data?.irr_result !== undefined ? response.data.irr_result : null;
 
@@ -451,7 +451,7 @@ export class IRRCalculationService implements IIRRCalculationService {
       }
 
       // Call the multiple portfolio funds IRR endpoint
-      const response = await this.api.post('/portfolio_funds/multiple/irr', {
+      const response = await this.api.post('/portfolio-funds/multiple/irr', {
         portfolio_fund_ids: allPortfolioFundIds,
         irr_date: irrDate
       });
@@ -465,7 +465,7 @@ export class IRRCalculationService implements IIRRCalculationService {
           metadata: {
             fundCount: allPortfolioFundIds.length,
             irrDate: irrDate || undefined,
-            method: 'multiple_portfolio_funds_api'
+            method: 'multiple_portfolio-funds_api'
           }
         };
       } else {

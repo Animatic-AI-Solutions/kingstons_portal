@@ -91,7 +91,7 @@ export const useClientDetails = (clientId: string | undefined) => {
       if (!clientId) throw new Error('Client ID is required');
 
       try {
-        const response = await api.get(`/client_groups/${clientId}/complete`);
+        const response = await api.get(`/client-groups/${clientId}/complete`);
         return response.data as ClientDetailsData;
       } catch (error: any) {
         // Handle 404 errors specifically - client was likely deleted

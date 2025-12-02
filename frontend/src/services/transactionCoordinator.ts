@@ -121,7 +121,7 @@ export class TransactionCoordinator {
             // Get the earliest date for this fund to trigger recalculation
             const earliestDate = dates.sort()[0];
 
-            const recalcResponse = await api.post(`portfolio_funds/${fundId}/recalculate-irr`, {
+            const recalcResponse = await api.post(`/portfolio-funds/${fundId}/recalculate-irr`, {
               activity_date: earliestDate
             });
             
@@ -161,14 +161,14 @@ export class TransactionCoordinator {
     };
 
     if (activity.toDelete && activity.originalActivityId) {
-      await api.delete(`holding_activity_logs/${activity.originalActivityId}`);
+      await api.delete(`/holding-activity-logs/${activity.originalActivityId}`);
     } else if (activity.isNew) {
       // Skip IRR calculation for new activities - it will be calculated after valuation
-      await api.post('holding_activity_logs', activityData, { 
+      await api.post('/holding-activity-logs', activityData, { 
         params: { skip_irr_calculation: true } 
       });
     } else if (activity.originalActivityId) {
-      await api.patch(`holding_activity_logs/${activity.originalActivityId}`, activityData);
+      await api.patch(`/holding-activity-logs/${activity.originalActivityId}`, activityData);
     }
   }
 
@@ -201,7 +201,7 @@ export class TransactionCoordinator {
       }));
 
       // Use bulk endpoint with sequence reservation
-      await api.post('holding_activity_logs/bulk', activityData, {
+      await api.post('/holding-activity-logs/bulk', activityData, {
         params: { skip_irr_calculation: true }
       });
     }
@@ -261,11 +261,11 @@ export class TransactionCoordinator {
     };
 
     if (valuation.toDelete && valuation.originalActivityId) {
-      await api.delete(`fund_valuations/${valuation.originalActivityId}`);
+      await api.delete(`/fund-valuations/${valuation.originalActivityId}`);
     } else if (valuation.isNew) {
-      await api.post('fund_valuations', valuationData);
+      await api.post('/fund-valuations', valuationData);
     } else if (valuation.originalActivityId) {
-      await api.patch(`fund_valuations/${valuation.originalActivityId}`, valuationData);
+      await api.patch(`/fund-valuations/${valuation.originalActivityId}`, valuationData);
     }
   }
 

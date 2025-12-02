@@ -156,14 +156,14 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
   const isFromClientDetailsPage = (): boolean => {
     // Only auto-populate if:
     // 1. There's a client_id parameter
-    // 2. There's a returnTo parameter that points to a client details page (/client_groups/{id})
+    // 2. There's a returnTo parameter that points to a client details page (/client-groups/{id})
     if (!urlClientId || !returnTo) {
       console.log(`🔍 Navigation check: Missing client_id (${!!urlClientId}) or returnTo (${!!returnTo})`);
       return false;
     }
     
     const decodedReturnTo = decodeURIComponent(returnTo);
-    const clientDetailsPattern = /^\/client_groups\/\d+$/;
+    const clientDetailsPattern = /^\/client-groups\/\d+$/;
     const isFromClientDetails = clientDetailsPattern.test(decodedReturnTo);
     
     console.log(`🔍 Navigation check: returnTo="${decodedReturnTo}", isFromClientDetails=${isFromClientDetails}`);
@@ -374,7 +374,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           const referrerPath = referrerUrl.pathname;
           
           // Determine return path based on referrer
-          if (referrerPath.includes('/client_groups/') && !referrerPath.includes('/add')) {
+          if (referrerPath.includes('/client-groups/') && !referrerPath.includes('/add')) {
             // Came from a client details page
             setReturnPath(referrerPath);
           } else if (referrerPath.includes('/products') && !referrerPath.includes('/add')) {
@@ -467,11 +467,11 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           portfoliosRes,
           productOwnersRes
         ] = await Promise.all([
-          api.get('/api/client_groups'),
-          api.get('/api/available_providers'),
-          api.get('/api/funds'),
-          api.get('/api/available_portfolios'),
-          api.get('/api/product_owners')
+          api.get('/client-groups'),
+          api.get('/available-providers'),
+          api.get('/funds'),
+          api.get('/available-portfolios'),
+          api.get('/product-owners')
         ]);
         
         setClients(clientsRes.data);
@@ -1100,7 +1100,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       setProducts(updatedProducts);
 
       // Fetch generations for this template
-      const generationsResponse = await api.get(`/api/available_portfolios/${templateId}/generations`);
+      const generationsResponse = await api.get(`/available-portfolios/${templateId}/generations`);
       const generationsData = generationsResponse.data;
       
       // Store the generations for this template
@@ -1137,7 +1137,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
       }
 
       // Fetch template details with specific generation ID
-      const response = await api.get(`/api/available_portfolios/${product.portfolio.templateId}?generation_id=${generationId}`);
+      const response = await api.get(`/available-portfolios/${product.portfolio.templateId}?generation_id=${generationId}`);
       const templateData = response.data;
       
       // Get funds in the template generation
@@ -1480,7 +1480,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         // First, create the portfolio if needed
         if (product.portfolio.type === 'template' && product.portfolio.templateId && product.portfolio.generationId) {
           // Create portfolio from template generation
-          const templateResponse = await api.post('/api/portfolios/from_template', {
+          const templateResponse = await api.post('/portfolios/from-template', {
             template_id: product.portfolio.templateId,
             generation_id: product.portfolio.generationId, // Send the generation ID to the API
             portfolio_name: finalPortfolioName,
@@ -1491,7 +1491,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
           console.log(`Created portfolio from template generation with ID: ${portfolioId}`);
         } else if (product.portfolio.type === 'bespoke') {
           // Create a bespoke portfolio
-          const portfolioResponse = await api.post('/api/portfolios', {
+          const portfolioResponse = await api.post('/portfolios', {
             portfolio_name: finalPortfolioName,
             status: 'active',
             start_date: formattedStartDate
@@ -1529,7 +1529,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                 };
                 
                 console.log(`Adding fund ${fundId} to portfolio ${portfolioId} with data:`, fundData);
-                await api.post('/api/portfolio_funds', fundData);
+                await api.post('/portfolio-funds', fundData);
                 console.log(`Added fund ${fundId} to portfolio ${portfolioId}`);
               } catch (err: any) {
                 console.error(`Error adding fund ${fundId} to portfolio:`, err);
@@ -1555,7 +1555,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                   // Only update if it's a valid number (can be 0 if user explicitly set it)
                   if (!isNaN(cashWeightingValue)) {
                     // Get the automatically created Cash fund entry to update it
-                    const portfolioFundsResponse = await api.get(`/api/portfolio_funds`, {
+                    const portfolioFundsResponse = await api.get(`/portfolio-funds`, {
                       params: { portfolio_id: portfolioId }
                     });
                     
@@ -1565,7 +1565,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                     
                     if (cashFundEntry) {
                       // Update the existing Cash fund entry
-                      await api.patch(`/api/portfolio_funds/${cashFundEntry.id}`, {
+                      await api.patch(`/portfolio-funds/${cashFundEntry.id}`, {
                         target_weighting: cashWeightingValue // Send the actual value (could be 0 if user set it)
                       });
                       console.log(`Updated Cash fund weighting to ${cashWeightingValue}% for portfolio ${portfolioId}`);
@@ -1593,7 +1593,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
             let targetRisk = null;
             targetRisk = calculateTargetRiskFromFunds(product);
             
-            const clientProductResponse = await api.post('/api/client_products', {
+            const clientProductResponse = await api.post('/client-products', {
               client_id: selectedClientId,
               provider_id: product.provider_id,
               product_type: product.product_type,
@@ -1617,7 +1617,7 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
               try {
                 // Create associations one by one
                 for (const ownerId of product.product_owner_ids) {
-                  await api.post('/api/product_owner_products', {
+                  await api.post('/product-owner-products', {
                       product_owner_id: ownerId,
                       product_id: createdProductId
                   });
@@ -1651,10 +1651,10 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
         console.log(`🔄 Invalidating client cache for ID: ${selectedClientId}`);
         await queryClient.invalidateQueries({ queryKey: ['clients', selectedClientId.toString()] });
         
-        navigate(`/client_groups/${selectedClientId}`);
+        navigate(`/client-groups/${selectedClientId}`);
       } else {
         console.error('❌ Invalid selectedClientId:', selectedClientId);
-        navigate('/client_groups'); // Fallback to clients list
+        navigate('/client-groups'); // Fallback to clients list
       }
 
     } catch (err: any) { // Type the error as any
@@ -2201,9 +2201,12 @@ const CreateClientProducts: React.FC = (): JSX.Element => {
                 <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                   <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
                 </svg>
-                <Link to={`/client_groups/${selectedClient.id}`} className="ml-1 text-sm font-medium text-gray-500 hover:text-primary-700 md:ml-2">
+                <button
+                  onClick={() => navigate(`/client-groups/${selectedClient.id}`)}
+                  className="ml-1 text-sm font-medium text-gray-500 hover:text-primary-700 md:ml-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 rounded"
+                >
                   {selectedClient.name}
-                </Link>
+                </button>
               </div>
             </li>
           )}

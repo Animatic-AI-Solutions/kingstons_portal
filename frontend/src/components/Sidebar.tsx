@@ -31,7 +31,7 @@ const Sidebar: React.FC = () => {
     },
     {
       type: 'link',
-      path: '/client_groups',
+      path: '/client-groups',
       label: 'Client Groups',
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -41,7 +41,7 @@ const Sidebar: React.FC = () => {
     },
     {
       type: 'link',
-      path: '/client_groups_phase2',
+      path: '/client-groups-phase2',
       label: 'Client Group v2',
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,7 +51,7 @@ const Sidebar: React.FC = () => {
     },
     {
       type: 'link',
-      path: '/create_client_group_prototype',
+      path: '/create-client-group-prototype',
       label: 'Create Group (Prototype)',
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,7 +71,7 @@ const Sidebar: React.FC = () => {
     },
     {
       type: 'link',
-      path: '/product_owners',
+      path: '/product-owners',
       label: 'Product Owners',
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

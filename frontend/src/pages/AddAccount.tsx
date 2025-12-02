@@ -111,8 +111,8 @@ const AddAccount: React.FC = () => {
         
         // Fetch all necessary data in parallel
         const [clientsResponse, providersResponse, portfoliosResponse] = await Promise.all([
-          api.get('/client_groups'),
-          api.get('/available_providers'),
+          api.get('/client-groups'),
+          api.get('/available-providers'),
           api.get('/portfolios')
         ]);
         
@@ -143,7 +143,7 @@ const AddAccount: React.FC = () => {
     // Fetch available portfolio templates
     const fetchTemplates = async () => {
       try {
-        const templates = await api.get('/available_portfolios');
+        const templates = await api.get('/available-portfolios');
         setAvailableTemplates(templates.data);
       } catch (error) {
         console.error('Error loading templates:', error);
@@ -157,7 +157,7 @@ const AddAccount: React.FC = () => {
     const fetchTemplateDetails = async () => {
       if (portfolioMode.templateId) {
         try {
-          const details = await api.get(`/available_portfolios/${portfolioMode.templateId}`);
+          const details = await api.get(`/available-portfolios/${portfolioMode.templateId}`);
           setSelectedTemplate(details.data);
         } catch (error) {
           console.error('Error loading template details:', error);
@@ -432,7 +432,7 @@ const AddAccount: React.FC = () => {
 
   const handleTemplateSelection = async (productId: string, templateId: number) => {
     try {
-      const response = await api.get(`/available_portfolios/${templateId}`);
+      const response = await api.get(`/available-portfolios/${templateId}`);
       const template = response.data;
       
       setProducts(products.map(product => {
@@ -483,19 +483,19 @@ const AddAccount: React.FC = () => {
         skip_portfolio_creation: true // Don't create portfolio automatically
       };
 
-      const response = await api.post('/client_products', accountData);
+      const response = await api.post('/client-products', accountData);
       const newAccountId = response.data.id;
 
       // Create a portfolio if selected
       if (products[0].portfolioType === 'template' && products[0].templateId) {
         // Create portfolio from template
-        const portfolioResponse = await api.post('/portfolios/from_template', {
+        const portfolioResponse = await api.post('/portfolios/from-template', {
           template_id: products[0].templateId,
           portfolio_name: products[0].newPortfolio?.name || `${products[0].name} Portfolio`
         });
         
         // Attach the portfolio to the account
-        await api.post('/product_portfolio_assignments', {
+        await api.post('/product-portfolio-assignments', {
           product_id: newAccountId,
           portfolio_id: portfolioResponse.data.id,
           start_date: startDate.format('YYYY-MM-DD')
@@ -516,7 +516,7 @@ const AddAccount: React.FC = () => {
           for (const fundId of products[0].newPortfolio.selectedFunds) {
             const weighting = parseFloat(products[0].newPortfolio.fundWeightings[fundId] || '0');
             if (weighting > 0) {
-              await api.post('/portfolio_funds', {
+              await api.post('/portfolio-funds', {
                 portfolio_id: portfolioResponse.data.id,
                 available_funds_id: fundId,
                 target_weighting: weighting,
@@ -528,7 +528,7 @@ const AddAccount: React.FC = () => {
         }
 
         // Attach the portfolio to the account
-        await api.post('/product_portfolio_assignments', {
+        await api.post('/product-portfolio-assignments', {
           product_id: newAccountId,
           portfolio_id: portfolioResponse.data.id,
           start_date: startDate.format('YYYY-MM-DD')

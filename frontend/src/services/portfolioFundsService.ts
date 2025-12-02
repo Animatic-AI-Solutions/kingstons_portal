@@ -51,7 +51,7 @@ export class PortfolioFundsService {
           console.warn(`Invalid portfolio_id in batch: ${portfolioId}, skipping`);
           results.set(portfolioId, []);
         } else {
-          const response = await this.api.get(`/portfolio_funds?portfolio_id=${portfolioId}`);
+          const response = await this.api.get(`/portfolio-funds?portfolio_id=${portfolioId}`);
           const portfolioFunds = response.data || [];
           
           this.cache.set(portfolioId, portfolioFunds);
@@ -116,7 +116,7 @@ export class PortfolioFundsService {
       return [];
     }
     
-    const response = await this.api.get(`/portfolio_funds?portfolio_id=${portfolioId}`);
+    const response = await this.api.get(`/portfolio-funds?portfolio_id=${portfolioId}`);
     return response.data || [];
   }
 

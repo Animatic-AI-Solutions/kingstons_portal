@@ -136,11 +136,11 @@ const AddPortfolioGeneration: React.FC = () => {
   const fetchPortfolioDetails = async () => {
     try {
       setIsLoadingPortfolio(true);
-      const response = await api.get(`/available_portfolios/${portfolioId}`);
+      const response = await api.get(`/available-portfolios/${portfolioId}`);
       setPortfolio(response.data);
       
       // Fetch the most recent generation for this portfolio
-      const generationsResponse = await api.get(`/available_portfolios/${portfolioId}/generations`);
+      const generationsResponse = await api.get(`/available-portfolios/${portfolioId}/generations`);
       if (generationsResponse.data && generationsResponse.data.length > 0) {
         // The API returns generations ordered by created_at desc, so first one is the latest
         const latestGeneration = generationsResponse.data[0];
@@ -184,7 +184,7 @@ const AddPortfolioGeneration: React.FC = () => {
   const fetchLatestGenerationFunds = async (generationId: number) => {
     try {
       setIsLoadingLatestFunds(true);
-      const response = await api.get(`/available_portfolios/available_portfolio_funds/generation/${generationId}`);
+      const response = await api.get(`/available-portfolios/available-portfolio-funds/generation/${generationId}`);
       
       if (response.data && response.data.length > 0) {
         // Process the funds to pre-populate selection and weightings
@@ -583,7 +583,7 @@ const AddPortfolioGeneration: React.FC = () => {
         }
 
         // Create the portfolio generation
-        await api.post(`/available_portfolios/${portfolioId}/generations`, payload);
+        await api.post(`/available-portfolios/${portfolioId}/generations`, payload);
         
         // Navigate back to the template details page with refresh flag
         navigate(`/definitions/portfolio-templates/${portfolioId}`, {

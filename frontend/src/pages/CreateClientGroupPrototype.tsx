@@ -207,7 +207,7 @@ const CreateClientGroupPrototype: React.FC = () => {
     // For prototype, just navigate to Phase 2 page
     // In real implementation, this would save to database first
     alert(`Client Group "${clientGroupName}" created with ${people.length} ${people.length === 1 ? 'person' : 'people'}!`);
-    navigate('/client_groups_phase2');
+    navigate('/client-groups-phase2');
   };
 
   const renderField = (

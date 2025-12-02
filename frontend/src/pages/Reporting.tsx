@@ -305,7 +305,7 @@ const Reporting: React.FC = () => {
       setError(null);
 
       // Fetch dashboard data first (most important)
-      const dashboardResponse = await api.get('/analytics/dashboard_all', {
+      const dashboardResponse = await api.get('/analytics/dashboard-all', {
         params: { fund_limit: 100000, provider_limit: 100000, template_limit: 100000 }
       });
 
@@ -317,7 +317,7 @@ const Reporting: React.FC = () => {
 
       // Try to fetch performance data, but don't fail if it errors
       try {
-        const performanceResponse = await api.get('/analytics/performance_data', {
+        const performanceResponse = await api.get('/analytics/performance-data', {
           params: { entity_type: 'overview', sort_order: 'highest', limit: 100000 }
         });
         setTopPerformers(performanceResponse.data.performanceData || []);
@@ -327,7 +327,7 @@ const Reporting: React.FC = () => {
       }
 
       // Fetch client risks
-      const clientRisksResponse = await api.get('/analytics/client_risks');
+      const clientRisksResponse = await api.get('/analytics/client-risks');
       setClientRisks(clientRisksResponse.data || []);
 
       setLastUpdated(new Date());

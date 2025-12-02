@@ -38,7 +38,7 @@ export const useClientMutations = () => {
   // Update client mutation
   const updateClient = useMutation({
     mutationFn: async (data: ClientUpdateData) => {
-      const response = await api.put(`/client_groups/${data.id}`, data.updates);
+      const response = await api.put(`/client-groups/${data.id}`, data.updates);
       return response.data;
     },
     onMutate: async (data: ClientUpdateData) => {
@@ -84,7 +84,7 @@ export const useClientMutations = () => {
   // Delete client mutation
   const deleteClient = useMutation({
     mutationFn: async (clientId: string) => {
-      const response = await api.delete(`/client_groups/${clientId}`);
+      const response = await api.delete(`/client-groups/${clientId}`);
       return response.data;
     },
     onMutate: async (clientId: string) => {
@@ -126,7 +126,7 @@ export const useClientMutations = () => {
     mutationFn: async (data: ProductOwnerUpdateData) => {
       if (data.action === 'add') {
         // Add product owner using authenticated API
-        const response = await api.post('client_group_product_owners', {
+        const response = await api.post('/client-group-product-owners', {
           client_group_id: Number(data.clientId),
           product_owner_id: data.productOwnerId
         });
@@ -136,7 +136,7 @@ export const useClientMutations = () => {
         if (!data.associationId) {
           throw new Error('Association ID is required for removing product owner');
         }
-        const response = await api.delete(`client_group_product_owners/${data.associationId}`);
+        const response = await api.delete(`/client-group-product-owners/${data.associationId}`);
         return response.data;
       }
     },
@@ -152,7 +152,7 @@ export const useClientMutations = () => {
   // Status change mutations (dormant/active)
   const changeClientStatus = useMutation({
     mutationFn: async (data: { clientId: string; status: string }) => {
-      const response = await api.put(`/client_groups/${data.clientId}`, { status: data.status });
+      const response = await api.put(`/client-groups/${data.clientId}`, { status: data.status });
       return response.data;
     },
     onSuccess: (data, variables) => {
