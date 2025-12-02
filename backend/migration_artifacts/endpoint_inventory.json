@@ -1,0 +1,1709 @@
+{
+  "generated_at": "2025-12-02T11:18:56.864258",
+  "total_endpoints": 166,
+  "endpoints_with_underscores": 127,
+  "endpoints": [
+    {
+      "path": "/advisors",
+      "name": "client_groups__advisors",
+      "methods": [
+        "GET"
+      ],
+      "file": "client_groups.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/advisors"
+    },
+    {
+      "path": "/all_latest_fund_valuations",
+      "name": "fund_valuations__all_latest_fund_valuations",
+      "methods": [
+        "GET"
+      ],
+      "file": "fund_valuations.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/all-latest-fund-valuations"
+    },
+    {
+      "path": "/analytics/cache/reset",
+      "name": "analytics__analytics_cache_reset",
+      "methods": [
+        "POST"
+      ],
+      "file": "analytics.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/analytics/cache/reset"
+    },
+    {
+      "path": "/analytics/client/{client_id}/irr",
+      "name": "analytics__analytics_client_{client_id}_irr",
+      "methods": [
+        "GET"
+      ],
+      "file": "analytics.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/analytics/client/{client-id}/irr"
+    },
+    {
+      "path": "/analytics/client_risks",
+      "name": "analytics__analytics_client_risks",
+      "methods": [
+        "GET"
+      ],
+      "file": "analytics.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/analytics/client-risks"
+    },
+    {
+      "path": "/analytics/company/irr",
+      "name": "analytics__analytics_company_irr",
+      "methods": [
+        "GET"
+      ],
+      "file": "analytics.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/analytics/company/irr"
+    },
+    {
+      "path": "/analytics/company/irr/refresh-background",
+      "name": "analytics__analytics_company_irr_refresh-background",
+      "methods": [
+        "POST"
+      ],
+      "file": "analytics.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/analytics/company/irr/refresh-background"
+    },
+    {
+      "path": "/analytics/dashboard-fast",
+      "name": "analytics__analytics_dashboard-fast",
+      "methods": [
+        "GET"
+      ],
+      "file": "analytics.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/analytics/dashboard-fast"
+    },
+    {
+      "path": "/analytics/dashboard_all",
+      "name": "analytics__analytics_dashboard_all",
+      "methods": [
+        "GET"
+      ],
+      "file": "analytics.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/analytics/dashboard-all"
+    },
+    {
+      "path": "/analytics/dashboard_stats",
+      "name": "analytics__analytics_dashboard_stats",
+      "methods": [
+        "GET"
+      ],
+      "file": "analytics.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/analytics/dashboard-stats"
+    },
+    {
+      "path": "/analytics/fund_distribution",
+      "name": "analytics__analytics_fund_distribution",
+      "methods": [
+        "GET"
+      ],
+      "file": "analytics.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/analytics/fund-distribution"
+    },
+    {
+      "path": "/analytics/irr-status",
+      "name": "analytics__analytics_irr-status",
+      "methods": [
+        "GET"
+      ],
+      "file": "analytics.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/analytics/irr-status"
+    },
+    {
+      "path": "/analytics/performance_data",
+      "name": "analytics__analytics_performance_data",
+      "methods": [
+        "GET"
+      ],
+      "file": "analytics.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/analytics/performance-data"
+    },
+    {
+      "path": "/analytics/portfolio/{portfolio_id}/irr",
+      "name": "analytics__analytics_portfolio_{portfolio_id}_irr",
+      "methods": [
+        "GET"
+      ],
+      "file": "analytics.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/analytics/portfolio/{portfolio-id}/irr"
+    },
+    {
+      "path": "/analytics/portfolio/{portfolio_id}/performance",
+      "name": "analytics__analytics_portfolio_{portfolio_id}_performance",
+      "methods": [
+        "GET"
+      ],
+      "file": "analytics.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/analytics/portfolio/{portfolio-id}/performance"
+    },
+    {
+      "path": "/analytics/portfolio_template_distribution",
+      "name": "analytics__analytics_portfolio_template_distribution",
+      "methods": [
+        "GET"
+      ],
+      "file": "analytics.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/analytics/portfolio-template-distribution"
+    },
+    {
+      "path": "/analytics/product/{product_id}/irr",
+      "name": "analytics__analytics_product_{product_id}_irr",
+      "methods": [
+        "GET"
+      ],
+      "file": "analytics.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/analytics/product/{product-id}/irr"
+    },
+    {
+      "path": "/analytics/product_client_counts",
+      "name": "analytics__analytics_product_client_counts",
+      "methods": [
+        "GET"
+      ],
+      "file": "analytics.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/analytics/product-client-counts"
+    },
+    {
+      "path": "/analytics/provider_distribution",
+      "name": "analytics__analytics_provider_distribution",
+      "methods": [
+        "GET"
+      ],
+      "file": "analytics.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/analytics/provider-distribution"
+    },
+    {
+      "path": "/analytics/risk_differences",
+      "name": "analytics__analytics_risk_differences",
+      "methods": [
+        "GET"
+      ],
+      "file": "analytics.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/analytics/risk-differences"
+    },
+    {
+      "path": "/auth/forgot-password",
+      "name": "auth__auth_forgot-password",
+      "methods": [
+        "POST"
+      ],
+      "file": "auth.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/auth/forgot-password"
+    },
+    {
+      "path": "/auth/login",
+      "name": "auth__auth_login",
+      "methods": [
+        "POST"
+      ],
+      "file": "auth.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/auth/login"
+    },
+    {
+      "path": "/auth/logout",
+      "name": "auth__auth_logout",
+      "methods": [
+        "POST"
+      ],
+      "file": "auth.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/auth/logout"
+    },
+    {
+      "path": "/auth/me",
+      "name": "auth__auth_me",
+      "methods": [
+        "GET"
+      ],
+      "file": "auth.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/auth/me"
+    },
+    {
+      "path": "/auth/reset-password",
+      "name": "auth__auth_reset-password",
+      "methods": [
+        "POST"
+      ],
+      "file": "auth.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/auth/reset-password"
+    },
+    {
+      "path": "/auth/signup",
+      "name": "auth__auth_signup",
+      "methods": [
+        "POST"
+      ],
+      "file": "auth.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/auth/signup"
+    },
+    {
+      "path": "/auth/update-profile",
+      "name": "auth__auth_update-profile",
+      "methods": [
+        "PUT"
+      ],
+      "file": "auth.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/auth/update-profile"
+    },
+    {
+      "path": "/auth/verify-reset-token",
+      "name": "auth__auth_verify-reset-token",
+      "methods": [
+        "POST"
+      ],
+      "file": "auth.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/auth/verify-reset-token"
+    },
+    {
+      "path": "/available_portfolio_funds",
+      "name": "available_portfolios__available_portfolio_funds",
+      "methods": [
+        "GET"
+      ],
+      "file": "available_portfolios.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/available-portfolio-funds"
+    },
+    {
+      "path": "/available_portfolio_funds/by-fund/{fund_id}",
+      "name": "available_portfolios__available_portfolio_funds_by-fund_{fund_id}",
+      "methods": [
+        "GET"
+      ],
+      "file": "available_portfolios.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/available-portfolio-funds/by-fund/{fund-id}"
+    },
+    {
+      "path": "/available_portfolio_funds/generation/{generation_id}",
+      "name": "available_portfolios__available_portfolio_funds_generation_{generation_id}",
+      "methods": [
+        "GET"
+      ],
+      "file": "available_portfolios.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/available-portfolio-funds/generation/{generation-id}"
+    },
+    {
+      "path": "/available_products",
+      "name": "products__available_products",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "products.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/available-products"
+    },
+    {
+      "path": "/available_products/{product_id}",
+      "name": "products__available_products_{product_id}",
+      "methods": [
+        "DELETE",
+        "GET",
+        "PATCH"
+      ],
+      "file": "products.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/available-products/{product-id}"
+    },
+    {
+      "path": "/available_providers",
+      "name": "available_providers__available_providers",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "available_providers.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/available-providers"
+    },
+    {
+      "path": "/available_providers/available-colors",
+      "name": "available_providers__available_providers_available-colors",
+      "methods": [
+        "GET"
+      ],
+      "file": "available_providers.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/available-providers/available-colors"
+    },
+    {
+      "path": "/available_providers/theme-colors",
+      "name": "available_providers__available_providers_theme-colors",
+      "methods": [
+        "GET"
+      ],
+      "file": "available_providers.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/available-providers/theme-colors"
+    },
+    {
+      "path": "/available_providers/update-theme-colors",
+      "name": "available_providers__available_providers_update-theme-colors",
+      "methods": [
+        "POST"
+      ],
+      "file": "available_providers.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/available-providers/update-theme-colors"
+    },
+    {
+      "path": "/available_providers/{provider_id}",
+      "name": "available_providers__available_providers_{provider_id}",
+      "methods": [
+        "DELETE",
+        "GET",
+        "PATCH"
+      ],
+      "file": "available_providers.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/available-providers/{provider-id}"
+    },
+    {
+      "path": "/available_providers_with_count",
+      "name": "available_providers__available_providers_with_count",
+      "methods": [
+        "GET"
+      ],
+      "file": "available_providers.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/available-providers-with-count"
+    },
+    {
+      "path": "/batch/generation-with-funds/{generation_id}",
+      "name": "available_portfolios__batch_generation-with-funds_{generation_id}",
+      "methods": [
+        "GET"
+      ],
+      "file": "available_portfolios.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/batch/generation-with-funds/{generation-id}"
+    },
+    {
+      "path": "/bulk-with-counts",
+      "name": "available_portfolios__bulk-with-counts",
+      "methods": [
+        "GET"
+      ],
+      "file": "available_portfolios.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/bulk-with-counts"
+    },
+    {
+      "path": "/client_group_fum_summary",
+      "name": "client_groups__client_group_fum_summary",
+      "methods": [
+        "GET"
+      ],
+      "file": "client_groups.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-group-fum-summary"
+    },
+    {
+      "path": "/client_group_fum_summary/{client_group_id}",
+      "name": "client_groups__client_group_fum_summary_{client_group_id}",
+      "methods": [
+        "GET"
+      ],
+      "file": "client_groups.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-group-fum-summary/{client-group-id}"
+    },
+    {
+      "path": "/client_group_product_owners",
+      "name": "client_group_product_owners__client_group_product_owners",
+      "methods": [
+        "DELETE",
+        "GET",
+        "POST"
+      ],
+      "file": "client_group_product_owners.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-group-product-owners"
+    },
+    {
+      "path": "/client_group_product_owners/{association_id}",
+      "name": "client_group_product_owners__client_group_product_owners_{association_id}",
+      "methods": [
+        "DELETE"
+      ],
+      "file": "client_group_product_owners.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-group-product-owners/{association-id}"
+    },
+    {
+      "path": "/client_group_versions",
+      "name": "client_groups__client_group_versions",
+      "methods": [
+        "POST"
+      ],
+      "file": "client_groups.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-group-versions"
+    },
+    {
+      "path": "/client_groups",
+      "name": "client_groups__client_groups",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "client_groups.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-groups"
+    },
+    {
+      "path": "/client_groups/bulk_client_data",
+      "name": "client_groups__client_groups_bulk_client_data",
+      "methods": [
+        "GET"
+      ],
+      "file": "client_groups.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-groups/bulk-client-data"
+    },
+    {
+      "path": "/client_groups/bulk_client_data_optimized",
+      "name": "client_groups__client_groups_bulk_client_data_optimized",
+      "methods": [
+        "GET"
+      ],
+      "file": "client_groups.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-groups/bulk-client-data-optimized"
+    },
+    {
+      "path": "/client_groups/dormant",
+      "name": "client_groups__client_groups_dormant",
+      "methods": [
+        "GET"
+      ],
+      "file": "client_groups.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-groups/dormant"
+    },
+    {
+      "path": "/client_groups/{client_group_id}",
+      "name": "client_groups__client_groups_{client_group_id}",
+      "methods": [
+        "DELETE",
+        "GET",
+        "PATCH",
+        "PUT"
+      ],
+      "file": "client_groups.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-groups/{client-group-id}"
+    },
+    {
+      "path": "/client_groups/{client_group_id}/complete",
+      "name": "client_groups__client_groups_{client_group_id}_complete",
+      "methods": [
+        "GET"
+      ],
+      "file": "client_groups.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-groups/{client-group-id}/complete"
+    },
+    {
+      "path": "/client_groups/{client_group_id}/irr",
+      "name": "client_groups__client_groups_{client_group_id}_irr",
+      "methods": [
+        "GET"
+      ],
+      "file": "client_groups.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-groups/{client-group-id}/irr"
+    },
+    {
+      "path": "/client_groups/{client_group_id}/products",
+      "name": "client_groups__client_groups_{client_group_id}_products",
+      "methods": [
+        "DELETE",
+        "GET"
+      ],
+      "file": "client_groups.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-groups/{client-group-id}/products"
+    },
+    {
+      "path": "/client_groups/{client_group_id}/status",
+      "name": "client_groups__client_groups_{client_group_id}_status",
+      "methods": [
+        "PUT"
+      ],
+      "file": "client_groups.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-groups/{client-group-id}/status"
+    },
+    {
+      "path": "/client_products",
+      "name": "client_products__client_products",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "client_products.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-products"
+    },
+    {
+      "path": "/client_products/{client_product_id}",
+      "name": "client_products__client_products_{client_product_id}",
+      "methods": [
+        "DELETE",
+        "GET",
+        "PATCH"
+      ],
+      "file": "client_products.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-products/{client-product-id}"
+    },
+    {
+      "path": "/client_products/{client_product_id}/complete",
+      "name": "client_products__client_products_{client_product_id}_complete",
+      "methods": [
+        "GET"
+      ],
+      "file": "client_products.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-products/{client-product-id}/complete"
+    },
+    {
+      "path": "/client_products/{client_product_id}/notes",
+      "name": "client_products__client_products_{client_product_id}_notes",
+      "methods": [
+        "POST"
+      ],
+      "file": "client_products.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-products/{client-product-id}/notes"
+    },
+    {
+      "path": "/client_products/{client_product_id}/provider_switches",
+      "name": "provider_switch_log__client_products_{client_product_id}_provider_switches",
+      "methods": [
+        "GET"
+      ],
+      "file": "provider_switch_log.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-products/{client-product-id}/provider-switches"
+    },
+    {
+      "path": "/client_products/{product_id}/fum",
+      "name": "client_products__client_products_{product_id}_fum",
+      "methods": [
+        "GET"
+      ],
+      "file": "client_products.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-products/{product-id}/fum"
+    },
+    {
+      "path": "/client_products/{product_id}/irr",
+      "name": "client_products__client_products_{product_id}_irr",
+      "methods": [
+        "GET"
+      ],
+      "file": "client_products.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-products/{product-id}/irr"
+    },
+    {
+      "path": "/client_products/{product_id}/lapse",
+      "name": "client_products__client_products_{product_id}_lapse",
+      "methods": [
+        "PATCH"
+      ],
+      "file": "client_products.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-products/{product-id}/lapse"
+    },
+    {
+      "path": "/client_products/{product_id}/owners",
+      "name": "client_products__client_products_{product_id}_owners",
+      "methods": [
+        "PATCH"
+      ],
+      "file": "client_products.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-products/{product-id}/owners"
+    },
+    {
+      "path": "/client_products/{product_id}/reactivate",
+      "name": "client_products__client_products_{product_id}_reactivate",
+      "methods": [
+        "PATCH"
+      ],
+      "file": "client_products.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-products/{product-id}/reactivate"
+    },
+    {
+      "path": "/client_products/{product_id}/revenue",
+      "name": "client_products__client_products_{product_id}_revenue",
+      "methods": [
+        "GET"
+      ],
+      "file": "client_products.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-products/{product-id}/revenue"
+    },
+    {
+      "path": "/client_products_with_owners",
+      "name": "client_products__client_products_with_owners",
+      "methods": [
+        "GET"
+      ],
+      "file": "client_products.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/client-products-with-owners"
+    },
+    {
+      "path": "/combined/{product_id}",
+      "name": "historical_irr__combined_{product_id}",
+      "methods": [
+        "GET"
+      ],
+      "file": "historical_irr.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/combined/{product-id}"
+    },
+    {
+      "path": "/from-template",
+      "name": "available_portfolios__from-template",
+      "methods": [
+        "POST"
+      ],
+      "file": "available_portfolios.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/from-template"
+    },
+    {
+      "path": "/fund_valuations",
+      "name": "fund_valuations__fund_valuations",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "fund_valuations.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/fund-valuations"
+    },
+    {
+      "path": "/fund_valuations/debug_api_calls",
+      "name": "fund_valuations__fund_valuations_debug_api_calls",
+      "methods": [
+        "GET"
+      ],
+      "file": "fund_valuations.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/fund-valuations/debug-api-calls"
+    },
+    {
+      "path": "/fund_valuations/debug_portfolio_irrs",
+      "name": "fund_valuations__fund_valuations_debug_portfolio_irrs",
+      "methods": [
+        "GET"
+      ],
+      "file": "fund_valuations.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/fund-valuations/debug-portfolio-irrs"
+    },
+    {
+      "path": "/fund_valuations/exists/{portfolio_fund_id}",
+      "name": "fund_valuations__fund_valuations_exists_{portfolio_fund_id}",
+      "methods": [
+        "GET"
+      ],
+      "file": "fund_valuations.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/fund-valuations/exists/{portfolio-fund-id}"
+    },
+    {
+      "path": "/fund_valuations/latest-date",
+      "name": "fund_valuations__fund_valuations_latest-date",
+      "methods": [
+        "GET"
+      ],
+      "file": "fund_valuations.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/fund-valuations/latest-date"
+    },
+    {
+      "path": "/fund_valuations/latest/{portfolio_fund_id}",
+      "name": "fund_valuations__fund_valuations_latest_{portfolio_fund_id}",
+      "methods": [
+        "GET"
+      ],
+      "file": "fund_valuations.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/fund-valuations/latest/{portfolio-fund-id}"
+    },
+    {
+      "path": "/fund_valuations/test_cascade_deletion",
+      "name": "fund_valuations__fund_valuations_test_cascade_deletion",
+      "methods": [
+        "POST"
+      ],
+      "file": "fund_valuations.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/fund-valuations/test-cascade-deletion"
+    },
+    {
+      "path": "/fund_valuations/{valuation_id}",
+      "name": "fund_valuations__fund_valuations_{valuation_id}",
+      "methods": [
+        "DELETE",
+        "GET",
+        "PATCH"
+      ],
+      "file": "fund_valuations.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/fund-valuations/{valuation-id}"
+    },
+    {
+      "path": "/funds",
+      "name": "funds__funds",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "funds.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/funds"
+    },
+    {
+      "path": "/funds/check-isin/{isin_number}",
+      "name": "funds__funds_check-isin_{isin_number}",
+      "methods": [
+        "GET"
+      ],
+      "file": "funds.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/funds/check-isin/{isin-number}"
+    },
+    {
+      "path": "/funds/{fund_id}",
+      "name": "funds__funds_{fund_id}",
+      "methods": [
+        "DELETE",
+        "GET",
+        "PATCH"
+      ],
+      "file": "funds.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/funds/{fund-id}"
+    },
+    {
+      "path": "/funds/{fund_id}/products-with-owners",
+      "name": "funds__funds_{fund_id}_products-with-owners",
+      "methods": [
+        "GET"
+      ],
+      "file": "funds.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/funds/{fund-id}/products-with-owners"
+    },
+    {
+      "path": "/funds/{product_id}",
+      "name": "historical_irr__funds_{product_id}",
+      "methods": [
+        "GET"
+      ],
+      "file": "historical_irr.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/funds/{product-id}"
+    },
+    {
+      "path": "/generations/{generation_id}",
+      "name": "available_portfolios__generations_{generation_id}",
+      "methods": [
+        "GET"
+      ],
+      "file": "available_portfolios.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/generations/{generation-id}"
+    },
+    {
+      "path": "/holding_activity_logs",
+      "name": "holding_activity_logs__holding_activity_logs",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "holding_activity_logs.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/holding-activity-logs"
+    },
+    {
+      "path": "/holding_activity_logs/bulk",
+      "name": "holding_activity_logs__holding_activity_logs_bulk",
+      "methods": [
+        "POST"
+      ],
+      "file": "holding_activity_logs.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/holding-activity-logs/bulk"
+    },
+    {
+      "path": "/holding_activity_logs/compare_irr_performance",
+      "name": "holding_activity_logs__holding_activity_logs_compare_irr_performance",
+      "methods": [
+        "POST"
+      ],
+      "file": "holding_activity_logs.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/holding-activity-logs/compare-irr-performance"
+    },
+    {
+      "path": "/holding_activity_logs/earliest_date",
+      "name": "holding_activity_logs__holding_activity_logs_earliest_date",
+      "methods": [
+        "GET"
+      ],
+      "file": "holding_activity_logs.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/holding-activity-logs/earliest-date"
+    },
+    {
+      "path": "/holding_activity_logs/recalculate_all_portfolio_irr",
+      "name": "holding_activity_logs__holding_activity_logs_recalculate_all_portfolio_irr",
+      "methods": [
+        "POST"
+      ],
+      "file": "holding_activity_logs.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/holding-activity-logs/recalculate-all-portfolio-irr"
+    },
+    {
+      "path": "/holding_activity_logs/test_sophisticated_irr_recalculation",
+      "name": "holding_activity_logs__holding_activity_logs_test_sophisticated_irr_recalculation",
+      "methods": [
+        "POST"
+      ],
+      "file": "holding_activity_logs.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/holding-activity-logs/test-sophisticated-irr-recalculation"
+    },
+    {
+      "path": "/holding_activity_logs/{activity_id}",
+      "name": "holding_activity_logs__holding_activity_logs_{activity_id}",
+      "methods": [
+        "PATCH"
+      ],
+      "file": "holding_activity_logs.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/holding-activity-logs/{activity-id}"
+    },
+    {
+      "path": "/holding_activity_logs/{holding_activity_log_id}",
+      "name": "holding_activity_logs__holding_activity_logs_{holding_activity_log_id}",
+      "methods": [
+        "DELETE",
+        "GET"
+      ],
+      "file": "holding_activity_logs.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/holding-activity-logs/{holding-activity-log-id}"
+    },
+    {
+      "path": "/irr-history-summary",
+      "name": "historical_irr__irr-history-summary",
+      "methods": [
+        "POST"
+      ],
+      "file": "historical_irr.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/irr-history-summary"
+    },
+    {
+      "path": "/irr-values",
+      "name": "portfolio_funds__irr-values",
+      "methods": [
+        "POST"
+      ],
+      "file": "portfolio_funds.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/irr-values"
+    },
+    {
+      "path": "/irr-values/{irr_value_id}",
+      "name": "portfolio_funds__irr-values_{irr_value_id}",
+      "methods": [
+        "DELETE",
+        "PATCH"
+      ],
+      "file": "portfolio_funds.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/irr-values/{irr-value-id}"
+    },
+    {
+      "path": "/latest_fund_valuations",
+      "name": "fund_valuations__latest_fund_valuations",
+      "methods": [
+        "GET"
+      ],
+      "file": "fund_valuations.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/latest-fund-valuations"
+    },
+    {
+      "path": "/latest_portfolio_valuations",
+      "name": "portfolio_valuations__latest_portfolio_valuations",
+      "methods": [
+        "GET"
+      ],
+      "file": "portfolio_valuations.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/latest-portfolio-valuations"
+    },
+    {
+      "path": "/portfolio-funds/batch-historical-valuations",
+      "name": "portfolio_funds__portfolio-funds_batch-historical-valuations",
+      "methods": [
+        "POST"
+      ],
+      "file": "portfolio_funds.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/portfolio-funds/batch-historical-valuations"
+    },
+    {
+      "path": "/portfolio-funds/batch-valuations",
+      "name": "portfolio_funds__portfolio-funds_batch-valuations",
+      "methods": [
+        "POST"
+      ],
+      "file": "portfolio_funds.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/portfolio-funds/batch-valuations"
+    },
+    {
+      "path": "/portfolio-funds/irr-cache/clear-expired",
+      "name": "portfolio_funds__portfolio-funds_irr-cache_clear-expired",
+      "methods": [
+        "POST"
+      ],
+      "file": "portfolio_funds.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/portfolio-funds/irr-cache/clear-expired"
+    },
+    {
+      "path": "/portfolio-funds/irr-cache/invalidate",
+      "name": "portfolio_funds__portfolio-funds_irr-cache_invalidate",
+      "methods": [
+        "POST"
+      ],
+      "file": "portfolio_funds.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/portfolio-funds/irr-cache/invalidate"
+    },
+    {
+      "path": "/portfolio-funds/irr-cache/stats",
+      "name": "portfolio_funds__portfolio-funds_irr-cache_stats",
+      "methods": [
+        "GET"
+      ],
+      "file": "portfolio_funds.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/portfolio-funds/irr-cache/stats"
+    },
+    {
+      "path": "/portfolio-funds/latest-irr",
+      "name": "portfolio_funds__portfolio-funds_latest-irr",
+      "methods": [
+        "GET"
+      ],
+      "file": "portfolio_funds.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/portfolio-funds/latest-irr"
+    },
+    {
+      "path": "/portfolio-irr-values/{portfolio_id}",
+      "name": "historical_irr__portfolio-irr-values_{portfolio_id}",
+      "methods": [
+        "GET"
+      ],
+      "file": "historical_irr.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolio-irr-values/{portfolio-id}"
+    },
+    {
+      "path": "/portfolio_funds",
+      "name": "portfolio_funds__portfolio_funds",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "portfolio_funds.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolio-funds"
+    },
+    {
+      "path": "/portfolio_funds/aggregated-irr-history",
+      "name": "portfolio_funds__portfolio_funds_aggregated-irr-history",
+      "methods": [
+        "POST"
+      ],
+      "file": "portfolio_funds.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolio-funds/aggregated-irr-history"
+    },
+    {
+      "path": "/portfolio_funds/batch/irr-values",
+      "name": "portfolio_funds__portfolio_funds_batch_irr-values",
+      "methods": [
+        "POST"
+      ],
+      "file": "portfolio_funds.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolio-funds/batch/irr-values"
+    },
+    {
+      "path": "/portfolio_funds/batch/irr-values-by-date",
+      "name": "portfolio_funds__portfolio_funds_batch_irr-values-by-date",
+      "methods": [
+        "POST"
+      ],
+      "file": "portfolio_funds.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolio-funds/batch/irr-values-by-date"
+    },
+    {
+      "path": "/portfolio_funds/enhanced/{product_id}",
+      "name": "portfolio_funds__portfolio_funds_enhanced_{product_id}",
+      "methods": [
+        "GET"
+      ],
+      "file": "portfolio_funds.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolio-funds/enhanced/{product-id}"
+    },
+    {
+      "path": "/portfolio_funds/multiple/historical_irr",
+      "name": "portfolio_funds__portfolio_funds_multiple_historical_irr",
+      "methods": [
+        "POST"
+      ],
+      "file": "portfolio_funds.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolio-funds/multiple/historical-irr"
+    },
+    {
+      "path": "/portfolio_funds/multiple/irr",
+      "name": "portfolio_funds__portfolio_funds_multiple_irr",
+      "methods": [
+        "POST"
+      ],
+      "file": "portfolio_funds.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolio-funds/multiple/irr"
+    },
+    {
+      "path": "/portfolio_funds/{portfolio_fund_id}",
+      "name": "portfolio_funds__portfolio_funds_{portfolio_fund_id}",
+      "methods": [
+        "DELETE",
+        "GET",
+        "PATCH"
+      ],
+      "file": "portfolio_funds.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolio-funds/{portfolio-fund-id}"
+    },
+    {
+      "path": "/portfolio_funds/{portfolio_fund_id}/irr",
+      "name": "portfolio_funds__portfolio_funds_{portfolio_fund_id}_irr",
+      "methods": [
+        "POST"
+      ],
+      "file": "portfolio_funds.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolio-funds/{portfolio-fund-id}/irr"
+    },
+    {
+      "path": "/portfolio_funds/{portfolio_fund_id}/irr-values",
+      "name": "portfolio_funds__portfolio_funds_{portfolio_fund_id}_irr-values",
+      "methods": [
+        "GET"
+      ],
+      "file": "portfolio_funds.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolio-funds/{portfolio-fund-id}/irr-values"
+    },
+    {
+      "path": "/portfolio_funds/{portfolio_fund_id}/latest-irr",
+      "name": "portfolio_funds__portfolio_funds_{portfolio_fund_id}_latest-irr",
+      "methods": [
+        "GET"
+      ],
+      "file": "portfolio_funds.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolio-funds/{portfolio-fund-id}/latest-irr"
+    },
+    {
+      "path": "/portfolio_funds/{portfolio_fund_id}/recalculate-all-irr",
+      "name": "portfolio_funds__portfolio_funds_{portfolio_fund_id}_recalculate-all-irr",
+      "methods": [
+        "POST"
+      ],
+      "file": "portfolio_funds.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolio-funds/{portfolio-fund-id}/recalculate-all-irr"
+    },
+    {
+      "path": "/portfolio_funds/{portfolio_fund_id}/recalculate-irr",
+      "name": "portfolio_funds__portfolio_funds_{portfolio_fund_id}_recalculate-irr",
+      "methods": [
+        "POST"
+      ],
+      "file": "portfolio_funds.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolio-funds/{portfolio-fund-id}/recalculate-irr"
+    },
+    {
+      "path": "/portfolio_types",
+      "name": "client_products__portfolio_types",
+      "methods": [
+        "GET"
+      ],
+      "file": "client_products.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolio-types"
+    },
+    {
+      "path": "/portfolio_valuations",
+      "name": "portfolio_valuations__portfolio_valuations",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "portfolio_valuations.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolio-valuations"
+    },
+    {
+      "path": "/portfolio_valuations/{valuation_id}",
+      "name": "portfolio_valuations__portfolio_valuations_{valuation_id}",
+      "methods": [
+        "DELETE",
+        "GET",
+        "PATCH"
+      ],
+      "file": "portfolio_valuations.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolio-valuations/{valuation-id}"
+    },
+    {
+      "path": "/portfolios",
+      "name": "portfolios__portfolios",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "portfolios.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/portfolios"
+    },
+    {
+      "path": "/portfolios/from_template",
+      "name": "portfolios__portfolios_from_template",
+      "methods": [
+        "POST"
+      ],
+      "file": "portfolios.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolios/from-template"
+    },
+    {
+      "path": "/portfolios/with-template",
+      "name": "portfolios__portfolios_with-template",
+      "methods": [
+        "GET"
+      ],
+      "file": "portfolios.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/portfolios/with-template"
+    },
+    {
+      "path": "/portfolios/{portfolio_id}",
+      "name": "portfolios__portfolios_{portfolio_id}",
+      "methods": [
+        "DELETE",
+        "GET",
+        "PATCH"
+      ],
+      "file": "portfolios.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolios/{portfolio-id}"
+    },
+    {
+      "path": "/portfolios/{portfolio_id}/activity_logs",
+      "name": "portfolios__portfolios_{portfolio_id}_activity_logs",
+      "methods": [
+        "GET"
+      ],
+      "file": "portfolios.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolios/{portfolio-id}/activity-logs"
+    },
+    {
+      "path": "/portfolios/{portfolio_id}/calculate-irr",
+      "name": "portfolios__portfolios_{portfolio_id}_calculate-irr",
+      "methods": [
+        "POST"
+      ],
+      "file": "portfolios.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolios/{portfolio-id}/calculate-irr"
+    },
+    {
+      "path": "/portfolios/{portfolio_id}/calculate-irr-for-date",
+      "name": "portfolios__portfolios_{portfolio_id}_calculate-irr-for-date",
+      "methods": [
+        "POST"
+      ],
+      "file": "portfolios.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolios/{portfolio-id}/calculate-irr-for-date"
+    },
+    {
+      "path": "/portfolios/{portfolio_id}/calculate-total-irr",
+      "name": "portfolios__portfolios_{portfolio_id}_calculate-total-irr",
+      "methods": [
+        "POST"
+      ],
+      "file": "portfolios.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolios/{portfolio-id}/calculate-total-irr"
+    },
+    {
+      "path": "/portfolios/{portfolio_id}/calculate_valuation",
+      "name": "portfolio_valuations__portfolios_{portfolio_id}_calculate_valuation",
+      "methods": [
+        "POST"
+      ],
+      "file": "portfolio_valuations.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolios/{portfolio-id}/calculate-valuation"
+    },
+    {
+      "path": "/portfolios/{portfolio_id}/complete",
+      "name": "portfolios__portfolios_{portfolio_id}_complete",
+      "methods": [
+        "GET"
+      ],
+      "file": "portfolios.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolios/{portfolio-id}/complete"
+    },
+    {
+      "path": "/portfolios/{portfolio_id}/current_value",
+      "name": "portfolio_valuations__portfolios_{portfolio_id}_current_value",
+      "methods": [
+        "GET"
+      ],
+      "file": "portfolio_valuations.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolios/{portfolio-id}/current-value"
+    },
+    {
+      "path": "/portfolios/{portfolio_id}/irr-history",
+      "name": "portfolios__portfolios_{portfolio_id}_irr-history",
+      "methods": [
+        "GET"
+      ],
+      "file": "portfolios.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolios/{portfolio-id}/irr-history"
+    },
+    {
+      "path": "/portfolios/{portfolio_id}/latest-irr",
+      "name": "portfolios__portfolios_{portfolio_id}_latest-irr",
+      "methods": [
+        "GET"
+      ],
+      "file": "portfolios.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolios/{portfolio-id}/latest-irr"
+    },
+    {
+      "path": "/portfolios/{portfolio_id}/latest_valuation",
+      "name": "portfolio_valuations__portfolios_{portfolio_id}_latest_valuation",
+      "methods": [
+        "GET"
+      ],
+      "file": "portfolio_valuations.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolios/{portfolio-id}/latest-valuation"
+    },
+    {
+      "path": "/portfolios/{portfolio_id}/template",
+      "name": "portfolios__portfolios_{portfolio_id}_template",
+      "methods": [
+        "PATCH"
+      ],
+      "file": "portfolios.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolios/{portfolio-id}/template"
+    },
+    {
+      "path": "/portfolios/{portfolio_id}/valuations",
+      "name": "portfolio_valuations__portfolios_{portfolio_id}_valuations",
+      "methods": [
+        "GET"
+      ],
+      "file": "portfolio_valuations.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/portfolios/{portfolio-id}/valuations"
+    },
+    {
+      "path": "/presence/{page_identifier}",
+      "name": "presence__presence_{page_identifier}",
+      "methods": [
+        "GET"
+      ],
+      "file": "presence.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/presence/{page-identifier}"
+    },
+    {
+      "path": "/presence/{page_identifier}/enter",
+      "name": "presence__presence_{page_identifier}_enter",
+      "methods": [
+        "POST"
+      ],
+      "file": "presence.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/presence/{page-identifier}/enter"
+    },
+    {
+      "path": "/presence/{page_identifier}/exit",
+      "name": "presence__presence_{page_identifier}_exit",
+      "methods": [
+        "DELETE"
+      ],
+      "file": "presence.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/presence/{page-identifier}/exit"
+    },
+    {
+      "path": "/product/{product_id}/portfolio-historical-irr",
+      "name": "historical_irr__product_{product_id}_portfolio-historical-irr",
+      "methods": [
+        "GET"
+      ],
+      "file": "historical_irr.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/product/{product-id}/portfolio-historical-irr"
+    },
+    {
+      "path": "/product_owner_products",
+      "name": "product_owners__product_owner_products",
+      "methods": [
+        "POST"
+      ],
+      "file": "product_owners.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/product-owner-products"
+    },
+    {
+      "path": "/product_owner_products/product/{product_id}",
+      "name": "product_owners__product_owner_products_product_{product_id}",
+      "methods": [
+        "DELETE"
+      ],
+      "file": "product_owners.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/product-owner-products/product/{product-id}"
+    },
+    {
+      "path": "/product_owner_products/{product_owner_id}/{product_id}",
+      "name": "product_owners__product_owner_products_{product_owner_id}_{product_id}",
+      "methods": [
+        "DELETE"
+      ],
+      "file": "product_owners.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/product-owner-products/{product-owner-id}/{product-id}"
+    },
+    {
+      "path": "/product_owners",
+      "name": "product_owners__product_owners",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "product_owners.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/product-owners"
+    },
+    {
+      "path": "/product_owners/{product_owner_id}",
+      "name": "product_owners__product_owners_{product_owner_id}",
+      "methods": [
+        "DELETE",
+        "GET",
+        "PATCH"
+      ],
+      "file": "product_owners.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/product-owners/{product-owner-id}"
+    },
+    {
+      "path": "/product_owners/{product_owner_id}/client_groups",
+      "name": "product_owners__product_owners_{product_owner_id}_client_groups",
+      "methods": [
+        "GET"
+      ],
+      "file": "product_owners.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/product-owners/{product-owner-id}/client-groups"
+    },
+    {
+      "path": "/product_owners/{product_owner_id}/products",
+      "name": "product_owners__product_owners_{product_owner_id}_products",
+      "methods": [
+        "GET"
+      ],
+      "file": "product_owners.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/product-owners/{product-owner-id}/products"
+    },
+    {
+      "path": "/product_value_irr_summary",
+      "name": "products__product_value_irr_summary",
+      "methods": [
+        "GET"
+      ],
+      "file": "products.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/product-value-irr-summary"
+    },
+    {
+      "path": "/products_display",
+      "name": "client_products__products_display",
+      "methods": [
+        "GET"
+      ],
+      "file": "client_products.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/products-display"
+    },
+    {
+      "path": "/provider_switch_log",
+      "name": "provider_switch_log__provider_switch_log",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "provider_switch_log.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/provider-switch-log"
+    },
+    {
+      "path": "/provider_switch_log/{log_id}",
+      "name": "provider_switch_log__provider_switch_log_{log_id}",
+      "methods": [
+        "GET"
+      ],
+      "file": "provider_switch_log.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/provider-switch-log/{log-id}"
+    },
+    {
+      "path": "/revenue/client-groups",
+      "name": "revenue__revenue_client-groups",
+      "methods": [
+        "GET"
+      ],
+      "file": "revenue.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/revenue/client-groups"
+    },
+    {
+      "path": "/revenue/company",
+      "name": "revenue__revenue_company",
+      "methods": [
+        "GET"
+      ],
+      "file": "revenue.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/revenue/company"
+    },
+    {
+      "path": "/revenue/optimized",
+      "name": "revenue__revenue_optimized",
+      "methods": [
+        "GET"
+      ],
+      "file": "revenue.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/revenue/optimized"
+    },
+    {
+      "path": "/revenue/rate",
+      "name": "revenue__revenue_rate",
+      "methods": [
+        "GET"
+      ],
+      "file": "revenue.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/revenue/rate"
+    },
+    {
+      "path": "/revenue/rate/refresh",
+      "name": "revenue__revenue_rate_refresh",
+      "methods": [
+        "POST"
+      ],
+      "file": "revenue.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/revenue/rate/refresh"
+    },
+    {
+      "path": "/search",
+      "name": "search__search",
+      "methods": [
+        "GET"
+      ],
+      "file": "search.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/search"
+    },
+    {
+      "path": "/system/bulk-operation-stats",
+      "name": "system__system_bulk-operation-stats",
+      "methods": [
+        "GET"
+      ],
+      "file": "system.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/system/bulk-operation-stats"
+    },
+    {
+      "path": "/system/health",
+      "name": "system__system_health",
+      "methods": [
+        "GET"
+      ],
+      "file": "system.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/system/health"
+    },
+    {
+      "path": "/system/performance-test",
+      "name": "system__system_performance-test",
+      "methods": [
+        "POST"
+      ],
+      "file": "system.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/system/performance-test"
+    },
+    {
+      "path": "/system/repair-sequences",
+      "name": "system__system_repair-sequences",
+      "methods": [
+        "POST"
+      ],
+      "file": "system.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/system/repair-sequences"
+    },
+    {
+      "path": "/system/sequence-health",
+      "name": "system__system_sequence-health",
+      "methods": [
+        "GET"
+      ],
+      "file": "system.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/system/sequence-health"
+    },
+    {
+      "path": "/template-portfolio-generations/active",
+      "name": "available_portfolios__template-portfolio-generations_active",
+      "methods": [
+        "GET"
+      ],
+      "file": "available_portfolios.py",
+      "has_underscore": false,
+      "hyphenated_equivalent": "/template-portfolio-generations/active"
+    },
+    {
+      "path": "/{portfolio_id}",
+      "name": "available_portfolios__{portfolio_id}",
+      "methods": [
+        "DELETE",
+        "GET",
+        "PUT"
+      ],
+      "file": "available_portfolios.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/{portfolio-id}"
+    },
+    {
+      "path": "/{portfolio_id}/generations",
+      "name": "available_portfolios__{portfolio_id}_generations",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "available_portfolios.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/{portfolio-id}/generations"
+    },
+    {
+      "path": "/{portfolio_id}/generations/{generation_id}",
+      "name": "available_portfolios__{portfolio_id}_generations_{generation_id}",
+      "methods": [
+        "DELETE",
+        "PATCH"
+      ],
+      "file": "available_portfolios.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/{portfolio-id}/generations/{generation-id}"
+    },
+    {
+      "path": "/{portfolio_id}/linked-products",
+      "name": "available_portfolios__{portfolio_id}_linked-products",
+      "methods": [
+        "GET"
+      ],
+      "file": "available_portfolios.py",
+      "has_underscore": true,
+      "hyphenated_equivalent": "/{portfolio-id}/linked-products"
+    }
+  ]
+}
