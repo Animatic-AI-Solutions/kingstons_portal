@@ -1,0 +1,6636 @@
+
+> wealth-management-frontend@0.1.0 test
+> jest ClientDetails.test.tsx -t renders the client details --no-coverage
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.warn
+    ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+
+    [0m [90m 124 |[39m   )[33m;[39m
+     [90m 125 |[39m
+    [31m[1m>[22m[39m[90m 126 |[39m   [36mconst[39m renderResult [33m=[39m render(ui[33m,[39m { wrapper[33m:[39m [33mWrapper[39m[33m,[39m [33m...[39mrenderOptions })[33m;[39m
+     [90m     |[39m                              [31m[1m^[22m[39m
+     [90m 127 |[39m
+     [90m 128 |[39m   [36mreturn[39m {
+     [90m 129 |[39m     [33m...[39mrenderResult[33m,[39m[0m
+
+      at warn (node_modules/react-router/lib/deprecations.ts:9:13)
+      at warnOnce (node_modules/react-router/lib/deprecations.ts:14:3)
+      at logDeprecation (node_modules/react-router/lib/deprecations.ts:26:5)
+      at logV6DeprecationWarnings (node_modules/react-router/lib/components.tsx:257:25)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+      at commitPassiveMountEffects_complete (node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+      at commitPassiveMountEffects_begin (node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+      at commitPassiveMountEffects (node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+      at flushPassiveEffectsImpl (node_modules/react-dom/cjs/react-dom.development.js:27078:3)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom.development.js:27023:14)
+      at node_modules/react-dom/cjs/react-dom.development.js:26808:9
+      at flushActQueue (node_modules/react/cjs/react.development.js:2667:24)
+      at act (node_modules/react/cjs/react.development.js:2582:11)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:180:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:271:10)
+      at renderWithProviders (src/tests/utils/testUtils.tsx:126:30)
+      at Object.<anonymous> (src/tests/ClientDetails.test.tsx:143:24)
+
+  console.warn
+    ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+    [0m [90m 124 |[39m   )[33m;[39m
+     [90m 125 |[39m
+    [31m[1m>[22m[39m[90m 126 |[39m   [36mconst[39m renderResult [33m=[39m render(ui[33m,[39m { wrapper[33m:[39m [33mWrapper[39m[33m,[39m [33m...[39mrenderOptions })[33m;[39m
+     [90m     |[39m                              [31m[1m^[22m[39m
+     [90m 127 |[39m
+     [90m 128 |[39m   [36mreturn[39m {
+     [90m 129 |[39m     [33m...[39mrenderResult[33m,[39m[0m
+
+      at warn (node_modules/react-router/lib/deprecations.ts:9:13)
+      at warnOnce (node_modules/react-router/lib/deprecations.ts:14:3)
+      at logDeprecation (node_modules/react-router/lib/deprecations.ts:37:5)
+      at logV6DeprecationWarnings (node_modules/react-router/lib/components.tsx:257:25)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+      at commitPassiveMountEffects_complete (node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+      at commitPassiveMountEffects_begin (node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+      at commitPassiveMountEffects (node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+      at flushPassiveEffectsImpl (node_modules/react-dom/cjs/react-dom.development.js:27078:3)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom.development.js:27023:14)
+      at node_modules/react-dom/cjs/react-dom.development.js:26808:9
+      at flushActQueue (node_modules/react/cjs/react.development.js:2667:24)
+      at act (node_modules/react/cjs/react.development.js:2582:11)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:180:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:271:10)
+      at renderWithProviders (src/tests/utils/testUtils.tsx:126:30)
+      at Object.<anonymous> (src/tests/ClientDetails.test.tsx:143:24)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    DEBUG: Client data: {
+      client: {
+        id: '1',
+        name: 'John Smith',
+        status: 'active',
+        advisor: 'Sarah Johnson',
+        advisor_id: 1,
+        advisor_name: 'Sarah Johnson',
+        advisor_email: 'sarah.johnson@example.com',
+        advisor_first_name: 'Sarah',
+        advisor_last_name: 'Johnson',
+        type: 'R',
+        created_at: '2022-01-15',
+        updated_at: '2022-01-15',
+        age: 45,
+        gender: 'M',
+        product_owners: []
+      },
+      client_product_owners: [],
+      clientAccounts: [
+        {
+          id: 1,
+          client_id: 1,
+          product_name: 'Retirement Account',
+          product_type: 'IRA',
+          provider_name: 'Vanguard',
+          start_date: '2022-01-20',
+          status: 'active',
+          total_value: 150000,
+          irr: 8.5,
+          weighting: 60,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 2,
+          client_id: 1,
+          product_name: 'College Savings',
+          product_type: '529 Plan',
+          provider_name: 'Fidelity',
+          start_date: '2022-02-15',
+          status: 'active',
+          total_value: 75000,
+          irr: 6.2,
+          weighting: 30,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        },
+        {
+          id: 3,
+          client_id: 1,
+          product_name: 'Emergency Fund',
+          product_type: 'Savings Account',
+          provider_name: 'Chase',
+          start_date: '2022-03-10',
+          status: 'active',
+          total_value: 25000,
+          irr: 1.5,
+          weighting: 10,
+          fixed_fee_facilitated: 0,
+          percentage_fee_facilitated: 0,
+          product_owners: []
+        }
+      ],
+      first_account_owners: [],
+      apiResponse: {
+        client_group: {
+          id: '1',
+          name: 'John Smith',
+          advisor: 'Sarah Johnson',
+          advisor_id: 1,
+          advisor_name: 'Sarah Johnson',
+          advisor_email: 'sarah.johnson@example.com',
+          advisor_first_name: 'Sarah',
+          advisor_last_name: 'Johnson',
+          type: 'R',
+          status: 'active',
+          created_at: '2022-01-15',
+          updated_at: '2022-01-15',
+          age: 45,
+          gender: 'M',
+          email: 'john.smith@example.com',
+          phone: '(555) 123-4567',
+          address: '123 Main St, Anytown, USA',
+          notes: 'Prefers email communication',
+          product_owners: []
+        },
+        products: [ [Object], [Object], [Object] ]
+      }
+    }
+
+      at ClientDetails (src/pages/ClientDetails.tsx:1233:11)
+
+  console.log
+    DEBUG: ClientHeader formatDate - input: 2022-01-15 output: 15 Jan 2022
+
+      at formatDate (src/pages/ClientDetails.tsx:305:13)
+
+  console.log
+    Product card for Emergency Fund: {
+      provider: 'Chase',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 25000,
+      irr: 1.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for College Savings: {
+      provider: 'Fidelity',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 75000,
+      irr: 6.2,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
+  console.log
+    Product card for Retirement Account: {
+      provider: 'Vanguard',
+      provider_id: undefined,
+      provider_theme_color: undefined,
+      using_color: '#3B82F6',
+      template_generation_id: undefined,
+      template_info: undefined,
+      fum: 150000,
+      irr: 8.5,
+      valuation_date: undefined
+    }
+
+      at ProductCard (src/pages/ClientDetails.tsx:703:11)
+
