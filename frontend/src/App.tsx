@@ -26,6 +26,7 @@ import AddClient from './pages/AddClient';
 import ClientDetails from './pages/ClientDetails';
 import ClientGroupPhase2 from './pages/phase2_prototype';
 import CreateClientGroupPrototype from './pages/CreateClientGroupPrototype';
+import ClientGroupSuite from './pages/ClientGroupSuite';
 
 // Product Management Pages - For handling financial products
 import Products from './pages/Products';
@@ -150,6 +151,7 @@ const AppContent: React.FC = () => {
           <Route path="/client-groups" element={<AppLayout><Clients /></AppLayout>} />
           <Route path="/client-groups/add" element={<AppLayout><CreateClientGroupPrototype /></AppLayout>} />
           <Route path="/client-groups/:clientId" element={<AppLayout><ClientDetails /></AppLayout>} />
+          <Route path="/client-groups/:clientGroupId/suite" element={<AppLayout><ClientGroupSuite /></AppLayout>} />
           <Route path="/client-groups-phase2" element={<AppLayout><ClientGroupPhase2 /></AppLayout>} />
           <Route path="/create-client-group-prototype" element={<AppLayout><CreateClientGroupPrototype /></AppLayout>} />
           

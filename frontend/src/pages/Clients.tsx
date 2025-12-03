@@ -97,7 +97,7 @@ const Clients: React.FC = () => {
   };
 
   const handleClientClick = (clientId: string) => {
-    navigate(`/client-groups/${clientId}`);
+    navigate(`/client-groups/${clientId}/suite`);
   };
 
 
