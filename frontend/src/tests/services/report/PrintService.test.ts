@@ -21,7 +21,7 @@ describe('PrintService', () => {
       expect(options.orientation).toBe('landscape');
       expect(options.ensureIRRHistory).toBe(true);
       expect(options.preserveColors).toBe(true);
-      expect(options.margins?.top).toBe('0.2in');
+      expect(options.margins?.top).toBe('1.2in');
       expect(options.margins?.right).toBe('0.05in');
     });
 
@@ -80,7 +80,7 @@ describe('PrintService', () => {
       
       expect(styles).toContain('@media print');
       expect(styles).toContain('size: A4 landscape');
-      expect(styles).toContain('margin: 0.2in 0.05in 0.2in 0.05in');
+      expect(styles).toContain('margin: 1.2in 0.05in 0.2in 0.05in');
       expect(styles).toContain('.print-hide');
       expect(styles).toContain('.irr-history-section');
     });

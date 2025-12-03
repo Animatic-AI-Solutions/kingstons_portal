@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(ls \"C:\\Users\\jacob\\Documents\\kingstons_portal\\backend\\app\\utils\"\" | grep -E \"sequence_manager \")"
+      "Bash(npm test:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

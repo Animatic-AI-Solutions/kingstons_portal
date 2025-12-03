@@ -1,0 +1,3 @@
+now in this project we have some tests but i thin most of them are broken, I want us to have proper testing to verify geatures befroe deployment to production, so we should have unit tests across the whole codebase, integration tests, and E2E tests for the most user flows, lets first analyse what we've currently got and if we cna use any of it, shoudl we start from scratch, what do we need to clean up opr delete and start again
+
+I want to analyse the state of our current tests

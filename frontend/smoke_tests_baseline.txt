@@ -1,0 +1,85 @@
+npm verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+npm info using npm@10.9.2
+npm info using node@v22.17.0
+npm verbose title npm test --testPathPattern=(reportFormatters|reportConstants|ReportFormatter) --no-coverage
+npm verbose argv "test" "--" "--testPathPattern=(reportFormatters|reportConstants|ReportFormatter)" "--no-coverage"
+npm verbose logfile logs-max:10 dir:C:\Users\jacob\AppData\Local\npm-cache\_logs\2025-12-02T16_21_01_359Z-
+npm verbose logfile C:\Users\jacob\AppData\Local\npm-cache\_logs\2025-12-02T16_21_01_359Z-debug-0.log
+
+> wealth-management-frontend@0.1.0 test
+> jest --testPathPattern=(reportFormatters|reportConstants|ReportFormatter) --no-coverage
+
+ts-jest[ts-jest-transformer] (WARN) Define `ts-jest` config under `globals` is deprecated. Please do
+transform: {
+    <transform_regex>: ['ts-jest', { /* ts-jest config goes here in Jest */ }],
+},
+See more at https://kulshekhar.github.io/ts-jest/docs/getting-started/presets#advanced
+ts-jest[ts-jest-transformer] (WARN) Define `ts-jest` config under `globals` is deprecated. Please do
+transform: {
+    <transform_regex>: ['ts-jest', { /* ts-jest config goes here in Jest */ }],
+},
+See more at https://kulshekhar.github.io/ts-jest/docs/getting-started/presets#advanced
+ts-jest[config] (WARN) 
+    The "ts-jest" config option "isolatedModules" is deprecated and will be removed in v30.0.0. Please use "isolatedModules: true" in C:/Users/jacob/Documents/kingstons_portal/frontend/tsconfig.json instead, see https://www.typescriptlang.org/tsconfig/#isolatedModules
+  
+ts-jest[ts-jest-transformer] (WARN) Define `ts-jest` config under `globals` is deprecated. Please do
+transform: {
+    <transform_regex>: ['ts-jest', { /* ts-jest config goes here in Jest */ }],
+},
+See more at https://kulshekhar.github.io/ts-jest/docs/getting-started/presets#advanced
+ts-jest[config] (WARN) 
+    The "ts-jest" config option "isolatedModules" is deprecated and will be removed in v30.0.0. Please use "isolatedModules: true" in C:/Users/jacob/Documents/kingstons_portal/frontend/tsconfig.json instead, see https://www.typescriptlang.org/tsconfig/#isolatedModules
+  
+ts-jest[config] (WARN) 
+    The "ts-jest" config option "isolatedModules" is deprecated and will be removed in v30.0.0. Please use "isolatedModules: true" in C:/Users/jacob/Documents/kingstons_portal/frontend/tsconfig.json instead, see https://www.typescriptlang.org/tsconfig/#isolatedModules
+  
+PASS src/tests/reportConstants.test.ts
+PASS src/tests/services/report/ReportFormatter.test.ts
+  ● Console
+
+    console.warn
+      Invalid activity type: invalid_type. Defaulting to 'investment'.
+
+    [0m [90m 242 |[39m
+     [90m 243 |[39m     [90m// Default fallback to prevent errors[39m
+    [31m[1m>[22m[39m[90m 244 |[39m     console[33m.[39mwarn([32m`Invalid activity type: ${activityType}. Defaulting to 'investment'.`[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 245 |[39m     [36mreturn[39m [32m'investment'[39m[33m;[39m
+     [90m 246 |[39m   }
+     [90m 247 |[39m }[0m
+
+      at ReportFormatter.validateActivityType (src/services/report/ReportFormatter.ts:244:13)
+      at ReportFormatter.formatCurrencyWithVisualSigning (src/services/report/ReportFormatter.ts:81:36)
+      at src/tests/services/report/ReportFormatter.test.ts:111:30
+      at Object.<anonymous> (node_modules/expect/build/toThrowMatchers.js:74:11)
+      at Object.throwingMatcher [as toThrow] (node_modules/expect/build/index.js:320:21)
+      at Object.<anonymous> (src/tests/services/report/ReportFormatter.test.ts:111:89)
+
+    console.warn
+      Invalid activity type: invalid_type. Defaulting to 'investment'.
+
+    [0m [90m 242 |[39m
+     [90m 243 |[39m     [90m// Default fallback to prevent errors[39m
+    [31m[1m>[22m[39m[90m 244 |[39m     console[33m.[39mwarn([32m`Invalid activity type: ${activityType}. Defaulting to 'investment'.`[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 245 |[39m     [36mreturn[39m [32m'investment'[39m[33m;[39m
+     [90m 246 |[39m   }
+     [90m 247 |[39m }[0m
+
+      at ReportFormatter.validateActivityType (src/services/report/ReportFormatter.ts:244:13)
+      at ReportFormatter.formatCurrencyWithVisualSigning (src/services/report/ReportFormatter.ts:81:36)
+      at Object.<anonymous> (src/tests/services/report/ReportFormatter.test.ts:112:24)
+
+PASS src/tests/reportFormatters.test.ts
+
+Test Suites: 3 passed, 3 total
+Tests:       52 passed, 52 total
+Snapshots:   0 total
+Time:        4.908 s, estimated 5 s
+Ran all test suites matching /(reportFormatters|reportConstants|ReportFormatter)/i.
+npm verbose cwd C:\Users\jacob\Documents\kingstons_portal\frontend
+npm verbose os Windows_NT 10.0.26100
+npm verbose node v22.17.0
+npm verbose npm  v10.9.2
+npm verbose exit 0
+npm info ok
