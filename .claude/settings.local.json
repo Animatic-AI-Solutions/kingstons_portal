@@ -3,7 +3,9 @@
     "allow": [
       "Bash(npm test:*)",
       "Bash(python -m pytest:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(test:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

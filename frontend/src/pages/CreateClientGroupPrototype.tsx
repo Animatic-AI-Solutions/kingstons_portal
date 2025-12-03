@@ -1,281 +1,153 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  UserIcon,
-  PlusIcon,
-  TrashIcon,
-  PencilIcon,
-  CheckIcon,
-  XMarkIcon,
-} from '@heroicons/react/24/outline';
+import { PlusIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
 import DynamicPageContainer from '../components/DynamicPageContainer';
+import { useClientGroupForm } from '../hooks/useClientGroupForm';
+import { useCreateClientGroupFlow } from '../hooks/useCreateClientGroupFlow';
+import {
+  BaseInput,
+  DateInput,
+  BaseDropdown,
+  TextArea,
+  ActionButton,
+  AddButton,
+  EditButton,
+  DeleteButton,
+  ErrorDisplay,
+} from '../components/ui';
+import {
+  TITLE_OPTIONS,
+  RELATIONSHIP_STATUS_OPTIONS,
+  GENDER_OPTIONS,
+  EMPLOYMENT_STATUS_OPTIONS,
+  CLIENT_GROUP_TYPES,
+  STATUS_OPTIONS,
+  AML_RESULT_OPTIONS,
+} from '../constants/clientGroup';
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
-interface PersonFormData {
-  id: string;
-  // Personal Information
-  gender: string;
-  title: string;
-  forename: string;
-  middleNames: string;
-  surname: string;
-  knownAs: string;
-  previousNames: string;
-  relationshipStatus: string;
-  addressLine1: string;
-  addressLine2: string;
-  addressLine3: string;
-  addressLine4: string;
-  addressLine5: string;
-  postcode: string;
-  emails: string[];
-  phoneNumbers: string[];
-  employmentStatus: string;
-  occupation: string;
-  dateMovedIn: string;
-  dateOfBirth: string;
-  placeOfBirth: string;
-  age: number;
-  // Regulatory Information
-  niNumber: string;
-  drivingLicenseExpiry: string;
-  passportExpiry: string;
-  otherIds: string;
-  amlCheck: string;
-  safeWords: string[];
-  shareDataWith: string;
-  // Relationship to client group
-  relationship: string;
-}
-
-// ============================================================================
-// MAIN COMPONENT
-// ============================================================================
-
+/**
+ * CreateClientGroupPrototype - Complete refactored form for creating client groups
+ *
+ * Uses new infrastructure:
+ * - useClientGroupForm hook for state management
+ * - useCreateClientGroupFlow hook for API orchestration
+ * - UI components from components/ui
+ * - Constants from constants/clientGroup
+ * - Validation from utils/validation
+ */
 const CreateClientGroupPrototype: React.FC = () => {
   const navigate = useNavigate();
-  const [clientGroupName, setClientGroupName] = useState('');
-  const [people, setPeople] = useState<PersonFormData[]>([]);
-  const [isAddingPerson, setIsAddingPerson] = useState(false);
-  const [editingPersonId, setEditingPersonId] = useState<string | null>(null);
 
-  // Form state for adding/editing a person
-  const [formData, setFormData] = useState<PersonFormData>(getEmptyPersonForm());
+  // Custom hooks for state management
+  const {
+    clientGroup,
+    productOwners,
+    validationErrors,
+    updateClientGroup,
+    addProductOwner,
+    updateProductOwner,
+    updateProductOwnerAddress,
+    removeProductOwner,
+    validateAll,
+  } = useClientGroupForm();
 
-  function getEmptyPersonForm(): PersonFormData {
-    return {
-      id: Date.now().toString(),
-      gender: '',
-      title: '',
-      forename: '',
-      middleNames: '',
-      surname: '',
-      knownAs: '',
-      previousNames: '',
-      relationshipStatus: '',
-      addressLine1: '',
-      addressLine2: '',
-      addressLine3: '',
-      addressLine4: '',
-      addressLine5: '',
-      postcode: '',
-      emails: [],
-      phoneNumbers: [],
-      employmentStatus: '',
-      occupation: '',
-      dateMovedIn: '',
-      dateOfBirth: '',
-      placeOfBirth: '',
-      age: 0,
-      niNumber: '',
-      drivingLicenseExpiry: '',
-      passportExpiry: '',
-      otherIds: '',
-      amlCheck: '',
-      safeWords: [],
-      shareDataWith: '',
-      relationship: '',
-    };
-  }
+  const {
+    createClientGroup: createClientGroupMutation,
+    isLoading,
+    error,
+    progress,
+  } = useCreateClientGroupFlow();
 
-  const handleInputChange = (field: keyof PersonFormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  // Local UI state
+  const [isAddingOwner, setIsAddingOwner] = useState(false);
+  const [editingOwnerTempId, setEditingOwnerTempId] = useState<string | null>(null);
 
-  const handleArrayInputChange = (field: 'emails' | 'phoneNumbers' | 'safeWords', value: string) => {
-    const array = value.split(',').map(item => item.trim()).filter(item => item);
-    setFormData(prev => ({ ...prev, [field]: array }));
-  };
-
-  // Calculate age from date of birth
-  const calculateAge = (dob: string): number => {
-    if (!dob) return 0;
-    const birthDate = new Date(dob);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
+  /**
+   * Handles initiating the "add new product owner" flow
+   */
+  const handleAddOwner = () => {
+    addProductOwner();
+    const newOwner = productOwners[productOwners.length];
+    if (newOwner) {
+      setEditingOwnerTempId(newOwner.tempId);
     }
-    return age;
+    setIsAddingOwner(true);
   };
 
-  // Validate that all required fields are filled
-  const isPersonFormValid = (): boolean => {
-    const required = [
-      'gender', 'title', 'forename', 'surname', 'knownAs', 'relationshipStatus',
-      'addressLine1', 'postcode', 'employmentStatus', 'occupation',
-      'dateOfBirth', 'placeOfBirth', 'niNumber', 'relationship'
-    ];
+  /**
+   * Handles initiating the "edit existing product owner" flow
+   */
+  const handleEditOwner = (tempId: string) => {
+    setEditingOwnerTempId(tempId);
+    setIsAddingOwner(true);
+  };
 
-    for (const field of required) {
-      if (!formData[field as keyof PersonFormData]) {
-        return false;
+  /**
+   * Handles saving the current product owner (closes the form)
+   */
+  const handleSaveOwner = () => {
+    setIsAddingOwner(false);
+    setEditingOwnerTempId(null);
+  };
+
+  /**
+   * Handles canceling the current product owner form
+   */
+  const handleCancelOwner = () => {
+    // If editing, don't remove the owner
+    // If adding new, remove the last added owner
+    if (editingOwnerTempId && productOwners.length > 0) {
+      const lastOwner = productOwners[productOwners.length - 1];
+      if (lastOwner.tempId === editingOwnerTempId) {
+        // This was a newly added owner that wasn't saved yet
+        removeProductOwner(editingOwnerTempId);
       }
     }
+    setIsAddingOwner(false);
+    setEditingOwnerTempId(null);
+  };
 
-    // Check arrays
-    if (formData.emails.length === 0 || formData.phoneNumbers.length === 0) {
-      return false;
+  /**
+   * Handles deleting a product owner
+   */
+  const handleDeleteOwner = (tempId: string) => {
+    if (window.confirm('Are you sure you want to remove this product owner?')) {
+      removeProductOwner(tempId);
     }
-
-    return true;
   };
 
-  const handleAddPerson = () => {
-    setIsAddingPerson(true);
-    setEditingPersonId(null);
-    setFormData(getEmptyPersonForm());
-  };
-
-  const handleEditPerson = (person: PersonFormData) => {
-    setEditingPersonId(person.id);
-    setIsAddingPerson(true);
-    setFormData({ ...person });
-  };
-
-  const handleSavePerson = () => {
-    if (!isPersonFormValid()) {
-      alert('Please fill in all required fields');
+  /**
+   * Handles form submission (creates client group via API)
+   */
+  const handleSubmit = async () => {
+    // Validate all fields first
+    const isValid = validateAll();
+    if (!isValid) {
       return;
     }
 
-    // Update age based on date of birth
-    const age = calculateAge(formData.dateOfBirth);
-    const personToSave = { ...formData, age };
+    try {
+      const groupId = await createClientGroupMutation({
+        clientGroup,
+        productOwners,
+      });
 
-    if (editingPersonId) {
-      // Update existing person
-      setPeople(prev => prev.map(p => p.id === editingPersonId ? personToSave : p));
-    } else {
-      // Add new person
-      setPeople(prev => [...prev, personToSave]);
-    }
-
-    // Reset form
-    setIsAddingPerson(false);
-    setEditingPersonId(null);
-    setFormData(getEmptyPersonForm());
-  };
-
-  const handleCancelPerson = () => {
-    setIsAddingPerson(false);
-    setEditingPersonId(null);
-    setFormData(getEmptyPersonForm());
-  };
-
-  const handleDeletePerson = (personId: string) => {
-    if (window.confirm('Are you sure you want to remove this person?')) {
-      setPeople(prev => prev.filter(p => p.id !== personId));
+      // Navigate to the created client group
+      navigate(`/client-groups/${groupId}`);
+    } catch (error) {
+      console.error('Failed to create client group:', error);
     }
   };
 
-  const handleCreateClientGroup = () => {
-    if (people.length === 0) {
-      alert('Please add at least one person to the client group');
-      return;
-    }
+  // Get the current editing owner (if any)
+  const editingOwner = editingOwnerTempId
+    ? productOwners.find((po) => po.tempId === editingOwnerTempId)
+    : null;
 
-    if (!clientGroupName.trim()) {
-      alert('Please enter a client group name');
-      return;
-    }
-
-    // For prototype, just navigate to Phase 2 page
-    // In real implementation, this would save to database first
-    alert(`Client Group "${clientGroupName}" created with ${people.length} ${people.length === 1 ? 'person' : 'people'}!`);
-    navigate('/client-groups-phase2');
-  };
-
-  const renderField = (
-    label: string,
-    field: keyof PersonFormData,
-    type: string = 'text',
-    required: boolean = false
-  ) => (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      <input
-        type={type}
-        value={formData[field] as string}
-        onChange={(e) => handleInputChange(field, e.target.value)}
-        onBlur={(e) => {
-          if (field === 'dateOfBirth' && e.target.value) {
-            const age = calculateAge(e.target.value);
-            handleInputChange('age', age);
-          }
-        }}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-      />
-    </div>
-  );
-
-  const renderArrayField = (
-    label: string,
-    field: 'emails' | 'phoneNumbers' | 'safeWords',
-    required: boolean = false
-  ) => (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        {label} {required && <span className="text-red-500">*</span>}
-        <span className="text-xs text-gray-500 ml-2">(comma-separated)</span>
-      </label>
-      <input
-        type="text"
-        value={formData[field].join(', ')}
-        onChange={(e) => handleArrayInputChange(field, e.target.value)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-      />
-    </div>
-  );
-
-  const renderSelectField = (
-    label: string,
-    field: keyof PersonFormData,
-    options: string[],
-    required: boolean = false
-  ) => (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      <select
-        value={formData[field] as string}
-        onChange={(e) => handleInputChange(field, e.target.value)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-      >
-        <option value="">Select...</option>
-        {options.map(option => (
-          <option key={option} value={option}>{option}</option>
-        ))}
-      </select>
-    </div>
-  );
+  // Get validation errors for current editing owner
+  const ownerErrors = editingOwnerTempId && validationErrors.productOwners
+    ? validationErrors.productOwners[editingOwnerTempId]
+    : undefined;
 
   return (
     <DynamicPageContainer maxWidth="1800px" className="py-6">
@@ -284,75 +156,139 @@ const CreateClientGroupPrototype: React.FC = () => {
         <h1 className="text-3xl font-normal text-gray-900 font-sans tracking-wide">
           Create New Client Group
         </h1>
-        <p className="text-gray-600 mt-1 text-sm">Add people to create a new client group</p>
+        <p className="text-gray-600 mt-1 text-sm">Complete the form to create a new client group</p>
       </div>
 
-      {/* Client Group Name */}
+      {/* Error Display */}
+      {error && (
+        <div className="mb-6">
+          <ErrorDisplay
+            error={error.message || 'Failed to create client group'}
+            onDismiss={() => {}}
+          />
+        </div>
+      )}
+
+      {/* Client Group Details Section */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Client Group Name <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          value={clientGroupName}
-          onChange={(e) => setClientGroupName(e.target.value)}
-          placeholder="e.g., Smith Family, Johnson Trust"
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-        />
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Client Group Details</h2>
+
+        <div className="grid grid-cols-2 gap-4">
+          <BaseInput
+            label="Client Group Name"
+            value={clientGroup.name}
+            onChange={(e) => updateClientGroup('name', e.target.value)}
+            required
+            error={validationErrors.clientGroup?.name}
+          />
+
+          <BaseDropdown
+            label="Type"
+            value={clientGroup.type}
+            onChange={(val) => updateClientGroup('type', val)}
+            options={CLIENT_GROUP_TYPES.map((opt) => ({ value: opt, label: opt }))}
+            required
+            error={validationErrors.clientGroup?.type}
+          />
+
+          <BaseDropdown
+            label="Status"
+            value={clientGroup.status}
+            onChange={(val) => updateClientGroup('status', val)}
+            options={STATUS_OPTIONS.map((opt) => ({ value: opt, label: opt }))}
+            required
+            error={validationErrors.clientGroup?.status}
+          />
+
+          <DateInput
+            label="Ongoing Start Date"
+            value={clientGroup.ongoing_start}
+            onChange={(e) => updateClientGroup('ongoing_start', e.target.value)}
+            error={validationErrors.clientGroup?.ongoing_start}
+          />
+
+          <DateInput
+            label="Client Declaration Date"
+            value={clientGroup.client_declaration}
+            onChange={(e) => updateClientGroup('client_declaration', e.target.value)}
+            error={validationErrors.clientGroup?.client_declaration}
+          />
+
+          <DateInput
+            label="Privacy Declaration Date"
+            value={clientGroup.privacy_declaration}
+            onChange={(e) => updateClientGroup('privacy_declaration', e.target.value)}
+            error={validationErrors.clientGroup?.privacy_declaration}
+          />
+
+          <DateInput
+            label="Full Fee Agreement Date"
+            value={clientGroup.full_fee_agreement}
+            onChange={(e) => updateClientGroup('full_fee_agreement', e.target.value)}
+            error={validationErrors.clientGroup?.full_fee_agreement}
+          />
+
+          <DateInput
+            label="Last Satisfactory Discussion Date"
+            value={clientGroup.last_satisfactory_discussion}
+            onChange={(e) => updateClientGroup('last_satisfactory_discussion', e.target.value)}
+            error={validationErrors.clientGroup?.last_satisfactory_discussion}
+          />
+
+          <div className="col-span-2">
+            <TextArea
+              label="Notes"
+              value={clientGroup.notes}
+              onChange={(e) => updateClientGroup('notes', e.target.value)}
+              rows={3}
+              error={validationErrors.clientGroup?.notes}
+            />
+          </div>
+        </div>
       </div>
 
-      {/* People in Client Group */}
+      {/* Product Owners Section */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-900">
-            People in Client Group ({people.length})
+            Product Owners ({productOwners.length})
           </h2>
-          {!isAddingPerson && (
-            <button
-              onClick={handleAddPerson}
-              className="flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
-            >
-              <PlusIcon className="w-5 h-5" />
-              Add Person
-            </button>
+          {!isAddingOwner && (
+            <AddButton onClick={handleAddOwner} label="Add Product Owner" />
           )}
         </div>
 
-        {/* List of Added People */}
-        {people.length > 0 && !isAddingPerson && (
+        {/* List of Added Product Owners */}
+        {productOwners.length > 0 && !isAddingOwner && (
           <div className="mb-6">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Relationship</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Age</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">DOB</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {people.map((person) => (
-                  <tr key={person.id} className="hover:bg-gray-50">
+                {productOwners.map((po) => (
+                  <tr key={po.tempId} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {person.title} {person.forename} {person.surname}
+                      {po.productOwner.title} {po.productOwner.firstname} {po.productOwner.surname}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{person.relationship}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{person.age}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{person.emails[0]}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {po.productOwner.dob}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {po.productOwner.email_1}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {po.productOwner.phone_1}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <button
-                        onClick={() => handleEditPerson(person)}
-                        className="text-primary-600 hover:text-primary-800 mr-3"
-                      >
-                        <PencilIcon className="w-5 h-5 inline" />
-                      </button>
-                      <button
-                        onClick={() => handleDeletePerson(person.id)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        <TrashIcon className="w-5 h-5 inline" />
-                      </button>
+                      <EditButton onClick={() => handleEditOwner(po.tempId)} />
+                      <DeleteButton onClick={() => handleDeleteOwner(po.tempId)} className="ml-2" />
                     </td>
                   </tr>
                 ))}
@@ -361,145 +297,324 @@ const CreateClientGroupPrototype: React.FC = () => {
           </div>
         )}
 
-        {/* Add/Edit Person Form */}
-        {isAddingPerson && (
+        {/* Product Owner Form */}
+        {isAddingOwner && editingOwner && (
           <div className="border-t pt-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 rounded-full bg-primary-100">
-                <UserIcon className="h-6 w-6 text-primary-700" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                {editingPersonId ? 'Edit Person' : 'Add New Person'}
-              </h3>
-            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              {editingOwnerTempId ? 'Edit Product Owner' : 'Add Product Owner'}
+            </h3>
 
-            {/* Personal Information */}
+            {/* Personal Details Section */}
             <div className="mb-6">
-              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-4">Personal Information</h4>
-              <div className="grid grid-cols-2 gap-4">
-                {renderSelectField('Gender', 'gender', ['Male', 'Female', 'Other'], true)}
-                {renderSelectField('Title', 'title', ['Mr', 'Mrs', 'Miss', 'Ms', 'Dr', 'Prof'], true)}
-                {renderField('Forename', 'forename', 'text', true)}
-                {renderField('Middle Names', 'middleNames')}
-                {renderField('Surname', 'surname', 'text', true)}
-                {renderField('Known As', 'knownAs', 'text', true)}
-                <div className="col-span-2">
-                  {renderField('Previous Names', 'previousNames')}
+              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-4">Personal Details</h4>
+              <div className="grid grid-cols-3 gap-4">
+                <BaseDropdown
+                  label="Title"
+                  value={editingOwner.productOwner.title}
+                  onChange={(val) => updateProductOwner(editingOwnerTempId!, 'title', val)}
+                  options={TITLE_OPTIONS.map((opt) => ({ value: opt, label: opt }))}
+                  required
+                  error={ownerErrors?.title}
+                />
+
+                <BaseInput
+                  label="First Name"
+                  value={editingOwner.productOwner.firstname}
+                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'firstname', e.target.value)}
+                  required
+                  error={ownerErrors?.firstname}
+                />
+
+                <BaseInput
+                  label="Middle Names"
+                  value={editingOwner.productOwner.middle_names}
+                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'middle_names', e.target.value)}
+                  error={ownerErrors?.middle_names}
+                />
+
+                <BaseInput
+                  label="Surname"
+                  value={editingOwner.productOwner.surname}
+                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'surname', e.target.value)}
+                  required
+                  error={ownerErrors?.surname}
+                />
+
+                <BaseInput
+                  label="Known As"
+                  value={editingOwner.productOwner.known_as}
+                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'known_as', e.target.value)}
+                  required
+                  error={ownerErrors?.known_as}
+                />
+
+                <BaseDropdown
+                  label="Gender"
+                  value={editingOwner.productOwner.gender}
+                  onChange={(val) => updateProductOwner(editingOwnerTempId!, 'gender', val)}
+                  options={GENDER_OPTIONS.map((opt) => ({ value: opt, label: opt }))}
+                  required
+                  error={ownerErrors?.gender}
+                />
+
+                <BaseDropdown
+                  label="Relationship Status"
+                  value={editingOwner.productOwner.relationship_status}
+                  onChange={(val) => updateProductOwner(editingOwnerTempId!, 'relationship_status', val)}
+                  options={RELATIONSHIP_STATUS_OPTIONS.map((opt) => ({ value: opt, label: opt }))}
+                  required
+                  error={ownerErrors?.relationship_status}
+                />
+
+                <DateInput
+                  label="Date of Birth"
+                  value={editingOwner.productOwner.dob}
+                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'dob', e.target.value)}
+                  required
+                  error={ownerErrors?.dob}
+                />
+
+                <BaseInput
+                  label="Place of Birth"
+                  value={editingOwner.productOwner.place_of_birth}
+                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'place_of_birth', e.target.value)}
+                  required
+                  error={ownerErrors?.place_of_birth}
+                />
+
+                <div className="col-span-3">
+                  <BaseInput
+                    label="Previous Names"
+                    value={editingOwner.productOwner.previous_names}
+                    onChange={(e) => updateProductOwner(editingOwnerTempId!, 'previous_names', e.target.value)}
+                    error={ownerErrors?.previous_names}
+                  />
                 </div>
-                <div className="col-span-2">
-                  {renderSelectField('Relationship Status', 'relationshipStatus', ['Single', 'Married', 'Divorced', 'Widowed', 'Civil Partnership'], true)}
-                </div>
-                <div className="col-span-2">
-                  {renderField('Address Line 1', 'addressLine1', 'text', true)}
-                </div>
-                <div className="col-span-2">
-                  {renderField('Address Line 2', 'addressLine2')}
-                </div>
-                <div className="col-span-2">
-                  {renderField('Address Line 3', 'addressLine3')}
-                </div>
-                <div className="col-span-2">
-                  {renderField('Address Line 4', 'addressLine4')}
-                </div>
-                <div className="col-span-2">
-                  {renderField('Address Line 5', 'addressLine5')}
-                </div>
-                {renderField('Postcode', 'postcode', 'text', true)}
-                {renderField('Date Moved In', 'dateMovedIn', 'date')}
-                {renderField('Date of Birth', 'dateOfBirth', 'date', true)}
-                {renderField('Age', 'age', 'number')}
-                <div className="col-span-2">
-                  {renderField('Place of Birth', 'placeOfBirth', 'text', true)}
-                </div>
-                <div className="col-span-2">
-                  {renderArrayField('Email Addresses', 'emails', true)}
-                </div>
-                <div className="col-span-2">
-                  {renderArrayField('Phone Numbers', 'phoneNumbers', true)}
-                </div>
-                {renderSelectField('Employment Status', 'employmentStatus', ['Employed', 'Self-Employed', 'Unemployed', 'Retired', 'Student'], true)}
-                {renderField('Occupation', 'occupation', 'text', true)}
               </div>
             </div>
 
-            {/* Regulatory Information */}
+            {/* Contact Information Section */}
             <div className="mb-6 pt-6 border-t">
-              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-4">Regulatory Information</h4>
+              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-4">Contact Information</h4>
               <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  {renderField('National Insurance Number', 'niNumber', 'text', true)}
-                </div>
-                <div className="col-span-2">
-                  {renderField('AML Check', 'amlCheck')}
-                </div>
-                {renderField('Driving License Expiry', 'drivingLicenseExpiry', 'date')}
-                {renderField('Passport Expiry', 'passportExpiry', 'date')}
-                <div className="col-span-2">
-                  {renderField('Other IDs', 'otherIds')}
-                </div>
-                <div className="col-span-2">
-                  {renderArrayField('Safe Words', 'safeWords')}
-                </div>
-                <div className="col-span-2">
-                  {renderField('Share Data With', 'shareDataWith')}
-                </div>
+                <BaseInput
+                  label="Email 1"
+                  type="email"
+                  value={editingOwner.productOwner.email_1}
+                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'email_1', e.target.value)}
+                  required
+                  error={ownerErrors?.email_1}
+                />
+
+                <BaseInput
+                  label="Email 2"
+                  type="email"
+                  value={editingOwner.productOwner.email_2}
+                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'email_2', e.target.value)}
+                  error={ownerErrors?.email_2}
+                />
+
+                <BaseInput
+                  label="Phone 1"
+                  type="tel"
+                  value={editingOwner.productOwner.phone_1}
+                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'phone_1', e.target.value)}
+                  required
+                  error={ownerErrors?.phone_1}
+                />
+
+                <BaseInput
+                  label="Phone 2"
+                  type="tel"
+                  value={editingOwner.productOwner.phone_2}
+                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'phone_2', e.target.value)}
+                  error={ownerErrors?.phone_2}
+                />
               </div>
             </div>
 
-            {/* Relationship to Client Group */}
+            {/* Residential Information Section */}
             <div className="mb-6 pt-6 border-t">
-              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-4">Client Group Relationship</h4>
+              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-4">Residential Information</h4>
               <div className="grid grid-cols-2 gap-4">
-                {renderSelectField('Relationship', 'relationship', ['Husband', 'Wife', 'Partner', 'Son', 'Daughter', 'Father', 'Mother', 'Other'], true)}
+                <div className="col-span-2">
+                  <BaseInput
+                    label="Address Line 1"
+                    value={editingOwner.address.line_1}
+                    onChange={(e) => updateProductOwnerAddress(editingOwnerTempId!, 'line_1', e.target.value)}
+                    required
+                    error={ownerErrors?.address?.line_1}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <BaseInput
+                    label="Address Line 2"
+                    value={editingOwner.address.line_2}
+                    onChange={(e) => updateProductOwnerAddress(editingOwnerTempId!, 'line_2', e.target.value)}
+                    error={ownerErrors?.address?.line_2}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <BaseInput
+                    label="Address Line 3"
+                    value={editingOwner.address.line_3}
+                    onChange={(e) => updateProductOwnerAddress(editingOwnerTempId!, 'line_3', e.target.value)}
+                    error={ownerErrors?.address?.line_3}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <BaseInput
+                    label="Address Line 4"
+                    value={editingOwner.address.line_4}
+                    onChange={(e) => updateProductOwnerAddress(editingOwnerTempId!, 'line_4', e.target.value)}
+                    error={ownerErrors?.address?.line_4}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <BaseInput
+                    label="Address Line 5"
+                    value={editingOwner.address.line_5}
+                    onChange={(e) => updateProductOwnerAddress(editingOwnerTempId!, 'line_5', e.target.value)}
+                    error={ownerErrors?.address?.line_5}
+                  />
+                </div>
+
+                <DateInput
+                  label="Moved In Date"
+                  value={editingOwner.productOwner.moved_in_date}
+                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'moved_in_date', e.target.value)}
+                  error={ownerErrors?.moved_in_date}
+                />
+              </div>
+            </div>
+
+            {/* Client Profiling Section */}
+            <div className="mb-6 pt-6 border-t">
+              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-4">Client Profiling</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <BaseInput
+                  label="Three Words"
+                  value={editingOwner.productOwner.three_words}
+                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'three_words', e.target.value)}
+                  error={ownerErrors?.three_words}
+                />
+
+                <BaseInput
+                  label="Share Data With"
+                  value={editingOwner.productOwner.share_data_with}
+                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'share_data_with', e.target.value)}
+                  error={ownerErrors?.share_data_with}
+                />
+              </div>
+            </div>
+
+            {/* Employment Information Section */}
+            <div className="mb-6 pt-6 border-t">
+              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-4">Employment Information</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <BaseDropdown
+                  label="Employment Status"
+                  value={editingOwner.productOwner.employment_status}
+                  onChange={(val) => updateProductOwner(editingOwnerTempId!, 'employment_status', val)}
+                  options={EMPLOYMENT_STATUS_OPTIONS.map((opt) => ({ value: opt, label: opt }))}
+                  required
+                  error={ownerErrors?.employment_status}
+                />
+
+                <BaseInput
+                  label="Occupation"
+                  value={editingOwner.productOwner.occupation}
+                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'occupation', e.target.value)}
+                  required
+                  error={ownerErrors?.occupation}
+                />
+              </div>
+            </div>
+
+            {/* Identity & Compliance Section */}
+            <div className="mb-6 pt-6 border-t">
+              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-4">Identity & Compliance</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <BaseInput
+                  label="National Insurance Number"
+                  value={editingOwner.productOwner.ni_number}
+                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'ni_number', e.target.value)}
+                  required
+                  error={ownerErrors?.ni_number}
+                />
+
+                <DateInput
+                  label="Passport Expiry Date"
+                  value={editingOwner.productOwner.passport_expiry_date}
+                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'passport_expiry_date', e.target.value)}
+                  error={ownerErrors?.passport_expiry_date}
+                />
+
+                <BaseDropdown
+                  label="AML Result"
+                  value={editingOwner.productOwner.aml_result}
+                  onChange={(val) => updateProductOwner(editingOwnerTempId!, 'aml_result', val)}
+                  options={AML_RESULT_OPTIONS.map((opt) => ({ value: opt, label: opt }))}
+                  error={ownerErrors?.aml_result}
+                />
+
+                <DateInput
+                  label="AML Date"
+                  value={editingOwner.productOwner.aml_date}
+                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'aml_date', e.target.value)}
+                  error={ownerErrors?.aml_date}
+                />
               </div>
             </div>
 
             {/* Form Actions */}
             <div className="flex items-center gap-3 pt-6 border-t">
-              <button
-                onClick={handleSavePerson}
-                disabled={!isPersonFormValid()}
-                className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-colors ${
-                  isPersonFormValid()
-                    ? 'bg-green-600 text-white hover:bg-green-700'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                <CheckIcon className="w-5 h-5" />
-                {editingPersonId ? 'Update Person' : 'Add Person'}
-              </button>
-              <button
-                onClick={handleCancelPerson}
-                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                <XMarkIcon className="w-5 h-5 inline mr-2" />
-                Cancel
-              </button>
+              <ActionButton
+                onClick={handleSaveOwner}
+                variant="success"
+                icon={<CheckIcon className="w-5 h-5" />}
+                label="Save Product Owner"
+              />
+              <ActionButton
+                onClick={handleCancelOwner}
+                variant="secondary"
+                icon={<XMarkIcon className="w-5 h-5" />}
+                label="Cancel"
+              />
             </div>
           </div>
         )}
       </div>
 
-      {/* Create Client Group Button */}
+      {/* Form Actions */}
       <div className="flex items-center justify-end gap-4">
-        <button
+        <ActionButton
           onClick={() => navigate('/reporting')}
-          className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleCreateClientGroup}
-          disabled={people.length === 0 || !clientGroupName.trim()}
-          className={`px-6 py-3 rounded-lg transition-colors ${
-            people.length > 0 && clientGroupName.trim()
-              ? 'bg-primary-700 text-white hover:bg-primary-800'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
-        >
-          Create Client Group
-        </button>
+          variant="secondary"
+          label="Cancel"
+        />
+        <ActionButton
+          onClick={handleSubmit}
+          variant="primary"
+          disabled={productOwners.length === 0 || !clientGroup.name.trim() || isLoading}
+          label={isLoading ? `Creating... (${progress})` : 'Create Client Group'}
+        />
       </div>
+
+      {/* Loading Spinner */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <div className="flex items-center gap-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-700"></div>
+              <div>
+                <p className="font-semibold text-gray-900">Creating Client Group</p>
+                <p className="text-sm text-gray-600">Step: {progress}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </DynamicPageContainer>
   );
 };

@@ -9,6 +9,11 @@ export default defineConfig({
     react(),
     splitVendorChunkPlugin(),  // Split vendor chunks
   ],
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, './src'),
+    },
+  },
   build: {
     outDir: 'C:\\inetpub\\wwwroot\\OfficeIntranet', // Absolute Windows path
     sourcemap: true,
