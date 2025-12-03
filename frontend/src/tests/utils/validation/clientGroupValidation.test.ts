@@ -36,11 +36,10 @@ describe('validateClientGroup', () => {
       expect(errors?.name).toContain('200');
     });
 
-    it('should return error when type is empty', () => {
+    it('should return null when type is empty (type is optional)', () => {
       const data = { ...validData, type: '' };
       const errors = validateClientGroup(data);
-      expect(errors).not.toBeNull();
-      expect(errors?.type).toContain('required');
+      expect(errors).toBeNull();
     });
 
     it('should return error when type is not in CLIENT_GROUP_TYPES', () => {

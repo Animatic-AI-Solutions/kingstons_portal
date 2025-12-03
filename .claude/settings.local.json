@@ -5,7 +5,8 @@
       "Bash(python -m pytest:*)",
       "Bash(npx tsc:*)",
       "Bash(test:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(tee:*)"
     ],
     "deny": [],
     "ask": []

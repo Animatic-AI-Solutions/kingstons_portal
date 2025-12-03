@@ -505,7 +505,6 @@ const CreateClientGroupPrototype: React.FC = () => {
                   value={editingOwner.productOwner.employment_status}
                   onChange={(val) => updateProductOwner(editingOwnerTempId!, 'employment_status', val)}
                   options={EMPLOYMENT_STATUS_OPTIONS.map((opt) => ({ value: opt, label: opt }))}
-                  required
                   error={ownerErrors?.employment_status}
                 />
 
@@ -513,7 +512,6 @@ const CreateClientGroupPrototype: React.FC = () => {
                   label="Occupation"
                   value={editingOwner.productOwner.occupation}
                   onChange={(e) => updateProductOwner(editingOwnerTempId!, 'occupation', e.target.value)}
-                  required
                   error={ownerErrors?.occupation}
                 />
               </div>
@@ -527,7 +525,6 @@ const CreateClientGroupPrototype: React.FC = () => {
                   label="National Insurance Number"
                   value={editingOwner.productOwner.ni_number}
                   onChange={(e) => updateProductOwner(editingOwnerTempId!, 'ni_number', e.target.value)}
-                  required
                   error={ownerErrors?.ni_number}
                 />
 

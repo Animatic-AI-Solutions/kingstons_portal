@@ -208,6 +208,11 @@ async def create_client_group(client_group: ClientGroupCreate, db=Depends(get_db
     """
     try:
         client_data = client_group.model_dump()
+
+        # Set created_at if not provided
+        if client_data.get('created_at') is None:
+            client_data['created_at'] = datetime.now()
+
         columns = list(client_data.keys())
         values = list(client_data.values())
         placeholders = ', '.join([f'${i + 1}' for i in range(len(values))])

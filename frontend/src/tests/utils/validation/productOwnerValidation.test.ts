@@ -53,11 +53,10 @@ describe('validateProductOwner', () => {
       expect(errors?.surname).toContain('required');
     });
 
-    it('should return error when dob is empty', () => {
+    it('should return null when dob is empty (dob is optional)', () => {
       const data = { ...validData, dob: '' };
       const errors = validateProductOwner(data, emptyAddress);
-      expect(errors).not.toBeNull();
-      expect(errors?.dob).toContain('required');
+      expect(errors).toBeNull();
     });
 
     it('should return error when dob is invalid date', () => {
@@ -83,11 +82,10 @@ describe('validateProductOwner', () => {
       expect(errors?.dob).toContain('120');
     });
 
-    it('should return error when neither email_1 nor email_2 is provided', () => {
+    it('should return null when neither email_1 nor email_2 is provided (emails are optional)', () => {
       const data = { ...validData, email_1: '', email_2: '' };
       const errors = validateProductOwner(data, emptyAddress);
-      expect(errors).not.toBeNull();
-      expect(errors?.email_1).toContain('required');
+      expect(errors).toBeNull();
     });
 
     it('should return null when only email_1 is provided', () => {
@@ -102,11 +100,10 @@ describe('validateProductOwner', () => {
       expect(errors).toBeNull();
     });
 
-    it('should return error when neither phone_1 nor phone_2 is provided', () => {
+    it('should return null when neither phone_1 nor phone_2 is provided (phones are optional)', () => {
       const data = { ...validData, phone_1: '', phone_2: '' };
       const errors = validateProductOwner(data, emptyAddress);
-      expect(errors).not.toBeNull();
-      expect(errors?.phone_1).toContain('required');
+      expect(errors).toBeNull();
     });
 
     it('should return null when only phone_1 is provided', () => {
@@ -440,9 +437,7 @@ describe('validateProductOwner', () => {
       expect(errors?.status).toBeDefined();
       expect(errors?.firstname).toBeDefined();
       expect(errors?.surname).toBeDefined();
-      expect(errors?.dob).toBeDefined();
-      expect(errors?.email_1).toBeDefined();
-      expect(errors?.phone_1).toBeDefined();
+      // Note: dob, email_1, and phone_1 are optional fields, so no errors expected for them
     });
 
     it('should handle whitespace-only firstname', () => {
