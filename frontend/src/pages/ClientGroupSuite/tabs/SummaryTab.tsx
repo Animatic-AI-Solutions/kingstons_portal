@@ -17,14 +17,6 @@ interface SummaryTabProps {
 const SummaryTab: React.FC<SummaryTabProps> = ({ clientGroupId }) => {
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-semibold text-gray-900">Summary</h2>
-        <p className="text-gray-600 text-sm mt-1">
-          Overview of client group information and key metrics
-        </p>
-      </div>
-
       {/* Placeholder Content */}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="text-center py-12">

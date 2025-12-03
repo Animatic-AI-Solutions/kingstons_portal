@@ -17,14 +17,6 @@ interface ClientManagementTabProps {
 const ClientManagementTab: React.FC<ClientManagementTabProps> = ({ clientGroupId }) => {
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-semibold text-gray-900">Client Management</h2>
-        <p className="text-gray-600 text-sm mt-1">
-          Client information, fees and meetings
-        </p>
-      </div>
-
       {/* Placeholder Content */}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="text-center py-12">
