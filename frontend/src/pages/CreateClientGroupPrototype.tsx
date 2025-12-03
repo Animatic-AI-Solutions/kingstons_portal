@@ -14,6 +14,7 @@ import {
   EditButton,
   DeleteButton,
   ErrorDisplay,
+  Button,
 } from '../components/ui';
 import {
   TITLE_OPTIONS,
@@ -66,11 +67,8 @@ const CreateClientGroupPrototype: React.FC = () => {
    * Handles initiating the "add new product owner" flow
    */
   const handleAddOwner = () => {
-    addProductOwner();
-    const newOwner = productOwners[productOwners.length];
-    if (newOwner) {
-      setEditingOwnerTempId(newOwner.tempId);
-    }
+    const newOwner = addProductOwner();
+    setEditingOwnerTempId(newOwner.tempId);
     setIsAddingOwner(true);
   };
 
@@ -187,7 +185,6 @@ const CreateClientGroupPrototype: React.FC = () => {
             value={clientGroup.type}
             onChange={(val) => updateClientGroup('type', val)}
             options={CLIENT_GROUP_TYPES.map((opt) => ({ value: opt, label: opt }))}
-            required
             error={validationErrors.clientGroup?.type}
           />
 
@@ -313,7 +310,6 @@ const CreateClientGroupPrototype: React.FC = () => {
                   value={editingOwner.productOwner.title}
                   onChange={(val) => updateProductOwner(editingOwnerTempId!, 'title', val)}
                   options={TITLE_OPTIONS.map((opt) => ({ value: opt, label: opt }))}
-                  required
                   error={ownerErrors?.title}
                 />
 
@@ -344,7 +340,6 @@ const CreateClientGroupPrototype: React.FC = () => {
                   label="Known As"
                   value={editingOwner.productOwner.known_as}
                   onChange={(e) => updateProductOwner(editingOwnerTempId!, 'known_as', e.target.value)}
-                  required
                   error={ownerErrors?.known_as}
                 />
 
@@ -353,7 +348,6 @@ const CreateClientGroupPrototype: React.FC = () => {
                   value={editingOwner.productOwner.gender}
                   onChange={(val) => updateProductOwner(editingOwnerTempId!, 'gender', val)}
                   options={GENDER_OPTIONS.map((opt) => ({ value: opt, label: opt }))}
-                  required
                   error={ownerErrors?.gender}
                 />
 
@@ -362,7 +356,6 @@ const CreateClientGroupPrototype: React.FC = () => {
                   value={editingOwner.productOwner.relationship_status}
                   onChange={(val) => updateProductOwner(editingOwnerTempId!, 'relationship_status', val)}
                   options={RELATIONSHIP_STATUS_OPTIONS.map((opt) => ({ value: opt, label: opt }))}
-                  required
                   error={ownerErrors?.relationship_status}
                 />
 
@@ -370,7 +363,6 @@ const CreateClientGroupPrototype: React.FC = () => {
                   label="Date of Birth"
                   value={editingOwner.productOwner.dob}
                   onChange={(e) => updateProductOwner(editingOwnerTempId!, 'dob', e.target.value)}
-                  required
                   error={ownerErrors?.dob}
                 />
 
@@ -378,7 +370,6 @@ const CreateClientGroupPrototype: React.FC = () => {
                   label="Place of Birth"
                   value={editingOwner.productOwner.place_of_birth}
                   onChange={(e) => updateProductOwner(editingOwnerTempId!, 'place_of_birth', e.target.value)}
-                  required
                   error={ownerErrors?.place_of_birth}
                 />
 
@@ -402,7 +393,6 @@ const CreateClientGroupPrototype: React.FC = () => {
                   type="email"
                   value={editingOwner.productOwner.email_1}
                   onChange={(e) => updateProductOwner(editingOwnerTempId!, 'email_1', e.target.value)}
-                  required
                   error={ownerErrors?.email_1}
                 />
 
@@ -419,7 +409,6 @@ const CreateClientGroupPrototype: React.FC = () => {
                   type="tel"
                   value={editingOwner.productOwner.phone_1}
                   onChange={(e) => updateProductOwner(editingOwnerTempId!, 'phone_1', e.target.value)}
-                  required
                   error={ownerErrors?.phone_1}
                 />
 
@@ -442,7 +431,6 @@ const CreateClientGroupPrototype: React.FC = () => {
                     label="Address Line 1"
                     value={editingOwner.address.line_1}
                     onChange={(e) => updateProductOwnerAddress(editingOwnerTempId!, 'line_1', e.target.value)}
-                    required
                     error={ownerErrors?.address?.line_1}
                   />
                 </div>
@@ -571,16 +559,18 @@ const CreateClientGroupPrototype: React.FC = () => {
             <div className="flex items-center gap-3 pt-6 border-t">
               <ActionButton
                 onClick={handleSaveOwner}
-                variant="success"
-                icon={<CheckIcon className="w-5 h-5" />}
-                label="Save Product Owner"
-              />
+                variant="save"
+                size="md"
+              >
+                Save Product Owner
+              </ActionButton>
               <ActionButton
                 onClick={handleCancelOwner}
-                variant="secondary"
-                icon={<XMarkIcon className="w-5 h-5" />}
-                label="Cancel"
-              />
+                variant="cancel"
+                size="md"
+              >
+                Cancel
+              </ActionButton>
             </div>
           </div>
         )}
@@ -588,17 +578,21 @@ const CreateClientGroupPrototype: React.FC = () => {
 
       {/* Form Actions */}
       <div className="flex items-center justify-end gap-4">
-        <ActionButton
-          onClick={() => navigate('/reporting')}
+        <Button
+          onClick={() => navigate('/client-groups')}
           variant="secondary"
-          label="Cancel"
-        />
-        <ActionButton
+          size="md"
+        >
+          Cancel
+        </Button>
+        <Button
           onClick={handleSubmit}
           variant="primary"
+          size="md"
           disabled={productOwners.length === 0 || !clientGroup.name.trim() || isLoading}
-          label={isLoading ? `Creating... (${progress})` : 'Create Client Group'}
-        />
+        >
+          {isLoading ? `Creating... (${progress})` : 'Create Client Group'}
+        </Button>
       </div>
 
       {/* Loading Spinner */}

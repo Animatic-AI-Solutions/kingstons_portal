@@ -2,9 +2,9 @@
  * Client group validation utilities
  *
  * Validates client group form data according to business rules:
- * - Required fields: name, type, status
+ * - Required fields: name, status
  * - Name length: min 2, max 200 characters
- * - Type must be in CLIENT_GROUP_TYPES
+ * - Type must be in CLIENT_GROUP_TYPES (if provided)
  * - Status must be in STATUS_OPTIONS
  * - Optional date fields must be valid if provided
  * - Notes max 1000 characters
@@ -31,10 +31,8 @@ export function validateClientGroup(data: ClientGroupFormData): Record<string, s
     errors.name = 'Client group name must not exceed 200 characters';
   }
 
-  // Type validation
-  if (!data.type || data.type.trim() === '') {
-    errors.type = 'Client group type is required';
-  } else if (!CLIENT_GROUP_TYPES.includes(data.type as any)) {
+  // Type validation (optional, but must be valid if provided)
+  if (data.type && data.type.trim() !== '' && !CLIENT_GROUP_TYPES.includes(data.type as any)) {
     errors.type = 'Please select a valid client group type';
   }
 

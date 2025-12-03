@@ -148,7 +148,7 @@ const AppContent: React.FC = () => {
           
           {/* Client Management Section - CRUD operations for clients */}
           <Route path="/client-groups" element={<AppLayout><Clients /></AppLayout>} />
-          <Route path="/client-groups/add" element={<AppLayout><AddClient /></AppLayout>} />
+          <Route path="/client-groups/add" element={<AppLayout><CreateClientGroupPrototype /></AppLayout>} />
           <Route path="/client-groups/:clientId" element={<AppLayout><ClientDetails /></AppLayout>} />
           <Route path="/client-groups-phase2" element={<AppLayout><ClientGroupPhase2 /></AppLayout>} />
           <Route path="/create-client-group-prototype" element={<AppLayout><CreateClientGroupPrototype /></AppLayout>} />

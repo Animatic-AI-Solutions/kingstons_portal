@@ -117,7 +117,7 @@ interface UseClientGroupFormReturn {
 
   // Actions
   updateClientGroup: (field: keyof ClientGroupFormData, value: any) => void;
-  addProductOwner: () => void;
+  addProductOwner: () => ProductOwnerWithAddress;
   updateProductOwner: (tempId: string, field: keyof ProductOwnerFormData, value: any) => void;
   updateProductOwnerAddress: (tempId: string, field: keyof AddressFormData, value: any) => void;
   removeProductOwner: (tempId: string) => void;
@@ -187,6 +187,7 @@ export const useClientGroupForm = (): UseClientGroupFormReturn => {
     };
 
     setProductOwners((prev) => [...prev, newProductOwner]);
+    return newProductOwner;
   }, []);
 
   /**

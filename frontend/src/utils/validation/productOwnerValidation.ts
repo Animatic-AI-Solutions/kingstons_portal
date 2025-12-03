@@ -2,12 +2,13 @@
  * Product owner validation utilities
  *
  * Validates product owner form data according to business rules:
- * - Required fields: firstname, surname, dob, at least one email, at least one phone
- * - Date of birth: valid date, not in future, not more than 120 years ago
- * - Email format validation
- * - Phone format validation
- * - UK NI number format validation
- * - Dropdown fields must match allowed options
+ * - Required fields: firstname, surname
+ * - Optional fields validated when provided:
+ *   - Date of birth: valid date, not in future, not more than 120 years ago
+ *   - Email format validation
+ *   - Phone format validation
+ *   - UK NI number format validation
+ *   - Dropdown fields must match allowed options
  * - Status must be 'active' or 'inactive'
  * - Address validation when address provided
  */
@@ -51,10 +52,8 @@ export function validateProductOwner(
     errors.surname = 'Surname is required';
   }
 
-  // Required field: dob
-  if (!data.dob || data.dob.trim() === '') {
-    errors.dob = 'Date of birth is required';
-  } else {
+  // Optional field: dob (if provided, must be valid)
+  if (data.dob && data.dob.trim() !== '') {
     // Validate dob format
     if (!isValidDate(data.dob)) {
       errors.dob = 'Please enter a valid date of birth';
@@ -74,39 +73,23 @@ export function validateProductOwner(
     }
   }
 
-  // At least one email required (email_1 OR email_2)
-  const hasEmail1 = data.email_1 && data.email_1.trim() !== '';
-  const hasEmail2 = data.email_2 && data.email_2.trim() !== '';
-
-  if (!hasEmail1 && !hasEmail2) {
-    errors.email_1 = 'At least one email address is required';
-  }
-
-  // Validate email_1 format if provided
-  if (hasEmail1 && !isValidEmail(data.email_1)) {
+  // Optional field: email_1 (validate format if provided)
+  if (data.email_1 && data.email_1.trim() !== '' && !isValidEmail(data.email_1)) {
     errors.email_1 = 'Please enter a valid email address';
   }
 
-  // Validate email_2 format if provided
-  if (hasEmail2 && !isValidEmail(data.email_2)) {
+  // Optional field: email_2 (validate format if provided)
+  if (data.email_2 && data.email_2.trim() !== '' && !isValidEmail(data.email_2)) {
     errors.email_2 = 'Please enter a valid email address';
   }
 
-  // At least one phone required (phone_1 OR phone_2)
-  const hasPhone1 = data.phone_1 && data.phone_1.trim() !== '';
-  const hasPhone2 = data.phone_2 && data.phone_2.trim() !== '';
-
-  if (!hasPhone1 && !hasPhone2) {
-    errors.phone_1 = 'At least one phone number is required';
-  }
-
-  // Validate phone_1 format if provided
-  if (hasPhone1 && !isValidPhoneNumber(data.phone_1)) {
+  // Optional field: phone_1 (validate format if provided)
+  if (data.phone_1 && data.phone_1.trim() !== '' && !isValidPhoneNumber(data.phone_1)) {
     errors.phone_1 = 'Please enter a valid UK phone number';
   }
 
-  // Validate phone_2 format if provided
-  if (hasPhone2 && !isValidPhoneNumber(data.phone_2)) {
+  // Optional field: phone_2 (validate format if provided)
+  if (data.phone_2 && data.phone_2.trim() !== '' && !isValidPhoneNumber(data.phone_2)) {
     errors.phone_2 = 'Please enter a valid UK phone number';
   }
 

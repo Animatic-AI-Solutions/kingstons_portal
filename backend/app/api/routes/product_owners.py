@@ -76,23 +76,45 @@ async def get_product_owner(product_owner_id: int=Path(..., description='The ID 
 @router.post('/product-owners', response_model=ProductOwner, status_code=status.HTTP_201_CREATED)
 async def create_product_owner(product_owner: ProductOwnerCreate, db=Depends(get_db)):
     """
-    Create a new product owner.
+    Create a new product owner with all 25 fields.
     """
     try:
-        insert_data = {'firstname': product_owner.firstname, 'surname': product_owner.surname, 'known_as': product_owner.known_as, 'status': product_owner.status}
-        logger.info(f'Creating new product owner: {insert_data}')
-        result = await db.fetchrow('\n            INSERT INTO product_owners (firstname, surname, known_as, status)\n            VALUES ($1, $2, $3, $4)\n            RETURNING id, firstname, surname, known_as, status, created_at\n            ', insert_data['firstname'], insert_data['surname'], insert_data['known_as'], insert_data['status'])
-        logger.info(f'Insert result: {result}')
+        logger.info(f'Creating new product owner: {product_owner.model_dump()}')
+
+        result = await db.fetchrow(
+            """
+            INSERT INTO product_owners (
+                status, firstname, surname, known_as,
+                title, middle_names, relationship_status, gender, previous_names, dob, place_of_birth,
+                email_1, email_2, phone_1, phone_2,
+                moved_in_date, address_id,
+                three_words, share_data_with,
+                employment_status, occupation,
+                passport_expiry_date, ni_number, aml_result, aml_date
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
+            RETURNING *
+            """,
+            product_owner.status, product_owner.firstname, product_owner.surname, product_owner.known_as,
+            product_owner.title, product_owner.middle_names, product_owner.relationship_status,
+            product_owner.gender, product_owner.previous_names, product_owner.dob, product_owner.place_of_birth,
+            product_owner.email_1, product_owner.email_2, product_owner.phone_1, product_owner.phone_2,
+            product_owner.moved_in_date, product_owner.address_id,
+            product_owner.three_words, product_owner.share_data_with,
+            product_owner.employment_status, product_owner.occupation,
+            product_owner.passport_expiry_date, product_owner.ni_number, product_owner.aml_result, product_owner.aml_date
+        )
+
         if not result:
-            logger.error('Insert result is empty or None')
             raise HTTPException(status_code=500, detail='Failed to create product owner - no data returned from insert')
+
         logger.info(f"Created product owner ID: {result['id']}")
         return dict(result)
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f'Error creating product owner: {str(e)}')
-        logger.error(f'Exception type: {type(e)}')
         raise HTTPException(status_code=500, detail=f'Internal server error: {str(e)}')
 
 @router.patch('/product-owners/{product_owner_id}', response_model=ProductOwner)
