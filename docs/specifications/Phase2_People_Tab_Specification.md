@@ -12,7 +12,6 @@ The People section is a dedicated sub-tab within the Basic Details tab of the Cl
 - Enable deletion of inactive product owners with confirmation
 - Provide full editing capabilities via modal dialog with progressive disclosure
 - Visual differentiation between active and inactive product owners
-- Audit logging for all mutations (regulatory requirement)
 
 ### 1.3 Location in Application
 - **Parent Component**: `ClientGroupSuite` (`frontend/src/pages/ClientGroupSuite/index.tsx`)
@@ -43,7 +42,7 @@ The People section is a dedicated sub-tab within the Basic Details tab of the Cl
 **US-4: Mark Product Owner as Deceased**
 - **As a** financial advisor
 - **I want to** mark an active product owner as deceased
-- **So that** I can properly record this status change for compliance and record-keeping
+- **So that** I can properly record this status change for record-keeping
 
 **US-5: Reactivate Product Owner**
 - **As a** financial advisor
@@ -58,7 +57,7 @@ The People section is a dedicated sub-tab within the Basic Details tab of the Cl
 **US-7: Edit Product Owner Details**
 - **As a** financial advisor
 - **I want to** click on a product owner row to open an edit modal
-- **So that** I can update their personal, contact, employment, and compliance information
+- **So that** I can update their personal, contact, and employment information
 
 **US-8: Visual Status Indication**
 - **As a** financial advisor
@@ -99,7 +98,7 @@ interface ProductOwner {
   gender: string;
   previous_names: string;
   dob: string; // ISO date string
-  deceased_date: string | null; // ISO date string - required for compliance when status='deceased'
+  deceased_date: string | null; // ISO date string - required when status='deceased'
   place_of_birth: string;
 
   // Contact information
@@ -299,24 +298,11 @@ type ProductOwnerStatus = 'active' | 'lapsed' | 'deceased';
 }
 ```
 
-**FR-3.6.1a: Audit Logging Requirement (Regulatory Compliance)**
-- **ALL status changes MUST be logged** to audit table for FCA compliance
-- Create entry in `product_owner_audit_log` or reuse `holding_activity_log` pattern
-- Log fields:
-  - `user_id`: ID of user making the change
-  - `product_owner_id`: ID of affected product owner
-  - `action_type`: 'status_change'
-  - `old_value`: Previous status
-  - `new_value`: New status
-  - `timestamp`: When change occurred
-  - `additional_data`: JSON with `deceased_date` if applicable
-- Backend MUST implement this before frontend deployment
-
 **FR-3.6.2: Status Transition Logic with Deceased Date Capture**
 ```typescript
 const handleStatusChange = async (productOwnerId: number, newStatus: string) => {
   try {
-    // If marking as deceased, prompt for deceased date (compliance requirement)
+    // If marking as deceased, prompt for deceased date
     let deceasedDate: string | null = null;
     if (newStatus === 'deceased') {
       const result = await showDeceasedDateModal(productOwnerId);
@@ -341,7 +327,7 @@ const handleStatusChange = async (productOwnerId: number, newStatus: string) => 
 
 // Helper modal for deceased date
 const showDeceasedDateModal = async (productOwnerId: number): Promise<{date: string | null, cancelled: boolean}> => {
-  // Show modal: "Please enter date of death (optional for now, but recommended for compliance)"
+  // Show modal: "Please enter date of death (optional)"
   // Return selected date or null
   // Return cancelled: true if user clicks Cancel instead of Confirm
 };
@@ -363,7 +349,6 @@ const showDeceasedDateModal = async (productOwnerId: number): Promise<{date: str
 - **Function**: `delete_product_owner()`
 - **Success**: Remove from list, show success notification
 - **Error Handling**: Show error notification, keep in list
-- **Audit Logging**: MUST log deletion to audit table with user_id, product_owner details, timestamp
 
 **FR-3.7.3: Deletion Validation**
 - Only allow deletion if status is NOT 'active'
@@ -510,7 +495,6 @@ const showDeceasedDateModal = async (productOwnerId: number): Promise<{date: str
 - **Request Body**: All 31 product owner fields (including deceased_date)
 - **Success**: Close modal, refresh list, show success notification
 - **Error**: Show error message in modal, keep modal open
-- **Audit Logging**: MUST log edit to audit table with user_id, changed fields (old/new values), timestamp
 
 ### 3.9 Create New Product Owner
 
@@ -549,7 +533,6 @@ const showDeceasedDateModal = async (productOwnerId: number): Promise<{date: str
   "display_order": 0  // Will be calculated as max(existing) + 1 on backend
 }
 ```
-- **Audit Logging**: MUST log creation to audit table
 
 **FR-3.9.5: Create Workflow**
 ```typescript
@@ -1368,11 +1351,10 @@ useEffect(() => {
 **Original Estimate**: 13-18 days
 **Revised Estimate**: 16-23 days (+28-55% reflecting newly identified requirements)
 
-### Phase 0: Pre-Development & Backend Updates (1-2 days) **NEW**
-1. Add `deceased_date` field to product_owners table via migration
-2. Implement audit logging for all product_owner mutations (create, update, delete, status change)
-3. Install HeadlessUI if not in dependencies: `npm install @headlessui/react`
-4. Verify all backend endpoints are accessible and returning expected data shapes
+### Phase 0: Pre-Development Setup (0.5-1 days) **NEW**
+1. Verify `deceased_date` field exists in product_owners table (already in schema)
+2. Install HeadlessUI if not in dependencies: `npm install @headlessui/react`
+3. Verify all backend endpoints are accessible and returning expected data shapes
 
 ### Phase 1: Core Table Display with Semantic HTML (2-3 days)
 1. Create PeopleSubTab component in BasicDetailsTab
@@ -1439,8 +1421,8 @@ useEffect(() => {
 4. Perform manual QA testing
 5. Fix bugs and edge cases
 
-**Total Estimated Time: 16-23 days** (updated based on critical analysis)
-- **Phase 0**: 1-2 days (backend updates, migrations, audit logging)
+**Total Estimated Time: 15-22 days** (simplified without audit logging requirements)
+- **Phase 0**: 0.5-1 days (setup and verification)
 - **Phases 1-2**: 3-5 days (table display + sorting)
 - **Phases 3-4**: 3-4 days (status management + delete)
 - **Phases 5-6**: 6-8 days (edit modal + create modal with progressive disclosure)
@@ -1458,7 +1440,6 @@ useEffect(() => {
 - ✅ Delete functionality with confirmation works (inactive only)
 - ✅ Edit modal with progressive disclosure (tabs) opens and saves changes
 - ✅ Inactive rows are visually distinct and automatically sort to bottom
-- ✅ **Audit logging captures all mutations**
 - ✅ Keyboard navigation works without conflicts
 
 ### 11.2 Performance Metrics
@@ -1502,12 +1483,6 @@ useEffect(() => {
 - Update display_order via PUT endpoint
 - Visual feedback during drag
 - Save order button
-
-**Audit History**
-- Track all changes to product owners
-- "View History" button in actions column
-- Modal showing timeline of changes
-- Integration with `holding_activity_log` table pattern
 
 ### 12.2 Advanced Features (Future Roadmap)
 
@@ -1691,6 +1666,7 @@ interface TableColumn {
 |---------|------|--------|---------|
 | 1.0 | 2025-12-04 | Claude Code | Initial specification document |
 | 2.0 | 2025-12-04 | Claude Code | **Major Revision** - Incorporated critical analysis findings:<br>• Added CREATE functionality (was deferred to Phase 2)<br>• Verified all backend API endpoints exist<br>• Added audit logging requirements (FCA compliance)<br>• Added deceased_date field to schema<br>• Specified HeadlessUI Dialog component<br>• Added progressive disclosure (tabs) for 31-field modal<br>• Mandated semantic HTML table structure with ARIA<br>• Fixed keyboard navigation conflict<br>• Updated timeline: 16-23 days (from 13-18 days)<br>• Added Phase 0 for backend updates<br>• See `critical_analysis/analysis_20251204_142742.md` for full review |
+| 3.0 | 2025-12-04 | Claude Code | **Simplification** - Removed excessive compliance features:<br>• Removed audit logging requirements (FR-3.6.1a)<br>• Removed Audit History future enhancement<br>• Removed audit logging acceptance criteria<br>• Simplified user stories to remove compliance references<br>• Updated timeline: 15-22 days (from 16-23 days)<br>• Changed form tabs from "Employment & Compliance" to "Employment"<br>• Focus on core CRUD functionality with essential security |
 
 ---
 
