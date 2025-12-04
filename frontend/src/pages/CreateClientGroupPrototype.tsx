@@ -118,22 +118,33 @@ const CreateClientGroupPrototype: React.FC = () => {
    * Handles form submission (creates client group via API)
    */
   const handleSubmit = async () => {
+    console.log('🔍 Submit clicked - starting validation');
+    console.log('Client Group:', clientGroup);
+    console.log('Product Owners:', productOwners);
+
     // Validate all fields first
     const isValid = validateAll();
+    console.log('Validation result:', isValid);
+
     if (!isValid) {
+      console.error('❌ Validation failed - check validation errors');
+      console.error('Validation errors:', validationErrors);
+      alert('Please fix validation errors before submitting. Check the console for details.');
       return;
     }
 
     try {
+      console.log('✅ Validation passed - creating client group');
       const groupId = await createClientGroupMutation({
         clientGroup,
         productOwners,
       });
 
+      console.log('✅ Client group created with ID:', groupId);
       // Navigate to the created client group
       navigate(`/client-groups/${groupId}`);
     } catch (error) {
-      console.error('Failed to create client group:', error);
+      console.error('❌ Failed to create client group:', error);
     }
   };
 
@@ -200,35 +211,35 @@ const CreateClientGroupPrototype: React.FC = () => {
           <DateInput
             label="Ongoing Start Date"
             value={clientGroup.ongoing_start}
-            onChange={(e) => updateClientGroup('ongoing_start', e.target.value)}
+            onChange={(date, formattedDate) => updateClientGroup('ongoing_start', formattedDate)}
             error={validationErrors.clientGroup?.ongoing_start}
           />
 
           <DateInput
             label="Client Declaration Date"
             value={clientGroup.client_declaration}
-            onChange={(e) => updateClientGroup('client_declaration', e.target.value)}
+            onChange={(date, formattedDate) => updateClientGroup('client_declaration', formattedDate)}
             error={validationErrors.clientGroup?.client_declaration}
           />
 
           <DateInput
             label="Privacy Declaration Date"
             value={clientGroup.privacy_declaration}
-            onChange={(e) => updateClientGroup('privacy_declaration', e.target.value)}
+            onChange={(date, formattedDate) => updateClientGroup('privacy_declaration', formattedDate)}
             error={validationErrors.clientGroup?.privacy_declaration}
           />
 
           <DateInput
             label="Full Fee Agreement Date"
             value={clientGroup.full_fee_agreement}
-            onChange={(e) => updateClientGroup('full_fee_agreement', e.target.value)}
+            onChange={(date, formattedDate) => updateClientGroup('full_fee_agreement', formattedDate)}
             error={validationErrors.clientGroup?.full_fee_agreement}
           />
 
           <DateInput
             label="Last Satisfactory Discussion Date"
             value={clientGroup.last_satisfactory_discussion}
-            onChange={(e) => updateClientGroup('last_satisfactory_discussion', e.target.value)}
+            onChange={(date, formattedDate) => updateClientGroup('last_satisfactory_discussion', formattedDate)}
             error={validationErrors.clientGroup?.last_satisfactory_discussion}
           />
 
@@ -362,7 +373,7 @@ const CreateClientGroupPrototype: React.FC = () => {
                 <DateInput
                   label="Date of Birth"
                   value={editingOwner.productOwner.dob}
-                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'dob', e.target.value)}
+                  onChange={(date, formattedDate) => updateProductOwner(editingOwnerTempId!, 'dob', formattedDate)}
                   error={ownerErrors?.dob}
                 />
 
@@ -470,7 +481,7 @@ const CreateClientGroupPrototype: React.FC = () => {
                 <DateInput
                   label="Moved In Date"
                   value={editingOwner.productOwner.moved_in_date}
-                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'moved_in_date', e.target.value)}
+                  onChange={(date, formattedDate) => updateProductOwner(editingOwnerTempId!, 'moved_in_date', formattedDate)}
                   error={ownerErrors?.moved_in_date}
                 />
               </div>
@@ -531,7 +542,7 @@ const CreateClientGroupPrototype: React.FC = () => {
                 <DateInput
                   label="Passport Expiry Date"
                   value={editingOwner.productOwner.passport_expiry_date}
-                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'passport_expiry_date', e.target.value)}
+                  onChange={(date, formattedDate) => updateProductOwner(editingOwnerTempId!, 'passport_expiry_date', formattedDate)}
                   error={ownerErrors?.passport_expiry_date}
                 />
 
@@ -546,7 +557,7 @@ const CreateClientGroupPrototype: React.FC = () => {
                 <DateInput
                   label="AML Date"
                   value={editingOwner.productOwner.aml_date}
-                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'aml_date', e.target.value)}
+                  onChange={(date, formattedDate) => updateProductOwner(editingOwnerTempId!, 'aml_date', formattedDate)}
                   error={ownerErrors?.aml_date}
                 />
               </div>

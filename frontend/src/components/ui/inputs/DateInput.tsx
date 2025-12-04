@@ -50,18 +50,29 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(({
   // Determine variant based on error state
   const currentVariant = error ? 'error' : variant;
   
-  // Format date to dd/mm/yyyy
+  // Format date to dd/mm/yyyy for display
   const formatDate = (date: Date | string | null): string => {
     if (!date) return '';
-    
+
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     if (isNaN(dateObj.getTime())) return '';
-    
+
     const day = dateObj.getDate().toString().padStart(2, '0');
     const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
     const year = dateObj.getFullYear();
-    
+
     return `${day}/${month}/${year}`;
+  };
+
+  // Format date to ISO format (YYYY-MM-DD) for validation
+  const formatDateISO = (date: Date | null): string => {
+    if (!date) return '';
+
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
   };
   
   // Parse dd/mm/yyyy to Date
@@ -141,15 +152,16 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(({
   
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     setIsFocused(false);
-    
+
     const parsedDate = parseDate(e.target.value);
-    
+
     if (parsedDate && isDateValid(parsedDate)) {
       const formatted = formatDate(parsedDate);
+      const isoFormatted = formatDateISO(parsedDate);
       setDisplayValue(formatted);
-      
+
       if (onChange) {
-        onChange(parsedDate, formatted);
+        onChange(parsedDate, isoFormatted);
       }
     } else if (e.target.value === '') {
       setDisplayValue('');

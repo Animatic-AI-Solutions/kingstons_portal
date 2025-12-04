@@ -248,6 +248,115 @@ async def get_client_group(client_group_id: int, db=Depends(get_db)):
         logger.error(f'Error fetching client group: {str(e)}')
         raise HTTPException(status_code=500, detail=f'Database error: {str(e)}')
 
+@router.get('/client-groups/{client_group_id}/product-owners')
+async def get_client_group_product_owners_detail(client_group_id: int, db=Depends(get_db)):
+    """
+    What it does: Retrieves all product owners for a specific client group with their address information.
+    Why it's needed: Allows viewing all people associated with a client group.
+    How it works:
+        1. Joins client_group_product_owners with product_owners table
+        2. Optionally includes address information if address_id is not null
+        3. Returns list of product owners with full details
+    Expected output: A JSON array of product owner objects with address information
+    """
+    try:
+        logger.info(f'Retrieving product owners for client group {client_group_id}')
+
+        # Check if client group exists
+        client_group = await db.fetchrow('SELECT id FROM client_groups WHERE id = $1', client_group_id)
+        if not client_group:
+            raise HTTPException(status_code=404, detail=f'Client group with ID {client_group_id} not found')
+
+        # Query to get product owners with address information
+        # Orders by display_order (user's custom order) or created_at if display_order is not set
+        query = '''
+            SELECT
+                po.*,
+                a.line_1 as address_line_1,
+                a.line_2 as address_line_2,
+                a.line_3 as address_line_3,
+                a.line_4 as address_line_4,
+                a.line_5 as address_line_5
+            FROM client_group_product_owners cgpo
+            INNER JOIN product_owners po ON cgpo.product_owner_id = po.id
+            LEFT JOIN addresses a ON po.address_id = a.id
+            WHERE cgpo.client_group_id = $1
+            ORDER BY
+                CASE WHEN cgpo.display_order > 0 THEN cgpo.display_order ELSE 9999 END ASC,
+                cgpo.created_at ASC
+        '''
+
+        results = await db.fetch(query, client_group_id)
+        return [dict(row) for row in results]
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f'Error fetching product owners for client group {client_group_id}: {str(e)}')
+        raise HTTPException(status_code=500, detail=f'Database error: {str(e)}')
+
+@router.put('/client-groups/{client_group_id}/product-owner-order')
+async def update_product_owner_order(client_group_id: int, order_data: dict, db=Depends(get_db)):
+    """
+    What it does: Updates the display order of product owners within a client group.
+    Why it's needed: Allows users to customize the order in which product owners appear.
+    How it works:
+        1. Receives an array of {product_owner_id, display_order} pairs
+        2. Updates the display_order field in client_group_product_owners table
+        3. Returns success message
+    Expected output: Success confirmation with updated count
+    """
+    try:
+        logger.info(f'Updating product owner order for client group {client_group_id}')
+
+        # Check if client group exists
+        client_group = await db.fetchrow('SELECT id FROM client_groups WHERE id = $1', client_group_id)
+        if not client_group:
+            raise HTTPException(status_code=404, detail=f'Client group with ID {client_group_id} not found')
+
+        # Get order updates from request
+        order_updates = order_data.get('order', [])
+        if not order_updates:
+            raise HTTPException(status_code=400, detail='Order data is required')
+
+        # Update each product owner's display_order
+        updated_count = 0
+        for update in order_updates:
+            product_owner_id = update.get('product_owner_id')
+            display_order = update.get('display_order')
+
+            if product_owner_id is None or display_order is None:
+                continue
+
+            # Update the display_order
+            result = await db.execute(
+                '''
+                UPDATE client_group_product_owners
+                SET display_order = $1
+                WHERE client_group_id = $2 AND product_owner_id = $3
+                ''',
+                display_order,
+                client_group_id,
+                product_owner_id
+            )
+
+            updated_count += 1
+
+        logger.info(f'Updated display_order for {updated_count} product owners in client group {client_group_id}')
+
+        return {
+            'success': True,
+            'message': f'Updated order for {updated_count} product owners',
+            'client_group_id': client_group_id,
+            'updated_count': updated_count
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f'Error updating product owner order for client group {client_group_id}: {str(e)}')
+        raise HTTPException(status_code=500, detail=f'Database error: {str(e)}')
+
 @router.put('/client-groups/{client_group_id}', response_model=ClientGroup)
 async def update_client_group(client_group_id: int, client_group_update: ClientGroupUpdate, db=Depends(get_db)):
     """
