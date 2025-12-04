@@ -144,36 +144,28 @@ const ClientGroupSuite: React.FC = () => {
       </div>
 
       {/* Horizontal Tab Navigation */}
-      <div className="mb-6 border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          {mainTabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`
-                  group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm
-                  ${
-                    isActive
-                      ? 'border-primary-700 text-primary-700'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }
-                `}
-              >
-                <Icon
-                  className={`
-                    -ml-0.5 mr-2 h-5 w-5
-                    ${isActive ? 'text-primary-700' : 'text-gray-400 group-hover:text-gray-500'}
-                  `}
-                />
-                {tab.label}
-              </button>
-            );
-          })}
-        </nav>
+      <div className="mb-6">
+        <div className="flex items-center justify-center">
+          <div className="inline-flex items-center bg-gray-100 rounded-lg p-1">
+            {mainTabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                    activeTab === tab.id
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-900 hover:text-gray-900'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="text-base font-medium whitespace-nowrap">{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Tab Content */}

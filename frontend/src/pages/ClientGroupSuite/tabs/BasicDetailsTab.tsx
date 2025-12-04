@@ -98,37 +98,36 @@ const BasicDetailsTab: React.FC<BasicDetailsTabProps> = ({ clientGroupId }) => {
 
   return (
     <div className="space-y-6">
-      {/* Sub-tab Navigation */}
-      <div className="border-b border-gray-200 bg-gray-50 -mx-6 px-6 py-3 rounded-t-lg">
-        <nav className="-mb-px flex space-x-8">
-          {subTabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeSubTab === tab.id;
-
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveSubTab(tab.id)}
-                className={`
-                  group inline-flex items-center py-3 px-1 border-b-2 font-medium text-sm
-                  ${
-                    isActive
-                      ? 'border-primary-600 text-primary-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }
-                `}
-              >
-                <Icon
-                  className={`
-                    -ml-0.5 mr-2 h-5 w-5
-                    ${isActive ? 'text-primary-600' : 'text-gray-400 group-hover:text-gray-500'}
-                  `}
-                />
-                {tab.label}
-              </button>
-            );
-          })}
-        </nav>
+      {/* Prominent divider line for visual separation */}
+      <div className="border-t-4 border-primary-600 pt-6 mt-4">
+        {/* Sub-section label */}
+        <div className="text-center mb-3">
+          <span className="text-base font-bold text-primary-700 uppercase tracking-wide">
+            Select Section
+          </span>
+        </div>
+        {/* Sub-tabs with visual distinction - smaller, colored */}
+        <div className="flex items-center justify-center">
+          <div className="inline-flex items-center bg-primary-50 rounded-lg p-1 overflow-x-auto border border-primary-200 shadow-sm">
+            {subTabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveSubTab(tab.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
+                    activeSubTab === tab.id
+                      ? 'bg-primary-700 text-white shadow-md'
+                      : 'text-primary-700 hover:bg-primary-100 hover:text-primary-800'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="text-sm font-medium whitespace-nowrap">{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Sub-tab Content */}
