@@ -6,7 +6,15 @@
       "Bash(npx tsc:*)",
       "Bash(test:*)",
       "Bash(npm run build:*)",
-      "Bash(tee:*)"
+      "Bash(tee:*)",
+      "Bash(pip install:*)",
+      "Bash(pytest:*)",
+      "Bash(source venv/bin/activate)",
+      "Bash(./venv/Scripts/python:*)",
+      "Bash(source venv/Scripts/activate:*)",
+      "Bash(python -m pip install:*)",
+      "Bash(where:*)",
+      "Bash(py:*)"
     ],
     "deny": [],
     "ask": []

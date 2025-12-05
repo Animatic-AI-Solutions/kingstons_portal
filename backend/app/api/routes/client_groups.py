@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from typing import List, Optional
 import logging
 from datetime import datetime
@@ -8,6 +8,7 @@ from app.models.client_group import ClientGroup, ClientGroupCreate, ClientGroupU
 from app.db.database import get_db
 from app.api.routes.auth import get_current_user
 from app.utils.product_owner_utils import get_product_owner_display_name
+from app.middleware.idempotency import check_idempotency, store_idempotency
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -901,3 +902,321 @@ async def get_client_group_irr(client_group_id: int, db=Depends(get_db)):
     except Exception as e:
         logger.error(f'Error calculating IRR for client group {client_group_id}: {str(e)}')
         raise HTTPException(status_code=500, detail=f'Database error: {str(e)}')
+
+
+async def _calculate_next_display_order(db, client_group_id: int) -> int:
+    """
+    Calculate the next display order for a product owner in a client group.
+
+    This function finds the maximum display_order for the given client group
+    and returns the next sequential value. It handles the case where no
+    product owners exist yet (returns 0).
+
+    Args:
+        db: Database connection
+        client_group_id: ID of the client group
+
+    Returns:
+        Next display order value (0 for first product owner, incremented for subsequent ones)
+
+    Note:
+        This function should be called within a transaction with an advisory lock
+        to ensure correct ordering when multiple product owners are created concurrently.
+    """
+    max_order_result = await db.fetchval(
+        """
+        SELECT COALESCE(MAX(display_order), -1)
+        FROM client_group_product_owners
+        WHERE client_group_id = $1
+        """,
+        client_group_id
+    )
+    # Important: Check for None explicitly, not truthiness (0 is valid!)
+    return (max_order_result if max_order_result is not None else -1) + 1
+
+
+async def _create_product_owner_record(db, product_owner_data: dict) -> dict:
+    """
+    Create a product owner record in the database.
+
+    Args:
+        db: Database connection
+        product_owner_data: Dictionary containing product owner fields
+
+    Returns:
+        Dictionary with created product owner data including ID
+
+    Raises:
+        HTTPException: If product owner creation fails
+    """
+    product_owner_result = await db.fetchrow(
+        """
+        INSERT INTO product_owners (
+            status, firstname, surname, known_as,
+            title, middle_names, relationship_status, gender,
+            previous_names, dob, place_of_birth,
+            email_1, email_2, phone_1, phone_2,
+            moved_in_date, address_id,
+            three_words, share_data_with,
+            employment_status, occupation,
+            passport_expiry_date, ni_number, aml_result, aml_date
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
+        RETURNING *
+        """,
+        product_owner_data.get('status', 'active'),
+        product_owner_data.get('firstname'),
+        product_owner_data.get('surname'),
+        product_owner_data.get('known_as'),
+        product_owner_data.get('title'),
+        product_owner_data.get('middle_names'),
+        product_owner_data.get('relationship_status'),
+        product_owner_data.get('gender'),
+        product_owner_data.get('previous_names'),
+        product_owner_data.get('dob'),
+        product_owner_data.get('place_of_birth'),
+        product_owner_data.get('email_1'),
+        product_owner_data.get('email_2'),
+        product_owner_data.get('phone_1'),
+        product_owner_data.get('phone_2'),
+        product_owner_data.get('moved_in_date'),
+        product_owner_data.get('address_id'),
+        product_owner_data.get('three_words'),
+        product_owner_data.get('share_data_with'),
+        product_owner_data.get('employment_status'),
+        product_owner_data.get('occupation'),
+        product_owner_data.get('passport_expiry_date'),
+        product_owner_data.get('ni_number'),
+        product_owner_data.get('aml_result'),
+        product_owner_data.get('aml_date')
+    )
+
+    if not product_owner_result:
+        raise HTTPException(
+            status_code=500,
+            detail='Failed to create product owner record in database'
+        )
+
+    return dict(product_owner_result)
+
+
+async def _create_client_group_association(
+    db,
+    client_group_id: int,
+    product_owner_id: int,
+    display_order: int
+) -> dict:
+    """
+    Create an association between a client group and a product owner.
+
+    Args:
+        db: Database connection
+        client_group_id: ID of the client group
+        product_owner_id: ID of the product owner
+        display_order: Display order for this association
+
+    Returns:
+        Dictionary with created association data
+
+    Raises:
+        HTTPException: If association creation fails
+    """
+    association_result = await db.fetchrow(
+        """
+        INSERT INTO client_group_product_owners (
+            client_group_id,
+            product_owner_id,
+            display_order
+        )
+        VALUES ($1, $2, $3)
+        RETURNING *
+        """,
+        client_group_id,
+        product_owner_id,
+        display_order
+    )
+
+    if not association_result:
+        raise HTTPException(
+            status_code=500,
+            detail='Failed to create client group product owner association'
+        )
+
+    return dict(association_result)
+
+
+async def _validate_product_owner_data(product_owner_data: dict) -> None:
+    """
+    Validate required fields for product owner creation.
+
+    Args:
+        product_owner_data: Dictionary containing product owner fields
+
+    Raises:
+        HTTPException: If required fields are missing or invalid
+    """
+    if not product_owner_data.get('firstname'):
+        raise HTTPException(
+            status_code=422,
+            detail="Field 'firstname' is required for product owner creation"
+        )
+    if not product_owner_data.get('surname'):
+        raise HTTPException(
+            status_code=422,
+            detail="Field 'surname' is required for product owner creation"
+        )
+
+
+async def _verify_client_group_exists(db, client_group_id: int) -> None:
+    """
+    Verify that a client group exists in the database.
+
+    Args:
+        db: Database connection
+        client_group_id: ID of the client group to verify
+
+    Raises:
+        HTTPException: If client group does not exist
+    """
+    client_group = await db.fetchrow(
+        'SELECT id FROM client_groups WHERE id = $1',
+        client_group_id
+    )
+    if not client_group:
+        raise HTTPException(
+            status_code=404,
+            detail=f'Client group with ID {client_group_id} not found'
+        )
+
+
+@router.post('/client-groups/{client_group_id}/product-owners', status_code=201)
+async def create_client_group_product_owner_atomic(
+    client_group_id: int,
+    product_owner_data: dict,
+    request: Request,
+    db=Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Atomically create a product owner and associate them with a client group.
+
+    This endpoint performs two operations in a single database transaction:
+    1. Creates a new product owner record
+    2. Associates the product owner with the specified client group
+
+    Transaction Guarantees:
+        - Both operations succeed or both fail (ACID compliance)
+        - No orphaned product owner records
+        - Thread-safe display order calculation via PostgreSQL advisory locks
+        - Automatic rollback on any error
+
+    Idempotency Support:
+        - Optional Idempotency-Key header prevents duplicate creation
+        - Keys are scoped to user and endpoint
+        - Cached responses returned for duplicate requests within 24 hours
+        - Request body hash verification prevents key reuse attacks
+
+    Args:
+        client_group_id: ID of the client group to associate the product owner with
+        product_owner_data: Product owner data containing:
+            - firstname (required): First name
+            - surname (required): Surname/last name
+            - status (optional): Defaults to 'active'
+            - Plus 20+ optional fields (email, phone, dob, etc.)
+        request: FastAPI Request object (for idempotency key handling)
+        db: Database connection (injected)
+        current_user: Authenticated user (injected)
+
+    Returns:
+        dict: Created product owner with all fields including auto-generated ID
+
+    Raises:
+        HTTPException 404: Client group not found
+        HTTPException 422: Missing required fields or idempotency key reuse
+        HTTPException 500: Database error (transaction automatically rolled back)
+
+    Example:
+        POST /api/client-groups/123/product-owners
+        Headers: Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000
+        {
+            "firstname": "John",
+            "surname": "Doe",
+            "email_1": "john.doe@example.com"
+        }
+
+    Reference:
+        - Architecture: docs/specifications/Phase2_People_Tab_Architecture.md Section 9.3
+        - Idempotency: docs/specifications/Phase2_People_Tab_Architecture.md Section 4.3
+        - Tests: backend/tests/api/test_client_group_product_owners.py
+        - Tests: backend/tests/middleware/test_idempotency.py
+    """
+    # Check for idempotency key and return cached response if found
+    cached_response = await check_idempotency(request, db, current_user)
+    if cached_response:
+        return cached_response
+
+    try:
+        # Validate input data
+        await _validate_product_owner_data(product_owner_data)
+
+        logger.info(f'Creating product owner atomically for client group {client_group_id}')
+
+        # Begin atomic transaction
+        async with db.transaction():
+            # Acquire PostgreSQL advisory lock to serialize display_order calculations
+            # This prevents race conditions when multiple requests create product owners concurrently
+            await db.execute('SELECT pg_advisory_xact_lock($1)', client_group_id)
+
+            # Verify client group exists before proceeding
+            await _verify_client_group_exists(db, client_group_id)
+
+            # Step 1: Create product owner record
+            product_owner_result = await _create_product_owner_record(db, product_owner_data)
+            product_owner_id = product_owner_result['id']
+
+            logger.info(f'Created product owner with ID {product_owner_id}')
+
+            # Step 2: Calculate next display order (advisory lock ensures correctness)
+            display_order = await _calculate_next_display_order(db, client_group_id)
+
+            # Step 3: Create association between client group and product owner
+            await _create_client_group_association(
+                db,
+                client_group_id,
+                product_owner_id,
+                display_order
+            )
+
+            logger.info(
+                f'Created association: client_group={client_group_id}, '
+                f'product_owner={product_owner_id}, display_order={display_order}'
+            )
+
+            # Transaction commits automatically here if no exceptions occurred
+
+        # Store idempotency key for future duplicate requests
+        await store_idempotency(
+            request,
+            product_owner_result,
+            201,  # HTTP 201 Created
+            db,
+            current_user
+        )
+
+        # Return created product owner data
+        return product_owner_result
+
+    except HTTPException:
+        # Re-raise HTTP exceptions (validation errors, not found, etc.)
+        raise
+    except Exception as e:
+        # Log unexpected errors and raise generic database error
+        logger.error(
+            f'Unexpected error in atomic product owner creation '
+            f'for client group {client_group_id}: {str(e)}',
+            exc_info=True
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=f'Database error during atomic operation: {str(e)}'
+        )
