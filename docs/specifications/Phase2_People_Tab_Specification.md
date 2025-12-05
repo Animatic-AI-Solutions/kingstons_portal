@@ -12,7 +12,6 @@ The People section is a dedicated sub-tab within the Basic Details tab of the Cl
 - Enable deletion of inactive product owners with confirmation
 - Provide full editing capabilities via modal dialog with progressive disclosure
 - Visual differentiation between active and inactive product owners
-- Audit logging for all mutations (regulatory requirement)
 
 ### 1.3 Location in Application
 - **Parent Component**: `ClientGroupSuite` (`frontend/src/pages/ClientGroupSuite/index.tsx`)
@@ -99,7 +98,6 @@ interface ProductOwner {
   gender: string;
   previous_names: string;
   dob: string; // ISO date string
-  deceased_date: string | null; // ISO date string - required for compliance when status='deceased'
   place_of_birth: string;
 
   // Contact information
@@ -294,39 +292,16 @@ type ProductOwnerStatus = 'active' | 'lapsed' | 'deceased';
 - **Request Body**:
 ```json
 {
-  "status": "active" | "lapsed" | "deceased",
-  "deceased_date": "YYYY-MM-DD" // Required if status="deceased", nullable otherwise
+  "status": "active" | "lapsed" | "deceased"
 }
 ```
 
-**FR-3.6.1a: Audit Logging Requirement (Regulatory Compliance)**
-- **ALL status changes MUST be logged** to audit table for FCA compliance
-- Create entry in `product_owner_audit_log` or reuse `holding_activity_log` pattern
-- Log fields:
-  - `user_id`: ID of user making the change
-  - `product_owner_id`: ID of affected product owner
-  - `action_type`: 'status_change'
-  - `old_value`: Previous status
-  - `new_value`: New status
-  - `timestamp`: When change occurred
-  - `additional_data`: JSON with `deceased_date` if applicable
-- Backend MUST implement this before frontend deployment
-
-**FR-3.6.2: Status Transition Logic with Deceased Date Capture**
+**FR-3.6.2: Status Transition Logic**
 ```typescript
 const handleStatusChange = async (productOwnerId: number, newStatus: string) => {
   try {
-    // If marking as deceased, prompt for deceased date (compliance requirement)
-    let deceasedDate: string | null = null;
-    if (newStatus === 'deceased') {
-      const result = await showDeceasedDateModal(productOwnerId);
-      if (result.cancelled) return; // User cancelled
-      deceasedDate = result.date; // Optional date, can be null
-    }
-
     await api.put(`/product-owners/${productOwnerId}`, {
-      status: newStatus,
-      deceased_date: deceasedDate
+      status: newStatus
     });
 
     // Refresh product owners list
@@ -337,13 +312,6 @@ const handleStatusChange = async (productOwnerId: number, newStatus: string) => 
     // Show error notification
     showNotification('Failed to update status', 'error');
   }
-};
-
-// Helper modal for deceased date
-const showDeceasedDateModal = async (productOwnerId: number): Promise<{date: string | null, cancelled: boolean}> => {
-  // Show modal: "Please enter date of death (optional for now, but recommended for compliance)"
-  // Return selected date or null
-  // Return cancelled: true if user clicks Cancel instead of Confirm
 };
 ```
 
@@ -363,7 +331,6 @@ const showDeceasedDateModal = async (productOwnerId: number): Promise<{date: str
 - **Function**: `delete_product_owner()`
 - **Success**: Remove from list, show success notification
 - **Error Handling**: Show error notification, keep in list
-- **Audit Logging**: MUST log deletion to audit table with user_id, product_owner details, timestamp
 
 **FR-3.7.3: Deletion Validation**
 - Only allow deletion if status is NOT 'active'
@@ -394,7 +361,7 @@ const showDeceasedDateModal = async (productOwnerId: number): Promise<{date: str
   - Research shows 30-field forms have 20-40% abandonment rate
   - Tabbed forms improve completion by 25-35%
 - **Tab Structure**:
-  1. **Personal Details tab** (11 fields): Title, Firstname, Surname, Middle Names, Known As, Gender, DOB, Deceased Date, Place of Birth, Relationship Status, Previous Names, Status
+  1. **Personal Details tab** (10 fields): Title, Firstname, Surname, Middle Names, Known As, Gender, DOB, Place of Birth, Relationship Status, Previous Names, Status
   2. **Contact & Address tab** (10 fields): Email 1, Email 2, Phone 1, Phone 2, Address Lines 1-5, Moved In Date
   3. **Employment & Compliance tab** (9 fields): Employment Status, Occupation, Three Words, Share Data With, NI Number, Passport Expiry, AML Result, AML Date
 - **Alternative**: "Quick Edit" mode showing 8 most-used fields with "View All Fields" expansion (defer to Phase 2)
@@ -507,10 +474,9 @@ const showDeceasedDateModal = async (productOwnerId: number): Promise<{date: str
 - **Endpoint**: `PUT /product-owners/{product_owner_id}`
 - **Backend Location**: `backend/app/api/routes/product_owners.py` ✅ **VERIFIED - Endpoint exists**
 - **Function**: `update_product_owner()`
-- **Request Body**: All 31 product owner fields (including deceased_date)
+- **Request Body**: All 30 product owner fields
 - **Success**: Close modal, refresh list, show success notification
 - **Error**: Show error message in modal, keep modal open
-- **Audit Logging**: MUST log edit to audit table with user_id, changed fields (old/new values), timestamp
 
 ### 3.9 Create New Product Owner
 
@@ -527,7 +493,6 @@ const showDeceasedDateModal = async (productOwnerId: number): Promise<{date: str
   - Title: "Add New Person to Client Group"
   - All fields start empty (no pre-populated values)
   - Status defaults to 'active'
-  - deceased_date field hidden unless status changed to 'deceased'
 
 **FR-3.9.3: Create API Endpoint**
 - **Endpoint**: `POST /product-owners`
@@ -549,7 +514,6 @@ const showDeceasedDateModal = async (productOwnerId: number): Promise<{date: str
   "display_order": 0  // Will be calculated as max(existing) + 1 on backend
 }
 ```
-- **Audit Logging**: MUST log creation to audit table
 
 **FR-3.9.5: Create Workflow**
 ```typescript
@@ -599,9 +563,8 @@ CREATE TABLE client_group_product_owners (
 ```
 
 **product_owners Table**
-- See `backend/app/models/product_owner.py` for complete 31-field schema
-- Key fields: id, status, firstname, surname, relationship_status, dob, **deceased_date**, email_1, etc.
-- **New field**: `deceased_date` (nullable timestamp) - **MUST BE ADDED** to product_owners table via migration
+- See `backend/app/models/product_owner.py` for complete 30-field schema
+- Key fields: id, status, firstname, surname, relationship_status, dob, email_1, etc.
 
 ### 4.3 API Endpoints (All Verified ✅)
 
@@ -615,7 +578,7 @@ Backend: backend/app/api/routes/client_groups.py ✅
 **CREATE Product Owner**
 ```
 POST /product-owners
-Request Body: ProductOwnerCreate (firstname, surname required, 29 other optional fields)
+Request Body: ProductOwnerCreate (firstname, surname required, 28 other optional fields)
 Response: ProductOwner (with generated ID)
 Backend: backend/app/api/routes/product_owners.py ✅
 ```
@@ -623,7 +586,7 @@ Backend: backend/app/api/routes/product_owners.py ✅
 **UPDATE Product Owner**
 ```
 PUT /product-owners/{product_owner_id}
-Request Body: Partial<ProductOwner> (any subset of 31 fields)
+Request Body: Partial<ProductOwner> (any subset of 30 fields)
 Response: ProductOwner
 Backend: backend/app/api/routes/product_owners.py ✅
 ```
@@ -1350,9 +1313,7 @@ useEffect(() => {
 - HttpOnly cookies for session management (already implemented)
 - JWT token validation on all API calls
 - No sensitive data in localStorage
-
-**Authorization**
-- Backend validates user has access to client group
+- All authenticated users have access to all client groups and their data
 - Product owner deletion requires inactive status
 - CSRF protection via SameSite cookies
 
@@ -1363,16 +1324,13 @@ useEffect(() => {
 
 ---
 
-## 10. Implementation Roadmap (Revised Based on Critical Analysis)
+## 10. Implementation Roadmap
 
-**Original Estimate**: 13-18 days
-**Revised Estimate**: 16-23 days (+28-55% reflecting newly identified requirements)
+**Current Estimate**: 13-19 days (simplified from v2.0 requirements)
 
-### Phase 0: Pre-Development & Backend Updates (1-2 days) **NEW**
-1. Add `deceased_date` field to product_owners table via migration
-2. Implement audit logging for all product_owner mutations (create, update, delete, status change)
-3. Install HeadlessUI if not in dependencies: `npm install @headlessui/react`
-4. Verify all backend endpoints are accessible and returning expected data shapes
+### Phase 0: Pre-Development & Backend Updates (< 1 day) **NEW**
+1. Install HeadlessUI if not in dependencies: `npm install @headlessui/react`
+2. Verify all backend endpoints are accessible and returning expected data shapes
 
 ### Phase 1: Core Table Display with Semantic HTML (2-3 days)
 1. Create PeopleSubTab component in BasicDetailsTab
@@ -1391,13 +1349,12 @@ useEffect(() => {
 5. **Add dynamic `aria-sort` attributes to column headers**
 6. Ensure inactive rows always sort to bottom
 
-### Phase 3: Status Management with Deceased Date (2-3 days)
+### Phase 3: Status Management (1-2 days)
 1. Implement action button rendering logic (active vs inactive states)
-2. Create handleStatusChange function with deceased date modal
+2. Create handleStatusChange function
 3. Add API integration for PUT /product-owners/{id}
-4. Implement deceased date capture modal when marking as deceased
-5. Add success/error notifications
-6. Test all status transitions (active → lapsed/deceased, inactive → active)
+4. Add success/error notifications
+5. Test all status transitions (active → lapsed/deceased, inactive → active)
 
 ### Phase 4: Delete Functionality (1 day)
 1. Create delete confirmation modal with HeadlessUI Dialog
@@ -1409,7 +1366,7 @@ useEffect(() => {
 ### Phase 5: Edit Modal with Progressive Disclosure (4-5 days) **EXPANDED**
 1. Set up HeadlessUI Dialog component for modal
 2. Build tabbed layout (Personal Details | Contact & Address | Employment & Compliance)
-3. Implement React Hook Form for 31-field form state management **RECOMMENDED**
+3. Implement React Hook Form for 30-field form state management **RECOMMENDED**
 4. Create reusable form field components (FormInput, FormSelect, FormDatePicker)
 5. Add client-side validation for all fields
 6. Create handleSubmit function
@@ -1439,10 +1396,10 @@ useEffect(() => {
 4. Perform manual QA testing
 5. Fix bugs and edge cases
 
-**Total Estimated Time: 16-23 days** (updated based on critical analysis)
-- **Phase 0**: 1-2 days (backend updates, migrations, audit logging)
+**Total Estimated Time: 13-19 days** (simplified from original)
+- **Phase 0**: < 1 day (dependency installation, endpoint verification)
 - **Phases 1-2**: 3-5 days (table display + sorting)
-- **Phases 3-4**: 3-4 days (status management + delete)
+- **Phases 3-4**: 2-3 days (status management + delete)
 - **Phases 5-6**: 6-8 days (edit modal + create modal with progressive disclosure)
 - **Phases 7-8**: 4-5 days (accessibility + testing)
 
@@ -1454,11 +1411,10 @@ useEffect(() => {
 - ✅ Table displays all product owners with 7 columns using semantic HTML
 - ✅ **Create new product owner functionality works**
 - ✅ Sorting works for all columns with ARIA attributes
-- ✅ Status transitions work correctly (active ↔ lapsed/deceased) with deceased date capture
+- ✅ Status transitions work correctly (active ↔ lapsed/deceased)
 - ✅ Delete functionality with confirmation works (inactive only)
 - ✅ Edit modal with progressive disclosure (tabs) opens and saves changes
 - ✅ Inactive rows are visually distinct and automatically sort to bottom
-- ✅ **Audit logging captures all mutations**
 - ✅ Keyboard navigation works without conflicts
 
 ### 11.2 Performance Metrics
@@ -1691,6 +1647,7 @@ interface TableColumn {
 |---------|------|--------|---------|
 | 1.0 | 2025-12-04 | Claude Code | Initial specification document |
 | 2.0 | 2025-12-04 | Claude Code | **Major Revision** - Incorporated critical analysis findings:<br>• Added CREATE functionality (was deferred to Phase 2)<br>• Verified all backend API endpoints exist<br>• Added audit logging requirements (FCA compliance)<br>• Added deceased_date field to schema<br>• Specified HeadlessUI Dialog component<br>• Added progressive disclosure (tabs) for 31-field modal<br>• Mandated semantic HTML table structure with ARIA<br>• Fixed keyboard navigation conflict<br>• Updated timeline: 16-23 days (from 13-18 days)<br>• Added Phase 0 for backend updates<br>• See `critical_analysis/analysis_20251204_142742.md` for full review |
+| 3.0 | 2025-12-05 | Claude Code | **Simplified Requirements**:<br>• REMOVED audit logging requirements (not needed)<br>• REMOVED deceased_date field requirement (not needed)<br>• REMOVED authorization/permissions requirements (simplified to authentication only)<br>• All authenticated users can access all client groups<br>• Updated field counts: 31 → 30 fields in modal<br>• Simplified Phase 0: < 1 day (removed backend migrations)<br>• Simplified Phase 3: 1-2 days (removed deceased date modal)<br>• Updated timeline: 13-19 days (from 16-23 days)<br>• Updated success metrics to remove audit logging |
 
 ---
 
