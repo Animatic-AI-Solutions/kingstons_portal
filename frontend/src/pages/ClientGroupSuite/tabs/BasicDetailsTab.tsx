@@ -6,6 +6,7 @@ import {
   DocumentTextIcon,
   ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
+import PeopleSubTab from './components/PeopleSubTab';
 
 interface BasicDetailsTabProps {
   clientGroupId: string;
@@ -39,12 +40,7 @@ const BasicDetailsTab: React.FC<BasicDetailsTabProps> = ({ clientGroupId }) => {
       case 'people':
         return (
           <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">People content coming soon</p>
-              <p className="text-gray-400 text-sm mt-2">
-                Personal information, contact details, and addresses
-              </p>
-            </div>
+            <PeopleSubTab />
           </div>
         );
       case 'relationships':

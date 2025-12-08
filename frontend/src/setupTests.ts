@@ -34,6 +34,53 @@ jest.mock('react-router-dom', () => ({
   useLocation: () => ({ pathname: '/', search: '', hash: '', state: null })
 }));
 
+// Mock @faker-js/faker to avoid ESM issues
+jest.mock('@faker-js/faker', () => ({
+  faker: {
+    number: {
+      int: () => 1,
+    },
+    person: {
+      firstName: () => 'John',
+      lastName: () => 'Doe',
+      middleName: () => 'William',
+      jobTitle: () => 'Software Engineer',
+    },
+    internet: {
+      email: () => 'john.doe@example.com',
+    },
+    phone: {
+      number: () => '+44 7700 900123',
+    },
+    location: {
+      streetAddress: () => '123 Main Street',
+      secondaryAddress: () => 'Apt 4B',
+      city: () => 'London',
+      county: () => 'Greater London',
+      zipCode: () => 'SW1A 1AA',
+    },
+    date: {
+      birthdate: () => new Date('1980-01-15'),
+      past: () => new Date('2023-01-01'),
+      future: () => new Date('2030-01-15'),
+    },
+    string: {
+      alpha: () => 'A',
+      numeric: () => '123456',
+    },
+    word: {
+      adjective: () => 'friendly',
+    },
+    helpers: {
+      arrayElement: (arr: any[]) => arr[0],
+      maybe: (fn: () => any, options?: { probability?: number }) => {
+        const prob = options?.probability ?? 0.5;
+        return prob > 0.5 ? fn() : null;
+      },
+    },
+  },
+}));
+
 // Global test setup
 beforeAll(() => {
   // Set up any global test environment configurations

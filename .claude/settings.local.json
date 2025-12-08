@@ -7,7 +7,11 @@
       "Bash(test:*)",
       "Bash(npm run build:*)",
       "Bash(tee:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npx eslint:*)",
+      "Bash(dir \"C:\\Users\\jacob\\Documents\\kingstons_portal\\frontend\\src\\components\" /B /A)",
+      "Bash(dir \"C:\\Users\\jacob\\Documents\\kingstons_portal\\frontend\\src\\pages\\ClientGroupSuite\\tabs\" /B /A)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

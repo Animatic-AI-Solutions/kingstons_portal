@@ -1,0 +1,645 @@
+/**
+ * ProductOwnerActions Component Tests (RED Phase - Iteration 4)
+ *
+ * Tests for the status management action buttons component that handles
+ * Lapse, Make Deceased, and Reactivate operations for product owners.
+ *
+ * Following TDD RED-GREEN-BLUE methodology - RED Phase (Failing Tests).
+ *
+ * @component ProductOwnerActions
+ * @requirements
+ * - Show Lapse and Make Deceased buttons for active product owners
+ * - Show Reactivate and Delete buttons for lapsed/deceased product owners
+ * - Handle status change API calls with loading states
+ * - Display success/error notifications
+ * - Refetch data after successful status changes
+ * - Optimistic UI updates (optional)
+ */
+
+import React from 'react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  createActiveProductOwner,
+  createLapsedProductOwner,
+  createDeceasedProductOwner,
+} from '../factories/productOwnerFactory';
+import ProductOwnerActions from '@/components/ProductOwnerActions';
+import * as api from '@/services/api';
+import toast from 'react-hot-toast';
+
+// Mock the API module
+jest.mock('@/services/api');
+
+// Mock notification system (react-hot-toast)
+jest.mock('react-hot-toast', () => ({
+  __esModule: true,
+  default: {
+    success: jest.fn(),
+    error: jest.fn(),
+  },
+}));
+
+// Create a test query client
+const createTestQueryClient = () => {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+        cacheTime: 0,
+      },
+      mutations: {
+        retry: false,
+      },
+    },
+    logger: {
+      log: () => {},
+      warn: () => {},
+      error: () => {},
+    },
+  });
+};
+
+describe('ProductOwnerActions Component', () => {
+  let queryClient: QueryClient;
+  const mockOnStatusChange = jest.fn();
+
+  beforeEach(() => {
+    queryClient = createTestQueryClient();
+    jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    queryClient.clear();
+  });
+
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+
+  // =================================================================
+  // Button Visibility Tests
+  // =================================================================
+
+  describe('Button Visibility', () => {
+    it('shows Lapse button for active product owners', () => {
+      const activeProductOwner = createActiveProductOwner();
+
+      render(
+        <ProductOwnerActions
+          productOwner={activeProductOwner}
+          onStatusChange={mockOnStatusChange}
+        />,
+        { wrapper }
+      );
+
+      // Active product owners should have a Lapse button
+      expect(screen.getByRole('button', { name: /lapse/i })).toBeInTheDocument();
+    });
+
+    it('shows Make Deceased button for active product owners', () => {
+      const activeProductOwner = createActiveProductOwner();
+
+      render(
+        <ProductOwnerActions
+          productOwner={activeProductOwner}
+          onStatusChange={mockOnStatusChange}
+        />,
+        { wrapper }
+      );
+
+      // Active product owners should have a Make Deceased button
+      expect(screen.getByRole('button', { name: /make deceased|deceased/i })).toBeInTheDocument();
+    });
+
+    it('shows Reactivate button for lapsed product owners', () => {
+      const lapsedProductOwner = createLapsedProductOwner();
+
+      render(
+        <ProductOwnerActions
+          productOwner={lapsedProductOwner}
+          onStatusChange={mockOnStatusChange}
+        />,
+        { wrapper }
+      );
+
+      // Lapsed product owners should have a Reactivate button
+      expect(screen.getByRole('button', { name: /reactivate/i })).toBeInTheDocument();
+    });
+
+    it('shows Reactivate button for deceased product owners', () => {
+      const deceasedProductOwner = createDeceasedProductOwner();
+
+      render(
+        <ProductOwnerActions
+          productOwner={deceasedProductOwner}
+          onStatusChange={mockOnStatusChange}
+        />,
+        { wrapper }
+      );
+
+      // Deceased product owners should have a Reactivate button
+      expect(screen.getByRole('button', { name: /reactivate/i })).toBeInTheDocument();
+    });
+
+    it('hides Delete button for active product owners', () => {
+      const activeProductOwner = createActiveProductOwner();
+
+      render(
+        <ProductOwnerActions
+          productOwner={activeProductOwner}
+          onStatusChange={mockOnStatusChange}
+        />,
+        { wrapper }
+      );
+
+      // Active product owners should NOT have a Delete button visible
+      expect(screen.queryByRole('button', { name: /delete/i })).not.toBeInTheDocument();
+    });
+
+    it('shows Delete button for lapsed product owners', () => {
+      const lapsedProductOwner = createLapsedProductOwner();
+
+      render(
+        <ProductOwnerActions
+          productOwner={lapsedProductOwner}
+          onStatusChange={mockOnStatusChange}
+        />,
+        { wrapper }
+      );
+
+      // Lapsed product owners should have a Delete button
+      expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
+    });
+
+    it('shows Delete button for deceased product owners', () => {
+      const deceasedProductOwner = createDeceasedProductOwner();
+
+      render(
+        <ProductOwnerActions
+          productOwner={deceasedProductOwner}
+          onStatusChange={mockOnStatusChange}
+        />,
+        { wrapper }
+      );
+
+      // Deceased product owners should have a Delete button
+      expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
+    });
+  });
+
+  // =================================================================
+  // Status Change API Call Tests
+  // =================================================================
+
+  describe('Status Change API Calls', () => {
+    it('calls status change API on Lapse button click', async () => {
+      const user = userEvent.setup();
+      const activeProductOwner = createActiveProductOwner({ id: 123 });
+      const mockUpdateStatus = jest.fn().mockResolvedValue({
+        data: { ...activeProductOwner, status: 'lapsed' },
+      });
+      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+
+      render(
+        <ProductOwnerActions
+          productOwner={activeProductOwner}
+          onStatusChange={mockOnStatusChange}
+        />,
+        { wrapper }
+      );
+
+      const lapseButton = screen.getByRole('button', { name: /lapse/i });
+      await user.click(lapseButton);
+
+      await waitFor(() => {
+        expect(mockUpdateStatus).toHaveBeenCalledWith(123, 'lapsed');
+      });
+    });
+
+    it('calls status change API on Make Deceased button click', async () => {
+      const user = userEvent.setup();
+      const activeProductOwner = createActiveProductOwner({ id: 456 });
+      const mockUpdateStatus = jest.fn().mockResolvedValue({
+        data: { ...activeProductOwner, status: 'deceased' },
+      });
+      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+
+      render(
+        <ProductOwnerActions
+          productOwner={activeProductOwner}
+          onStatusChange={mockOnStatusChange}
+        />,
+        { wrapper }
+      );
+
+      const deceasedButton = screen.getByRole('button', { name: /make deceased|deceased/i });
+      await user.click(deceasedButton);
+
+      await waitFor(() => {
+        expect(mockUpdateStatus).toHaveBeenCalledWith(456, 'deceased');
+      });
+    });
+
+    it('calls status change API on Reactivate button click', async () => {
+      const user = userEvent.setup();
+      const lapsedProductOwner = createLapsedProductOwner({ id: 789 });
+      const mockUpdateStatus = jest.fn().mockResolvedValue({
+        data: { ...lapsedProductOwner, status: 'active' },
+      });
+      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+
+      render(
+        <ProductOwnerActions
+          productOwner={lapsedProductOwner}
+          onStatusChange={mockOnStatusChange}
+        />,
+        { wrapper }
+      );
+
+      const reactivateButton = screen.getByRole('button', { name: /reactivate/i });
+      await user.click(reactivateButton);
+
+      await waitFor(() => {
+        expect(mockUpdateStatus).toHaveBeenCalledWith(789, 'active');
+      });
+    });
+  });
+
+  // =================================================================
+  // Loading State Tests
+  // =================================================================
+
+  describe('Loading States', () => {
+    it('shows loading state during Lapse operation', async () => {
+      const user = userEvent.setup();
+      const activeProductOwner = createActiveProductOwner({ id: 123 });
+
+      // Create a promise we can control
+      let resolvePromise: (value: any) => void;
+      const mockUpdateStatus = jest.fn().mockImplementation(() => {
+        return new Promise((resolve) => {
+          resolvePromise = resolve;
+        });
+      });
+      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+
+      render(
+        <ProductOwnerActions
+          productOwner={activeProductOwner}
+          onStatusChange={mockOnStatusChange}
+        />,
+        { wrapper }
+      );
+
+      const lapseButton = screen.getByRole('button', { name: /lapse/i });
+      await user.click(lapseButton);
+
+      // Button should show loading state
+      await waitFor(() => {
+        expect(lapseButton).toBeDisabled();
+        expect(screen.getByText(/loading/i)).toBeInTheDocument();
+      });
+
+      // Clean up
+      resolvePromise!({ data: { ...activeProductOwner, status: 'lapsed' } });
+    });
+
+    it('shows loading state during Make Deceased operation', async () => {
+      const user = userEvent.setup();
+      const activeProductOwner = createActiveProductOwner({ id: 456 });
+
+      // Create a promise we can control
+      let resolvePromise: (value: any) => void;
+      const mockUpdateStatus = jest.fn().mockImplementation(() => {
+        return new Promise((resolve) => {
+          resolvePromise = resolve;
+        });
+      });
+      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+
+      render(
+        <ProductOwnerActions
+          productOwner={activeProductOwner}
+          onStatusChange={mockOnStatusChange}
+        />,
+        { wrapper }
+      );
+
+      const deceasedButton = screen.getByRole('button', { name: /make deceased|deceased/i });
+      await user.click(deceasedButton);
+
+      // Button should show loading state
+      await waitFor(() => {
+        expect(deceasedButton).toBeDisabled();
+        expect(screen.getByText(/loading/i)).toBeInTheDocument();
+      });
+
+      // Clean up
+      resolvePromise!({ data: { ...activeProductOwner, status: 'deceased' } });
+    });
+
+    it('shows loading state during Reactivate operation', async () => {
+      const user = userEvent.setup();
+      const lapsedProductOwner = createLapsedProductOwner({ id: 789 });
+
+      // Create a promise we can control
+      let resolvePromise: (value: any) => void;
+      const mockUpdateStatus = jest.fn().mockImplementation(() => {
+        return new Promise((resolve) => {
+          resolvePromise = resolve;
+        });
+      });
+      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+
+      render(
+        <ProductOwnerActions
+          productOwner={lapsedProductOwner}
+          onStatusChange={mockOnStatusChange}
+        />,
+        { wrapper }
+      );
+
+      const reactivateButton = screen.getByRole('button', { name: /reactivate/i });
+      await user.click(reactivateButton);
+
+      // Button should show loading state
+      await waitFor(() => {
+        expect(reactivateButton).toBeDisabled();
+        expect(screen.getByText(/loading/i)).toBeInTheDocument();
+      });
+
+      // Clean up
+      resolvePromise!({ data: { ...lapsedProductOwner, status: 'active' } });
+    });
+  });
+
+  // =================================================================
+  // Success Handling Tests
+  // =================================================================
+
+  describe('Success Handling', () => {
+    it('displays success notification on successful lapse', async () => {
+      const user = userEvent.setup();
+      const activeProductOwner = createActiveProductOwner({ id: 123 });
+      const mockUpdateStatus = jest.fn().mockResolvedValue({
+        data: { ...activeProductOwner, status: 'lapsed' },
+      });
+      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+
+      render(
+        <ProductOwnerActions
+          productOwner={activeProductOwner}
+          onStatusChange={mockOnStatusChange}
+        />,
+        { wrapper }
+      );
+
+      const lapseButton = screen.getByRole('button', { name: /lapse/i });
+      await user.click(lapseButton);
+
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith(
+          expect.stringContaining('lapsed')
+        );
+      });
+    });
+
+    it('displays success notification on successful deceased', async () => {
+      const user = userEvent.setup();
+      const activeProductOwner = createActiveProductOwner({ id: 456 });
+      const mockUpdateStatus = jest.fn().mockResolvedValue({
+        data: { ...activeProductOwner, status: 'deceased' },
+      });
+      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+
+      render(
+        <ProductOwnerActions
+          productOwner={activeProductOwner}
+          onStatusChange={mockOnStatusChange}
+        />,
+        { wrapper }
+      );
+
+      const deceasedButton = screen.getByRole('button', { name: /make deceased|deceased/i });
+      await user.click(deceasedButton);
+
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith(
+          expect.stringContaining('deceased')
+        );
+      });
+    });
+
+    it('displays success notification on successful reactivate', async () => {
+      const user = userEvent.setup();
+      const lapsedProductOwner = createLapsedProductOwner({ id: 789 });
+      const mockUpdateStatus = jest.fn().mockResolvedValue({
+        data: { ...lapsedProductOwner, status: 'active' },
+      });
+      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+
+      render(
+        <ProductOwnerActions
+          productOwner={lapsedProductOwner}
+          onStatusChange={mockOnStatusChange}
+        />,
+        { wrapper }
+      );
+
+      const reactivateButton = screen.getByRole('button', { name: /reactivate/i });
+      await user.click(reactivateButton);
+
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith(
+          expect.stringContaining('reactivated')
+        );
+      });
+    });
+
+    it('refetches product owners after status change', async () => {
+      const user = userEvent.setup();
+      const activeProductOwner = createActiveProductOwner({ id: 123 });
+      const mockUpdateStatus = jest.fn().mockResolvedValue({
+        data: { ...activeProductOwner, status: 'lapsed' },
+      });
+      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+
+      render(
+        <ProductOwnerActions
+          productOwner={activeProductOwner}
+          onStatusChange={mockOnStatusChange}
+        />,
+        { wrapper }
+      );
+
+      const lapseButton = screen.getByRole('button', { name: /lapse/i });
+      await user.click(lapseButton);
+
+      await waitFor(() => {
+        // onStatusChange callback should be called to trigger refetch
+        expect(mockOnStatusChange).toHaveBeenCalled();
+      });
+    });
+  });
+
+  // =================================================================
+  // Error Handling Tests
+  // =================================================================
+
+  describe('Error Handling', () => {
+    it('displays error notification on failed lapse', async () => {
+      const user = userEvent.setup();
+      const activeProductOwner = createActiveProductOwner({ id: 123 });
+      const mockUpdateStatus = jest.fn().mockRejectedValue(
+        new Error('Failed to update status')
+      );
+      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+
+      render(
+        <ProductOwnerActions
+          productOwner={activeProductOwner}
+          onStatusChange={mockOnStatusChange}
+        />,
+        { wrapper }
+      );
+
+      const lapseButton = screen.getByRole('button', { name: /lapse/i });
+      await user.click(lapseButton);
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          expect.stringContaining('failed')
+        );
+      });
+    });
+
+    it('displays error notification on failed deceased', async () => {
+      const user = userEvent.setup();
+      const activeProductOwner = createActiveProductOwner({ id: 456 });
+      const mockUpdateStatus = jest.fn().mockRejectedValue(
+        new Error('Failed to update status')
+      );
+      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+
+      render(
+        <ProductOwnerActions
+          productOwner={activeProductOwner}
+          onStatusChange={mockOnStatusChange}
+        />,
+        { wrapper }
+      );
+
+      const deceasedButton = screen.getByRole('button', { name: /make deceased|deceased/i });
+      await user.click(deceasedButton);
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          expect.stringContaining('failed')
+        );
+      });
+    });
+
+    it('displays error notification on failed reactivate', async () => {
+      const user = userEvent.setup();
+      const lapsedProductOwner = createLapsedProductOwner({ id: 789 });
+      const mockUpdateStatus = jest.fn().mockRejectedValue(
+        new Error('Failed to update status')
+      );
+      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+
+      render(
+        <ProductOwnerActions
+          productOwner={lapsedProductOwner}
+          onStatusChange={mockOnStatusChange}
+        />,
+        { wrapper }
+      );
+
+      const reactivateButton = screen.getByRole('button', { name: /reactivate/i });
+      await user.click(reactivateButton);
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          expect.stringContaining('failed')
+        );
+      });
+    });
+  });
+
+  // =================================================================
+  // Optimistic Updates Tests (Optional)
+  // =================================================================
+
+  describe('Optimistic Updates', () => {
+    it('shows optimistic UI update during status change', async () => {
+      const user = userEvent.setup();
+      const activeProductOwner = createActiveProductOwner({
+        id: 123,
+        firstname: 'John',
+        surname: 'Smith'
+      });
+
+      // Create a promise we can control
+      let resolvePromise: (value: any) => void;
+      const mockUpdateStatus = jest.fn().mockImplementation(() => {
+        return new Promise((resolve) => {
+          resolvePromise = resolve;
+        });
+      });
+      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+
+      render(
+        <ProductOwnerActions
+          productOwner={activeProductOwner}
+          onStatusChange={mockOnStatusChange}
+        />,
+        { wrapper }
+      );
+
+      const lapseButton = screen.getByRole('button', { name: /lapse/i });
+      await user.click(lapseButton);
+
+      // UI should optimistically update (e.g., show "Lapsing..." or disable certain actions)
+      await waitFor(() => {
+        expect(lapseButton).toBeDisabled();
+      });
+
+      // Clean up
+      resolvePromise!({ data: { ...activeProductOwner, status: 'lapsed' } });
+    });
+
+    it('reverts optimistic update on error', async () => {
+      const user = userEvent.setup();
+      const activeProductOwner = createActiveProductOwner({
+        id: 123,
+        firstname: 'John',
+        surname: 'Smith'
+      });
+
+      const mockUpdateStatus = jest.fn().mockRejectedValue(
+        new Error('Network error')
+      );
+      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+
+      render(
+        <ProductOwnerActions
+          productOwner={activeProductOwner}
+          onStatusChange={mockOnStatusChange}
+        />,
+        { wrapper }
+      );
+
+      const lapseButton = screen.getByRole('button', { name: /lapse/i });
+      await user.click(lapseButton);
+
+      // After error, UI should revert to original state
+      await waitFor(() => {
+        // Button should be re-enabled after error
+        expect(lapseButton).not.toBeDisabled();
+        expect(toast.error).toHaveBeenCalled();
+      });
+    });
+  });
+});

@@ -23,3 +23,6 @@ export * from './clientGroups';
 
 // Client Group Product Owners Junction API
 export * from './clientGroupProductOwners';
+
+// Product Owner Status Update API
+export * from './updateProductOwner';

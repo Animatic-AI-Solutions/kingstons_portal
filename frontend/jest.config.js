@@ -26,7 +26,7 @@ module.exports = {
     }
   },
   transformIgnorePatterns: [
-    '/node_modules/(?!axios)/'
+    '/node_modules/(?!(axios|@faker-js))/'
   ],
   globals: {
     'ts-jest': {
