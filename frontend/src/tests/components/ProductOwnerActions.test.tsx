@@ -55,17 +55,13 @@ const createTestQueryClient = () => {
     defaultOptions: {
       queries: {
         retry: false,
-        cacheTime: 0,
+        gcTime: 0, // React Query v5: renamed from cacheTime
       },
       mutations: {
         retry: false,
       },
     },
-    logger: {
-      log: () => {},
-      warn: () => {},
-      error: () => {},
-    },
+    // Note: logger option removed in React Query v5
   });
 };
 

@@ -22,9 +22,11 @@ import React, { useMemo, memo, useCallback, useState } from 'react';
 import StatusBadge from './StatusBadge';
 import ActionButton from './ui/buttons/ActionButton';
 import EditButton from './ui/buttons/EditButton';
+import AddButton from './ui/buttons/AddButton';
 import SortableColumnHeader from './SortableColumnHeader';
 import ProductOwnerActions from './ProductOwnerActions';
 import EditProductOwnerModal from './EditProductOwnerModal';
+import CreateProductOwnerModal from './CreateProductOwnerModal';
 import { formatFullName, calculateAge } from '@/utils/productOwnerHelpers';
 import { sortProductOwners, type SortConfig } from '@/utils/sortProductOwners';
 import type { ProductOwner } from '@/types/productOwner';
@@ -37,6 +39,7 @@ import type { ProductOwner } from '@/types/productOwner';
  * @property error - Error object if data fetch failed, null otherwise
  * @property onRetry - Optional callback function for retry button in error state
  * @property onRefetch - Optional callback function for data refresh after status changes
+ * @property clientGroupId - Client group ID for creating new product owners
  */
 interface ProductOwnerTableProps {
   /** Array of product owner records to display in the table */
@@ -49,6 +52,8 @@ interface ProductOwnerTableProps {
   onRetry?: () => void;
   /** Optional callback function for data refresh after status changes */
   onRefetch?: () => void;
+  /** Client group ID for creating new product owners */
+  clientGroupId?: number;
 }
 
 /**
@@ -301,6 +306,7 @@ const ProductOwnerTable: React.FC<ProductOwnerTableProps> = ({
   error,
   onRetry,
   onRefetch,
+  clientGroupId,
 }) => {
   /**
    * Sort state management
@@ -314,6 +320,12 @@ const ProductOwnerTable: React.FC<ProductOwnerTableProps> = ({
    */
   const [editingProductOwner, setEditingProductOwner] = useState<ProductOwner | null>(null);
   const isEditModalOpen = editingProductOwner !== null;
+
+  /**
+   * Create modal state management
+   * Tracks whether create modal is open
+   */
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   /**
    * Handle sort state changes from SortableColumnHeader
@@ -359,6 +371,35 @@ const ProductOwnerTable: React.FC<ProductOwnerTableProps> = ({
   }, [onRefetch]);
 
   /**
+   * Handle Add Person button click
+   *
+   * Opens create modal
+   */
+  const handleAddPerson = useCallback(() => {
+    setIsCreateModalOpen(true);
+  }, []);
+
+  /**
+   * Handle create modal close
+   *
+   * Closes create modal
+   */
+  const handleCreateModalClose = useCallback(() => {
+    setIsCreateModalOpen(false);
+  }, []);
+
+  /**
+   * Handle successful creation from create modal
+   *
+   * Closes modal and triggers data refresh
+   */
+  const handleCreateSuccess = useCallback(() => {
+    if (onRefetch) {
+      onRefetch();
+    }
+  }, [onRefetch]);
+
+  /**
    * PERFORMANCE OPTIMIZATION 1: Memoize enriched product owners
    *
    * Pre-computes display fields (full name, age, formatted DOB, inactive status)
@@ -396,23 +437,48 @@ const ProductOwnerTable: React.FC<ProductOwnerTableProps> = ({
    */
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table
-          className="min-w-full divide-y divide-gray-200"
-          role="table"
-          aria-label="Product Owners"
-          aria-busy="true"
-        >
-          <TableHeader sortConfig={sortConfig} onSort={handleSort} />
-        </table>
-        <div data-testid="table-skeleton" className="p-8" role="status" aria-label="Loading product owners">
-          <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-            <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-            <div className="h-4 bg-gray-200 rounded w-4/5"></div>
+      <>
+        {/* Add Person Button - Only show if clientGroupId is provided */}
+        {clientGroupId && (
+          <div className="mb-4 flex justify-end">
+            <AddButton
+              onClick={handleAddPerson}
+              context="Person"
+              design="balanced"
+              size="md"
+            />
+          </div>
+        )}
+
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <table
+            className="min-w-full divide-y divide-gray-200"
+            role="table"
+            aria-label="Product Owners"
+            aria-busy="true"
+          >
+            <TableHeader sortConfig={sortConfig} onSort={handleSort} />
+          </table>
+          <div data-testid="table-skeleton" className="p-8" role="status" aria-label="Loading product owners">
+            <div className="animate-pulse space-y-4">
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+              <div className="h-4 bg-gray-200 rounded w-4/5"></div>
+            </div>
           </div>
         </div>
-      </div>
+
+        {/* Create Product Owner Modal */}
+        {clientGroupId && (
+          <CreateProductOwnerModal
+            isOpen={isCreateModalOpen}
+            onClose={handleCreateModalClose}
+            clientGroupId={clientGroupId}
+            onCreate={handleCreateSuccess}
+            includeProductSelection={false}
+          />
+        )}
+      </>
     );
   }
 
@@ -421,36 +487,61 @@ const ProductOwnerTable: React.FC<ProductOwnerTableProps> = ({
    */
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow p-8">
-        <div className="text-center" role="alert" aria-live="assertive">
-          <svg
-            className="mx-auto h-12 w-12 text-red-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      <>
+        {/* Add Person Button - Only show if clientGroupId is provided */}
+        {clientGroupId && (
+          <div className="mb-4 flex justify-end">
+            <AddButton
+              onClick={handleAddPerson}
+              context="Person"
+              design="balanced"
+              size="md"
             />
-          </svg>
-          <h3 className="mt-4 text-lg font-medium text-gray-900">
-            Error Loading Product Owners
-          </h3>
-          <p className="mt-2 text-sm text-gray-500">{error.message}</p>
-          {onRetry && (
-            <button
-              onClick={onRetry}
-              className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+          </div>
+        )}
+
+        <div className="bg-white rounded-lg shadow p-8">
+          <div className="text-center" role="alert" aria-live="assertive">
+            <svg
+              className="mx-auto h-12 w-12 text-red-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
             >
-              Retry
-            </button>
-          )}
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <h3 className="mt-4 text-lg font-medium text-gray-900">
+              Error Loading Product Owners
+            </h3>
+            <p className="mt-2 text-sm text-gray-500">{error.message}</p>
+            {onRetry && (
+              <button
+                onClick={onRetry}
+                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+              >
+                Retry
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+
+        {/* Create Product Owner Modal */}
+        {clientGroupId && (
+          <CreateProductOwnerModal
+            isOpen={isCreateModalOpen}
+            onClose={handleCreateModalClose}
+            clientGroupId={clientGroupId}
+            onCreate={handleCreateSuccess}
+            includeProductSelection={false}
+          />
+        )}
+      </>
     );
   }
 
@@ -459,35 +550,55 @@ const ProductOwnerTable: React.FC<ProductOwnerTableProps> = ({
    */
   if (productOwners.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-8">
-        <div className="text-center">
-          <svg
-            className="mx-auto h-12 w-12 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1}
-              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+      <>
+        {/* Add Person Button - Only show if clientGroupId is provided */}
+        {clientGroupId && (
+          <div className="mb-4 flex justify-end">
+            <AddButton
+              onClick={handleAddPerson}
+              context="Person"
+              design="balanced"
+              size="md"
             />
-          </svg>
-          <h3 className="mt-4 text-lg font-medium text-gray-900">
-            No Product Owners Found
-          </h3>
-          <p className="mt-2 text-sm text-gray-500">
-            Add your first product owner to get started
-          </p>
-          <button
-            className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
-          >
-            Add Product Owner
-          </button>
+          </div>
+        )}
+
+        <div className="bg-white rounded-lg shadow p-8">
+          <div className="text-center">
+            <svg
+              className="mx-auto h-12 w-12 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1}
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+              />
+            </svg>
+            <h3 className="mt-4 text-lg font-medium text-gray-900">
+              No Product Owners Found
+            </h3>
+            <p className="mt-2 text-sm text-gray-500">
+              Add your first product owner to get started
+            </p>
+          </div>
         </div>
-      </div>
+
+        {/* Create Product Owner Modal */}
+        {clientGroupId && (
+          <CreateProductOwnerModal
+            isOpen={isCreateModalOpen}
+            onClose={handleCreateModalClose}
+            clientGroupId={clientGroupId}
+            onCreate={handleCreateSuccess}
+            includeProductSelection={false}
+          />
+        )}
+      </>
     );
   }
 
@@ -497,6 +608,19 @@ const ProductOwnerTable: React.FC<ProductOwnerTableProps> = ({
    */
   return (
     <>
+      {/* Add Person Button - Only show if clientGroupId is provided */}
+      {clientGroupId && (
+        <div className="mb-4 flex justify-end">
+          <AddButton
+            onClick={handleAddPerson}
+            context="Person"
+            design="balanced"
+            size="md"
+            aria-label="Add new person to client group"
+          />
+        </div>
+      )}
+
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table
@@ -526,6 +650,17 @@ const ProductOwnerTable: React.FC<ProductOwnerTableProps> = ({
           onClose={handleEditModalClose}
           productOwner={editingProductOwner}
           onUpdate={handleEditSuccess}
+        />
+      )}
+
+      {/* Create Product Owner Modal */}
+      {clientGroupId && (
+        <CreateProductOwnerModal
+          isOpen={isCreateModalOpen}
+          onClose={handleCreateModalClose}
+          clientGroupId={clientGroupId}
+          onCreate={handleCreateSuccess}
+          includeProductSelection={false}
         />
       )}
     </>

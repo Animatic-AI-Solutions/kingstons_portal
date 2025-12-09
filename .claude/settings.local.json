@@ -15,7 +15,8 @@
       "Bash(timeout 120 npm test:*)",
       "Bash(Select-String \"●\")",
       "Bash(Select-Object -First 35)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(npx jest --clearCache)"
     ],
     "deny": [],
     "ask": []

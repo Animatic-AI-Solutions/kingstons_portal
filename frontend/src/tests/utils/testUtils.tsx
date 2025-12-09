@@ -26,11 +26,7 @@ export function createTestQueryClient(): QueryClient {
         retry: false,
       },
     },
-    logger: {
-      log: console.log,
-      warn: console.warn,
-      error: () => {}, // Suppress expected errors
-    },
+    // Note: logger option removed in React Query v5
   });
 }
 

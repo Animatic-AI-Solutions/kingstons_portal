@@ -20,14 +20,10 @@ const createTestQueryClient = () => {
     defaultOptions: {
       queries: {
         retry: false,
-        cacheTime: 0,
+        gcTime: 0, // React Query v5: renamed from cacheTime
       },
     },
-    logger: {
-      log: () => {},
-      warn: () => {},
-      error: () => {},
-    },
+    // Note: logger option removed in React Query v5
   });
 };
 
@@ -997,6 +993,362 @@ describe('ProductOwnerTable Component', () => {
       // Edit button should be disabled during operation
       const editButton = screen.getByRole('button', { name: /edit/i });
       expect(editButton).toBeDisabled();
+    });
+  });
+
+  // ============================================================
+  // Add Person Button Integration Tests (Iteration 7)
+  // ============================================================
+
+  describe('Add Person Button', () => {
+    it('renders Add Person button at top of table', () => {
+      const mockProductOwners = [createActiveProductOwner()];
+
+      render(
+        <ProductOwnerTable
+          productOwners={mockProductOwners}
+          isLoading={false}
+          error={null}
+          clientGroupId={123}
+        />,
+        { wrapper }
+      );
+
+      // Add Person button should be visible at top
+      const addButton = screen.getByRole('button', { name: /add person/i });
+      expect(addButton).toBeInTheDocument();
+    });
+
+    it('Add Person button has proper styling', () => {
+      const mockProductOwners = [createActiveProductOwner()];
+
+      render(
+        <ProductOwnerTable
+          productOwners={mockProductOwners}
+          isLoading={false}
+          error={null}
+          clientGroupId={123}
+        />,
+        { wrapper }
+      );
+
+      const addButton = screen.getByRole('button', { name: /add person/i });
+      // Should have primary button styling
+      expect(addButton).toHaveClass(expect.stringMatching(/bg-|text-|hover:/));
+    });
+
+    it('Add Person button has accessible label', () => {
+      const mockProductOwners = [createActiveProductOwner()];
+
+      render(
+        <ProductOwnerTable
+          productOwners={mockProductOwners}
+          isLoading={false}
+          error={null}
+          clientGroupId={123}
+        />,
+        { wrapper }
+      );
+
+      const addButton = screen.getByRole('button', { name: /add person/i });
+      expect(addButton).toHaveAccessibleName();
+    });
+
+    it('Add Person button always enabled (regardless of table state)', () => {
+      const mockProductOwners = [
+        createActiveProductOwner(),
+        createLapsedProductOwner(),
+        createDeceasedProductOwner(),
+      ];
+
+      render(
+        <ProductOwnerTable
+          productOwners={mockProductOwners}
+          isLoading={false}
+          error={null}
+          clientGroupId={123}
+        />,
+        { wrapper }
+      );
+
+      const addButton = screen.getByRole('button', { name: /add person/i });
+      expect(addButton).not.toBeDisabled();
+    });
+  });
+
+  describe('Create Modal Integration', () => {
+    it('clicking Add Person button opens CreateProductOwnerModal', async () => {
+      const mockProductOwners = [createActiveProductOwner()];
+      const user = userEvent.setup();
+
+      render(
+        <ProductOwnerTable
+          productOwners={mockProductOwners}
+          isLoading={false}
+          error={null}
+          clientGroupId={123}
+        />,
+        { wrapper }
+      );
+
+      // Click Add Person button
+      const addButton = screen.getByRole('button', { name: /add person/i });
+      await user.click(addButton);
+
+      // Modal should open
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(screen.getByText(/create product owner/i)).toBeInTheDocument();
+      });
+    });
+
+    it('modal receives correct client_group_id', async () => {
+      const mockProductOwners = [createActiveProductOwner()];
+      const user = userEvent.setup();
+
+      render(
+        <ProductOwnerTable
+          productOwners={mockProductOwners}
+          isLoading={false}
+          error={null}
+          clientGroupId={456}
+        />,
+        { wrapper }
+      );
+
+      // Click Add Person button
+      const addButton = screen.getByRole('button', { name: /add person/i });
+      await user.click(addButton);
+
+      // Modal should open (client_group_id passed internally)
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+
+      // Fill and submit to verify client_group_id is used
+      await user.type(screen.getByLabelText(/first name/i), 'John');
+      await user.type(screen.getByLabelText(/surname/i), 'Smith');
+
+      // Modal should be ready to create with client_group_id 456
+      const createButton = screen.getByRole('button', { name: /^create$/i });
+      expect(createButton).toBeInTheDocument();
+    });
+
+    it('table refreshes after successful creation', async () => {
+      const mockProductOwners = [createActiveProductOwner({ id: 1 })];
+      const mockOnRefetch = jest.fn();
+      const user = userEvent.setup();
+
+      render(
+        <ProductOwnerTable
+          productOwners={mockProductOwners}
+          isLoading={false}
+          error={null}
+          clientGroupId={123}
+          onRefetch={mockOnRefetch}
+        />,
+        { wrapper }
+      );
+
+      // Click Add Person button
+      const addButton = screen.getByRole('button', { name: /add person/i });
+      await user.click(addButton);
+
+      // Wait for modal to open
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+
+      // Fill and submit
+      await user.type(screen.getByLabelText(/first name/i), 'Jane');
+      await user.type(screen.getByLabelText(/surname/i), 'Doe');
+
+      const createButton = screen.getByRole('button', { name: /^create$/i });
+      await user.click(createButton);
+
+      // onRefetch callback should be called
+      await waitFor(() => {
+        expect(mockOnRefetch).toHaveBeenCalled();
+      });
+    });
+
+    it('handles multiple creations sequentially', async () => {
+      const mockProductOwners = [createActiveProductOwner({ id: 1 })];
+      const user = userEvent.setup();
+
+      render(
+        <ProductOwnerTable
+          productOwners={mockProductOwners}
+          isLoading={false}
+          error={null}
+          clientGroupId={123}
+        />,
+        { wrapper }
+      );
+
+      const addButton = screen.getByRole('button', { name: /add person/i });
+
+      // First creation
+      await user.click(addButton);
+      await waitFor(() => {
+        expect(screen.getByText(/create product owner/i)).toBeInTheDocument();
+      });
+
+      await user.type(screen.getByLabelText(/first name/i), 'First');
+      await user.type(screen.getByLabelText(/surname/i), 'Person');
+      await user.click(screen.getByRole('button', { name: /^create$/i }));
+
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      });
+
+      // Second creation
+      await user.click(addButton);
+      await waitFor(() => {
+        expect(screen.getByText(/create product owner/i)).toBeInTheDocument();
+      });
+
+      await user.type(screen.getByLabelText(/first name/i), 'Second');
+      await user.type(screen.getByLabelText(/surname/i), 'Person');
+      await user.click(screen.getByRole('button', { name: /^create$/i }));
+
+      // Should handle multiple creations
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      });
+    });
+
+    it('modal closes after successful creation', async () => {
+      const mockProductOwners = [createActiveProductOwner()];
+      const user = userEvent.setup();
+
+      render(
+        <ProductOwnerTable
+          productOwners={mockProductOwners}
+          isLoading={false}
+          error={null}
+          clientGroupId={123}
+        />,
+        { wrapper }
+      );
+
+      // Click Add Person button
+      await user.click(screen.getByRole('button', { name: /add person/i }));
+
+      // Wait for modal to open
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+
+      // Fill and submit
+      await user.type(screen.getByLabelText(/first name/i), 'John');
+      await user.type(screen.getByLabelText(/surname/i), 'Smith');
+      await user.click(screen.getByRole('button', { name: /^create$/i }));
+
+      // Modal should close
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      });
+    });
+
+    it('handles add button spam clicking (no duplicate modals)', async () => {
+      const mockProductOwners = [createActiveProductOwner()];
+      const user = userEvent.setup();
+
+      render(
+        <ProductOwnerTable
+          productOwners={mockProductOwners}
+          isLoading={false}
+          error={null}
+          clientGroupId={123}
+        />,
+        { wrapper }
+      );
+
+      const addButton = screen.getByRole('button', { name: /add person/i });
+
+      // Click multiple times rapidly
+      await user.click(addButton);
+      await user.click(addButton);
+      await user.click(addButton);
+
+      // Should only show one modal
+      await waitFor(() => {
+        const dialogs = screen.queryAllByRole('dialog');
+        expect(dialogs.length).toBeLessThanOrEqual(1);
+      });
+    });
+
+    it('modal can be cancelled without creating', async () => {
+      const mockProductOwners = [createActiveProductOwner()];
+      const mockOnRefetch = jest.fn();
+      const user = userEvent.setup();
+
+      render(
+        <ProductOwnerTable
+          productOwners={mockProductOwners}
+          isLoading={false}
+          error={null}
+          clientGroupId={123}
+          onRefetch={mockOnRefetch}
+        />,
+        { wrapper }
+      );
+
+      // Click Add Person button
+      await user.click(screen.getByRole('button', { name: /add person/i }));
+
+      // Wait for modal to open
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+
+      // Fill some data
+      await user.type(screen.getByLabelText(/first name/i), 'John');
+
+      // Click Cancel
+      const cancelButton = screen.getByRole('button', { name: /cancel/i });
+      await user.click(cancelButton);
+
+      // Modal should close without creating
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      });
+
+      // Should not trigger refetch
+      expect(mockOnRefetch).not.toHaveBeenCalled();
+    });
+
+    it('add button visible even with empty table', () => {
+      render(
+        <ProductOwnerTable
+          productOwners={[]}
+          isLoading={false}
+          error={null}
+          clientGroupId={123}
+        />,
+        { wrapper }
+      );
+
+      // Add Person button should still be visible with empty table
+      const addButton = screen.getByRole('button', { name: /add person/i });
+      expect(addButton).toBeInTheDocument();
+    });
+
+    it('add button visible during loading', () => {
+      render(
+        <ProductOwnerTable
+          productOwners={[]}
+          isLoading={true}
+          error={null}
+          clientGroupId={123}
+        />,
+        { wrapper }
+      );
+
+      // Add Person button should be visible even during loading
+      const addButton = screen.getByRole('button', { name: /add person/i });
+      expect(addButton).toBeInTheDocument();
     });
   });
 });

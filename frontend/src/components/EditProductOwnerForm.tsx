@@ -57,6 +57,8 @@ const BUTTON_TEXT = {
   CANCEL: 'Cancel',
   SAVE: 'Save',
   SAVING: 'Saving...',
+  CREATE: 'Create',
+  CREATING: 'Creating...',
 } as const;
 
 /**
@@ -93,21 +95,24 @@ const ERROR_MESSAGES = {
 /**
  * EditProductOwnerForm Props Interface
  *
- * @property productOwner - Existing product owner data for pre-population
- * @property onSubmit - Callback when form is submitted with valid data (only changed fields)
+ * @property productOwner - Existing product owner data for pre-population (optional for create mode)
+ * @property onSubmit - Callback when form is submitted with valid data (changed fields for edit, all fields for create)
  * @property onCancel - Callback when user cancels editing
  * @property isSubmitting - Loading state during API submission
+ * @property mode - Form mode: 'edit' (default) or 'create'
  * @property onDirtyChange - Optional callback when form dirty state changes
  */
 interface EditProductOwnerFormProps {
-  /** Existing product owner data for pre-population */
-  productOwner: ProductOwner;
-  /** Callback when form is submitted with valid data (only changed fields) */
+  /** Existing product owner data for pre-population (optional for create mode) */
+  productOwner?: ProductOwner;
+  /** Callback when form is submitted with valid data (changed fields for edit, all fields for create) */
   onSubmit: (data: Partial<ProductOwner>) => Promise<void>;
   /** Callback when user cancels editing */
   onCancel: () => void;
   /** Loading state during API submission */
   isSubmitting: boolean;
+  /** Form mode: 'edit' (default) or 'create' */
+  mode?: 'edit' | 'create';
   /** Optional callback when form dirty state changes */
   onDirtyChange?: (isDirty: boolean) => void;
 }
@@ -225,6 +230,7 @@ const validationSchema = yup.object({
  *
  * Renders comprehensive form with 4 sections and 30 fields.
  * Handles validation, dirty tracking, and submission.
+ * Supports both edit mode (update existing) and create mode (new record).
  *
  * @param props - Component props
  * @returns JSX element with form sections and fields
@@ -234,8 +240,17 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
   onSubmit,
   onCancel,
   isSubmitting,
+  mode = 'edit',
   onDirtyChange,
 }) => {
+  // Default values for create mode (empty) or edit mode (existing data)
+  const defaultValues = mode === 'create'
+    ? {
+        status: STATUS_VALUES.ACTIVE, // Default to active for new product owners
+        // All other fields will be empty/undefined
+      }
+    : productOwner;
+
   const {
     control,
     handleSubmit,
@@ -243,8 +258,8 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
     watch,
   } = useForm({
     resolver: yupResolver(validationSchema),
-    defaultValues: productOwner,
-    mode: 'onChange', // Validate on change to clear errors immediately
+    defaultValues,
+    mode: 'all', // Validate on blur and change for best UX and test compatibility
   });
 
   /**
@@ -266,7 +281,9 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
 
   /**
    * Handle form submission
-   * Only sends changed fields to API (based on dirtyFields)
+   *
+   * Edit mode: Only sends changed fields to API (based on dirtyFields)
+   * Create mode: Sends all filled fields to API
    *
    * Performance: Sending only changed fields reduces payload size and
    * allows for precise audit logging of what was modified.
@@ -274,20 +291,30 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
    * @param data - Form data with all field values
    */
   const handleFormSubmit = useCallback(async (data: any) => {
-    // Extract only changed fields from form data
-    // dirtyFields can be { fieldName: true } or { fieldName: { ... } } for nested fields
-    const changedData: Partial<ProductOwner> = {};
+    try {
+      if (mode === 'edit') {
+        // Extract only changed fields from form data for edit mode
+        // dirtyFields can be { fieldName: true } or { fieldName: { ... } } for nested fields
+        const changedData: Partial<ProductOwner> = {};
 
-    Object.keys(dirtyFields).forEach((key) => {
-      const typedKey = key as keyof ProductOwner;
-      // Check if the field is actually dirty (could be boolean or object for nested fields)
-      if (dirtyFields[typedKey]) {
-        changedData[typedKey] = data[key];
+        Object.keys(dirtyFields).forEach((key) => {
+          const typedKey = key as keyof ProductOwner;
+          // Check if the field is actually dirty (could be boolean or object for nested fields)
+          if (dirtyFields[typedKey]) {
+            changedData[typedKey] = data[key];
+          }
+        });
+
+        await onSubmit(changedData);
+      } else {
+        // Send all filled fields for create mode
+        await onSubmit(data);
       }
-    });
-
-    await onSubmit(changedData);
-  }, [dirtyFields, onSubmit]);
+    } catch (error) {
+      console.error('Form submit error:', error);
+      throw error;
+    }
+  }, [dirtyFields, mode, onSubmit]);
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-0">
@@ -548,7 +575,7 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
       </FormSection>
 
       {/* ================================================================== */}
-      {/* Form Actions - Cancel and Save buttons                             */}
+      {/* Form Actions - Cancel and Save/Create buttons                      */}
       {/* ================================================================== */}
       <div className="modal-footer flex justify-end gap-3 pt-6 border-t border-gray-200 mt-6">
         {/* Cancel Button - Triggers unsaved changes warning if form is dirty */}
@@ -561,10 +588,12 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
           {BUTTON_TEXT.CANCEL}
         </button>
 
-        {/* Save Button - Disabled if submitting or no changes made */}
+        {/* Submit Button - Text changes based on mode (Save for edit, Create for create) */}
+        {/* Edit mode: Disabled if submitting or no changes made */}
+        {/* Create mode: Disabled only if submitting */}
         <button
           type="submit"
-          disabled={isSubmitting || !isDirty}
+          disabled={isSubmitting || (mode === 'edit' && !isDirty)}
           className="inline-flex justify-center items-center rounded-md border border-transparent bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isSubmitting ? (
@@ -591,10 +620,10 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 />
               </svg>
-              {BUTTON_TEXT.SAVING}
+              {mode === 'create' ? BUTTON_TEXT.CREATING : BUTTON_TEXT.SAVING}
             </>
           ) : (
-            BUTTON_TEXT.SAVE
+            mode === 'create' ? BUTTON_TEXT.CREATE : BUTTON_TEXT.SAVE
           )}
         </button>
       </div>

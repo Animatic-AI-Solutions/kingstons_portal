@@ -32,10 +32,9 @@
  * @module pages/ClientGroupSuite/tabs/components/PeopleSubTab
  */
 
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import ProductOwnerTable from '@/components/ProductOwnerTable';
-import ActionButton from '@/components/ui/buttons/ActionButton';
 import { useProductOwners } from '@/hooks/useProductOwners';
 
 /**
@@ -127,48 +126,16 @@ const PeopleSubTab: React.FC = () => {
     refetch,
   } = useProductOwners(clientGroupIdNumber);
 
-  /**
-   * Memoized handler for Add Person button
-   *
-   * Prevents function recreation on every render for performance.
-   * Currently logs to console - will open modal in Phase 3.
-   *
-   * Future implementation:
-   * - Open Add Person modal
-   * - Validate form inputs
-   * - Call API to create new product owner
-   * - Invalidate React Query cache to trigger refetch
-   * - Display success/error toast notification
-   */
-  const handleAddPerson = useCallback(() => {
-    // TODO: Implement add person modal in Phase 3
-    console.log('Add Person clicked for client group:', clientGroupIdNumber);
-  }, [clientGroupIdNumber]);
-
   return (
     <div className="space-y-6">
-      {/* Header Section with Add Person button */}
-      <div className="flex items-center justify-between">
-        {/* Title and Description */}
-        <div>
-          <h3 className="text-lg font-medium text-gray-900">
-            Product Owners
-          </h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage personal information, contact details, and addresses
-          </p>
-        </div>
-
-        {/* Add Person Action Button */}
-        <ActionButton
-          variant="add"
-          size="md"
-          context="Person"
-          onClick={handleAddPerson}
-          aria-label="Add new person to client group"
-        >
-          Add Person
-        </ActionButton>
+      {/* Header Section */}
+      <div>
+        <h3 className="text-lg font-medium text-gray-900">
+          Product Owners
+        </h3>
+        <p className="mt-1 text-sm text-gray-500">
+          Manage personal information, contact details, and addresses
+        </p>
       </div>
 
       {/* Product Owner Table */}
@@ -184,6 +151,7 @@ const PeopleSubTab: React.FC = () => {
         - Memoization for performance
         - Accessibility (WCAG 2.1 AA)
         - Responsive design
+        - Add Person button and modal
       */}
       <ProductOwnerTable
         productOwners={productOwners || []}
@@ -191,6 +159,7 @@ const PeopleSubTab: React.FC = () => {
         error={error}
         onRetry={refetch}
         onRefetch={refetch}
+        clientGroupId={clientGroupIdNumber || undefined}
       />
     </div>
   );
