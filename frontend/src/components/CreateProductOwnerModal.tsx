@@ -14,9 +14,9 @@
  * @module components/CreateProductOwnerModal
  */
 
-import React, { Fragment, useState, useCallback } from 'react';
-import { Dialog, Transition } from '@headlessui/react';
+import React, { useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
+import BaseModal from './BaseModal';
 import EditProductOwnerForm from './EditProductOwnerForm';
 import { createProductOwner } from '@/services/api/productOwners';
 import { createClientGroupProductOwner } from '@/services/api/clientGroupProductOwners';
@@ -55,13 +55,6 @@ const MODAL_TEXT = {
   SUCCESS_MESSAGE: 'Product owner created successfully',
 } as const;
 
-/**
- * Transition duration constants for modal animations
- */
-const TRANSITION_DURATION = {
-  ENTER: 300,
-  LEAVE: 200,
-} as const;
 
 // ============================================================================
 // Component
@@ -145,59 +138,20 @@ const CreateProductOwnerModal: React.FC<CreateProductOwnerModalProps> = ({
   }, [clientGroupId, onCreate, onClose]);
 
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={handleClose}>
-        {/* Backdrop overlay */}
-        <Transition.Child
-          as={Fragment}
-          enter={`ease-out duration-${TRANSITION_DURATION.ENTER}`}
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave={`ease-in duration-${TRANSITION_DURATION.LEAVE}`}
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-black bg-opacity-25" />
-        </Transition.Child>
-
-        {/* Modal content container */}
-        <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4 text-center">
-            <Transition.Child
-              as={Fragment}
-              enter={`ease-out duration-${TRANSITION_DURATION.ENTER}`}
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave={`ease-in duration-${TRANSITION_DURATION.LEAVE}`}
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
-            >
-              <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                {/* Modal header */}
-                <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
-                  {MODAL_TEXT.TITLE}
-                </Dialog.Title>
-
-                <Dialog.Description className="mt-1 text-sm text-gray-500">
-                  {MODAL_TEXT.SUBTITLE}
-                </Dialog.Description>
-
-                {/* Modal body - EditProductOwnerForm in create mode */}
-                <div className="mt-4">
-                  <EditProductOwnerForm
-                    mode="create"
-                    onSubmit={handleSubmit}
-                    onCancel={handleCancel}
-                    isSubmitting={isSubmitting}
-                    onDirtyChange={setIsFormDirty}
-                  />
-                </div>
-              </Dialog.Panel>
-            </Transition.Child>
-          </div>
-        </div>
-      </Dialog>
-    </Transition>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={MODAL_TEXT.TITLE}
+      description={MODAL_TEXT.SUBTITLE}
+    >
+      <EditProductOwnerForm
+        mode="create"
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+        isSubmitting={isSubmitting}
+        onDirtyChange={setIsFormDirty}
+      />
+    </BaseModal>
   );
 };
 

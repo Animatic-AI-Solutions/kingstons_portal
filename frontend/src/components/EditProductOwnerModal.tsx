@@ -15,9 +15,9 @@
  * @module components/EditProductOwnerModal
  */
 
-import React, { Fragment, useState, useCallback } from 'react';
-import { Dialog, Transition } from '@headlessui/react';
+import React, { useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
+import BaseModal from './BaseModal';
 import EditProductOwnerForm from './EditProductOwnerForm';
 import * as productOwnersApi from '@/services/api/productOwners';
 import { formatApiError } from '@/utils/errorHandling';
@@ -51,13 +51,6 @@ const MODAL_TEXT = {
   UNSAVED_CHANGES_WARNING: 'You have unsaved changes. Are you sure you want to close?',
 } as const;
 
-/**
- * Transition duration constants for HeadlessUI animations
- */
-const TRANSITION_DURATION = {
-  ENTER: 'ease-out duration-300',
-  LEAVE: 'ease-in duration-200',
-} as const;
 
 /**
  * Format product owner full name for subtitle
@@ -154,66 +147,22 @@ const EditProductOwnerModal: React.FC<EditProductOwnerModalProps> = ({
   }, [handleClose]);
 
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50 max-w-4xl" onClose={handleClose}>
-        {/* Backdrop overlay with fade transition */}
-        <Transition.Child
-          as={Fragment}
-          enter={TRANSITION_DURATION.ENTER}
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave={TRANSITION_DURATION.LEAVE}
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-        </Transition.Child>
-
-        {/* Modal positioning container - centers modal on screen */}
-        <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4 text-center">
-            {/* Modal panel with scale and fade transition */}
-            <Transition.Child
-              as={Fragment}
-              enter={TRANSITION_DURATION.ENTER}
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave={TRANSITION_DURATION.LEAVE}
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
-            >
-              <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all" role="document">
-                {/* Dialog Title - HeadlessUI automatically sets aria-labelledby */}
-                <Dialog.Title
-                  as="h3"
-                  className="text-lg font-medium leading-6 text-gray-900 mb-2"
-                  id="edit-product-owner-title"
-                >
-                  {MODAL_TEXT.TITLE}
-                </Dialog.Title>
-
-                {/* Dialog Description - Product owner name subtitle */}
-                <Dialog.Description
-                  className="text-sm text-gray-500 mb-6"
-                  id="edit-product-owner-description"
-                >
-                  {productOwnerName}
-                </Dialog.Description>
-
-                {/* Edit Form */}
-                <EditProductOwnerForm
-                  productOwner={productOwner}
-                  onSubmit={handleSubmit}
-                  onCancel={handleCancel}
-                  isSubmitting={isSubmitting}
-                  onDirtyChange={setFormIsDirty}
-                />
-              </Dialog.Panel>
-            </Transition.Child>
-          </div>
-        </div>
-      </Dialog>
-    </Transition>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={MODAL_TEXT.TITLE}
+      description={productOwnerName}
+      titleId="edit-product-owner-title"
+      descriptionId="edit-product-owner-description"
+    >
+      <EditProductOwnerForm
+        productOwner={productOwner}
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+        isSubmitting={isSubmitting}
+        onDirtyChange={setFormIsDirty}
+      />
+    </BaseModal>
   );
 };
 
