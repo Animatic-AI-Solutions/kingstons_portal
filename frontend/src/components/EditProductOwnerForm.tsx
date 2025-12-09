@@ -21,6 +21,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import FormSection from './form/FormSection';
 import FormTextField from './form/FormTextField';
+import { PRODUCT_OWNER_STATUS } from '@/utils/productOwnerConstants';
 import type { ProductOwner } from '@/types/productOwner';
 
 // ============================================================================
@@ -61,14 +62,6 @@ const BUTTON_TEXT = {
   CREATING: 'Creating...',
 } as const;
 
-/**
- * Status values for the status dropdown
- */
-const STATUS_VALUES = {
-  ACTIVE: 'active',
-  LAPSED: 'lapsed',
-  DECEASED: 'deceased',
-} as const;
 
 /**
  * Validation error messages
@@ -168,7 +161,7 @@ const validationSchema = yup.object({
     .required(ERROR_MESSAGES.SURNAME_REQUIRED)
     .max(100, ERROR_MESSAGES.SURNAME_MAX),
   known_as: yup.string().nullable().max(100, ERROR_MESSAGES.MAX_100),
-  status: yup.string().oneOf([STATUS_VALUES.ACTIVE, STATUS_VALUES.LAPSED, STATUS_VALUES.DECEASED]).required(),
+  status: yup.string().oneOf(Object.values(PRODUCT_OWNER_STATUS)).required(),
 
   // Personal Details Fields
   title: yup.string().nullable().max(20, ERROR_MESSAGES.MAX_100),
@@ -246,7 +239,7 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
   // Default values for create mode (empty) or edit mode (existing data)
   const defaultValues = mode === 'create'
     ? {
-        status: STATUS_VALUES.ACTIVE, // Default to active for new product owners
+        status: PRODUCT_OWNER_STATUS.ACTIVE, // Default to active for new product owners
         // All other fields will be empty/undefined
       }
     : productOwner;
@@ -267,7 +260,7 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
    * Deceased status triggers display of deceased_date field
    */
   const statusValue = watch('status');
-  const isDeceased = statusValue === STATUS_VALUES.DECEASED;
+  const isDeceased = statusValue === PRODUCT_OWNER_STATUS.DECEASED;
 
   /**
    * Notify parent component of dirty state changes
@@ -394,9 +387,9 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
                   aria-required
                   aria-describedby={fieldState.error ? 'status-error' : undefined}
                 >
-                  <option value={STATUS_VALUES.ACTIVE}>Active</option>
-                  <option value={STATUS_VALUES.LAPSED}>Lapsed</option>
-                  <option value={STATUS_VALUES.DECEASED}>Deceased</option>
+                  <option value={PRODUCT_OWNER_STATUS.ACTIVE}>Active</option>
+                  <option value={PRODUCT_OWNER_STATUS.LAPSED}>Lapsed</option>
+                  <option value={PRODUCT_OWNER_STATUS.DECEASED}>Deceased</option>
                 </select>
                 {fieldState.error && (
                   <p

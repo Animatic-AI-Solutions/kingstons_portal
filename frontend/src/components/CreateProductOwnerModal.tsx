@@ -116,16 +116,16 @@ const CreateProductOwnerModal: React.FC<CreateProductOwnerModalProps> = ({
     setIsSubmitting(true);
     try {
       // Create the product owner
-      const newProductOwner = await createProductOwner(data as any);
+      const newProductOwner = await createProductOwner(data);
 
       // Associate product owner with client group
-      if (newProductOwner.id) {
+      if (newProductOwner?.id) {
         try {
           await createClientGroupProductOwner({
             client_group_id: clientGroupId,
             product_owner_id: newProductOwner.id,
           });
-        } catch (associationError: any) {
+        } catch (associationError) {
           console.error('Failed to associate product owner with client group:', associationError);
           // Continue - product owner was created successfully
           // User can manually associate later if needed
@@ -135,7 +135,7 @@ const CreateProductOwnerModal: React.FC<CreateProductOwnerModalProps> = ({
       toast.success(MODAL_TEXT.SUCCESS_MESSAGE);
       onCreate(); // Trigger data refresh
       onClose(); // Close modal
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating product owner:', error);
       toast.error(formatApiError(error));
       // Keep modal open on error for retry
