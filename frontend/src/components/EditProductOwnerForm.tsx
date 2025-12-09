@@ -41,12 +41,12 @@ const FORM_SECTIONS = {
     TITLE: 'Contact Information',
     DEFAULT_OPEN: false,
   },
-  HEALTH: {
-    TITLE: 'Health Information',
+  PROFILING: {
+    TITLE: 'Client Profiling',
     DEFAULT_OPEN: false,
   },
   PROFESSIONAL: {
-    TITLE: 'Professional Information',
+    TITLE: 'Professional & Compliance',
     DEFAULT_OPEN: false,
   },
 } as const;
@@ -195,23 +195,48 @@ const validationSchema = yup.object({
     .string()
     .nullable()
     .matches(/^[0-9\s\-()]{0,20}$/, ERROR_MESSAGES.PHONE_INVALID),
-  address_id: yup.number().nullable(),
+  address_line_1: yup.string().nullable().max(100, ERROR_MESSAGES.MAX_100),
+  address_line_2: yup.string().nullable().max(100, ERROR_MESSAGES.MAX_100),
+  address_line_3: yup.string().nullable().max(100, ERROR_MESSAGES.MAX_100),
+  address_line_4: yup.string().nullable().max(100, ERROR_MESSAGES.MAX_100),
+  address_line_5: yup.string().nullable().max(100, ERROR_MESSAGES.MAX_100),
   notes: yup.string().nullable(),
 
-  // Health Information Fields
-  vulnerability: yup.string().nullable(),
-  health_notes: yup.string().nullable(),
+  // Deceased date (conditional field based on status)
   deceased_date: yup
     .string()
     .nullable()
     .test('is-valid-date', ERROR_MESSAGES.DATE_INVALID, isValidDate),
 
-  // Professional Information Fields
+  // Contact Information - Additional Fields
+  moved_in_date: yup
+    .string()
+    .nullable()
+    .matches(/^\d{4}-\d{2}-\d{2}$|^$/, ERROR_MESSAGES.DATE_INVALID)
+    .test('is-valid-date', ERROR_MESSAGES.DATE_INVALID, isValidDate),
+
+  // Client Profiling Fields
+  three_words: yup.string().nullable().max(200, 'Must be less than 200 characters'),
+  share_data_with: yup.string().nullable().max(200, 'Must be less than 200 characters'),
+
+  // Professional & Compliance Fields
   occupation: yup.string().nullable().max(100, ERROR_MESSAGES.MAX_100),
   ni_number: yup
     .string()
     .nullable()
     .matches(/^[A-Z]{2}[0-9]{6}[A-Z]$/, ERROR_MESSAGES.NI_NUMBER_INVALID),
+  employment_status: yup.string().nullable().max(100, ERROR_MESSAGES.MAX_100),
+  passport_expiry_date: yup
+    .string()
+    .nullable()
+    .matches(/^\d{4}-\d{2}-\d{2}$|^$/, ERROR_MESSAGES.DATE_INVALID)
+    .test('is-valid-date', ERROR_MESSAGES.DATE_INVALID, isValidDate),
+  aml_result: yup.string().nullable().max(50, ERROR_MESSAGES.MAX_100),
+  aml_date: yup
+    .string()
+    .nullable()
+    .matches(/^\d{4}-\d{2}-\d{2}$|^$/, ERROR_MESSAGES.DATE_INVALID)
+    .test('is-valid-date', ERROR_MESSAGES.DATE_INVALID, isValidDate),
 });
 
 // ============================================================================
@@ -360,9 +385,9 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
           />
           <FormTextField
             name="relationship_status"
-            label="Relationship Status"
+            label="Relationship"
             control={control}
-            placeholder="Single, Married, etc."
+            placeholder="e.g., Husband, Wife, Daughter"
           />
           <Controller
             name="status"
@@ -403,6 +428,16 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
               </div>
             )}
           />
+          {/* Conditional deceased_date field - only shown when status is 'deceased' */}
+          {/* Business rule: Deceased date is required context for deceased status */}
+          {isDeceased && (
+            <FormTextField
+              name="deceased_date"
+              label="Deceased Date"
+              control={control}
+              type="date"
+            />
+          )}
         </div>
       </FormSection>
 
@@ -410,7 +445,7 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
       {/* Section 2: Contact Information (collapsed by default)              */}
       {/* ================================================================== */}
       <FormSection title={FORM_SECTIONS.CONTACT.TITLE} defaultOpen={FORM_SECTIONS.CONTACT.DEFAULT_OPEN}>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4">
           <FormTextField
             name="email_1"
             label="Primary Email"
@@ -439,115 +474,67 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
             type="tel"
             placeholder="Optional"
           />
-          <Controller
-            name="address_id"
+          <FormTextField
+            name="address_line_1"
+            label="Address Line 1"
             control={control}
-            render={({ field, fieldState }) => (
-              <div className="form-field sm:col-span-2">
-                <label
-                  htmlFor="address_id"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Address
-                </label>
-                <input
-                  {...field}
-                  id="address_id"
-                  type="number"
-                  value={field.value ?? ''}
-                  placeholder="Address ID"
-                  className={`block w-full rounded-md shadow-sm sm:text-sm border ${
-                    fieldState.invalid
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
-                  } focus:outline-none focus:ring-2 focus:ring-offset-0 transition-colors px-3 py-2`}
-                  aria-invalid={fieldState.invalid}
-                  aria-describedby={fieldState.error ? 'address_id-error' : undefined}
-                />
-                {fieldState.error && (
-                  <p
-                    id="address_id-error"
-                    className="mt-1 text-sm text-red-600"
-                    role="alert"
-                  >
-                    {fieldState.error.message}
-                  </p>
-                )}
-              </div>
-            )}
+            placeholder="House number and street"
           />
-          <Controller
-            name="notes"
+          <FormTextField
+            name="address_line_2"
+            label="Address Line 2"
             control={control}
-            render={({ field, fieldState }) => (
-              <div className="form-field sm:col-span-2">
-                <label
-                  htmlFor="notes"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Notes
-                </label>
-                <textarea
-                  {...field}
-                  id="notes"
-                  rows={3}
-                  value={field.value ?? ''}
-                  placeholder="Additional notes"
-                  className={`block w-full rounded-md shadow-sm sm:text-sm border ${
-                    fieldState.invalid
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
-                  } focus:outline-none focus:ring-2 focus:ring-offset-0 transition-colors px-3 py-2`}
-                  aria-invalid={fieldState.invalid}
-                  aria-describedby={fieldState.error ? 'notes-error' : undefined}
-                />
-                {fieldState.error && (
-                  <p
-                    id="notes-error"
-                    className="mt-1 text-sm text-red-600"
-                    role="alert"
-                  >
-                    {fieldState.error.message}
-                  </p>
-                )}
-              </div>
-            )}
+            placeholder="Optional"
+          />
+          <FormTextField
+            name="address_line_3"
+            label="Address Line 3"
+            control={control}
+            placeholder="Town/City"
+          />
+          <FormTextField
+            name="address_line_4"
+            label="Address Line 4"
+            control={control}
+            placeholder="County/State"
+          />
+          <FormTextField
+            name="address_line_5"
+            label="Address Line 5"
+            control={control}
+            placeholder="SW1A 1AA"
+          />
+          <FormTextField
+            name="moved_in_date"
+            label="Moved In Date"
+            control={control}
+            type="date"
           />
         </div>
       </FormSection>
 
       {/* ================================================================== */}
-      {/* Section 3: Health Information (collapsed by default)               */}
+      {/* Section 3: Client Profiling (collapsed by default)                */}
       {/* ================================================================== */}
-      <FormSection title={FORM_SECTIONS.HEALTH.TITLE} defaultOpen={FORM_SECTIONS.HEALTH.DEFAULT_OPEN}>
+      <FormSection title={FORM_SECTIONS.PROFILING.TITLE} defaultOpen={FORM_SECTIONS.PROFILING.DEFAULT_OPEN}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormTextField
-            name="vulnerability"
-            label="Vulnerability"
+            name="three_words"
+            label="Three Words"
             control={control}
-            placeholder="Any vulnerabilities"
+            placeholder="e.g., Conservative, Detail-oriented, Family-focused"
           />
           <FormTextField
-            name="health_notes"
-            label="Health Notes"
+            name="share_data_with"
+            label="Share Data With"
             control={control}
-            placeholder="Health-related notes"
+            placeholder="Data sharing preferences"
           />
-          {/* Conditional deceased_date field - only shown when status is 'deceased' */}
-          {/* Business rule: Deceased date is required context for deceased status */}
-          {isDeceased && (
-            <FormTextField
-              name="deceased_date"
-              label="Deceased Date"
-              control={control}
-              type="date"
-            />
-          )}
         </div>
       </FormSection>
 
       {/* ================================================================== */}
-      {/* Section 4: Professional Information (collapsed by default)         */}
+      {/* Section 4: Professional & Compliance (collapsed by default)       */}
       {/* ================================================================== */}
       <FormSection title={FORM_SECTIONS.PROFESSIONAL.TITLE} defaultOpen={FORM_SECTIONS.PROFESSIONAL.DEFAULT_OPEN}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -564,8 +551,106 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
             placeholder="AB123456C"
             pattern="[A-Z]{2}[0-9]{6}[A-Z]"
           />
+          <FormTextField
+            name="employment_status"
+            label="Employment Status"
+            control={control}
+            placeholder="e.g., Employed, Self-employed, Retired"
+          />
+          <FormTextField
+            name="passport_expiry_date"
+            label="Passport Expiry Date"
+            control={control}
+            type="date"
+          />
+          <Controller
+            name="aml_result"
+            control={control}
+            render={({ field, fieldState }) => (
+              <div className="form-field">
+                <label
+                  htmlFor="aml_result"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  AML Result
+                </label>
+                <select
+                  {...field}
+                  id="aml_result"
+                  value={field.value ?? ''}
+                  className={`block w-full rounded-md shadow-sm sm:text-sm border ${
+                    fieldState.invalid
+                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
+                  } focus:outline-none focus:ring-2 focus:ring-offset-0 transition-colors px-3 py-2`}
+                  aria-invalid={fieldState.invalid}
+                  aria-describedby={fieldState.error ? 'aml_result-error' : undefined}
+                >
+                  <option value="">Select result</option>
+                  <option value="Pass">Pass</option>
+                  <option value="Fail">Fail</option>
+                </select>
+                {fieldState.error && (
+                  <p
+                    id="aml_result-error"
+                    className="mt-1 text-sm text-red-600"
+                    role="alert"
+                  >
+                    {fieldState.error.message}
+                  </p>
+                )}
+              </div>
+            )}
+          />
+          <FormTextField
+            name="aml_date"
+            label="AML Check Date"
+            control={control}
+            type="date"
+          />
         </div>
       </FormSection>
+
+      {/* ================================================================== */}
+      {/* Notes Field - Always Visible Outside Sections                     */}
+      {/* ================================================================== */}
+      <Controller
+        name="notes"
+        control={control}
+        render={({ field, fieldState }) => (
+          <div className="form-field mt-6">
+            <label
+              htmlFor="notes"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Notes
+            </label>
+            <textarea
+              {...field}
+              id="notes"
+              rows={3}
+              value={field.value ?? ''}
+              placeholder="Additional notes"
+              className={`block w-full rounded-md shadow-sm sm:text-sm border ${
+                fieldState.invalid
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                  : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
+              } focus:outline-none focus:ring-2 focus:ring-offset-0 transition-colors px-3 py-2`}
+              aria-invalid={fieldState.invalid}
+              aria-describedby={fieldState.error ? 'notes-error' : undefined}
+            />
+            {fieldState.error && (
+              <p
+                id="notes-error"
+                className="mt-1 text-sm text-red-600"
+                role="alert"
+              >
+                {fieldState.error.message}
+              </p>
+            )}
+          </div>
+        )}
+      />
 
       {/* ================================================================== */}
       {/* Form Actions - Cancel and Save/Create buttons                      */}

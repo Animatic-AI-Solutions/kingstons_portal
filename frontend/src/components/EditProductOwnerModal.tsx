@@ -20,6 +20,7 @@ import toast from 'react-hot-toast';
 import BaseModal from './BaseModal';
 import EditProductOwnerForm from './EditProductOwnerForm';
 import * as productOwnersApi from '@/services/api/productOwners';
+import { createAddress, updateAddress, hasAddressData } from '@/services/api/addresses';
 import { formatApiError } from '@/utils/errorHandling';
 import type { ProductOwner } from '@/types/productOwner';
 
@@ -125,7 +126,56 @@ const EditProductOwnerModal: React.FC<EditProductOwnerModalProps> = ({
   const handleSubmit = useCallback(async (data: Partial<ProductOwner>) => {
     setIsSubmitting(true);
     try {
-      await productOwnersApi.updateProductOwner(productOwner.id, data);
+      // Extract address fields from form data
+      const {
+        address_line_1,
+        address_line_2,
+        address_line_3,
+        address_line_4,
+        address_line_5,
+        ...productOwnerData
+      } = data;
+
+      const addressFields = {
+        line_1: address_line_1 || '',
+        line_2: address_line_2 || '',
+        line_3: address_line_3 || '',
+        line_4: address_line_4 || '',
+        line_5: address_line_5 || '',
+      };
+
+      // Determine if any address field has value
+      const hasAddress = hasAddressData(addressFields);
+
+      // Handle address creation/update/removal
+      if (hasAddress && productOwner.address_id) {
+        // Update existing address
+        try {
+          await updateAddress(productOwner.address_id, addressFields);
+        } catch (addressError) {
+          console.error('Failed to update address:', addressError);
+          toast.error('Failed to update address. Please try again.');
+          setIsSubmitting(false);
+          return;
+        }
+      } else if (hasAddress && !productOwner.address_id) {
+        // Create new address
+        try {
+          const newAddress = await createAddress(addressFields);
+          productOwnerData.address_id = newAddress.id;
+        } catch (addressError) {
+          console.error('Failed to create address:', addressError);
+          toast.error('Failed to create address. Please try again.');
+          setIsSubmitting(false);
+          return;
+        }
+      } else if (!hasAddress && productOwner.address_id) {
+        // User cleared all address fields - remove association
+        productOwnerData.address_id = null;
+      }
+
+      // Update product owner
+      await productOwnersApi.updateProductOwner(productOwner.id, productOwnerData);
       toast.success(MODAL_TEXT.SUCCESS_MESSAGE);
       onUpdate(); // Trigger data refresh in parent
       onClose(); // Close modal
@@ -135,7 +185,7 @@ const EditProductOwnerModal: React.FC<EditProductOwnerModalProps> = ({
     } finally {
       setIsSubmitting(false);
     }
-  }, [productOwner.id, onUpdate, onClose]);
+  }, [productOwner.id, productOwner.address_id, onUpdate, onClose]);
 
   /**
    * Handle cancel button click

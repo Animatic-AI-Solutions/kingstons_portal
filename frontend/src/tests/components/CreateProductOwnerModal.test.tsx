@@ -180,11 +180,11 @@ describe('CreateProductOwnerModal Component', () => {
         { wrapper }
       );
 
-      // Check for section headings
+      // Check for section headings (Health removed, Profiling added, Professional renamed)
       expect(screen.getByText(/personal information/i)).toBeInTheDocument();
       expect(screen.getByText(/contact information/i)).toBeInTheDocument();
-      expect(screen.getByText(/health information/i)).toBeInTheDocument();
-      expect(screen.getByText(/professional information/i)).toBeInTheDocument();
+      expect(screen.getByText(/client profiling/i)).toBeInTheDocument();
+      expect(screen.getByText(/professional & compliance/i)).toBeInTheDocument();
     });
 
     it('modal has responsive width (max-w-4xl)', () => {
@@ -225,7 +225,7 @@ describe('CreateProductOwnerModal Component', () => {
   // ============================================================
 
   describe('Form Field Rendering', () => {
-    it('renders all 4 sections (Personal, Contact, Health, Professional)', () => {
+    it('renders all 4 sections (Personal, Contact, Profiling, Professional & Compliance)', () => {
       render(
         <CreateProductOwnerModal
           isOpen={true}
@@ -238,8 +238,8 @@ describe('CreateProductOwnerModal Component', () => {
 
       expect(screen.getByText(/personal information/i)).toBeInTheDocument();
       expect(screen.getByText(/contact information/i)).toBeInTheDocument();
-      expect(screen.getByText(/health information/i)).toBeInTheDocument();
-      expect(screen.getByText(/professional information/i)).toBeInTheDocument();
+      expect(screen.getByText(/client profiling/i)).toBeInTheDocument();
+      expect(screen.getByText(/professional & compliance/i)).toBeInTheDocument();
     });
 
     it('renders all 9 Personal Information fields', () => {
@@ -260,11 +260,11 @@ describe('CreateProductOwnerModal Component', () => {
       expect(screen.getByLabelText(/previous.*name/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/date of birth/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/place of birth/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/relationship status/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/relationship/i)).toBeInTheDocument();
       expect(screen.getByRole('combobox', { name: /^status/i })).toBeInTheDocument();
     });
 
-    it('renders all 6 Contact Information fields', async () => {
+    it('renders all 11 Contact Information fields', async () => {
       const user = userEvent.setup();
 
       render(
@@ -285,11 +285,16 @@ describe('CreateProductOwnerModal Component', () => {
       expect(screen.getByLabelText(/secondary email/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/primary phone/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/secondary phone/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/address/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/address line 1/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/address line 2/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/address line 3/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/address line 4/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/address line 5/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/moved.*in.*date/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/notes/i)).toBeInTheDocument();
     });
 
-    it('renders all 3 Health Information fields', async () => {
+    it('renders all 2 Client Profiling fields', async () => {
       const user = userEvent.setup();
 
       render(
@@ -302,17 +307,15 @@ describe('CreateProductOwnerModal Component', () => {
         { wrapper }
       );
 
-      // Expand Health Information section
-      const healthSection = screen.getByText(/health information/i);
-      await user.click(healthSection);
+      // Expand Client Profiling section
+      const profilingSection = screen.getByText(/client profiling/i);
+      await user.click(profilingSection);
 
-      expect(screen.getByLabelText(/vulnerability/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/health notes/i)).toBeInTheDocument();
-      // deceased_date not shown unless status is deceased
-      expect(screen.queryByLabelText(/deceased date/i)).not.toBeInTheDocument();
+      expect(screen.getByLabelText(/three words/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/share data with/i)).toBeInTheDocument();
     });
 
-    it('renders all 2 Professional Information fields', async () => {
+    it('renders all 6 Professional & Compliance fields', async () => {
       const user = userEvent.setup();
 
       render(
@@ -325,12 +328,16 @@ describe('CreateProductOwnerModal Component', () => {
         { wrapper }
       );
 
-      // Expand Professional Information section
-      const professionalSection = screen.getByText(/professional information/i);
+      // Expand Professional & Compliance section
+      const professionalSection = screen.getByText(/professional & compliance/i);
       await user.click(professionalSection);
 
       expect(screen.getByLabelText(/occupation/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/ni number/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/employment status/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/passport expiry date/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/aml result/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/aml check date/i)).toBeInTheDocument();
     });
 
     it('all fields start empty/default values', () => {
@@ -582,8 +589,8 @@ describe('CreateProductOwnerModal Component', () => {
         { wrapper }
       );
 
-      // Expand Professional section
-      const professionalSection = screen.getByText(/professional information/i);
+      // Expand Professional & Compliance section
+      const professionalSection = screen.getByText(/professional & compliance/i);
       await user.click(professionalSection);
 
       // Enter invalid NI Number
@@ -1751,9 +1758,7 @@ describe('CreateProductOwnerModal Component', () => {
         { wrapper }
       );
 
-      // Expand Health section
-      await user.click(screen.getByText(/health information/i));
-
+      // Personal Information section is open by default
       // Initially no deceased_date
       expect(screen.queryByLabelText(/deceased date/i)).not.toBeInTheDocument();
 
@@ -1761,7 +1766,7 @@ describe('CreateProductOwnerModal Component', () => {
       const statusSelect = screen.getByRole('combobox', { name: /^status/i });
       await user.selectOptions(statusSelect, 'deceased');
 
-      // deceased_date should appear
+      // deceased_date should appear in Personal Information section
       await waitFor(() => {
         expect(screen.getByLabelText(/deceased date/i)).toBeInTheDocument();
       });

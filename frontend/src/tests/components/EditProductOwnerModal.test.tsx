@@ -170,8 +170,8 @@ describe('EditProductOwnerModal Component', () => {
       // Check for section headings
       expect(screen.getByText(/personal information/i)).toBeInTheDocument();
       expect(screen.getByText(/contact information/i)).toBeInTheDocument();
-      expect(screen.getByText(/health information/i)).toBeInTheDocument();
-      expect(screen.getByText(/professional information/i)).toBeInTheDocument();
+      expect(screen.getByText(/client profiling/i)).toBeInTheDocument();
+      expect(screen.getByText(/professional & compliance/i)).toBeInTheDocument();
     });
 
     it('shows progressive disclosure sections collapsed by default (except first)', () => {
@@ -195,10 +195,10 @@ describe('EditProductOwnerModal Component', () => {
       const contactSection = screen.getByText(/contact information/i).closest('button');
       expect(contactSection).toHaveAttribute('aria-expanded', 'false');
 
-      const healthSection = screen.getByText(/health information/i).closest('button');
-      expect(healthSection).toHaveAttribute('aria-expanded', 'false');
+      const profilingSection = screen.getByText(/client profiling/i).closest('button');
+      expect(profilingSection).toHaveAttribute('aria-expanded', 'false');
 
-      const professionalSection = screen.getByText(/professional information/i).closest('button');
+      const professionalSection = screen.getByText(/professional & compliance/i).closest('button');
       expect(professionalSection).toHaveAttribute('aria-expanded', 'false');
     });
 
@@ -247,11 +247,11 @@ describe('EditProductOwnerModal Component', () => {
       expect(screen.getByLabelText(/previous.*name/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/date of birth/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/place of birth/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/relationship status/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/relationship/i)).toBeInTheDocument();
       expect(screen.getByRole('combobox', { name: /^status/i })).toBeInTheDocument();
     });
 
-    it('renders Contact Information section with 6 fields', async () => {
+    it('renders Contact Information section with 11 fields', async () => {
       const productOwner = createActiveProductOwner();
       const user = userEvent.setup();
 
@@ -269,16 +269,21 @@ describe('EditProductOwnerModal Component', () => {
       const contactSection = screen.getByText(/contact information/i);
       await user.click(contactSection);
 
-      // Contact Information fields (6 fields)
+      // Contact Information fields (11 fields)
       expect(screen.getByLabelText(/primary email/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/secondary email/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/primary phone/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/secondary phone/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/address/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/address line 1/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/address line 2/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/address line 3/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/address line 4/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/address line 5/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/moved.*in.*date/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/notes/i)).toBeInTheDocument();
     });
 
-    it('renders Health Information section with 3 fields', async () => {
+    it('renders Client Profiling section with 2 fields', async () => {
       const productOwner = createActiveProductOwner();
       const user = userEvent.setup();
 
@@ -292,18 +297,16 @@ describe('EditProductOwnerModal Component', () => {
         { wrapper }
       );
 
-      // Expand Health Information section
-      const healthSection = screen.getByText(/health information/i);
-      await user.click(healthSection);
+      // Expand Client Profiling section
+      const profilingSection = screen.getByText(/client profiling/i);
+      await user.click(profilingSection);
 
-      // Health Information fields (3 fields - deceased_date only shown for deceased status)
-      expect(screen.getByLabelText(/vulnerability/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/health notes/i)).toBeInTheDocument();
-      // deceased_date not shown for active status
-      expect(screen.queryByLabelText(/deceased date/i)).not.toBeInTheDocument();
+      // Client Profiling fields (2 fields)
+      expect(screen.getByLabelText(/three words/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/share data with/i)).toBeInTheDocument();
     });
 
-    it('renders Professional Information section with 2 fields', async () => {
+    it('renders Professional & Compliance section with 6 fields', async () => {
       const productOwner = createActiveProductOwner();
       const user = userEvent.setup();
 
@@ -317,13 +320,17 @@ describe('EditProductOwnerModal Component', () => {
         { wrapper }
       );
 
-      // Expand Professional Information section
-      const professionalSection = screen.getByText(/professional information/i);
+      // Expand Professional & Compliance section
+      const professionalSection = screen.getByText(/professional & compliance/i);
       await user.click(professionalSection);
 
-      // Professional Information fields (2 fields)
+      // Professional & Compliance fields (6 fields)
       expect(screen.getByLabelText(/occupation/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/ni number/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/employment status/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/passport expiry date/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/aml result/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/aml check date/i)).toBeInTheDocument();
     });
 
     it('all fields pre-populated with existing product owner data', () => {
@@ -448,7 +455,7 @@ describe('EditProductOwnerModal Component', () => {
       );
 
       // Expand Professional section
-      const professionalSection = screen.getByText(/professional information/i);
+      const professionalSection = screen.getByText(/professional & compliance/i);
       await user.click(professionalSection);
 
       const niInput = screen.getByLabelText(/ni number/i);
@@ -470,8 +477,8 @@ describe('EditProductOwnerModal Component', () => {
       );
 
       // Expand Health section
-      const healthSection = screen.getByText(/health information/i);
-      await user.click(healthSection);
+      const profilingSection = screen.getByText(/client profiling/i);
+      await user.click(profilingSection);
 
       // deceased_date should be visible for deceased status
       expect(screen.getByLabelText(/deceased date/i)).toBeInTheDocument();
@@ -538,10 +545,10 @@ describe('EditProductOwnerModal Component', () => {
       const contactSection = screen.getByText(/contact information/i).closest('button');
       expect(contactSection).toHaveAttribute('aria-expanded', 'false');
 
-      const healthSection = screen.getByText(/health information/i).closest('button');
-      expect(healthSection).toHaveAttribute('aria-expanded', 'false');
+      const profilingSection = screen.getByText(/client profiling/i).closest('button');
+      expect(profilingSection).toHaveAttribute('aria-expanded', 'false');
 
-      const professionalSection = screen.getByText(/professional information/i).closest('button');
+      const professionalSection = screen.getByText(/professional & compliance/i).closest('button');
       expect(professionalSection).toHaveAttribute('aria-expanded', 'false');
     });
 
@@ -633,12 +640,12 @@ describe('EditProductOwnerModal Component', () => {
       const contactSection = screen.getByText(/contact information/i);
       await user.click(contactSection);
 
-      const healthSection = screen.getByText(/health information/i);
-      await user.click(healthSection);
+      const profilingSection = screen.getByText(/client profiling/i);
+      await user.click(profilingSection);
 
       // Both should be expanded
       expect(contactSection.closest('button')).toHaveAttribute('aria-expanded', 'true');
-      expect(healthSection.closest('button')).toHaveAttribute('aria-expanded', 'true');
+      expect(profilingSection.closest('button')).toHaveAttribute('aria-expanded', 'true');
     });
 
     it('section indicators show open/closed state (chevron icon)', () => {
@@ -867,7 +874,7 @@ describe('EditProductOwnerModal Component', () => {
       );
 
       // Expand Professional section
-      const professionalSection = screen.getByText(/professional information/i);
+      const professionalSection = screen.getByText(/professional & compliance/i);
       await user.click(professionalSection);
 
       // Enter invalid NI Number
@@ -1065,6 +1072,7 @@ describe('EditProductOwnerModal Component', () => {
         firstname: 'John',
         surname: 'Smith',
         email_1: 'john@example.com',
+        address_id: null, // No address to avoid address handling logic
       });
       const user = userEvent.setup();
       mockUpdateProductOwner.mockResolvedValue({ ...productOwner });
@@ -1251,6 +1259,7 @@ describe('EditProductOwnerModal Component', () => {
         id: 123,
         firstname: 'John',
         email_1: 'john@example.com',
+        address_id: null, // No address to avoid address handling logic
       });
       const user = userEvent.setup();
       mockUpdateProductOwner.mockResolvedValue({ ...productOwner });
@@ -2413,8 +2422,8 @@ describe('EditProductOwnerModal Component', () => {
       );
 
       // Expand Health section
-      const healthSection = screen.getByText(/health information/i);
-      await user.click(healthSection);
+      const profilingSection = screen.getByText(/client profiling/i);
+      await user.click(profilingSection);
 
       // deceased_date field should be visible
       expect(screen.getByLabelText(/deceased date/i)).toBeInTheDocument();
@@ -2435,8 +2444,8 @@ describe('EditProductOwnerModal Component', () => {
       );
 
       // Expand Health section
-      const healthSection = screen.getByText(/health information/i);
-      await user.click(healthSection);
+      const profilingSection = screen.getByText(/client profiling/i);
+      await user.click(profilingSection);
 
       // deceased_date field should not be visible
       expect(screen.queryByLabelText(/deceased date/i)).not.toBeInTheDocument();
@@ -2457,8 +2466,8 @@ describe('EditProductOwnerModal Component', () => {
       );
 
       // Expand Health section
-      const healthSection = screen.getByText(/health information/i);
-      await user.click(healthSection);
+      const profilingSection = screen.getByText(/client profiling/i);
+      await user.click(profilingSection);
 
       // Initially no deceased_date field
       expect(screen.queryByLabelText(/deceased date/i)).not.toBeInTheDocument();
@@ -2488,8 +2497,8 @@ describe('EditProductOwnerModal Component', () => {
       );
 
       // Expand Health section
-      const healthSection = screen.getByText(/health information/i);
-      await user.click(healthSection);
+      const profilingSection = screen.getByText(/client profiling/i);
+      await user.click(profilingSection);
 
       // Initially deceased_date field visible
       expect(screen.getByLabelText(/deceased date/i)).toBeInTheDocument();

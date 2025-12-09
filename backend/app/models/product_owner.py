@@ -50,10 +50,15 @@ class ProductOwnerBase(BaseModel):
 
     @field_validator('dob', 'moved_in_date', 'passport_expiry_date', 'aml_date', mode='before')
     @classmethod
-    def empty_str_to_none(cls, v):
-        """Convert empty strings to None for optional date fields"""
+    def convert_date_strings(cls, v):
+        """Convert date strings to date objects, handle empty strings and None"""
         if v == '' or v is None:
             return None
+        if isinstance(v, str):
+            try:
+                return date.fromisoformat(v)
+            except ValueError:
+                return None
         return v
 
 
@@ -106,6 +111,19 @@ class ProductOwnerUpdate(BaseModel):
     model_config = ConfigDict(
         from_attributes=True
     )
+
+    @field_validator('dob', 'moved_in_date', 'passport_expiry_date', 'aml_date', mode='before')
+    @classmethod
+    def convert_date_strings(cls, v):
+        """Convert date strings to date objects, handle empty strings and None"""
+        if v == '' or v is None:
+            return None
+        if isinstance(v, str):
+            try:
+                return date.fromisoformat(v)
+            except ValueError:
+                return None
+        return v
 
 
 class ProductOwnerInDBBase(BaseModel):

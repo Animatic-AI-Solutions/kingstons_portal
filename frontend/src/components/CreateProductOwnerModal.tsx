@@ -20,6 +20,7 @@ import BaseModal from './BaseModal';
 import EditProductOwnerForm from './EditProductOwnerForm';
 import { createProductOwner } from '@/services/api/productOwners';
 import { createClientGroupProductOwner } from '@/services/api/clientGroupProductOwners';
+import { createAddress, hasAddressData } from '@/services/api/addresses';
 import { formatApiError } from '@/utils/errorHandling';
 import type { ProductOwner } from '@/types/productOwner';
 
@@ -108,8 +109,39 @@ const CreateProductOwnerModal: React.FC<CreateProductOwnerModalProps> = ({
   const handleSubmit = useCallback(async (data: Partial<ProductOwner>) => {
     setIsSubmitting(true);
     try {
+      // Extract address fields from form data
+      const {
+        address_line_1,
+        address_line_2,
+        address_line_3,
+        address_line_4,
+        address_line_5,
+        ...productOwnerData
+      } = data;
+
+      const addressFields = {
+        line_1: address_line_1 || '',
+        line_2: address_line_2 || '',
+        line_3: address_line_3 || '',
+        line_4: address_line_4 || '',
+        line_5: address_line_5 || '',
+      };
+
+      // Create address if any field has value
+      if (hasAddressData(addressFields)) {
+        try {
+          const newAddress = await createAddress(addressFields);
+          productOwnerData.address_id = newAddress.id;
+        } catch (addressError) {
+          console.error('Failed to create address:', addressError);
+          toast.error('Failed to create address. Please try again.');
+          setIsSubmitting(false);
+          return; // Stop submission if address creation fails
+        }
+      }
+
       // Create the product owner
-      const newProductOwner = await createProductOwner(data);
+      const newProductOwner = await createProductOwner(productOwnerData);
 
       // Associate product owner with client group
       if (newProductOwner?.id) {
