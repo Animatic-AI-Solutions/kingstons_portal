@@ -21,8 +21,10 @@
 import React, { useMemo, memo, useCallback, useState } from 'react';
 import StatusBadge from './StatusBadge';
 import ActionButton from './ui/buttons/ActionButton';
+import EditButton from './ui/buttons/EditButton';
 import SortableColumnHeader from './SortableColumnHeader';
 import ProductOwnerActions from './ProductOwnerActions';
+import EditProductOwnerModal from './EditProductOwnerModal';
 import { formatFullName, calculateAge } from '@/utils/productOwnerHelpers';
 import { sortProductOwners, type SortConfig } from '@/utils/sortProductOwners';
 import type { ProductOwner } from '@/types/productOwner';
@@ -150,9 +152,10 @@ const isInactive = (status: string): boolean => {
 interface ProductOwnerRowProps {
   owner: EnrichedProductOwner;
   onRefetch?: () => void;
+  onEdit: (owner: ProductOwner) => void;
 }
 
-const ProductOwnerRow = memo<ProductOwnerRowProps>(({ owner, onRefetch }) => {
+const ProductOwnerRow = memo<ProductOwnerRowProps>(({ owner, onRefetch, onEdit }) => {
   return (
     <tr
       className={owner.isInactive ? 'opacity-50 bg-gray-50' : ''}
@@ -198,12 +201,20 @@ const ProductOwnerRow = memo<ProductOwnerRowProps>(({ owner, onRefetch }) => {
         <StatusBadge status={owner.status} />
       </td>
 
-      {/* Actions Column - Status management buttons */}
+      {/* Actions Column - Edit button and status management buttons */}
       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-        <ProductOwnerActions
-          productOwner={owner}
-          onStatusChange={onRefetch}
-        />
+        <div className="flex items-center gap-2">
+          <EditButton
+            onClick={() => onEdit(owner)}
+            size="sm"
+            design="minimal"
+            aria-label={`Edit ${owner.fullName}`}
+          />
+          <ProductOwnerActions
+            productOwner={owner}
+            onStatusChange={onRefetch}
+          />
+        </div>
       </td>
     </tr>
   );
@@ -298,6 +309,13 @@ const ProductOwnerTable: React.FC<ProductOwnerTableProps> = ({
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
 
   /**
+   * Edit modal state management
+   * Tracks which product owner is being edited (null = modal closed)
+   */
+  const [editingProductOwner, setEditingProductOwner] = useState<ProductOwner | null>(null);
+  const isEditModalOpen = editingProductOwner !== null;
+
+  /**
    * Handle sort state changes from SortableColumnHeader
    *
    * @param column - Column to sort by
@@ -310,6 +328,35 @@ const ProductOwnerTable: React.FC<ProductOwnerTableProps> = ({
       setSortConfig({ column, direction });
     }
   }, []);
+
+  /**
+   * Handle Edit button click
+   *
+   * Opens edit modal with selected product owner data
+   */
+  const handleEdit = useCallback((owner: ProductOwner) => {
+    setEditingProductOwner(owner);
+  }, []);
+
+  /**
+   * Handle edit modal close
+   *
+   * Closes edit modal and clears selected product owner
+   */
+  const handleEditModalClose = useCallback(() => {
+    setEditingProductOwner(null);
+  }, []);
+
+  /**
+   * Handle successful update from edit modal
+   *
+   * Closes modal and triggers data refresh
+   */
+  const handleEditSuccess = useCallback(() => {
+    if (onRefetch) {
+      onRefetch();
+    }
+  }, [onRefetch]);
 
   /**
    * PERFORMANCE OPTIMIZATION 1: Memoize enriched product owners
@@ -449,22 +496,39 @@ const ProductOwnerTable: React.FC<ProductOwnerTableProps> = ({
    * Inactive rows always at bottom. Each row memoized for performance.
    */
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      <div className="overflow-x-auto">
-        <table
-          className="min-w-full divide-y divide-gray-200"
-          role="table"
-          aria-label="Product Owners"
-        >
-          <TableHeader sortConfig={sortConfig} onSort={handleSort} />
-          <tbody className="bg-white divide-y divide-gray-200">
-            {sortedProductOwners.map((owner) => (
-              <ProductOwnerRow key={owner.id} owner={owner} onRefetch={onRefetch} />
-            ))}
-          </tbody>
-        </table>
+    <>
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="overflow-x-auto">
+          <table
+            className="min-w-full divide-y divide-gray-200"
+            role="table"
+            aria-label="Product Owners"
+          >
+            <TableHeader sortConfig={sortConfig} onSort={handleSort} />
+            <tbody className="bg-white divide-y divide-gray-200">
+              {sortedProductOwners.map((owner) => (
+                <ProductOwnerRow
+                  key={owner.id}
+                  owner={owner}
+                  onRefetch={onRefetch}
+                  onEdit={handleEdit}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+
+      {/* Edit Product Owner Modal */}
+      {editingProductOwner && (
+        <EditProductOwnerModal
+          isOpen={isEditModalOpen}
+          onClose={handleEditModalClose}
+          productOwner={editingProductOwner}
+          onUpdate={handleEditSuccess}
+        />
+      )}
+    </>
   );
 };
 

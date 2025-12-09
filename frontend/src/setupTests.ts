@@ -97,6 +97,13 @@ beforeAll(() => {
       dispatchEvent: jest.fn(),
     })),
   });
+
+  // Mock ResizeObserver for HeadlessUI Dialog compatibility
+  global.ResizeObserver = class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
 });
 
 afterEach(() => {

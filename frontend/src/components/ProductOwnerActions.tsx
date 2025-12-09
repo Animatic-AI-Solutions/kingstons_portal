@@ -22,8 +22,62 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { LapseButton, ActionButton, DeleteButton } from '@/components/ui';
-import { updateProductOwnerStatus } from '@/services/api';
+import { updateProductOwnerStatus } from '@/services/api/updateProductOwner';
+import { deleteProductOwner } from '@/services/api/deleteProductOwner';
+import { formatApiError } from '@/utils/errorHandling';
+import DeleteConfirmationModal from '@/components/DeleteConfirmationModal';
 import type { ProductOwner } from '@/types/productOwner';
+
+// ==========================
+// Constants
+// ==========================
+
+/**
+ * Success notification messages for status change operations
+ * Centralized for consistency across all actions
+ */
+const SUCCESS_MESSAGES = {
+  LAPSED: 'Status updated to lapsed',
+  DECEASED: 'Status updated to deceased',
+  REACTIVATED: 'Product owner reactivated',
+  DELETED: 'Product owner deleted successfully',
+} as const;
+
+/**
+ * Fallback error messages when API error is not user-friendly
+ * Used as backup when formatApiError doesn't provide a message
+ */
+const FALLBACK_ERROR_MESSAGES = {
+  STATUS_UPDATE: 'Failed to update status',
+  DELETE: 'Failed to delete product owner',
+} as const;
+
+/**
+ * Button text constants for loading and default states
+ */
+const BUTTON_TEXT = {
+  MAKE_DECEASED: 'Make Deceased',
+  MAKE_DECEASED_LOADING: 'Loading...',
+  REACTIVATE: 'Reactivate',
+  REACTIVATE_LOADING: 'Loading...',
+} as const;
+
+/**
+ * CSS classes for custom inline buttons
+ * Extracted for reusability and consistency with design system
+ *
+ * Note: LapseButton and DeleteButton use design="minimal" prop instead
+ */
+const BUTTON_STYLES = {
+  /** Gray button style for Make Deceased action */
+  MAKE_DECEASED: 'inline-flex items-center px-2.5 py-1 text-sm font-medium rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-700 hover:text-gray-800 focus:ring-2 focus:ring-gray-500/20 border border-gray-200 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150',
+  /** Green button style for Reactivate action */
+  REACTIVATE: 'inline-flex items-center px-2.5 py-1 text-sm font-medium rounded-lg bg-green-50 hover:bg-green-100 text-green-700 hover:text-green-800 focus:ring-2 focus:ring-green-500/20 border border-green-200 hover:border-green-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150',
+} as const;
+
+// ==========================
+// Type Definitions
+// ==========================
 
 /**
  * ProductOwnerActions Props Interface
@@ -38,6 +92,10 @@ interface ProductOwnerActionsProps {
   onStatusChange?: () => void;
 }
 
+// ==========================
+// Component
+// ==========================
+
 /**
  * ProductOwnerActions Component
  *
@@ -51,11 +109,43 @@ const ProductOwnerActions: React.FC<ProductOwnerActionsProps> = ({
   productOwner,
   onStatusChange,
 }) => {
-  // Loading state for each action to prevent concurrent operations
+  // ==========================
+  // State Management
+  // ==========================
+
+  /**
+   * Loading state for Lapse operation
+   * Prevents concurrent operations when true
+   */
   const [isLapsing, setIsLapsing] = useState(false);
+
+  /**
+   * Loading state for Make Deceased operation
+   * Prevents concurrent operations when true
+   */
   const [isMakingDeceased, setIsMakingDeceased] = useState(false);
+
+  /**
+   * Loading state for Reactivate operation
+   * Prevents concurrent operations when true
+   */
   const [isReactivating, setIsReactivating] = useState(false);
+
+  /**
+   * Loading state for Delete operation
+   * Prevents concurrent operations when true
+   */
   const [isDeleting, setIsDeleting] = useState(false);
+
+  /**
+   * Modal visibility state for delete confirmation
+   * True when delete confirmation modal is displayed
+   */
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  // ==========================
+  // Event Handlers
+  // ==========================
 
   /**
    * Handle Lapse action (active → lapsed)
@@ -70,7 +160,7 @@ const ProductOwnerActions: React.FC<ProductOwnerActionsProps> = ({
       await updateProductOwnerStatus(productOwner.id, 'lapsed');
 
       // Show success notification
-      toast.success('Status updated to lapsed');
+      toast.success(SUCCESS_MESSAGES.LAPSED);
 
       // Trigger data refresh via callback
       if (onStatusChange) {
@@ -78,7 +168,7 @@ const ProductOwnerActions: React.FC<ProductOwnerActionsProps> = ({
       }
     } catch (error: any) {
       // Show error notification with user-friendly message
-      toast.error(error.message || 'Failed to update status');
+      toast.error(error.message || FALLBACK_ERROR_MESSAGES.STATUS_UPDATE);
     } finally {
       // Clear loading state
       setIsLapsing(false);
@@ -98,7 +188,7 @@ const ProductOwnerActions: React.FC<ProductOwnerActionsProps> = ({
       await updateProductOwnerStatus(productOwner.id, 'deceased');
 
       // Show success notification
-      toast.success('Status updated to deceased');
+      toast.success(SUCCESS_MESSAGES.DECEASED);
 
       // Trigger data refresh via callback
       if (onStatusChange) {
@@ -106,7 +196,7 @@ const ProductOwnerActions: React.FC<ProductOwnerActionsProps> = ({
       }
     } catch (error: any) {
       // Show error notification with user-friendly message
-      toast.error(error.message || 'Failed to update status');
+      toast.error(error.message || FALLBACK_ERROR_MESSAGES.STATUS_UPDATE);
     } finally {
       // Clear loading state
       setIsMakingDeceased(false);
@@ -126,7 +216,7 @@ const ProductOwnerActions: React.FC<ProductOwnerActionsProps> = ({
       await updateProductOwnerStatus(productOwner.id, 'active');
 
       // Show success notification
-      toast.success('Product owner reactivated');
+      toast.success(SUCCESS_MESSAGES.REACTIVATED);
 
       // Trigger data refresh via callback
       if (onStatusChange) {
@@ -134,7 +224,7 @@ const ProductOwnerActions: React.FC<ProductOwnerActionsProps> = ({
       }
     } catch (error: any) {
       // Show error notification with user-friendly message
-      toast.error(error.message || 'Failed to update status');
+      toast.error(error.message || FALLBACK_ERROR_MESSAGES.STATUS_UPDATE);
     } finally {
       // Clear loading state
       setIsReactivating(false);
@@ -142,26 +232,41 @@ const ProductOwnerActions: React.FC<ProductOwnerActionsProps> = ({
   };
 
   /**
-   * Handle Delete action (placeholder for future implementation)
+   * Handle Delete action
    *
-   * TODO: Implement deletion in Phase 3
-   * Currently a placeholder to satisfy test requirements.
+   * Permanently deletes the product owner via API call after user confirmation.
+   * Shows loading state, success/error notifications, and triggers refresh.
+   * Keeps modal open on error to allow retry.
    */
   const handleDelete = async () => {
     setIsDeleting(true);
 
     try {
-      // TODO: Implement actual delete API call in Phase 3
-      console.log('Delete product owner:', productOwner.id);
+      await deleteProductOwner(productOwner.id);
 
-      // Placeholder success notification
-      toast.success('Delete functionality coming in Phase 3');
+      // Show success notification
+      toast.success(SUCCESS_MESSAGES.DELETED);
+
+      // Close modal on success
+      setIsDeleteModalOpen(false);
+
+      // Trigger data refresh via callback
+      if (onStatusChange) {
+        onStatusChange();
+      }
     } catch (error: any) {
-      toast.error('Failed to delete product owner');
+      // Show error notification with user-friendly message
+      const errorMessage = formatApiError(error);
+      toast.error(errorMessage || FALLBACK_ERROR_MESSAGES.DELETE);
+      // Keep modal open on error to allow user to retry
     } finally {
       setIsDeleting(false);
     }
   };
+
+  // ==========================
+  // Render
+  // ==========================
 
   /**
    * Conditional rendering based on product owner status
@@ -173,52 +278,59 @@ const ProductOwnerActions: React.FC<ProductOwnerActionsProps> = ({
     // Active product owners: Show Lapse and Make Deceased buttons
     return (
       <div className="flex items-center gap-2">
+        {/* Lapse button - minimal design from UI component library */}
         <LapseButton
           onClick={handleLapse}
           disabled={isLapsing || isMakingDeceased}
           loading={isLapsing}
           size="sm"
           design="minimal"
-        >
-          {isLapsing ? 'Loading...' : 'Lapse'}
-        </LapseButton>
-        <ActionButton
-          variant="delete"
+        />
+        {/* Make Deceased button - gray inline style */}
+        <button
           onClick={handleMakeDeceased}
           disabled={isLapsing || isMakingDeceased}
-          loading={isMakingDeceased}
-          size="sm"
-          design="minimal"
+          className={BUTTON_STYLES.MAKE_DECEASED}
+          aria-label="Mark product owner as deceased"
         >
-          {isMakingDeceased ? 'Loading...' : 'Make Deceased'}
-        </ActionButton>
+          {isMakingDeceased ? BUTTON_TEXT.MAKE_DECEASED_LOADING : BUTTON_TEXT.MAKE_DECEASED}
+        </button>
       </div>
     );
   }
 
   // Lapsed or Deceased product owners: Show Reactivate and Delete buttons
   return (
-    <div className="flex items-center gap-2">
-      <ActionButton
-        variant="save"
-        onClick={handleReactivate}
-        disabled={isReactivating || isDeleting}
-        loading={isReactivating}
-        size="sm"
-        design="minimal"
-      >
-        {isReactivating ? 'Loading...' : 'Reactivate'}
-      </ActionButton>
-      <DeleteButton
-        onClick={handleDelete}
-        disabled={isReactivating || isDeleting}
-        loading={isDeleting}
-        size="sm"
-        design="minimal"
-      >
-        {isDeleting ? 'Loading...' : 'Delete'}
-      </DeleteButton>
-    </div>
+    <>
+      <div className="flex items-center gap-2">
+        {/* Reactivate button - green inline style */}
+        <button
+          onClick={handleReactivate}
+          disabled={isReactivating || isDeleting}
+          className={BUTTON_STYLES.REACTIVATE}
+          aria-label="Reactivate product owner"
+        >
+          {isReactivating ? BUTTON_TEXT.REACTIVATE_LOADING : BUTTON_TEXT.REACTIVATE}
+        </button>
+        {/* Delete button - minimal design from UI component library */}
+        <DeleteButton
+          onClick={() => setIsDeleteModalOpen(true)}
+          disabled={isReactivating || isDeleting}
+          loading={isDeleting}
+          size="sm"
+          design="minimal"
+        />
+      </div>
+
+      {/* Delete Confirmation Modal - shown when user clicks Delete button */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onCancel={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDelete}
+        productOwner={productOwner}
+        isLoading={isDeleting}
+      />
+    </>
   );
 };
 

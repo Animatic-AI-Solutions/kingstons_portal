@@ -131,8 +131,8 @@ export function createProductOwner(overrides?: Partial<ProductOwner>): ProductOw
 
     email_1: faker.internet.email({ firstName, lastName }).toLowerCase(),
     email_2: faker.helpers.maybe(() => faker.internet.email({ firstName, lastName }).toLowerCase(), { probability: 0.3 }) || null,
-    phone_1: faker.phone.number('+44 #### ### ###'),
-    phone_2: faker.helpers.maybe(() => faker.phone.number('+44 #### ### ###'), { probability: 0.4 }) || null,
+    phone_1: '07700 900123', // Valid UK mobile number format
+    phone_2: faker.helpers.maybe(() => '07700 900456', { probability: 0.4 }) || null,
 
     moved_in_date: faker.helpers.maybe(() => faker.date.past({ years: 10 }).toISOString().split('T')[0], { probability: 0.6 }) || null,
     address_id: faker.helpers.maybe(() => faker.number.int({ min: 1, max: 1000 }), { probability: 0.8 }) || null,

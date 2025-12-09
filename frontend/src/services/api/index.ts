@@ -26,3 +26,6 @@ export * from './clientGroupProductOwners';
 
 // Product Owner Status Update API
 export * from './updateProductOwner';
+
+// Product Owner Delete API
+export * from './deleteProductOwner';

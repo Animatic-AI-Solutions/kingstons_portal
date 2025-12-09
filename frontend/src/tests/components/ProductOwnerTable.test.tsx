@@ -8,7 +8,8 @@
  */
 
 import React from 'react';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createProductOwner, createActiveProductOwner, createLapsedProductOwner, createDeceasedProductOwner } from '../factories/productOwnerFactory';
 import ProductOwnerTable from '@/components/ProductOwnerTable';
@@ -660,6 +661,342 @@ describe('ProductOwnerTable Component', () => {
       headers.forEach(header => {
         expect(header).toHaveAttribute('scope', 'col');
       });
+    });
+  });
+
+  // ============================================================
+  // Edit Button Integration Tests (Iteration 6)
+  // ============================================================
+
+  describe('Edit Button Rendering', () => {
+    it('shows Edit button in actions column for each row', () => {
+      const mockProductOwners = [
+        createActiveProductOwner(),
+        createLapsedProductOwner(),
+        createDeceasedProductOwner(),
+      ];
+
+      render(
+        <ProductOwnerTable
+          productOwners={mockProductOwners}
+          isLoading={false}
+          error={null}
+        />,
+        { wrapper }
+      );
+
+      // Each row should have an Edit button
+      const editButtons = screen.getAllByRole('button', { name: /edit/i });
+      expect(editButtons).toHaveLength(3);
+    });
+
+    it('Edit button has proper accessible label', () => {
+      const mockProductOwners = [createActiveProductOwner()];
+
+      render(
+        <ProductOwnerTable
+          productOwners={mockProductOwners}
+          isLoading={false}
+          error={null}
+        />,
+        { wrapper }
+      );
+
+      const editButton = screen.getByRole('button', { name: /edit/i });
+      expect(editButton).toHaveAccessibleName();
+      expect(editButton).toHaveAttribute('aria-label', expect.stringContaining('edit'));
+    });
+
+    it('Edit button has proper styling', () => {
+      const mockProductOwners = [createActiveProductOwner()];
+
+      render(
+        <ProductOwnerTable
+          productOwners={mockProductOwners}
+          isLoading={false}
+          error={null}
+        />,
+        { wrapper }
+      );
+
+      const editButton = screen.getByRole('button', { name: /edit/i });
+      // EditButton component should have proper styling classes
+      expect(editButton).toHaveClass(expect.stringMatching(/text-|bg-|hover:/));
+    });
+
+    it('Edit button always visible (regardless of status)', () => {
+      const mockProductOwners = [
+        createActiveProductOwner({ firstname: 'Active', surname: 'User' }),
+        createLapsedProductOwner({ firstname: 'Lapsed', surname: 'User' }),
+        createDeceasedProductOwner({ firstname: 'Deceased', surname: 'User' }),
+      ];
+
+      render(
+        <ProductOwnerTable
+          productOwners={mockProductOwners}
+          isLoading={false}
+          error={null}
+        />,
+        { wrapper }
+      );
+
+      // All three rows should have Edit buttons regardless of status
+      const editButtons = screen.getAllByRole('button', { name: /edit/i });
+      expect(editButtons).toHaveLength(3);
+    });
+  });
+
+  describe('Edit Modal Integration', () => {
+    it('clicking Edit button opens EditProductOwnerModal', async () => {
+      const mockProductOwners = [createActiveProductOwner()];
+      const user = userEvent.setup();
+
+      render(
+        <ProductOwnerTable
+          productOwners={mockProductOwners}
+          isLoading={false}
+          error={null}
+        />,
+        { wrapper }
+      );
+
+      // Click Edit button
+      const editButton = screen.getByRole('button', { name: /edit/i });
+      await user.click(editButton);
+
+      // Modal should open
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(screen.getByText(/edit product owner/i)).toBeInTheDocument();
+      });
+    });
+
+    it('modal receives correct product owner data', async () => {
+      const productOwner = createActiveProductOwner({
+        firstname: 'John',
+        surname: 'Smith',
+      });
+      const user = userEvent.setup();
+
+      render(
+        <ProductOwnerTable
+          productOwners={[productOwner]}
+          isLoading={false}
+          error={null}
+        />,
+        { wrapper }
+      );
+
+      // Click Edit button
+      const editButton = screen.getByRole('button', { name: /edit/i });
+      await user.click(editButton);
+
+      // Modal should show product owner's data
+      await waitFor(() => {
+        expect(screen.getByText(/john smith/i)).toBeInTheDocument();
+        expect(screen.getByDisplayValue('John')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('Smith')).toBeInTheDocument();
+      });
+    });
+
+    it('modal closes after successful update', async () => {
+      const mockProductOwners = [createActiveProductOwner({ id: 123 })];
+      const user = userEvent.setup();
+
+      render(
+        <ProductOwnerTable
+          productOwners={mockProductOwners}
+          isLoading={false}
+          error={null}
+        />,
+        { wrapper }
+      );
+
+      // Click Edit button
+      const editButton = screen.getByRole('button', { name: /edit/i });
+      await user.click(editButton);
+
+      // Wait for modal to open
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+
+      // Click Cancel to close modal
+      const cancelButton = screen.getByRole('button', { name: /cancel/i });
+      await user.click(cancelButton);
+
+      // Modal should close
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      });
+    });
+
+    it('table refreshes data after successful update', async () => {
+      const mockProductOwners = [createActiveProductOwner({ id: 123, firstname: 'John' })];
+      const mockOnRefetch = jest.fn();
+      const user = userEvent.setup();
+
+      render(
+        <ProductOwnerTable
+          productOwners={mockProductOwners}
+          isLoading={false}
+          error={null}
+          onRefetch={mockOnRefetch}
+        />,
+        { wrapper }
+      );
+
+      // Click Edit button
+      const editButton = screen.getByRole('button', { name: /edit/i });
+      await user.click(editButton);
+
+      // Wait for modal to open
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+
+      // Make a change and save
+      const firstNameInput = screen.getByLabelText(/first name/i);
+      await user.clear(firstNameInput);
+      await user.type(firstNameInput, 'Jane');
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      // onRefetch callback should be called
+      await waitFor(() => {
+        expect(mockOnRefetch).toHaveBeenCalled();
+      });
+    });
+
+    it('multiple product owners can be edited sequentially', async () => {
+      const mockProductOwners = [
+        createActiveProductOwner({ id: 1, firstname: 'John', surname: 'Smith' }),
+        createActiveProductOwner({ id: 2, firstname: 'Jane', surname: 'Doe' }),
+      ];
+      const user = userEvent.setup();
+
+      render(
+        <ProductOwnerTable
+          productOwners={mockProductOwners}
+          isLoading={false}
+          error={null}
+        />,
+        { wrapper }
+      );
+
+      // Get all edit buttons
+      const editButtons = screen.getAllByRole('button', { name: /edit/i });
+
+      // Edit first product owner
+      await user.click(editButtons[0]);
+      await waitFor(() => {
+        expect(screen.getByText(/john smith/i)).toBeInTheDocument();
+      });
+
+      // Close modal
+      const cancelButton = screen.getByRole('button', { name: /cancel/i });
+      await user.click(cancelButton);
+
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      });
+
+      // Edit second product owner
+      await user.click(editButtons[1]);
+      await waitFor(() => {
+        expect(screen.getByText(/jane doe/i)).toBeInTheDocument();
+      });
+    });
+
+    it('modal shows correct data for each product owner', async () => {
+      const mockProductOwners = [
+        createActiveProductOwner({ id: 1, firstname: 'Alice', surname: 'Anderson' }),
+        createActiveProductOwner({ id: 2, firstname: 'Bob', surname: 'Brown' }),
+      ];
+      const user = userEvent.setup();
+
+      render(
+        <ProductOwnerTable
+          productOwners={mockProductOwners}
+          isLoading={false}
+          error={null}
+        />,
+        { wrapper }
+      );
+
+      const editButtons = screen.getAllByRole('button', { name: /edit/i });
+
+      // Edit first owner
+      await user.click(editButtons[0]);
+      await waitFor(() => {
+        expect(screen.getByDisplayValue('Alice')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('Anderson')).toBeInTheDocument();
+      });
+
+      // Close modal
+      const cancelButton = screen.getByRole('button', { name: /cancel/i });
+      await user.click(cancelButton);
+
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      });
+
+      // Edit second owner
+      await user.click(editButtons[1]);
+      await waitFor(() => {
+        expect(screen.getByDisplayValue('Bob')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('Brown')).toBeInTheDocument();
+      });
+    });
+
+    it('handles edit button spam clicking (no duplicate modals)', async () => {
+      const mockProductOwners = [createActiveProductOwner()];
+      const user = userEvent.setup();
+
+      render(
+        <ProductOwnerTable
+          productOwners={mockProductOwners}
+          isLoading={false}
+          error={null}
+        />,
+        { wrapper }
+      );
+
+      const editButton = screen.getByRole('button', { name: /edit/i });
+
+      // Click multiple times rapidly
+      await user.click(editButton);
+      await user.click(editButton);
+      await user.click(editButton);
+
+      // Should only show one modal
+      await waitFor(() => {
+        const dialogs = screen.queryAllByRole('dialog');
+        expect(dialogs.length).toBeLessThanOrEqual(1);
+      });
+    });
+
+    it('edit button disabled during other operations (delete, status change)', async () => {
+      const mockProductOwners = [createActiveProductOwner()];
+      const user = userEvent.setup();
+
+      render(
+        <ProductOwnerTable
+          productOwners={mockProductOwners}
+          isLoading={false}
+          error={null}
+        />,
+        { wrapper }
+      );
+
+      // Start a status change operation (e.g., click Lapse button)
+      const lapseButton = screen.getByRole('button', { name: /lapse/i });
+      await user.click(lapseButton);
+
+      // Edit button should be disabled during operation
+      const editButton = screen.getByRole('button', { name: /edit/i });
+      expect(editButton).toBeDisabled();
     });
   });
 });

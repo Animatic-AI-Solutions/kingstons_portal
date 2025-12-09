@@ -26,11 +26,19 @@ import {
   createDeceasedProductOwner,
 } from '../factories/productOwnerFactory';
 import ProductOwnerActions from '@/components/ProductOwnerActions';
-import * as api from '@/services/api';
+import { updateProductOwnerStatus, deleteProductOwner } from '@/services/api';
 import toast from 'react-hot-toast';
 
 // Mock the API module
-jest.mock('@/services/api');
+jest.mock('@/services/api', () => ({
+  updateProductOwnerStatus: jest.fn(),
+  deleteProductOwner: jest.fn(),
+}));
+
+// Mock error handling utilities
+jest.mock('@/utils/errorHandling', () => ({
+  formatApiError: jest.fn((error) => error.response?.data?.detail || error.message || 'An error occurred'),
+}));
 
 // Mock notification system (react-hot-toast)
 jest.mock('react-hot-toast', () => ({
@@ -200,7 +208,7 @@ describe('ProductOwnerActions Component', () => {
       const mockUpdateStatus = jest.fn().mockResolvedValue({
         data: { ...activeProductOwner, status: 'lapsed' },
       });
-      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+      (updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -224,7 +232,7 @@ describe('ProductOwnerActions Component', () => {
       const mockUpdateStatus = jest.fn().mockResolvedValue({
         data: { ...activeProductOwner, status: 'deceased' },
       });
-      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+      (updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -248,7 +256,7 @@ describe('ProductOwnerActions Component', () => {
       const mockUpdateStatus = jest.fn().mockResolvedValue({
         data: { ...lapsedProductOwner, status: 'active' },
       });
-      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+      (updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -283,7 +291,7 @@ describe('ProductOwnerActions Component', () => {
           resolvePromise = resolve;
         });
       });
-      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+      (updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -317,7 +325,7 @@ describe('ProductOwnerActions Component', () => {
           resolvePromise = resolve;
         });
       });
-      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+      (updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -351,7 +359,7 @@ describe('ProductOwnerActions Component', () => {
           resolvePromise = resolve;
         });
       });
-      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+      (updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -386,7 +394,7 @@ describe('ProductOwnerActions Component', () => {
       const mockUpdateStatus = jest.fn().mockResolvedValue({
         data: { ...activeProductOwner, status: 'lapsed' },
       });
-      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+      (updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -412,7 +420,7 @@ describe('ProductOwnerActions Component', () => {
       const mockUpdateStatus = jest.fn().mockResolvedValue({
         data: { ...activeProductOwner, status: 'deceased' },
       });
-      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+      (updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -438,7 +446,7 @@ describe('ProductOwnerActions Component', () => {
       const mockUpdateStatus = jest.fn().mockResolvedValue({
         data: { ...lapsedProductOwner, status: 'active' },
       });
-      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+      (updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -464,7 +472,7 @@ describe('ProductOwnerActions Component', () => {
       const mockUpdateStatus = jest.fn().mockResolvedValue({
         data: { ...activeProductOwner, status: 'lapsed' },
       });
-      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+      (updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -492,10 +500,10 @@ describe('ProductOwnerActions Component', () => {
     it('displays error notification on failed lapse', async () => {
       const user = userEvent.setup();
       const activeProductOwner = createActiveProductOwner({ id: 123 });
-      const mockUpdateStatus = jest.fn().mockRejectedValue(
+
+      (updateProductOwnerStatus as jest.Mock).mockRejectedValue(
         new Error('Failed to update status')
       );
-      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -510,7 +518,7 @@ describe('ProductOwnerActions Component', () => {
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
-          expect.stringContaining('failed')
+          expect.stringContaining('Failed')
         );
       });
     });
@@ -518,10 +526,10 @@ describe('ProductOwnerActions Component', () => {
     it('displays error notification on failed deceased', async () => {
       const user = userEvent.setup();
       const activeProductOwner = createActiveProductOwner({ id: 456 });
-      const mockUpdateStatus = jest.fn().mockRejectedValue(
+
+      (updateProductOwnerStatus as jest.Mock).mockRejectedValue(
         new Error('Failed to update status')
       );
-      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -536,7 +544,7 @@ describe('ProductOwnerActions Component', () => {
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
-          expect.stringContaining('failed')
+          expect.stringContaining('Failed')
         );
       });
     });
@@ -544,10 +552,10 @@ describe('ProductOwnerActions Component', () => {
     it('displays error notification on failed reactivate', async () => {
       const user = userEvent.setup();
       const lapsedProductOwner = createLapsedProductOwner({ id: 789 });
-      const mockUpdateStatus = jest.fn().mockRejectedValue(
+
+      (updateProductOwnerStatus as jest.Mock).mockRejectedValue(
         new Error('Failed to update status')
       );
-      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -562,7 +570,7 @@ describe('ProductOwnerActions Component', () => {
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
-          expect.stringContaining('failed')
+          expect.stringContaining('Failed')
         );
       });
     });
@@ -588,7 +596,7 @@ describe('ProductOwnerActions Component', () => {
           resolvePromise = resolve;
         });
       });
-      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+      (updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -621,7 +629,7 @@ describe('ProductOwnerActions Component', () => {
       const mockUpdateStatus = jest.fn().mockRejectedValue(
         new Error('Network error')
       );
-      (api.updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
+      (updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -639,6 +647,553 @@ describe('ProductOwnerActions Component', () => {
         // Button should be re-enabled after error
         expect(lapseButton).not.toBeDisabled();
         expect(toast.error).toHaveBeenCalled();
+      });
+    });
+  });
+
+  // =================================================================
+  // Delete Functionality Tests (Iteration 5)
+  // =================================================================
+
+  describe('Delete Functionality', () => {
+    describe('Delete Button Rendering', () => {
+      it('shows Delete button for lapsed product owners', () => {
+        const lapsedProductOwner = createLapsedProductOwner();
+
+        render(
+          <ProductOwnerActions
+            productOwner={lapsedProductOwner}
+            onStatusChange={mockOnStatusChange}
+          />,
+          { wrapper }
+        );
+
+        // Lapsed product owners should have a Delete button
+        expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
+      });
+
+      it('shows Delete button for deceased product owners', () => {
+        const deceasedProductOwner = createDeceasedProductOwner();
+
+        render(
+          <ProductOwnerActions
+            productOwner={deceasedProductOwner}
+            onStatusChange={mockOnStatusChange}
+          />,
+          { wrapper }
+        );
+
+        // Deceased product owners should have a Delete button
+        expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
+      });
+
+      it('does not show Delete button for active product owners', () => {
+        const activeProductOwner = createActiveProductOwner();
+
+        render(
+          <ProductOwnerActions
+            productOwner={activeProductOwner}
+            onStatusChange={mockOnStatusChange}
+          />,
+          { wrapper }
+        );
+
+        // Active product owners should NOT have a Delete button visible
+        expect(screen.queryByRole('button', { name: /delete/i })).not.toBeInTheDocument();
+      });
+    });
+
+    describe('Delete Flow', () => {
+      it('opens DeleteConfirmationModal when Delete button clicked', async () => {
+        const user = userEvent.setup();
+        const lapsedProductOwner = createLapsedProductOwner({ id: 123 });
+
+        render(
+          <ProductOwnerActions
+            productOwner={lapsedProductOwner}
+            onStatusChange={mockOnStatusChange}
+          />,
+          { wrapper }
+        );
+
+        const deleteButton = screen.getByRole('button', { name: /delete/i });
+        await user.click(deleteButton);
+
+        // DeleteConfirmationModal should open
+        await waitFor(() => {
+          expect(screen.getByRole('dialog')).toBeInTheDocument();
+        });
+      });
+
+      it('calls deleteProductOwner API when confirmed', async () => {
+        const user = userEvent.setup();
+        const lapsedProductOwner = createLapsedProductOwner({ id: 456 });
+
+        // Set up mock return value
+        (deleteProductOwner as jest.Mock).mockResolvedValue({ status: 204 });
+
+        render(
+          <ProductOwnerActions
+            productOwner={lapsedProductOwner}
+            onStatusChange={mockOnStatusChange}
+          />,
+          { wrapper }
+        );
+
+        // Click Delete button to open modal
+        const deleteButton = screen.getByRole('button', { name: /delete/i });
+        await user.click(deleteButton);
+
+        // Confirm deletion in modal
+        await waitFor(() => {
+          expect(screen.getByRole('dialog')).toBeInTheDocument();
+        });
+
+        const confirmButton = screen.getByRole('button', { name: /delete|confirm/i });
+        await user.click(confirmButton);
+
+        // API should be called
+        await waitFor(() => {
+          expect(deleteProductOwner).toHaveBeenCalledWith(456);
+        });
+      });
+
+      it('shows success toast on successful deletion', async () => {
+        const user = userEvent.setup();
+        const lapsedProductOwner = createLapsedProductOwner({ id: 789 });
+        const mockDeleteProductOwner = jest.fn().mockResolvedValue({ status: 204 });
+
+        jest.mock('@/services/api', () => ({
+          updateProductOwnerStatus: jest.fn(),
+          deleteProductOwner: mockDeleteProductOwner,
+        }));
+
+        render(
+          <ProductOwnerActions
+            productOwner={lapsedProductOwner}
+            onStatusChange={mockOnStatusChange}
+          />,
+          { wrapper }
+        );
+
+        // Click Delete button and confirm
+        const deleteButton = screen.getByRole('button', { name: /delete/i });
+        await user.click(deleteButton);
+
+        await waitFor(() => {
+          expect(screen.getByRole('dialog')).toBeInTheDocument();
+        });
+
+        const confirmButton = screen.getByRole('button', { name: /delete|confirm/i });
+        await user.click(confirmButton);
+
+        // Success toast should be shown
+        await waitFor(() => {
+          expect(toast.success).toHaveBeenCalledWith(
+            expect.stringContaining('deleted')
+          );
+        });
+      });
+
+      it('calls onStatusChange callback after deletion', async () => {
+        const user = userEvent.setup();
+        const lapsedProductOwner = createLapsedProductOwner({ id: 101 });
+        const mockDeleteProductOwner = jest.fn().mockResolvedValue({ status: 204 });
+
+        jest.mock('@/services/api', () => ({
+          updateProductOwnerStatus: jest.fn(),
+          deleteProductOwner: mockDeleteProductOwner,
+        }));
+
+        render(
+          <ProductOwnerActions
+            productOwner={lapsedProductOwner}
+            onStatusChange={mockOnStatusChange}
+          />,
+          { wrapper }
+        );
+
+        // Click Delete button and confirm
+        const deleteButton = screen.getByRole('button', { name: /delete/i });
+        await user.click(deleteButton);
+
+        await waitFor(() => {
+          expect(screen.getByRole('dialog')).toBeInTheDocument();
+        });
+
+        const confirmButton = screen.getByRole('button', { name: /delete|confirm/i });
+        await user.click(confirmButton);
+
+        // onStatusChange should be called
+        await waitFor(() => {
+          expect(mockOnStatusChange).toHaveBeenCalled();
+        });
+      });
+
+      it('closes modal after successful deletion', async () => {
+        const user = userEvent.setup();
+        const lapsedProductOwner = createLapsedProductOwner({ id: 202 });
+        const mockDeleteProductOwner = jest.fn().mockResolvedValue({ status: 204 });
+
+        jest.mock('@/services/api', () => ({
+          updateProductOwnerStatus: jest.fn(),
+          deleteProductOwner: mockDeleteProductOwner,
+        }));
+
+        render(
+          <ProductOwnerActions
+            productOwner={lapsedProductOwner}
+            onStatusChange={mockOnStatusChange}
+          />,
+          { wrapper }
+        );
+
+        // Click Delete button and confirm
+        const deleteButton = screen.getByRole('button', { name: /delete/i });
+        await user.click(deleteButton);
+
+        await waitFor(() => {
+          expect(screen.getByRole('dialog')).toBeInTheDocument();
+        });
+
+        const confirmButton = screen.getByRole('button', { name: /delete|confirm/i });
+        await user.click(confirmButton);
+
+        // Modal should close after successful deletion
+        await waitFor(() => {
+          expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        });
+      });
+    });
+
+    describe('Delete Cancellation', () => {
+      it('closes modal when Cancel clicked', async () => {
+        const user = userEvent.setup();
+        const lapsedProductOwner = createLapsedProductOwner();
+
+        render(
+          <ProductOwnerActions
+            productOwner={lapsedProductOwner}
+            onStatusChange={mockOnStatusChange}
+          />,
+          { wrapper }
+        );
+
+        // Click Delete button to open modal
+        const deleteButton = screen.getByRole('button', { name: /delete/i });
+        await user.click(deleteButton);
+
+        await waitFor(() => {
+          expect(screen.getByRole('dialog')).toBeInTheDocument();
+        });
+
+        // Click Cancel button
+        const cancelButton = screen.getByRole('button', { name: /cancel/i });
+        await user.click(cancelButton);
+
+        // Modal should close
+        await waitFor(() => {
+          expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        });
+      });
+
+      it('does not call API when cancelled', async () => {
+        const user = userEvent.setup();
+        const lapsedProductOwner = createLapsedProductOwner({ id: 303 });
+        const mockDeleteProductOwner = jest.fn();
+
+        jest.mock('@/services/api', () => ({
+          updateProductOwnerStatus: jest.fn(),
+          deleteProductOwner: mockDeleteProductOwner,
+        }));
+
+        render(
+          <ProductOwnerActions
+            productOwner={lapsedProductOwner}
+            onStatusChange={mockOnStatusChange}
+          />,
+          { wrapper }
+        );
+
+        // Click Delete button and cancel
+        const deleteButton = screen.getByRole('button', { name: /delete/i });
+        await user.click(deleteButton);
+
+        await waitFor(() => {
+          expect(screen.getByRole('dialog')).toBeInTheDocument();
+        });
+
+        const cancelButton = screen.getByRole('button', { name: /cancel/i });
+        await user.click(cancelButton);
+
+        // API should not be called
+        expect(mockDeleteProductOwner).not.toHaveBeenCalled();
+      });
+
+      it('does not show success toast when cancelled', async () => {
+        const user = userEvent.setup();
+        const lapsedProductOwner = createLapsedProductOwner();
+
+        render(
+          <ProductOwnerActions
+            productOwner={lapsedProductOwner}
+            onStatusChange={mockOnStatusChange}
+          />,
+          { wrapper }
+        );
+
+        // Click Delete button and cancel
+        const deleteButton = screen.getByRole('button', { name: /delete/i });
+        await user.click(deleteButton);
+
+        await waitFor(() => {
+          expect(screen.getByRole('dialog')).toBeInTheDocument();
+        });
+
+        const cancelButton = screen.getByRole('button', { name: /cancel/i });
+        await user.click(cancelButton);
+
+        // Success toast should not be shown
+        expect(toast.success).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('Delete Error Handling', () => {
+      it('shows error toast on API failure', async () => {
+        const user = userEvent.setup();
+        const lapsedProductOwner = createLapsedProductOwner({ id: 404 });
+
+        // Set up mock to reject
+        (deleteProductOwner as jest.Mock).mockRejectedValue(
+          new Error('Failed to delete product owner')
+        );
+
+        render(
+          <ProductOwnerActions
+            productOwner={lapsedProductOwner}
+            onStatusChange={mockOnStatusChange}
+          />,
+          { wrapper }
+        );
+
+        // Click Delete button and confirm
+        const deleteButton = screen.getByRole('button', { name: /delete/i });
+        await user.click(deleteButton);
+
+        await waitFor(() => {
+          expect(screen.getByRole('dialog')).toBeInTheDocument();
+        });
+
+        const confirmButton = screen.getByRole('button', { name: /delete|confirm/i });
+        await user.click(confirmButton);
+
+        // Error toast should be shown
+        await waitFor(() => {
+          expect(toast.error).toHaveBeenCalledWith(
+            expect.stringContaining('Failed')
+          );
+        });
+      });
+
+      it('keeps modal open on error', async () => {
+        const user = userEvent.setup();
+        const lapsedProductOwner = createLapsedProductOwner({ id: 505 });
+
+        // Set up mock to reject
+        (deleteProductOwner as jest.Mock).mockRejectedValue(
+          new Error('Network error')
+        );
+
+        render(
+          <ProductOwnerActions
+            productOwner={lapsedProductOwner}
+            onStatusChange={mockOnStatusChange}
+          />,
+          { wrapper }
+        );
+
+        // Click Delete button and confirm
+        const deleteButton = screen.getByRole('button', { name: /delete/i });
+        await user.click(deleteButton);
+
+        await waitFor(() => {
+          expect(screen.getByRole('dialog')).toBeInTheDocument();
+        });
+
+        const confirmButton = screen.getByRole('button', { name: /delete|confirm/i });
+        await user.click(confirmButton);
+
+        // Modal should remain open after error
+        await waitFor(() => {
+          expect(toast.error).toHaveBeenCalled();
+        });
+
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+
+      it('allows retry after error', async () => {
+        const user = userEvent.setup();
+        const lapsedProductOwner = createLapsedProductOwner({ id: 606 });
+
+        // Set up mock to fail once then succeed
+        (deleteProductOwner as jest.Mock)
+          .mockRejectedValueOnce(new Error('Network error'))
+          .mockResolvedValueOnce({ status: 204 });
+
+        render(
+          <ProductOwnerActions
+            productOwner={lapsedProductOwner}
+            onStatusChange={mockOnStatusChange}
+          />,
+          { wrapper }
+        );
+
+        // First attempt - fails
+        const deleteButton = screen.getByRole('button', { name: /delete/i });
+        await user.click(deleteButton);
+
+        await waitFor(() => {
+          expect(screen.getByRole('dialog')).toBeInTheDocument();
+        });
+
+        let confirmButton = screen.getByRole('button', { name: /delete|confirm/i });
+        await user.click(confirmButton);
+
+        await waitFor(() => {
+          expect(toast.error).toHaveBeenCalled();
+        });
+
+        // Second attempt - succeeds
+        confirmButton = screen.getByRole('button', { name: /delete|confirm/i });
+        await user.click(confirmButton);
+
+        await waitFor(() => {
+          expect(deleteProductOwner).toHaveBeenCalledTimes(2);
+          expect(toast.success).toHaveBeenCalled();
+        });
+      });
+
+      it('handles specific error messages (404 not found)', async () => {
+        const user = userEvent.setup();
+        const lapsedProductOwner = createLapsedProductOwner({ id: 707 });
+
+        // Set up mock to reject with 404 error
+        (deleteProductOwner as jest.Mock).mockRejectedValue({
+          response: {
+            status: 404,
+            data: {
+              detail: 'Product owner not found',
+            },
+          },
+        });
+
+        render(
+          <ProductOwnerActions
+            productOwner={lapsedProductOwner}
+            onStatusChange={mockOnStatusChange}
+          />,
+          { wrapper }
+        );
+
+        // Click Delete button and confirm
+        const deleteButton = screen.getByRole('button', { name: /delete/i });
+        await user.click(deleteButton);
+
+        await waitFor(() => {
+          expect(screen.getByRole('dialog')).toBeInTheDocument();
+        });
+
+        const confirmButton = screen.getByRole('button', { name: /delete|confirm/i });
+        await user.click(confirmButton);
+
+        // Error toast should show specific message
+        await waitFor(() => {
+          expect(toast.error).toHaveBeenCalledWith(
+            expect.stringContaining('not found')
+          );
+        });
+      });
+
+      it('handles specific error messages (403 forbidden)', async () => {
+        const user = userEvent.setup();
+        const lapsedProductOwner = createLapsedProductOwner({ id: 808 });
+
+        // Set up mock to reject with 403 error
+        (deleteProductOwner as jest.Mock).mockRejectedValue({
+          response: {
+            status: 403,
+            data: {
+              detail: 'No permission to delete',
+            },
+          },
+        });
+
+        render(
+          <ProductOwnerActions
+            productOwner={lapsedProductOwner}
+            onStatusChange={mockOnStatusChange}
+          />,
+          { wrapper }
+        );
+
+        // Click Delete button and confirm
+        const deleteButton = screen.getByRole('button', { name: /delete/i });
+        await user.click(deleteButton);
+
+        await waitFor(() => {
+          expect(screen.getByRole('dialog')).toBeInTheDocument();
+        });
+
+        const confirmButton = screen.getByRole('button', { name: /delete|confirm/i });
+        await user.click(confirmButton);
+
+        // Error toast should show specific message
+        await waitFor(() => {
+          expect(toast.error).toHaveBeenCalledWith(
+            expect.stringContaining('permission')
+          );
+        });
+      });
+
+      it('handles specific error messages (409 conflict)', async () => {
+        const user = userEvent.setup();
+        const lapsedProductOwner = createLapsedProductOwner({ id: 909 });
+
+        // Set up mock to reject with 409 error
+        (deleteProductOwner as jest.Mock).mockRejectedValue({
+          response: {
+            status: 409,
+            data: {
+              detail: 'Cannot delete - referenced by other records',
+            },
+          },
+        });
+
+        render(
+          <ProductOwnerActions
+            productOwner={lapsedProductOwner}
+            onStatusChange={mockOnStatusChange}
+          />,
+          { wrapper }
+        );
+
+        // Click Delete button and confirm
+        const deleteButton = screen.getByRole('button', { name: /delete/i });
+        await user.click(deleteButton);
+
+        await waitFor(() => {
+          expect(screen.getByRole('dialog')).toBeInTheDocument();
+        });
+
+        const confirmButton = screen.getByRole('button', { name: /delete|confirm/i });
+        await user.click(confirmButton);
+
+        // Error toast should show specific message
+        await waitFor(() => {
+          expect(toast.error).toHaveBeenCalledWith(
+            expect.stringContaining('Cannot delete')
+          );
+        });
       });
     });
   });

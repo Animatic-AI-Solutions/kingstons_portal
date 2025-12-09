@@ -11,7 +11,11 @@
       "Bash(npx eslint:*)",
       "Bash(dir \"C:\\Users\\jacob\\Documents\\kingstons_portal\\frontend\\src\\components\" /B /A)",
       "Bash(dir \"C:\\Users\\jacob\\Documents\\kingstons_portal\\frontend\\src\\pages\\ClientGroupSuite\\tabs\" /B /A)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(timeout 120 npm test:*)",
+      "Bash(Select-String \"●\")",
+      "Bash(Select-Object -First 35)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []
