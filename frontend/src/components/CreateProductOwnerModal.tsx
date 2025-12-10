@@ -175,6 +175,8 @@ const CreateProductOwnerModal: React.FC<CreateProductOwnerModalProps> = ({
       onClose={handleClose}
       title={MODAL_TEXT.TITLE}
       description={MODAL_TEXT.SUBTITLE}
+      titleId="create-product-owner-title"
+      descriptionId="create-product-owner-description"
     >
       <EditProductOwnerForm
         mode="create"

@@ -218,8 +218,6 @@ const StatusBadge: React.FC<StatusBadgeProps> = memo(({ status, className = '' }
 
   return (
     <span
-      role="status"
-      aria-label={`Status: ${config.text}`}
       className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${config.bgColor} ${config.textColor} ${className}`}
     >
       {/* Status icon for visual indication */}
@@ -230,7 +228,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = memo(({ status, className = '' }
       />
 
       {/* Status text label */}
-      <span className="text-sm font-medium">{config.text}</span>
+      <span className="text-sm font-medium" aria-label={`Status: ${config.text}`}>{config.text}</span>
     </span>
   );
 });

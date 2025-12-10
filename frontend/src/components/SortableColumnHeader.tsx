@@ -229,10 +229,10 @@ const SortableColumnHeader: React.FC<SortableColumnHeaderProps> = ({
         type="button"
         onClick={handleClick}
         onKeyDown={handleKeyDown}
-        aria-sort={ariaSortValue}
         aria-label={ariaLabel}
         className={`
           flex items-center gap-1
+          h-11 min-w-[44px]
           hover:text-gray-700
           focus:outline-none
           focus:ring-2

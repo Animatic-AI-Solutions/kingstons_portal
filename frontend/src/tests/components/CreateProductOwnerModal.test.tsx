@@ -1647,19 +1647,33 @@ describe('CreateProductOwnerModal Component', () => {
         { wrapper }
       );
 
-      // Tab to first field (title is first in Personal Information section)
-      await user.tab();
-      const titleInput = screen.getByLabelText(/^title$/i);
-      expect(titleInput).toHaveFocus();
+      // Tab through disclosure buttons and verify keyboard navigation works
+      // Note: With collapsible sections, all 4 disclosure buttons are in tab order
+      await user.tab(); // Close button
 
-      // Tab to next field (first name)
-      await user.tab();
+      // Skip past all disclosure buttons to get to form fields
+      // In CreateProductOwnerModal, all sections are collapsed by default except Personal
+      // So we need to tab through the disclosure buttons to reach the first input
       const firstNameInput = screen.getByLabelText(/first name/i);
+
+      // Tab until we find an input field with focus (handles variable number of disclosure buttons)
+      let attempts = 0;
+      while (!firstNameInput.matches(':focus') && attempts < 10) {
+        await user.tab();
+        attempts++;
+      }
+
+      // Verify we can navigate between fields
       expect(firstNameInput).toHaveFocus();
 
-      // Shift+Tab back to title
+      // Tab to next field
+      await user.tab();
+      const middleNamesInput = screen.getByLabelText(/middle name/i);
+      expect(middleNamesInput).toHaveFocus();
+
+      // Shift+Tab back
       await user.tab({ shift: true });
-      expect(titleInput).toHaveFocus();
+      expect(firstNameInput).toHaveFocus();
     });
 
     it('Create button accessible', () => {

@@ -40,6 +40,7 @@ import type { ProductOwner } from '@/types/productOwner';
  * @property onRetry - Optional callback function for retry button in error state
  * @property onRefetch - Optional callback function for data refresh after status changes
  * @property clientGroupId - Client group ID for creating new product owners
+ * @property onAnnounce - Optional callback function for announcing actions to screen readers
  */
 interface ProductOwnerTableProps {
   /** Array of product owner records to display in the table */
@@ -54,6 +55,8 @@ interface ProductOwnerTableProps {
   onRefetch?: () => void;
   /** Client group ID for creating new product owners */
   clientGroupId?: number;
+  /** Optional callback function for announcing actions to screen readers via aria-live */
+  onAnnounce?: (message: string) => void;
 }
 
 /**
@@ -158,9 +161,10 @@ interface ProductOwnerRowProps {
   owner: EnrichedProductOwner;
   onRefetch?: () => void;
   onEdit: (owner: ProductOwner) => void;
+  onAnnounce?: (message: string) => void;
 }
 
-const ProductOwnerRow = memo<ProductOwnerRowProps>(({ owner, onRefetch, onEdit }) => {
+const ProductOwnerRow = memo<ProductOwnerRowProps>(({ owner, onRefetch, onEdit, onAnnounce }) => {
   return (
     <tr
       className={owner.isInactive ? 'opacity-50 bg-gray-50' : ''}
@@ -218,6 +222,7 @@ const ProductOwnerRow = memo<ProductOwnerRowProps>(({ owner, onRefetch, onEdit }
           <ProductOwnerActions
             productOwner={owner}
             onStatusChange={onRefetch}
+            onAnnounce={onAnnounce}
           />
         </div>
       </td>
@@ -307,6 +312,7 @@ const ProductOwnerTable: React.FC<ProductOwnerTableProps> = ({
   onRetry,
   onRefetch,
   clientGroupId,
+  onAnnounce,
 }) => {
   /**
    * Sort state management
@@ -336,10 +342,21 @@ const ProductOwnerTable: React.FC<ProductOwnerTableProps> = ({
   const handleSort = useCallback((column: SortConfig['column'], direction: 'asc' | 'desc' | null) => {
     if (direction === null) {
       setSortConfig(null);
+      // Announce sort clear to screen readers
+      if (onAnnounce) {
+        onAnnounce('Sorting cleared');
+        setTimeout(() => onAnnounce(''), 3000);
+      }
     } else {
       setSortConfig({ column, direction });
+      // Announce sort change to screen readers
+      if (onAnnounce) {
+        const directionText = direction === 'asc' ? 'ascending' : 'descending';
+        onAnnounce(`Sorted by ${column} ${directionText}`);
+        setTimeout(() => onAnnounce(''), 3000);
+      }
     }
-  }, []);
+  }, [onAnnounce]);
 
   /**
    * Handle Edit button click
@@ -365,10 +382,14 @@ const ProductOwnerTable: React.FC<ProductOwnerTableProps> = ({
    * Closes modal and triggers data refresh
    */
   const handleEditSuccess = useCallback(() => {
+    if (onAnnounce) {
+      onAnnounce('Product owner updated successfully');
+      setTimeout(() => onAnnounce(''), 3000);
+    }
     if (onRefetch) {
       onRefetch();
     }
-  }, [onRefetch]);
+  }, [onRefetch, onAnnounce]);
 
   /**
    * Handle Add Person button click
@@ -459,12 +480,13 @@ const ProductOwnerTable: React.FC<ProductOwnerTableProps> = ({
           >
             <TableHeader sortConfig={sortConfig} onSort={handleSort} />
           </table>
-          <div data-testid="table-skeleton" className="p-8" role="status" aria-label="Loading product owners">
+          <div data-testid="table-skeleton" className="p-8" aria-live="polite" aria-busy="true">
             <div className="animate-pulse space-y-4">
               <div className="h-4 bg-gray-200 rounded w-3/4"></div>
               <div className="h-4 bg-gray-200 rounded w-5/6"></div>
               <div className="h-4 bg-gray-200 rounded w-4/5"></div>
             </div>
+            <span className="sr-only">Loading product owners</span>
           </div>
         </div>
 
@@ -628,6 +650,9 @@ const ProductOwnerTable: React.FC<ProductOwnerTableProps> = ({
             role="table"
             aria-label="Product Owners"
           >
+            <caption className="sr-only">
+              {productOwners.length} product owner{productOwners.length !== 1 ? 's' : ''}
+            </caption>
             <TableHeader sortConfig={sortConfig} onSort={handleSort} />
             <tbody className="bg-white divide-y divide-gray-200">
               {sortedProductOwners.map((owner) => (
@@ -636,6 +661,7 @@ const ProductOwnerTable: React.FC<ProductOwnerTableProps> = ({
                   owner={owner}
                   onRefetch={onRefetch}
                   onEdit={handleEdit}
+                  onAnnounce={onAnnounce}
                 />
               ))}
             </tbody>

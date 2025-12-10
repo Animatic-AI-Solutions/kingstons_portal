@@ -199,9 +199,21 @@
     @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
   }
   
-  /* Focus styles for keyboard navigation */
+  /* Focus styles for keyboard navigation - WCAG 2.1 AA compliant */
   *:focus-visible {
     @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+  }
+
+  /* Enhanced focus indicators for buttons, links, and inputs */
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  [role="button"]:focus-visible,
+  [role="tab"]:focus-visible {
+    outline: 3px solid #3b82f6 !important;
+    outline-offset: 2px !important;
   }
 
   /* Cash fund styling */

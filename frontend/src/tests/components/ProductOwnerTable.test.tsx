@@ -285,7 +285,8 @@ describe('ProductOwnerTable Component', () => {
       );
 
       // Check for StatusBadge with active status
-      const statusBadge = screen.getByRole('status', { name: /active/i });
+      const statusText = screen.getByText('Active');
+      const statusBadge = statusText.parentElement;
       expect(statusBadge).toBeInTheDocument();
       expect(statusBadge).toHaveClass('bg-green-100', 'text-green-800');
     });
@@ -303,7 +304,8 @@ describe('ProductOwnerTable Component', () => {
       );
 
       // Check for StatusBadge with lapsed status
-      const statusBadge = screen.getByRole('status', { name: /lapsed/i });
+      const statusText = screen.getByText('Lapsed');
+      const statusBadge = statusText.parentElement;
       expect(statusBadge).toBeInTheDocument();
       expect(statusBadge).toHaveClass('bg-orange-100', 'text-orange-800');
     });
@@ -321,7 +323,8 @@ describe('ProductOwnerTable Component', () => {
       );
 
       // Check for StatusBadge with deceased status
-      const statusBadge = screen.getByRole('status', { name: /deceased/i });
+      const statusText = screen.getByText('Deceased');
+      const statusBadge = statusText.parentElement;
       expect(statusBadge).toBeInTheDocument();
       expect(statusBadge).toHaveClass('bg-gray-100', 'text-gray-800');
     });
@@ -338,9 +341,10 @@ describe('ProductOwnerTable Component', () => {
         { wrapper }
       );
 
-      // Check for Edit and Delete buttons
+      // Check for Edit, Lapse, and Mark Deceased buttons (for active product owners)
       expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /lapse/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /mark product owner as deceased/i })).toBeInTheDocument();
     });
   });
 
@@ -501,12 +505,13 @@ describe('ProductOwnerTable Component', () => {
           productOwners={[]}
           isLoading={false}
           error={null}
+          clientGroupId={123}
         />,
         { wrapper }
       );
 
-      // Check for add button in empty state
-      expect(screen.getByRole('button', { name: /add product owner/i })).toBeInTheDocument();
+      // Check for add button in empty state (should show Add New Person button)
+      expect(screen.getByRole('button', { name: /add new person/i })).toBeInTheDocument();
     });
 
     it('hides empty state when product owners are present', () => {
@@ -700,7 +705,7 @@ describe('ProductOwnerTable Component', () => {
 
       const editButton = screen.getByRole('button', { name: /edit/i });
       expect(editButton).toHaveAccessibleName();
-      expect(editButton).toHaveAttribute('aria-label', expect.stringContaining('edit'));
+      expect(editButton).toHaveAttribute('aria-label', expect.stringMatching(/edit/i));
     });
 
     it('Edit button has proper styling', () => {
@@ -717,7 +722,7 @@ describe('ProductOwnerTable Component', () => {
 
       const editButton = screen.getByRole('button', { name: /edit/i });
       // EditButton component should have proper styling classes
-      expect(editButton).toHaveClass(expect.stringMatching(/text-|bg-|hover:/));
+      expect(editButton.className).toMatch(/text-|bg-/);
     });
 
     it('Edit button always visible (regardless of status)', () => {
@@ -1015,7 +1020,7 @@ describe('ProductOwnerTable Component', () => {
       );
 
       // Add Person button should be visible at top
-      const addButton = screen.getByRole('button', { name: /add person/i });
+      const addButton = screen.getByRole('button', { name: /add new person/i });
       expect(addButton).toBeInTheDocument();
     });
 
@@ -1032,9 +1037,9 @@ describe('ProductOwnerTable Component', () => {
         { wrapper }
       );
 
-      const addButton = screen.getByRole('button', { name: /add person/i });
+      const addButton = screen.getByRole('button', { name: /add new person/i });
       // Should have primary button styling
-      expect(addButton).toHaveClass(expect.stringMatching(/bg-|text-|hover:/));
+      expect(addButton.className).toMatch(/bg-|text-/);
     });
 
     it('Add Person button has accessible label', () => {
@@ -1050,7 +1055,7 @@ describe('ProductOwnerTable Component', () => {
         { wrapper }
       );
 
-      const addButton = screen.getByRole('button', { name: /add person/i });
+      const addButton = screen.getByRole('button', { name: /add new person/i });
       expect(addButton).toHaveAccessibleName();
     });
 
@@ -1071,7 +1076,7 @@ describe('ProductOwnerTable Component', () => {
         { wrapper }
       );
 
-      const addButton = screen.getByRole('button', { name: /add person/i });
+      const addButton = screen.getByRole('button', { name: /add new person/i });
       expect(addButton).not.toBeDisabled();
     });
   });
@@ -1092,7 +1097,7 @@ describe('ProductOwnerTable Component', () => {
       );
 
       // Click Add Person button
-      const addButton = screen.getByRole('button', { name: /add person/i });
+      const addButton = screen.getByRole('button', { name: /add new person/i });
       await user.click(addButton);
 
       // Modal should open
@@ -1117,7 +1122,7 @@ describe('ProductOwnerTable Component', () => {
       );
 
       // Click Add Person button
-      const addButton = screen.getByRole('button', { name: /add person/i });
+      const addButton = screen.getByRole('button', { name: /add new person/i });
       await user.click(addButton);
 
       // Modal should open (client_group_id passed internally)
@@ -1151,7 +1156,7 @@ describe('ProductOwnerTable Component', () => {
       );
 
       // Click Add Person button
-      const addButton = screen.getByRole('button', { name: /add person/i });
+      const addButton = screen.getByRole('button', { name: /add new person/i });
       await user.click(addButton);
 
       // Wait for modal to open
@@ -1186,7 +1191,7 @@ describe('ProductOwnerTable Component', () => {
         { wrapper }
       );
 
-      const addButton = screen.getByRole('button', { name: /add person/i });
+      const addButton = screen.getByRole('button', { name: /add new person/i });
 
       // First creation
       await user.click(addButton);
@@ -1233,7 +1238,7 @@ describe('ProductOwnerTable Component', () => {
       );
 
       // Click Add Person button
-      await user.click(screen.getByRole('button', { name: /add person/i }));
+      await user.click(screen.getByRole('button', { name: /add new person/i }));
 
       // Wait for modal to open
       await waitFor(() => {
@@ -1265,7 +1270,7 @@ describe('ProductOwnerTable Component', () => {
         { wrapper }
       );
 
-      const addButton = screen.getByRole('button', { name: /add person/i });
+      const addButton = screen.getByRole('button', { name: /add new person/i });
 
       // Click multiple times rapidly
       await user.click(addButton);
@@ -1296,7 +1301,7 @@ describe('ProductOwnerTable Component', () => {
       );
 
       // Click Add Person button
-      await user.click(screen.getByRole('button', { name: /add person/i }));
+      await user.click(screen.getByRole('button', { name: /add new person/i }));
 
       // Wait for modal to open
       await waitFor(() => {
@@ -1331,7 +1336,7 @@ describe('ProductOwnerTable Component', () => {
       );
 
       // Add Person button should still be visible with empty table
-      const addButton = screen.getByRole('button', { name: /add person/i });
+      const addButton = screen.getByRole('button', { name: /add new person/i });
       expect(addButton).toBeInTheDocument();
     });
 
@@ -1347,7 +1352,7 @@ describe('ProductOwnerTable Component', () => {
       );
 
       // Add Person button should be visible even during loading
-      const addButton = screen.getByRole('button', { name: /add person/i });
+      const addButton = screen.getByRole('button', { name: /add new person/i });
       expect(addButton).toBeInTheDocument();
     });
   });

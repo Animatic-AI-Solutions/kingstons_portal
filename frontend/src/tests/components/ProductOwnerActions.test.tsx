@@ -26,12 +26,16 @@ import {
   createDeceasedProductOwner,
 } from '../factories/productOwnerFactory';
 import ProductOwnerActions from '@/components/ProductOwnerActions';
-import { updateProductOwnerStatus, deleteProductOwner } from '@/services/api';
+import { updateProductOwnerStatus } from '@/services/api/updateProductOwner';
+import { deleteProductOwner } from '@/services/api/deleteProductOwner';
 import toast from 'react-hot-toast';
 
-// Mock the API module
-jest.mock('@/services/api', () => ({
+// Mock the API modules (matching the actual import paths in the component)
+jest.mock('@/services/api/updateProductOwner', () => ({
   updateProductOwnerStatus: jest.fn(),
+}));
+
+jest.mock('@/services/api/deleteProductOwner', () => ({
   deleteProductOwner: jest.fn(),
 }));
 
@@ -201,10 +205,9 @@ describe('ProductOwnerActions Component', () => {
     it('calls status change API on Lapse button click', async () => {
       const user = userEvent.setup();
       const activeProductOwner = createActiveProductOwner({ id: 123 });
-      const mockUpdateStatus = jest.fn().mockResolvedValue({
+      (updateProductOwnerStatus as jest.Mock).mockResolvedValue({
         data: { ...activeProductOwner, status: 'lapsed' },
       });
-      (updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -218,17 +221,16 @@ describe('ProductOwnerActions Component', () => {
       await user.click(lapseButton);
 
       await waitFor(() => {
-        expect(mockUpdateStatus).toHaveBeenCalledWith(123, 'lapsed');
+        expect(updateProductOwnerStatus).toHaveBeenCalledWith(123, 'lapsed');
       });
     });
 
     it('calls status change API on Make Deceased button click', async () => {
       const user = userEvent.setup();
       const activeProductOwner = createActiveProductOwner({ id: 456 });
-      const mockUpdateStatus = jest.fn().mockResolvedValue({
+      (updateProductOwnerStatus as jest.Mock).mockResolvedValue({
         data: { ...activeProductOwner, status: 'deceased' },
       });
-      (updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -242,17 +244,16 @@ describe('ProductOwnerActions Component', () => {
       await user.click(deceasedButton);
 
       await waitFor(() => {
-        expect(mockUpdateStatus).toHaveBeenCalledWith(456, 'deceased');
+        expect(updateProductOwnerStatus).toHaveBeenCalledWith(456, 'deceased');
       });
     });
 
     it('calls status change API on Reactivate button click', async () => {
       const user = userEvent.setup();
       const lapsedProductOwner = createLapsedProductOwner({ id: 789 });
-      const mockUpdateStatus = jest.fn().mockResolvedValue({
+      (updateProductOwnerStatus as jest.Mock).mockResolvedValue({
         data: { ...lapsedProductOwner, status: 'active' },
       });
-      (updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -266,7 +267,7 @@ describe('ProductOwnerActions Component', () => {
       await user.click(reactivateButton);
 
       await waitFor(() => {
-        expect(mockUpdateStatus).toHaveBeenCalledWith(789, 'active');
+        expect(updateProductOwnerStatus).toHaveBeenCalledWith(789, 'active');
       });
     });
   });
@@ -282,12 +283,11 @@ describe('ProductOwnerActions Component', () => {
 
       // Create a promise we can control
       let resolvePromise: (value: any) => void;
-      const mockUpdateStatus = jest.fn().mockImplementation(() => {
+      (updateProductOwnerStatus as jest.Mock).mockImplementation(() => {
         return new Promise((resolve) => {
           resolvePromise = resolve;
         });
       });
-      (updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -316,12 +316,11 @@ describe('ProductOwnerActions Component', () => {
 
       // Create a promise we can control
       let resolvePromise: (value: any) => void;
-      const mockUpdateStatus = jest.fn().mockImplementation(() => {
+      (updateProductOwnerStatus as jest.Mock).mockImplementation(() => {
         return new Promise((resolve) => {
           resolvePromise = resolve;
         });
       });
-      (updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -350,12 +349,11 @@ describe('ProductOwnerActions Component', () => {
 
       // Create a promise we can control
       let resolvePromise: (value: any) => void;
-      const mockUpdateStatus = jest.fn().mockImplementation(() => {
+      (updateProductOwnerStatus as jest.Mock).mockImplementation(() => {
         return new Promise((resolve) => {
           resolvePromise = resolve;
         });
       });
-      (updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -387,10 +385,9 @@ describe('ProductOwnerActions Component', () => {
     it('displays success notification on successful lapse', async () => {
       const user = userEvent.setup();
       const activeProductOwner = createActiveProductOwner({ id: 123 });
-      const mockUpdateStatus = jest.fn().mockResolvedValue({
+      (updateProductOwnerStatus as jest.Mock).mockResolvedValue({
         data: { ...activeProductOwner, status: 'lapsed' },
       });
-      (updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -413,10 +410,9 @@ describe('ProductOwnerActions Component', () => {
     it('displays success notification on successful deceased', async () => {
       const user = userEvent.setup();
       const activeProductOwner = createActiveProductOwner({ id: 456 });
-      const mockUpdateStatus = jest.fn().mockResolvedValue({
+      (updateProductOwnerStatus as jest.Mock).mockResolvedValue({
         data: { ...activeProductOwner, status: 'deceased' },
       });
-      (updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -439,10 +435,9 @@ describe('ProductOwnerActions Component', () => {
     it('displays success notification on successful reactivate', async () => {
       const user = userEvent.setup();
       const lapsedProductOwner = createLapsedProductOwner({ id: 789 });
-      const mockUpdateStatus = jest.fn().mockResolvedValue({
+      (updateProductOwnerStatus as jest.Mock).mockResolvedValue({
         data: { ...lapsedProductOwner, status: 'active' },
       });
-      (updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -465,10 +460,9 @@ describe('ProductOwnerActions Component', () => {
     it('refetches product owners after status change', async () => {
       const user = userEvent.setup();
       const activeProductOwner = createActiveProductOwner({ id: 123 });
-      const mockUpdateStatus = jest.fn().mockResolvedValue({
+      (updateProductOwnerStatus as jest.Mock).mockResolvedValue({
         data: { ...activeProductOwner, status: 'lapsed' },
       });
-      (updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions
@@ -587,12 +581,11 @@ describe('ProductOwnerActions Component', () => {
 
       // Create a promise we can control
       let resolvePromise: (value: any) => void;
-      const mockUpdateStatus = jest.fn().mockImplementation(() => {
+      (updateProductOwnerStatus as jest.Mock).mockImplementation(() => {
         return new Promise((resolve) => {
           resolvePromise = resolve;
         });
       });
-      (updateProductOwnerStatus as jest.Mock) = mockUpdateStatus;
 
       render(
         <ProductOwnerActions

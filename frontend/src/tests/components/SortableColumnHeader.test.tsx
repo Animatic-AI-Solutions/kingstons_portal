@@ -119,8 +119,9 @@ describe('SortableColumnHeader', () => {
         />
       );
 
-      const header = screen.getByRole('button', { name: /name/i });
-      expect(header).toHaveAttribute('aria-sort', 'ascending');
+      // aria-sort should be on the <th> element (columnheader role), not the button
+      const columnHeader = screen.getByRole('columnheader', { name: /name/i });
+      expect(columnHeader).toHaveAttribute('aria-sort', 'ascending');
     });
 
     it('applies aria-sort="descending" when sorted descending', () => {
@@ -136,8 +137,9 @@ describe('SortableColumnHeader', () => {
         />
       );
 
-      const header = screen.getByRole('button', { name: /name/i });
-      expect(header).toHaveAttribute('aria-sort', 'descending');
+      // aria-sort should be on the <th> element (columnheader role), not the button
+      const columnHeader = screen.getByRole('columnheader', { name: /name/i });
+      expect(columnHeader).toHaveAttribute('aria-sort', 'descending');
     });
 
     it('applies aria-sort="none" when not sorted', () => {
@@ -153,8 +155,9 @@ describe('SortableColumnHeader', () => {
         />
       );
 
-      const header = screen.getByRole('button', { name: /name/i });
-      expect(header).toHaveAttribute('aria-sort', 'none');
+      // aria-sort should be on the <th> element (columnheader role), not the button
+      const columnHeader = screen.getByRole('columnheader', { name: /name/i });
+      expect(columnHeader).toHaveAttribute('aria-sort', 'none');
     });
 
     it('applies aria-sort="none" when different column is sorted', () => {
@@ -170,8 +173,9 @@ describe('SortableColumnHeader', () => {
         />
       );
 
-      const header = screen.getByRole('button', { name: /name/i });
-      expect(header).toHaveAttribute('aria-sort', 'none');
+      // aria-sort should be on the <th> element (columnheader role), not the button
+      const columnHeader = screen.getByRole('columnheader', { name: /name/i });
+      expect(columnHeader).toHaveAttribute('aria-sort', 'none');
     });
   });
 

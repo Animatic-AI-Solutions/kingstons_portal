@@ -74,8 +74,8 @@ const BaseModal: React.FC<BaseModalProps> = ({
   title,
   description,
   children,
-  titleId,
-  descriptionId,
+  titleId = 'modal-title',
+  descriptionId = 'modal-description',
 }) => {
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -108,8 +108,22 @@ const BaseModal: React.FC<BaseModalProps> = ({
             >
               <Dialog.Panel
                 className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all"
-                role="document"
+                aria-labelledby={titleId}
+                aria-describedby={description ? descriptionId : undefined}
               >
+                {/* Close button for accessibility */}
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Close modal"
+                  className="absolute top-4 right-4 h-11 min-w-[44px] text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 rounded"
+                >
+                  <span className="sr-only">Close modal</span>
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+
                 {/* Dialog Title - HeadlessUI automatically sets aria-labelledby */}
                 <Dialog.Title
                   as="h3"

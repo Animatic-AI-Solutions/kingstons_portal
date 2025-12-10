@@ -70,9 +70,9 @@ const BUTTON_TEXT = {
  */
 const BUTTON_STYLES = {
   /** Gray button style for Make Deceased action */
-  MAKE_DECEASED: 'inline-flex items-center px-2.5 py-1 text-sm font-medium rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-700 hover:text-gray-800 focus:ring-2 focus:ring-gray-500/20 border border-gray-200 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150',
+  MAKE_DECEASED: 'inline-flex items-center px-2.5 h-11 min-w-[44px] text-sm font-medium rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-700 hover:text-gray-800 focus:ring-2 focus:ring-gray-500/20 border border-gray-200 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150',
   /** Green button style for Reactivate action */
-  REACTIVATE: 'inline-flex items-center px-2.5 py-1 text-sm font-medium rounded-lg bg-green-50 hover:bg-green-100 text-green-700 hover:text-green-800 focus:ring-2 focus:ring-green-500/20 border border-green-200 hover:border-green-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150',
+  REACTIVATE: 'inline-flex items-center px-2.5 h-11 min-w-[44px] text-sm font-medium rounded-lg bg-green-50 hover:bg-green-100 text-green-700 hover:text-green-800 focus:ring-2 focus:ring-green-500/20 border border-green-200 hover:border-green-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150',
 } as const;
 
 // ==========================
@@ -84,12 +84,15 @@ const BUTTON_STYLES = {
  *
  * @property productOwner - Product owner record with status and ID
  * @property onStatusChange - Optional callback invoked after successful status change
+ * @property onAnnounce - Optional callback for announcing actions to screen readers
  */
 interface ProductOwnerActionsProps {
   /** Product owner record with status and ID */
   productOwner: ProductOwner;
   /** Optional callback invoked after successful status change (for data refresh) */
   onStatusChange?: () => void;
+  /** Optional callback for announcing actions to screen readers via aria-live */
+  onAnnounce?: (message: string) => void;
 }
 
 // ==========================
@@ -108,6 +111,7 @@ interface ProductOwnerActionsProps {
 const ProductOwnerActions: React.FC<ProductOwnerActionsProps> = ({
   productOwner,
   onStatusChange,
+  onAnnounce,
 }) => {
   // ==========================
   // State Management
@@ -162,6 +166,12 @@ const ProductOwnerActions: React.FC<ProductOwnerActionsProps> = ({
       // Show success notification
       toast.success(SUCCESS_MESSAGES.LAPSED);
 
+      // Announce to screen readers
+      if (onAnnounce) {
+        onAnnounce('Status changed to lapsed');
+        setTimeout(() => onAnnounce(''), 3000);
+      }
+
       // Trigger data refresh via callback
       if (onStatusChange) {
         onStatusChange();
@@ -190,6 +200,12 @@ const ProductOwnerActions: React.FC<ProductOwnerActionsProps> = ({
       // Show success notification
       toast.success(SUCCESS_MESSAGES.DECEASED);
 
+      // Announce to screen readers
+      if (onAnnounce) {
+        onAnnounce('Status changed to deceased');
+        setTimeout(() => onAnnounce(''), 3000);
+      }
+
       // Trigger data refresh via callback
       if (onStatusChange) {
         onStatusChange();
@@ -217,6 +233,12 @@ const ProductOwnerActions: React.FC<ProductOwnerActionsProps> = ({
 
       // Show success notification
       toast.success(SUCCESS_MESSAGES.REACTIVATED);
+
+      // Announce to screen readers
+      if (onAnnounce) {
+        onAnnounce('Product owner reactivated');
+        setTimeout(() => onAnnounce(''), 3000);
+      }
 
       // Trigger data refresh via callback
       if (onStatusChange) {

@@ -32,7 +32,7 @@
  * @module pages/ClientGroupSuite/tabs/components/PeopleSubTab
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import ProductOwnerTable from '@/components/ProductOwnerTable';
 import { useProductOwners } from '@/hooks/useProductOwners';
@@ -126,8 +126,23 @@ const PeopleSubTab: React.FC = () => {
     refetch,
   } = useProductOwners(clientGroupIdNumber);
 
+  /**
+   * Dynamic announcement state for aria-live region
+   * Used to announce user actions like sorts, status changes, and saves
+   */
+  const [announcement, setAnnouncement] = useState<string>('');
+
   return (
     <div className="space-y-6">
+      {/* Screen Reader Announcements - aria-live region */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {announcement || (
+          isLoading ? "Loading product owners" :
+          error ? `Error: ${error.message}` :
+          productOwners ? `${productOwners.length} product owner${productOwners.length !== 1 ? 's' : ''} found` : ''
+        )}
+      </div>
+
       {/* Header Section */}
       <div>
         <h3 className="text-lg font-medium text-gray-900">
@@ -160,6 +175,7 @@ const PeopleSubTab: React.FC = () => {
         onRetry={refetch}
         onRefetch={refetch}
         clientGroupId={clientGroupIdNumber || undefined}
+        onAnnounce={setAnnouncement}
       />
     </div>
   );

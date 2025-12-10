@@ -62,7 +62,7 @@ const FormSection: React.FC<FormSectionProps> = React.memo(({
       {({ open }) => (
         <div className="border-b border-gray-200">
           <Disclosure.Button
-            className="flex w-full items-center justify-between py-4 text-left text-sm font-medium text-gray-900 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
+            className="flex w-full items-center justify-between py-4 min-h-[44px] text-left text-sm font-medium text-gray-900 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
             aria-expanded={open}
           >
             <span className="flex items-center gap-2">
