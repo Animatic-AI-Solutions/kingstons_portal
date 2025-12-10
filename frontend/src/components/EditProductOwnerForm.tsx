@@ -86,6 +86,20 @@ const ERROR_MESSAGES = {
 // ============================================================================
 
 /**
+ * Validation error from FastAPI 422 responses
+ *
+ * FastAPI returns validation errors with:
+ * - loc: Array with path to field (e.g., ['body', 'email_1'])
+ * - msg: Human-readable error message
+ * - type: Error type (e.g., 'value_error.email')
+ */
+export interface ValidationError {
+  loc: (string | number)[];
+  msg: string;
+  type: string;
+}
+
+/**
  * EditProductOwnerForm Props Interface
  *
  * @property productOwner - Existing product owner data for pre-population (optional for create mode)
@@ -94,6 +108,7 @@ const ERROR_MESSAGES = {
  * @property isSubmitting - Loading state during API submission
  * @property mode - Form mode: 'edit' (default) or 'create'
  * @property onDirtyChange - Optional callback when form dirty state changes
+ * @property validationErrors - Optional array of FastAPI validation errors to display inline
  */
 interface EditProductOwnerFormProps {
   /** Existing product owner data for pre-population (optional for create mode) */
@@ -108,6 +123,8 @@ interface EditProductOwnerFormProps {
   mode?: 'edit' | 'create';
   /** Optional callback when form dirty state changes */
   onDirtyChange?: (isDirty: boolean) => void;
+  /** Optional array of FastAPI validation errors to display inline */
+  validationErrors?: ValidationError[];
 }
 
 // ============================================================================
@@ -260,6 +277,7 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
   isSubmitting,
   mode = 'edit',
   onDirtyChange,
+  validationErrors,
 }) => {
   // Default values for create mode (empty) or edit mode (existing data)
   const defaultValues = mode === 'create'
@@ -274,6 +292,7 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
     handleSubmit,
     formState: { errors, isDirty, dirtyFields, isSubmitting: formIsSubmitting },
     watch,
+    setError,
   } = useForm({
     resolver: yupResolver(validationSchema),
     defaultValues,
@@ -296,6 +315,37 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
       onDirtyChange(isDirty);
     }
   }, [isDirty, onDirtyChange]);
+
+  /**
+   * Apply external validation errors from FastAPI 422 responses
+   *
+   * When the API returns validation errors, this effect parses them and
+   * applies them to the corresponding form fields using setError.
+   *
+   * FastAPI validation error format:
+   * {
+   *   detail: [
+   *     { loc: ['body', 'email_1'], msg: 'Invalid email format', type: 'value_error.email' }
+   *   ]
+   * }
+   *
+   * The loc array contains the path to the field. We extract the field name
+   * (last element after 'body') and set the error message on that field.
+   */
+  React.useEffect(() => {
+    if (validationErrors && validationErrors.length > 0) {
+      validationErrors.forEach((error) => {
+        // Extract field name from loc array (e.g., ['body', 'email_1'] -> 'email_1')
+        const fieldName = error.loc[error.loc.length - 1] as string;
+
+        // Set error on the field
+        setError(fieldName as any, {
+          type: 'server',
+          message: error.msg,
+        });
+      });
+    }
+  }, [validationErrors, setError]);
 
   /**
    * Handle form submission

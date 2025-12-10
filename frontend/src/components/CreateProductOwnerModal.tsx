@@ -14,10 +14,10 @@
  * @module components/CreateProductOwnerModal
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import BaseModal from './BaseModal';
-import EditProductOwnerForm from './EditProductOwnerForm';
+import EditProductOwnerForm, { ValidationError } from './EditProductOwnerForm';
 import { createProductOwner } from '@/services/api/productOwners';
 import { createClientGroupProductOwner } from '@/services/api/clientGroupProductOwners';
 import { createAddress, hasAddressData } from '@/services/api/addresses';
@@ -78,6 +78,17 @@ const CreateProductOwnerModal: React.FC<CreateProductOwnerModalProps> = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
+
+  /**
+   * Clear validation errors when modal closes
+   */
+  useEffect(() => {
+    if (!isOpen) {
+      setValidationErrors([]);
+      setIsFormDirty(false);
+    }
+  }, [isOpen]);
 
   /**
    * Handle modal close with unsaved changes warning
@@ -158,11 +169,26 @@ const CreateProductOwnerModal: React.FC<CreateProductOwnerModalProps> = ({
       }
 
       toast.success(MODAL_TEXT.SUCCESS_MESSAGE);
+      setValidationErrors([]); // Clear any previous errors
       onCreate(); // Trigger data refresh
       onClose(); // Close modal
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating product owner:', error);
-      toast.error(formatApiError(error));
+
+      // Check if this is a 422 validation error from FastAPI
+      if (error?.response?.status === 422 && error?.response?.data?.detail) {
+        // Parse validation errors from FastAPI format
+        const errors: ValidationError[] = error.response.data.detail;
+        setValidationErrors(errors);
+
+        // Show generic toast error for user feedback
+        toast.error('Please fix the validation errors and try again');
+      } else {
+        // For other errors, show the formatted error message
+        toast.error(formatApiError(error));
+        setValidationErrors([]); // Clear validation errors for non-422 errors
+      }
+
       // Keep modal open on error for retry
     } finally {
       setIsSubmitting(false);
@@ -184,6 +210,7 @@ const CreateProductOwnerModal: React.FC<CreateProductOwnerModalProps> = ({
         onCancel={handleCancel}
         isSubmitting={isSubmitting}
         onDirtyChange={setIsFormDirty}
+        validationErrors={validationErrors}
       />
     </BaseModal>
   );

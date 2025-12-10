@@ -24,14 +24,22 @@ import PeopleSubTab from '@/pages/ClientGroupSuite/tabs/components/PeopleSubTab'
 import {
   createProductOwner,
   updateProductOwner,
-  deleteProductOwner,
 } from '@/services/api/productOwners';
 import { createClientGroupProductOwner } from '@/services/api/clientGroupProductOwners';
+import { useProductOwners } from '@/hooks/useProductOwners';
+import { updateProductOwnerStatus } from '@/services/api/updateProductOwner';
+import { deleteProductOwner } from '@/services/api/deleteProductOwner';
 
 // Mock API modules
 jest.mock('@/services/api/productOwners');
 jest.mock('@/services/api/clientGroupProductOwners');
-jest.mock('react-hot-toast');
+jest.mock('@/services/api/updateProductOwner');
+jest.mock('@/services/api/deleteProductOwner');
+jest.mock('react-hot-toast', () => ({
+  success: jest.fn(),
+  error: jest.fn(),
+  loading: jest.fn(),
+}));
 
 // Mock AuthContext
 jest.mock('@/context/AuthContext', () => ({
@@ -46,6 +54,17 @@ jest.mock('@/context/AuthContext', () => ({
     isAuthenticated: true,
   }),
 }));
+
+// Mock react-router-dom useParams
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useParams: () => ({
+    clientGroupId: '123',
+  }),
+}));
+
+// Mock useProductOwners hook
+jest.mock('@/hooks/useProductOwners');
 
 /**
  * Create test query client
@@ -92,6 +111,7 @@ const generateMockProductOwners = (count: number) => {
 describe('People Tab Integration Flows', () => {
   let queryClient: QueryClient;
   let mockProductOwners: any[];
+  let mockRefetch: jest.Mock;
 
   beforeEach(() => {
     queryClient = createTestQueryClient();
@@ -103,12 +123,12 @@ describe('People Tab Integration Flows', () => {
     jest.clearAllMocks();
 
     // Mock useProductOwners hook
-    require('@/hooks/useProductOwners').useProductOwners = jest.fn(() => ({
+    (useProductOwners as jest.Mock).mockReturnValue({
       data: mockProductOwners,
       isLoading: false,
       error: null,
       refetch: jest.fn(),
-    }));
+    });
 
     // Mock window.confirm
     global.confirm = jest.fn(() => true);
@@ -152,11 +172,11 @@ describe('People Tab Integration Flows', () => {
 
       // Wait for table to load
       await waitFor(() => {
-        expect(screen.queryByRole('status', { name: /loading/i })).not.toBeInTheDocument();
+        expect(screen.queryByTestId('table-skeleton')).not.toBeInTheDocument();
       });
 
       // Step 1: Click "Add Person" button
-      const addButton = screen.getByRole('button', { name: /add new person/i });
+      const addButton = screen.getByRole('button', { name: /add new person to client group/i });
       await user.click(addButton);
 
       // Step 2: Modal opens
@@ -213,7 +233,7 @@ describe('People Tab Integration Flows', () => {
       renderPeopleTab();
 
       await waitFor(() => {
-        expect(screen.queryByRole('status', { name: /loading/i })).not.toBeInTheDocument();
+        expect(screen.queryByTestId('table-skeleton')).not.toBeInTheDocument();
       });
 
       // Step 1: Click Edit button for John Smith
@@ -258,7 +278,7 @@ describe('People Tab Integration Flows', () => {
       const toast = require('react-hot-toast');
 
       // Mock successful status change
-      (updateProductOwner as jest.Mock).mockResolvedValue({
+      (updateProductOwnerStatus as jest.Mock).mockResolvedValue({
         id: 1,
         firstname: 'John',
         surname: 'Smith',
@@ -268,25 +288,20 @@ describe('People Tab Integration Flows', () => {
       renderPeopleTab();
 
       await waitFor(() => {
-        expect(screen.queryByRole('status', { name: /loading/i })).not.toBeInTheDocument();
+        expect(screen.queryByTestId('table-skeleton')).not.toBeInTheDocument();
       });
 
       // Step 1: Find John Smith row (active)
-      const johnRow = screen.getByText('John').closest('tr');
+      const johnRow = screen.getByText('Mr John Smith').closest('tr');
       expect(johnRow).toBeInTheDocument();
 
       // Step 2: Click Lapse button
-      const lapseButton = within(johnRow!).getByLabelText(/lapse/i);
+      const lapseButton = within(johnRow!).getByRole('button', { name: 'Lapse' });
       await user.click(lapseButton);
 
       // Step 3: Verify API called
       await waitFor(() => {
-        expect(updateProductOwner).toHaveBeenCalledWith(
-          1,
-          expect.objectContaining({
-            status: 'lapsed',
-          })
-        );
+        expect(updateProductOwnerStatus).toHaveBeenCalledWith(1, 'lapsed');
       });
 
       // Step 4: Verify success feedback
@@ -300,7 +315,7 @@ describe('People Tab Integration Flows', () => {
       const toast = require('react-hot-toast');
 
       // Mock successful reactivation
-      (updateProductOwner as jest.Mock).mockResolvedValue({
+      (updateProductOwnerStatus as jest.Mock).mockResolvedValue({
         id: 2,
         firstname: 'Jane',
         surname: 'Doe',
@@ -310,25 +325,20 @@ describe('People Tab Integration Flows', () => {
       renderPeopleTab();
 
       await waitFor(() => {
-        expect(screen.queryByRole('status', { name: /loading/i })).not.toBeInTheDocument();
+        expect(screen.queryByTestId('table-skeleton')).not.toBeInTheDocument();
       });
 
       // Step 1: Find Jane Doe row (lapsed)
-      const janeRow = screen.getByText('Jane').closest('tr');
+      const janeRow = screen.getByText('Mr Jane Doe').closest('tr');
       expect(janeRow).toBeInTheDocument();
 
       // Step 2: Click Reactivate button
-      const reactivateButton = within(janeRow!).getByLabelText(/reactivate/i);
+      const reactivateButton = within(janeRow!).getByRole('button', { name: /reactivate/i });
       await user.click(reactivateButton);
 
       // Step 3: Verify API called
       await waitFor(() => {
-        expect(updateProductOwner).toHaveBeenCalledWith(
-          2,
-          expect.objectContaining({
-            status: 'active',
-          })
-        );
+        expect(updateProductOwnerStatus).toHaveBeenCalledWith(2, 'active');
       });
 
       // Step 4: Verify success feedback
@@ -345,21 +355,21 @@ describe('People Tab Integration Flows', () => {
       renderPeopleTab();
 
       await waitFor(() => {
-        expect(screen.queryByRole('status', { name: /loading/i })).not.toBeInTheDocument();
+        expect(screen.queryByTestId('table-skeleton')).not.toBeInTheDocument();
       });
 
       // Step 1: Find Jane Doe row (lapsed/inactive)
-      const janeRow = screen.getByText('Jane').closest('tr');
+      const janeRow = screen.getByText('Mr Jane Doe').closest('tr');
       expect(janeRow).toBeInTheDocument();
 
       // Step 2: Click Delete button
-      const deleteButton = within(janeRow!).getByLabelText(/delete/i);
+      const deleteButton = within(janeRow!).getByRole('button', { name: 'Delete' });
       await user.click(deleteButton);
 
       // Step 3: Confirm deletion in modal
       await waitFor(() => {
         expect(screen.getByRole('dialog')).toBeInTheDocument();
-        expect(screen.getByText(/confirm.*delete/i)).toBeInTheDocument();
+        expect(screen.getByText(/are you sure you want to delete/i)).toBeInTheDocument();
       });
 
       const confirmButton = screen.getByRole('button', { name: /delete/i });
@@ -390,7 +400,7 @@ describe('People Tab Integration Flows', () => {
       renderPeopleTab();
 
       await waitFor(() => {
-        expect(screen.queryByRole('status', { name: /loading/i })).not.toBeInTheDocument();
+        expect(screen.queryByTestId('table-skeleton')).not.toBeInTheDocument();
       });
 
       // Step 1: Sort by name ascending
@@ -435,17 +445,17 @@ describe('People Tab Integration Flows', () => {
         createMockProductOwner({ id: 4, firstname: 'David', status: 'deceased' }),
       ];
 
-      require('@/hooks/useProductOwners').useProductOwners = jest.fn(() => ({
+      (useProductOwners as jest.Mock).mockReturnValue({
         data: mockProductOwners,
         isLoading: false,
         error: null,
         refetch: jest.fn(),
-      }));
+      });
 
       renderPeopleTab();
 
       await waitFor(() => {
-        expect(screen.queryByRole('status', { name: /loading/i })).not.toBeInTheDocument();
+        expect(screen.queryByTestId('table-skeleton')).not.toBeInTheDocument();
       });
 
       // Step 1: Sort by name ascending
@@ -486,7 +496,7 @@ describe('People Tab Integration Flows', () => {
       renderPeopleTab();
 
       await waitFor(() => {
-        expect(screen.queryByRole('status', { name: /loading/i })).not.toBeInTheDocument();
+        expect(screen.queryByTestId('table-skeleton')).not.toBeInTheDocument();
       });
 
       const nameHeader = screen.getByRole('columnheader', { name: /name/i });
@@ -533,11 +543,11 @@ describe('People Tab Integration Flows', () => {
       renderPeopleTab();
 
       await waitFor(() => {
-        expect(screen.queryByRole('status', { name: /loading/i })).not.toBeInTheDocument();
+        expect(screen.queryByTestId('table-skeleton')).not.toBeInTheDocument();
       });
 
       // Step 1: Open create modal
-      const addButton = screen.getByRole('button', { name: /add new person/i });
+      const addButton = screen.getByRole('button', { name: /add new person to client group/i });
       await user.click(addButton);
 
       await waitFor(() => {
@@ -568,13 +578,15 @@ describe('People Tab Integration Flows', () => {
       const user = userEvent.setup();
       const toast = require('react-hot-toast');
 
-      // Mock 422 validation error
+      // Mock 422 validation error - server rejects email as already in use
+      // Note: We use a valid email format to bypass client-side validation
+      // and test server-side validation error handling
       (createProductOwner as jest.Mock).mockRejectedValue({
         response: {
           status: 422,
           data: {
             detail: [
-              { loc: ['body', 'email_1'], msg: 'Invalid email format' },
+              { loc: ['body', 'email_1'], msg: 'Email address already in use' },
             ],
           },
         },
@@ -583,11 +595,11 @@ describe('People Tab Integration Flows', () => {
       renderPeopleTab();
 
       await waitFor(() => {
-        expect(screen.queryByRole('status', { name: /loading/i })).not.toBeInTheDocument();
+        expect(screen.queryByTestId('table-skeleton')).not.toBeInTheDocument();
       });
 
-      // Step 1: Open modal and fill invalid data
-      const addButton = screen.getByRole('button', { name: /add new person/i });
+      // Step 1: Open modal and fill form with valid format but duplicate email
+      const addButton = screen.getByRole('button', { name: /add new person to client group/i });
       await user.click(addButton);
 
       await waitFor(() => {
@@ -597,20 +609,20 @@ describe('People Tab Integration Flows', () => {
       await user.type(screen.getByLabelText(/first name/i), 'Test');
       await user.type(screen.getByLabelText(/surname/i), 'User');
 
-      // Expand contact section and enter invalid email
+      // Expand contact section and enter email that exists in database
       await user.click(screen.getByText(/contact information/i));
-      await user.type(screen.getByLabelText(/primary email/i), 'invalid-email');
+      await user.type(screen.getByLabelText(/primary email/i), 'existing@example.com');
 
       // Step 2: Submit
       const createButton = screen.getByRole('button', { name: /^create$/i });
       await user.click(createButton);
 
-      // Step 3: Verify error displayed
+      // Step 3: Verify server validation error displayed inline
       await waitFor(() => {
-        expect(screen.getByText(/invalid email/i)).toBeInTheDocument();
+        expect(screen.getByText(/email address already in use/i)).toBeInTheDocument();
       });
 
-      // Step 4: Modal stays open
+      // Step 4: Modal stays open for user to correct the error
       expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
@@ -632,11 +644,11 @@ describe('People Tab Integration Flows', () => {
       renderPeopleTab();
 
       await waitFor(() => {
-        expect(screen.queryByRole('status', { name: /loading/i })).not.toBeInTheDocument();
+        expect(screen.queryByTestId('table-skeleton')).not.toBeInTheDocument();
       });
 
       // Step 1: Open modal and submit
-      const addButton = screen.getByRole('button', { name: /add new person/i });
+      const addButton = screen.getByRole('button', { name: /add new person to client group/i });
       await user.click(addButton);
 
       await waitFor(() => {
@@ -671,12 +683,15 @@ describe('People Tab Integration Flows', () => {
     it('error recovery: retry failed API calls', async () => {
       const user = userEvent.setup();
 
+      // Create reusable mock refetch
+      mockRefetch = jest.fn().mockResolvedValue({ data: mockProductOwners });
+
       // Mock loading error
       require('@/hooks/useProductOwners').useProductOwners = jest.fn(() => ({
         data: undefined,
         isLoading: false,
         error: new Error('Failed to load product owners'),
-        refetch: jest.fn().mockResolvedValue({ data: mockProductOwners }),
+        refetch: mockRefetch,
       }));
 
       renderPeopleTab();
@@ -695,7 +710,6 @@ describe('People Tab Integration Flows', () => {
       await user.click(retryButton);
 
       // Step 4: Verify refetch called
-      const mockRefetch = require('@/hooks/useProductOwners').useProductOwners().refetch;
       expect(mockRefetch).toHaveBeenCalled();
     });
   });
@@ -722,7 +736,7 @@ describe('People Tab Integration Flows', () => {
       renderPeopleTab();
 
       await waitFor(() => {
-        expect(screen.queryByRole('status', { name: /loading/i })).not.toBeInTheDocument();
+        expect(screen.queryByTestId('table-skeleton')).not.toBeInTheDocument();
       });
 
       const endTime = performance.now();
@@ -760,7 +774,7 @@ describe('People Tab Integration Flows', () => {
       renderPeopleTab();
 
       await waitFor(() => {
-        expect(screen.queryByRole('status', { name: /loading/i })).not.toBeInTheDocument();
+        expect(screen.queryByTestId('table-skeleton')).not.toBeInTheDocument();
       });
 
       const endTime = performance.now();
