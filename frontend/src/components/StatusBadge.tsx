@@ -218,17 +218,17 @@ const StatusBadge: React.FC<StatusBadgeProps> = memo(({ status, className = '' }
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${config.bgColor} ${config.textColor} ${className}`}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${config.bgColor} ${config.textColor} ${className}`}
     >
       {/* Status icon for visual indication */}
       <Icon
-        className={`w-4 h-4 ${config.iconColor}`}
+        className={`w-3 h-3 ${config.iconColor}`}
         data-testid={config.testId}
         aria-hidden="true"
       />
 
       {/* Status text label */}
-      <span className="text-sm font-medium" aria-label={`Status: ${config.text}`}>{config.text}</span>
+      <span className="text-xs font-medium" aria-label={`Status: ${config.text}`}>{config.text}</span>
     </span>
   );
 });

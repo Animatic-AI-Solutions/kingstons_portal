@@ -133,7 +133,7 @@ const PeopleSubTab: React.FC = () => {
   const [announcement, setAnnouncement] = useState<string>('');
 
   return (
-    <div className="space-y-6">
+    <div>
       {/* Screen Reader Announcements - aria-live region */}
       <div className="sr-only" aria-live="polite" aria-atomic="true">
         {announcement || (
@@ -141,16 +141,6 @@ const PeopleSubTab: React.FC = () => {
           error ? `Error: ${error.message}` :
           productOwners ? `${productOwners.length} product owner${productOwners.length !== 1 ? 's' : ''} found` : ''
         )}
-      </div>
-
-      {/* Header Section */}
-      <div>
-        <h3 className="text-lg font-medium text-gray-900">
-          Product Owners
-        </h3>
-        <p className="mt-1 text-sm text-gray-500">
-          Manage personal information, contact details, and addresses
-        </p>
       </div>
 
       {/* Product Owner Table */}

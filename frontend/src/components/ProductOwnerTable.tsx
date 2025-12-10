@@ -171,48 +171,48 @@ const ProductOwnerRow = memo<ProductOwnerRowProps>(({ owner, onRefetch, onEdit, 
       data-testid={`product-owner-row-${owner.id}`}
     >
       {/* Name Column - Pre-formatted full name */}
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm font-medium text-gray-900">
+      <td className="px-3 py-2 whitespace-nowrap">
+        <div className="text-xs font-medium text-gray-900">
           {owner.fullName}
         </div>
       </td>
 
       {/* Relationship Column */}
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm text-gray-900">
+      <td className="px-3 py-2 whitespace-nowrap">
+        <div className="text-xs text-gray-900">
           {owner.relationship_status || EMPTY_VALUE_PLACEHOLDER}
         </div>
       </td>
 
       {/* Age Column - Pre-calculated age */}
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm text-gray-900">
+      <td className="px-3 py-2 whitespace-nowrap">
+        <div className="text-xs text-gray-900">
           {owner.age !== null ? owner.age : EMPTY_VALUE_PLACEHOLDER}
         </div>
       </td>
 
       {/* DOB Column - Pre-formatted date */}
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm text-gray-900">
+      <td className="px-3 py-2 whitespace-nowrap">
+        <div className="text-xs text-gray-900">
           {owner.formattedDOB}
         </div>
       </td>
 
       {/* Email Column - Primary email */}
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm text-gray-900">
+      <td className="px-3 py-2 whitespace-nowrap">
+        <div className="text-xs text-gray-900">
           {owner.email_1 || EMPTY_VALUE_PLACEHOLDER}
         </div>
       </td>
 
       {/* Status Column - Badge component */}
-      <td className="px-6 py-4 whitespace-nowrap">
+      <td className="px-3 py-2 whitespace-nowrap">
         <StatusBadge status={owner.status} />
       </td>
 
       {/* Actions Column - Edit button and status management buttons */}
-      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-        <div className="flex items-center gap-2">
+      <td className="px-3 py-2 whitespace-nowrap text-xs font-medium">
+        <div className="flex items-center gap-1">
           <EditButton
             onClick={() => onEdit(owner)}
             size="sm"
@@ -285,7 +285,7 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({ sortConfig, onSort }) =>
         <th
           scope="col"
           aria-sort="none"
-          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+          className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
         >
           Actions
         </th>
@@ -632,12 +632,12 @@ const ProductOwnerTable: React.FC<ProductOwnerTableProps> = ({
     <>
       {/* Add Person Button - Only show if clientGroupId is provided */}
       {clientGroupId && (
-        <div className="mb-4 flex justify-end">
+        <div className="mb-2 flex justify-end">
           <AddButton
             onClick={handleAddPerson}
             context="Person"
             design="balanced"
-            size="md"
+            size="sm"
             aria-label="Add new person to client group"
           />
         </div>
