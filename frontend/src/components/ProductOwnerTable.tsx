@@ -167,64 +167,54 @@ interface ProductOwnerRowProps {
 const ProductOwnerRow = memo<ProductOwnerRowProps>(({ owner, onRefetch, onEdit, onAnnounce }) => {
   return (
     <tr
-      className={owner.isInactive ? 'opacity-50 bg-gray-50' : ''}
+      className={`hover:bg-gray-50 cursor-pointer transition-colors ${
+        owner.isInactive ? 'opacity-50 grayscale-[30%]' : ''
+      }`}
       data-testid={`product-owner-row-${owner.id}`}
     >
       {/* Name Column - Pre-formatted full name */}
-      <td className="px-3 py-2 whitespace-nowrap">
-        <div className="text-xs font-medium text-gray-900">
-          {owner.fullName}
-        </div>
+      <td className="px-3 py-1 whitespace-nowrap text-base font-medium text-gray-900">
+        {owner.fullName}
       </td>
 
       {/* Relationship Column */}
-      <td className="px-3 py-2 whitespace-nowrap">
-        <div className="text-xs text-gray-900">
-          {owner.relationship_status || EMPTY_VALUE_PLACEHOLDER}
-        </div>
+      <td className="px-3 py-1 whitespace-nowrap text-base text-gray-900">
+        {owner.relationship_status || EMPTY_VALUE_PLACEHOLDER}
       </td>
 
       {/* Age Column - Pre-calculated age */}
-      <td className="px-3 py-2 whitespace-nowrap">
-        <div className="text-xs text-gray-900">
-          {owner.age !== null ? owner.age : EMPTY_VALUE_PLACEHOLDER}
-        </div>
+      <td className="px-3 py-1 whitespace-nowrap text-base text-gray-900">
+        {owner.age !== null ? owner.age : EMPTY_VALUE_PLACEHOLDER}
       </td>
 
       {/* DOB Column - Pre-formatted date */}
-      <td className="px-3 py-2 whitespace-nowrap">
-        <div className="text-xs text-gray-900">
-          {owner.formattedDOB}
-        </div>
+      <td className="px-3 py-1 whitespace-nowrap text-base text-gray-900">
+        {owner.formattedDOB}
       </td>
 
       {/* Email Column - Primary email */}
-      <td className="px-3 py-2 whitespace-nowrap">
-        <div className="text-xs text-gray-900">
-          {owner.email_1 || EMPTY_VALUE_PLACEHOLDER}
-        </div>
+      <td className="px-3 py-1 whitespace-nowrap text-base text-gray-900">
+        {owner.email_1 || EMPTY_VALUE_PLACEHOLDER}
       </td>
 
       {/* Status Column - Badge component */}
-      <td className="px-3 py-2 whitespace-nowrap">
+      <td className="px-3 py-1 whitespace-nowrap text-base">
         <StatusBadge status={owner.status} />
       </td>
 
       {/* Actions Column - Edit button and status management buttons */}
-      <td className="px-3 py-2 whitespace-nowrap text-xs font-medium">
-        <div className="flex items-center gap-1">
-          <EditButton
-            onClick={() => onEdit(owner)}
-            size="sm"
-            design="minimal"
-            aria-label={`Edit ${owner.fullName}`}
-          />
-          <ProductOwnerActions
-            productOwner={owner}
-            onStatusChange={onRefetch}
-            onAnnounce={onAnnounce}
-          />
-        </div>
+      <td className="px-3 py-1 whitespace-nowrap text-base">
+        <EditButton
+          onClick={() => onEdit(owner)}
+          size="sm"
+          design="minimal"
+          aria-label={`Edit ${owner.fullName}`}
+        />
+        <ProductOwnerActions
+          productOwner={owner}
+          onStatusChange={onRefetch}
+          onAnnounce={onAnnounce}
+        />
       </td>
     </tr>
   );
@@ -285,7 +275,7 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({ sortConfig, onSort }) =>
         <th
           scope="col"
           aria-sort="none"
-          className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+          className="px-3 py-1 text-left text-sm font-bold text-gray-900 uppercase tracking-wider"
         >
           Actions
         </th>
@@ -632,7 +622,7 @@ const ProductOwnerTable: React.FC<ProductOwnerTableProps> = ({
     <>
       {/* Add Person Button - Only show if clientGroupId is provided */}
       {clientGroupId && (
-        <div className="mb-2 flex justify-end">
+        <div className="mb-3 flex justify-end">
           <AddButton
             onClick={handleAddPerson}
             context="Person"
@@ -643,7 +633,7 @@ const ProductOwnerTable: React.FC<ProductOwnerTableProps> = ({
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table
             className="min-w-full divide-y divide-gray-200"

@@ -56,7 +56,7 @@ const FALLBACK_ERROR_MESSAGES = {
  * Button text constants for loading and default states
  */
 const BUTTON_TEXT = {
-  MAKE_DECEASED: 'Make Deceased',
+  MAKE_DECEASED: 'Deceased',
   MAKE_DECEASED_LOADING: 'Loading...',
   REACTIVATE: 'Reactivate',
   REACTIVATE_LOADING: 'Loading...',
