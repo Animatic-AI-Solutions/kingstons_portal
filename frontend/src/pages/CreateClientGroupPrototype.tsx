@@ -7,7 +7,6 @@ import { useCreateClientGroupFlow } from '../hooks/useCreateClientGroupFlow';
 import { useAuth } from '../context/AuthContext';
 import {
   BaseInput,
-  DateInput,
   BaseDropdown,
   TextArea,
   ActionButton,
@@ -238,13 +237,28 @@ const CreateClientGroupPrototype: React.FC = () => {
             helperText="Optional: Assign a specific advisor to this client group"
           />
 
-          <DateInput
-            label="Client Start Date"
-            value={clientGroup.client_start_date}
-            onChange={(date, formattedDate) => updateClientGroup('client_start_date', formattedDate)}
-            error={validationErrors.clientGroup?.client_start_date}
-            helperText="Date when the client relationship officially began"
-          />
+          <div>
+            <label htmlFor="client_start_date" className="block text-sm font-medium text-gray-700 mb-1">
+              Client Start Date
+            </label>
+            <input
+              id="client_start_date"
+              type="date"
+              value={clientGroup.client_start_date}
+              onChange={(e) => updateClientGroup('client_start_date', e.target.value)}
+              className={`block w-full rounded-md shadow-sm text-sm border ${
+                validationErrors.clientGroup?.client_start_date
+                  ? 'border-red-500 focus:border-red-600 focus:ring-red-500/10 bg-red-50'
+                  : 'border-gray-300 focus:border-primary-700 focus:ring-primary-700/10 bg-white'
+              } focus:outline-none focus:ring-4 focus:ring-offset-2 transition-all duration-150 ease-in-out px-3 py-2 h-10 text-gray-900`}
+            />
+            {validationErrors.clientGroup?.client_start_date && (
+              <p className="mt-1 text-xs text-red-600">
+                {validationErrors.clientGroup.client_start_date}
+              </p>
+            )}
+            <p className="mt-1 text-xs text-gray-500">Date when the client relationship officially began</p>
+          </div>
         </div>
       </div>
 
@@ -363,12 +377,25 @@ const CreateClientGroupPrototype: React.FC = () => {
                   error={ownerErrors?.relationship_status}
                 />
 
-                <DateInput
-                  label="Date of Birth"
-                  value={editingOwner.productOwner.dob}
-                  onChange={(date, formattedDate) => updateProductOwner(editingOwnerTempId!, 'dob', formattedDate)}
-                  error={ownerErrors?.dob}
-                />
+                <div>
+                  <label htmlFor="dob" className="block text-sm font-medium text-gray-700 mb-1">
+                    Date of Birth
+                  </label>
+                  <input
+                    id="dob"
+                    type="date"
+                    value={editingOwner.productOwner.dob}
+                    onChange={(e) => updateProductOwner(editingOwnerTempId!, 'dob', e.target.value)}
+                    className={`block w-full rounded-md shadow-sm text-sm border ${
+                      ownerErrors?.dob
+                        ? 'border-red-500 focus:border-red-600 focus:ring-red-500/10 bg-red-50'
+                        : 'border-gray-300 focus:border-primary-700 focus:ring-primary-700/10 bg-white'
+                    } focus:outline-none focus:ring-4 focus:ring-offset-2 transition-all duration-150 ease-in-out px-3 py-2 h-10 text-gray-900`}
+                  />
+                  {ownerErrors?.dob && (
+                    <p className="mt-1 text-xs text-red-600">{ownerErrors.dob}</p>
+                  )}
+                </div>
 
                 <BaseInput
                   label="Place of Birth"
@@ -471,12 +498,25 @@ const CreateClientGroupPrototype: React.FC = () => {
                   />
                 </div>
 
-                <DateInput
-                  label="Moved In Date"
-                  value={editingOwner.productOwner.moved_in_date}
-                  onChange={(date, formattedDate) => updateProductOwner(editingOwnerTempId!, 'moved_in_date', formattedDate)}
-                  error={ownerErrors?.moved_in_date}
-                />
+                <div>
+                  <label htmlFor="moved_in_date" className="block text-sm font-medium text-gray-700 mb-1">
+                    Moved In Date
+                  </label>
+                  <input
+                    id="moved_in_date"
+                    type="date"
+                    value={editingOwner.productOwner.moved_in_date}
+                    onChange={(e) => updateProductOwner(editingOwnerTempId!, 'moved_in_date', e.target.value)}
+                    className={`block w-full rounded-md shadow-sm text-sm border ${
+                      ownerErrors?.moved_in_date
+                        ? 'border-red-500 focus:border-red-600 focus:ring-red-500/10 bg-red-50'
+                        : 'border-gray-300 focus:border-primary-700 focus:ring-primary-700/10 bg-white'
+                    } focus:outline-none focus:ring-4 focus:ring-offset-2 transition-all duration-150 ease-in-out px-3 py-2 h-10 text-gray-900`}
+                  />
+                  {ownerErrors?.moved_in_date && (
+                    <p className="mt-1 text-xs text-red-600">{ownerErrors.moved_in_date}</p>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -532,12 +572,25 @@ const CreateClientGroupPrototype: React.FC = () => {
                   error={ownerErrors?.ni_number}
                 />
 
-                <DateInput
-                  label="Passport Expiry Date"
-                  value={editingOwner.productOwner.passport_expiry_date}
-                  onChange={(date, formattedDate) => updateProductOwner(editingOwnerTempId!, 'passport_expiry_date', formattedDate)}
-                  error={ownerErrors?.passport_expiry_date}
-                />
+                <div>
+                  <label htmlFor="passport_expiry_date" className="block text-sm font-medium text-gray-700 mb-1">
+                    Passport Expiry Date
+                  </label>
+                  <input
+                    id="passport_expiry_date"
+                    type="date"
+                    value={editingOwner.productOwner.passport_expiry_date}
+                    onChange={(e) => updateProductOwner(editingOwnerTempId!, 'passport_expiry_date', e.target.value)}
+                    className={`block w-full rounded-md shadow-sm text-sm border ${
+                      ownerErrors?.passport_expiry_date
+                        ? 'border-red-500 focus:border-red-600 focus:ring-red-500/10 bg-red-50'
+                        : 'border-gray-300 focus:border-primary-700 focus:ring-primary-700/10 bg-white'
+                    } focus:outline-none focus:ring-4 focus:ring-offset-2 transition-all duration-150 ease-in-out px-3 py-2 h-10 text-gray-900`}
+                  />
+                  {ownerErrors?.passport_expiry_date && (
+                    <p className="mt-1 text-xs text-red-600">{ownerErrors.passport_expiry_date}</p>
+                  )}
+                </div>
 
                 <BaseDropdown
                   label="AML Result"
@@ -547,12 +600,25 @@ const CreateClientGroupPrototype: React.FC = () => {
                   error={ownerErrors?.aml_result}
                 />
 
-                <DateInput
-                  label="AML Date"
-                  value={editingOwner.productOwner.aml_date}
-                  onChange={(date, formattedDate) => updateProductOwner(editingOwnerTempId!, 'aml_date', formattedDate)}
-                  error={ownerErrors?.aml_date}
-                />
+                <div>
+                  <label htmlFor="aml_date" className="block text-sm font-medium text-gray-700 mb-1">
+                    AML Date
+                  </label>
+                  <input
+                    id="aml_date"
+                    type="date"
+                    value={editingOwner.productOwner.aml_date}
+                    onChange={(e) => updateProductOwner(editingOwnerTempId!, 'aml_date', e.target.value)}
+                    className={`block w-full rounded-md shadow-sm text-sm border ${
+                      ownerErrors?.aml_date
+                        ? 'border-red-500 focus:border-red-600 focus:ring-red-500/10 bg-red-50'
+                        : 'border-gray-300 focus:border-primary-700 focus:ring-primary-700/10 bg-white'
+                    } focus:outline-none focus:ring-4 focus:ring-offset-2 transition-all duration-150 ease-in-out px-3 py-2 h-10 text-gray-900`}
+                  />
+                  {ownerErrors?.aml_date && (
+                    <p className="mt-1 text-xs text-red-600">{ownerErrors.aml_date}</p>
+                  )}
+                </div>
               </div>
             </div>
 
