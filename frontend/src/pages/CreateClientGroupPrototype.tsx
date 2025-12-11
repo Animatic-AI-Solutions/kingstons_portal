@@ -415,107 +415,95 @@ const CreateClientGroupPrototype: React.FC = () => {
               </div>
             </div>
 
-            {/* Contact Information Section */}
+            {/* Contact & Residential Information Section */}
             <div className="mb-6 pt-6 border-t">
-              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-4">Contact Information</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <BaseInput
-                  label="Email 1"
-                  type="email"
-                  value={editingOwner.productOwner.email_1}
-                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'email_1', e.target.value)}
-                  error={ownerErrors?.email_1}
-                />
-
-                <BaseInput
-                  label="Email 2"
-                  type="email"
-                  value={editingOwner.productOwner.email_2}
-                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'email_2', e.target.value)}
-                  error={ownerErrors?.email_2}
-                />
-
-                <BaseInput
-                  label="Phone 1"
-                  type="tel"
-                  value={editingOwner.productOwner.phone_1}
-                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'phone_1', e.target.value)}
-                  error={ownerErrors?.phone_1}
-                />
-
-                <BaseInput
-                  label="Phone 2"
-                  type="tel"
-                  value={editingOwner.productOwner.phone_2}
-                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'phone_2', e.target.value)}
-                  error={ownerErrors?.phone_2}
-                />
-              </div>
-            </div>
-
-            {/* Residential Information Section */}
-            <div className="mb-6 pt-6 border-t">
-              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-4">Residential Information</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
+              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-4">Contact & Residential Information</h4>
+              <div className="grid grid-cols-2 gap-6">
+                {/* Left Column - Address */}
+                <div className="space-y-4">
+                  <h5 className="text-xs font-medium text-gray-600 uppercase">Address</h5>
                   <BaseInput
                     label="Address Line 1"
                     value={editingOwner.address.line_1}
                     onChange={(e) => updateProductOwnerAddress(editingOwnerTempId!, 'line_1', e.target.value)}
                     error={ownerErrors?.address?.line_1}
                   />
-                </div>
-                <div className="col-span-2">
                   <BaseInput
                     label="Address Line 2"
                     value={editingOwner.address.line_2}
                     onChange={(e) => updateProductOwnerAddress(editingOwnerTempId!, 'line_2', e.target.value)}
                     error={ownerErrors?.address?.line_2}
                   />
-                </div>
-                <div className="col-span-2">
                   <BaseInput
                     label="Address Line 3"
                     value={editingOwner.address.line_3}
                     onChange={(e) => updateProductOwnerAddress(editingOwnerTempId!, 'line_3', e.target.value)}
                     error={ownerErrors?.address?.line_3}
                   />
-                </div>
-                <div className="col-span-2">
                   <BaseInput
                     label="Address Line 4"
                     value={editingOwner.address.line_4}
                     onChange={(e) => updateProductOwnerAddress(editingOwnerTempId!, 'line_4', e.target.value)}
                     error={ownerErrors?.address?.line_4}
                   />
-                </div>
-                <div className="col-span-2">
                   <BaseInput
                     label="Address Line 5"
                     value={editingOwner.address.line_5}
                     onChange={(e) => updateProductOwnerAddress(editingOwnerTempId!, 'line_5', e.target.value)}
                     error={ownerErrors?.address?.line_5}
                   />
+                  <div>
+                    <label htmlFor="moved_in_date" className="block text-sm font-medium text-gray-700 mb-1">
+                      Moved In Date
+                    </label>
+                    <input
+                      id="moved_in_date"
+                      type="date"
+                      value={editingOwner.productOwner.moved_in_date}
+                      onChange={(e) => updateProductOwner(editingOwnerTempId!, 'moved_in_date', e.target.value)}
+                      className={`block w-full rounded-md shadow-sm text-sm border ${
+                        ownerErrors?.moved_in_date
+                          ? 'border-red-500 focus:border-red-600 focus:ring-red-500/10 bg-red-50'
+                          : 'border-gray-300 focus:border-primary-700 focus:ring-primary-700/10 bg-white'
+                      } focus:outline-none focus:ring-4 focus:ring-offset-2 transition-all duration-150 ease-in-out px-3 py-2 h-10 text-gray-900`}
+                    />
+                    {ownerErrors?.moved_in_date && (
+                      <p className="mt-1 text-xs text-red-600">{ownerErrors.moved_in_date}</p>
+                    )}
+                  </div>
                 </div>
 
-                <div>
-                  <label htmlFor="moved_in_date" className="block text-sm font-medium text-gray-700 mb-1">
-                    Moved In Date
-                  </label>
-                  <input
-                    id="moved_in_date"
-                    type="date"
-                    value={editingOwner.productOwner.moved_in_date}
-                    onChange={(e) => updateProductOwner(editingOwnerTempId!, 'moved_in_date', e.target.value)}
-                    className={`block w-full rounded-md shadow-sm text-sm border ${
-                      ownerErrors?.moved_in_date
-                        ? 'border-red-500 focus:border-red-600 focus:ring-red-500/10 bg-red-50'
-                        : 'border-gray-300 focus:border-primary-700 focus:ring-primary-700/10 bg-white'
-                    } focus:outline-none focus:ring-4 focus:ring-offset-2 transition-all duration-150 ease-in-out px-3 py-2 h-10 text-gray-900`}
+                {/* Right Column - Contact Information */}
+                <div className="space-y-4">
+                  <h5 className="text-xs font-medium text-gray-600 uppercase">Contact Details</h5>
+                  <BaseInput
+                    label="Email 1"
+                    type="email"
+                    value={editingOwner.productOwner.email_1}
+                    onChange={(e) => updateProductOwner(editingOwnerTempId!, 'email_1', e.target.value)}
+                    error={ownerErrors?.email_1}
                   />
-                  {ownerErrors?.moved_in_date && (
-                    <p className="mt-1 text-xs text-red-600">{ownerErrors.moved_in_date}</p>
-                  )}
+                  <BaseInput
+                    label="Email 2"
+                    type="email"
+                    value={editingOwner.productOwner.email_2}
+                    onChange={(e) => updateProductOwner(editingOwnerTempId!, 'email_2', e.target.value)}
+                    error={ownerErrors?.email_2}
+                  />
+                  <BaseInput
+                    label="Phone 1"
+                    type="tel"
+                    value={editingOwner.productOwner.phone_1}
+                    onChange={(e) => updateProductOwner(editingOwnerTempId!, 'phone_1', e.target.value)}
+                    error={ownerErrors?.phone_1}
+                  />
+                  <BaseInput
+                    label="Phone 2"
+                    type="tel"
+                    value={editingOwner.productOwner.phone_2}
+                    onChange={(e) => updateProductOwner(editingOwnerTempId!, 'phone_2', e.target.value)}
+                    error={ownerErrors?.phone_2}
+                  />
                 </div>
               </div>
             </div>

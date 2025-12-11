@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserIcon } from '@heroicons/react/24/outline';
 import api from '../../../services/api';
+import { formatDateShort } from '../../../utils/formatters';
 
 interface SummaryTabProps {
   clientGroupId: string;
@@ -228,7 +229,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ clientGroupId }) => {
                         </div>
                         <div>
                           <span className="font-bold text-blue-600">DOB: </span>
-                          <span className="font-medium text-gray-900">{person.dob || 'N/A'}</span>
+                          <span className="font-medium text-gray-900">{person.dob ? formatDateShort(person.dob) : 'N/A'}</span>
                         </div>
                         <div>
                           <span className="font-bold text-blue-600">Age: </span>
@@ -264,7 +265,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ clientGroupId }) => {
                           {!person.address_line_1 && <div>N/A</div>}
                         </div>
                         <p className="text-base text-gray-900 mt-1">
-                          <span className="font-bold text-blue-600">Moved in:</span> {person.moved_in_date || 'N/A'}
+                          <span className="font-bold text-blue-600">Moved in:</span> {person.moved_in_date ? formatDateShort(person.moved_in_date) : 'N/A'}
                         </p>
                       </div>
                       <div>
@@ -318,7 +319,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ clientGroupId }) => {
                       <div className="space-y-1">
                         <div>
                           <span className="font-bold text-blue-600">Passport: </span>
-                          <span className="font-medium text-gray-900">{person.passport_expiry_date || 'N/A'}</span>
+                          <span className="font-medium text-gray-900">{person.passport_expiry_date ? formatDateShort(person.passport_expiry_date) : 'N/A'}</span>
                         </div>
                         <div>
                           <span className="font-bold text-blue-600">AML Result: </span>
@@ -326,7 +327,7 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ clientGroupId }) => {
                         </div>
                         <div>
                           <span className="font-bold text-blue-600">AML Date: </span>
-                          <span className="font-medium text-gray-900">{person.aml_date || 'N/A'}</span>
+                          <span className="font-medium text-gray-900">{person.aml_date ? formatDateShort(person.aml_date) : 'N/A'}</span>
                         </div>
                       </div>
                     </div>

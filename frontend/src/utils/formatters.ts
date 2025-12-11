@@ -19,6 +19,15 @@ export const formatDate = (dateString: string): string => {
   });
 };
 
+export const formatDateShort = (dateString: string | null | undefined): string => {
+  if (!dateString) return '';
+  return new Date(dateString).toLocaleDateString('en-GB', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+};
+
 export const formatDateTime = (dateString: string): string => {
   return new Date(dateString).toLocaleString('en-GB', {
     year: 'numeric',
