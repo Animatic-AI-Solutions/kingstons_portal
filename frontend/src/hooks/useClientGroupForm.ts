@@ -29,6 +29,7 @@ const createInitialClientGroup = (): ClientGroupFormData => ({
   name: '',
   type: '',
   status: 'active',
+  advisor_id: null,
   client_start_date: '',
   ongoing_start: '',
   client_declaration: '',

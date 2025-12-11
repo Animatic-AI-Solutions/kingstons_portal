@@ -1,1 +1,1 @@
-ok now lets add this field to the create client group modal 
+(http://localhost:3000/client-groups/add)

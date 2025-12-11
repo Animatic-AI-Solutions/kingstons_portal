@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PlusIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
 import DynamicPageContainer from '../components/DynamicPageContainer';
 import { useClientGroupForm } from '../hooks/useClientGroupForm';
 import { useCreateClientGroupFlow } from '../hooks/useCreateClientGroupFlow';
+import { useAuth } from '../context/AuthContext';
 import {
   BaseInput,
   DateInput,
@@ -38,6 +39,7 @@ import {
  */
 const CreateClientGroupPrototype: React.FC = () => {
   const navigate = useNavigate();
+  const { api } = useAuth();
 
   // Custom hooks for state management
   const {
@@ -62,6 +64,25 @@ const CreateClientGroupPrototype: React.FC = () => {
   // Local UI state
   const [isAddingOwner, setIsAddingOwner] = useState(false);
   const [editingOwnerTempId, setEditingOwnerTempId] = useState<string | null>(null);
+  const [advisorOptions, setAdvisorOptions] = useState<{ value: string; label: string }[]>([]);
+
+  // Fetch available advisors for dropdown
+  useEffect(() => {
+    const fetchAdvisors = async () => {
+      try {
+        const response = await api.get('/advisors');
+        const advisors = response.data;
+        const options = advisors.map((advisor: any) => ({
+          value: advisor.advisor_id.toString(),
+          label: advisor.full_name || `${advisor.first_name} ${advisor.last_name}`.trim()
+        }));
+        setAdvisorOptions(options);
+      } catch (err) {
+        console.error('Error fetching advisors:', err);
+      }
+    };
+    fetchAdvisors();
+  }, [api]);
 
   /**
    * Handles initiating the "add new product owner" flow
@@ -208,6 +229,15 @@ const CreateClientGroupPrototype: React.FC = () => {
             error={validationErrors.clientGroup?.status}
           />
 
+          <BaseDropdown
+            label="Advisor"
+            value={clientGroup.advisor_id?.toString() || ''}
+            onChange={(val) => updateClientGroup('advisor_id', val ? parseInt(val as string) : null)}
+            options={advisorOptions}
+            placeholder="Select an advisor"
+            helperText="Optional: Assign a specific advisor to this client group"
+          />
+
           <DateInput
             label="Client Start Date"
             value={clientGroup.client_start_date}
@@ -215,51 +245,6 @@ const CreateClientGroupPrototype: React.FC = () => {
             error={validationErrors.clientGroup?.client_start_date}
             helperText="Date when the client relationship officially began"
           />
-
-          <DateInput
-            label="Ongoing Start Date"
-            value={clientGroup.ongoing_start}
-            onChange={(date, formattedDate) => updateClientGroup('ongoing_start', formattedDate)}
-            error={validationErrors.clientGroup?.ongoing_start}
-          />
-
-          <DateInput
-            label="Client Declaration Date"
-            value={clientGroup.client_declaration}
-            onChange={(date, formattedDate) => updateClientGroup('client_declaration', formattedDate)}
-            error={validationErrors.clientGroup?.client_declaration}
-          />
-
-          <DateInput
-            label="Privacy Declaration Date"
-            value={clientGroup.privacy_declaration}
-            onChange={(date, formattedDate) => updateClientGroup('privacy_declaration', formattedDate)}
-            error={validationErrors.clientGroup?.privacy_declaration}
-          />
-
-          <DateInput
-            label="Full Fee Agreement Date"
-            value={clientGroup.full_fee_agreement}
-            onChange={(date, formattedDate) => updateClientGroup('full_fee_agreement', formattedDate)}
-            error={validationErrors.clientGroup?.full_fee_agreement}
-          />
-
-          <DateInput
-            label="Last Satisfactory Discussion Date"
-            value={clientGroup.last_satisfactory_discussion}
-            onChange={(date, formattedDate) => updateClientGroup('last_satisfactory_discussion', formattedDate)}
-            error={validationErrors.clientGroup?.last_satisfactory_discussion}
-          />
-
-          <div className="col-span-2">
-            <TextArea
-              label="Notes"
-              value={clientGroup.notes}
-              onChange={(e) => updateClientGroup('notes', e.target.value)}
-              rows={3}
-              error={validationErrors.clientGroup?.notes}
-            />
-          </div>
         </div>
       </div>
 

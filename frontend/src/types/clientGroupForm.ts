@@ -66,13 +66,14 @@ export interface AddressFormData {
 
 /**
  * Form data for creating a client group
- * Matches client_groups database table (11 fields)
+ * Matches client_groups database table (12 fields)
  * Excludes: id, created_at (auto-generated)
  */
 export interface ClientGroupFormData {
   name: string;
   type: string;
   status: string;
+  advisor_id: number | null;  // Foreign key to profiles table for advisor assignment
   client_start_date: string;  // ISO date format YYYY-MM-DD - Date when client relationship officially began
   ongoing_start: string;  // ISO date format YYYY-MM-DD
   client_declaration: string;  // ISO date format YYYY-MM-DD

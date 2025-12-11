@@ -175,60 +175,6 @@ const AddClient: React.FC = () => {
             />
 
             <div>
-              <DateInput
-                label="Client Start Date"
-                value={formData.client_start_date ? new Date(formData.client_start_date) : undefined}
-                onChange={(date, formattedDate) => {
-                  if (date) {
-                    const isoString = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD for DATE field
-                    setFormData(prev => ({ ...prev, client_start_date: isoString }));
-                  } else {
-                    setFormData(prev => ({ ...prev, client_start_date: null }));
-                  }
-                }}
-                placeholder="dd/mm/yyyy"
-                showCalendarIcon={true}
-                helperText="The date when the client relationship officially began"
-              />
-            </div>
-
-            <div>
-              <DateInput
-                label="Client Since"
-                value={formData.created_at ? new Date(formData.created_at) : undefined}
-                onChange={(date, formattedDate) => {
-                  console.log('DEBUG: AddClient DateInput onChange:', { date, formattedDate });
-                  if (date) {
-                    const isoString = date.toISOString();
-                    console.log('DEBUG: AddClient setting created_at to:', isoString);
-                    setFormData(prev => ({ ...prev, created_at: isoString }));
-                  } else {
-                    console.log('DEBUG: AddClient setting created_at to null');
-                    setFormData(prev => ({ ...prev, created_at: null }));
-                  }
-                }}
-                placeholder="dd/mm/yyyy"
-                showCalendarIcon={true}
-                helperText="Optional: Set the actual start date for this client relationship. Leave blank to use today's date."
-              />
-            </div>
-
-            {/* Advisor Assignment - Using BaseDropdown */}
-            <div>
-              <BaseDropdown
-                label="Advisor"
-                options={advisorOptions}
-                value={formData.advisor_id?.toString() || ''}
-                onChange={(value) => setFormData(prev => ({ 
-                  ...prev, 
-                  advisor_id: value ? parseInt(value as string) : null 
-                }))}
-                placeholder="Select an advisor"
-                helperText="Optional: Assign a specific advisor to this client group"
-              />
-            </div>
-
-            <div>
               <BaseDropdown
                 label="Client Group Type"
                 options={typeOptions}
@@ -249,6 +195,39 @@ const AddClient: React.FC = () => {
                 placeholder="Select status"
                 required
                 helperText="Set the current operational status of the client group"
+              />
+            </div>
+
+            {/* Advisor Assignment - Using BaseDropdown */}
+            <div>
+              <BaseDropdown
+                label="Advisor"
+                options={advisorOptions}
+                value={formData.advisor_id?.toString() || ''}
+                onChange={(value) => setFormData(prev => ({
+                  ...prev,
+                  advisor_id: value ? parseInt(value as string) : null
+                }))}
+                placeholder="Select an advisor"
+                helperText="Optional: Assign a specific advisor to this client group"
+              />
+            </div>
+
+            <div>
+              <DateInput
+                label="Client Start Date"
+                value={formData.client_start_date ? new Date(formData.client_start_date) : undefined}
+                onChange={(date, formattedDate) => {
+                  if (date) {
+                    const isoString = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD for DATE field
+                    setFormData(prev => ({ ...prev, client_start_date: isoString }));
+                  } else {
+                    setFormData(prev => ({ ...prev, client_start_date: null }));
+                  }
+                }}
+                placeholder="dd/mm/yyyy"
+                showCalendarIcon={true}
+                helperText="Date when the client relationship officially began"
               />
             </div>
           </div>
