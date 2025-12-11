@@ -45,6 +45,13 @@ export function validateClientGroup(data: ClientGroupFormData): Record<string, s
 
   // Optional date field validations
 
+  // client_start_date validation (optional date field)
+  if (data.client_start_date && data.client_start_date.trim() !== '') {
+    if (!isValidDate(data.client_start_date)) {
+      errors.client_start_date = 'Please enter a valid client start date';
+    }
+  }
+
   // ongoing_start validation (optional date field)
   if (data.ongoing_start && data.ongoing_start.trim() !== '') {
     if (!isValidDate(data.ongoing_start)) {

@@ -236,9 +236,9 @@ describe('People Tab Integration Flows', () => {
         expect(screen.queryByTestId('table-skeleton')).not.toBeInTheDocument();
       });
 
-      // Step 1: Click Edit button for John Smith
-      const editButton = screen.getAllByLabelText(/edit.*john/i)[0];
-      await user.click(editButton);
+      // Step 1: Click on John Smith row to edit
+      const johnRow = screen.getByText('Mr John Smith').closest('tr');
+      await user.click(johnRow!);
 
       // Step 2: Modal opens with existing data
       await waitFor(() => {
@@ -296,7 +296,7 @@ describe('People Tab Integration Flows', () => {
       expect(johnRow).toBeInTheDocument();
 
       // Step 2: Click Lapse button
-      const lapseButton = within(johnRow!).getByRole('button', { name: 'Lapse' });
+      const lapseButton = within(johnRow!).getByRole('button', { name: /lapse product owner/i });
       await user.click(lapseButton);
 
       // Step 3: Verify API called
@@ -363,7 +363,7 @@ describe('People Tab Integration Flows', () => {
       expect(janeRow).toBeInTheDocument();
 
       // Step 2: Click Delete button
-      const deleteButton = within(janeRow!).getByRole('button', { name: 'Delete' });
+      const deleteButton = within(janeRow!).getByRole('button', { name: /delete product owner/i });
       await user.click(deleteButton);
 
       // Step 3: Confirm deletion in modal
@@ -609,8 +609,7 @@ describe('People Tab Integration Flows', () => {
       await user.type(screen.getByLabelText(/first name/i), 'Test');
       await user.type(screen.getByLabelText(/surname/i), 'User');
 
-      // Expand contact section and enter email that exists in database
-      await user.click(screen.getByText(/contact information/i));
+      // Enter email that exists in database
       await user.type(screen.getByLabelText(/primary email/i), 'existing@example.com');
 
       // Step 2: Submit
@@ -753,9 +752,9 @@ describe('People Tab Integration Flows', () => {
       const table = screen.getByRole('table');
       expect(table).toBeInTheDocument();
 
-      // Step 4: Verify actions are still clickable
-      const editButtons = screen.getAllByLabelText(/edit/i);
-      expect(editButtons.length).toBe(50);
+      // Step 4: Verify rows are clickable
+      const tableRows = screen.getAllByRole('row');
+      expect(tableRows.length).toBe(51); // 50 data rows + 1 header row
     }, 10000); // 10 second timeout
 
     it('complete flow: handle 100 product owners (stress test)', async () => {

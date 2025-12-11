@@ -2716,7 +2716,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
           </Transition.Child>
 
           <div className="fixed inset-0 overflow-y-auto z-50">
-            <div className="flex min-h-full items-center justify-center p-4 text-center">
+            <div className="flex min-h-full items-start justify-center p-4 pt-16 text-center">
               <Transition.Child
                 as={Fragment}
                 enter="ease-out duration-300"
@@ -2841,7 +2841,7 @@ const AccountIRRCalculation: React.FC<AccountIRRCalculationProps> = ({ accountId
           </Transition.Child>
 
           <div className="fixed inset-0 overflow-y-auto z-50">
-            <div className="flex min-h-full items-center justify-center p-4 text-center">
+            <div className="flex min-h-full items-start justify-center p-4 pt-16 text-center">
               <Transition.Child
                 as={Fragment}
                 enter="ease-out duration-300"

@@ -19,7 +19,6 @@ import React, { useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import FormSection from './form/FormSection';
 import FormTextField from './form/FormTextField';
 import { PRODUCT_OWNER_STATUS } from '@/utils/productOwnerConstants';
 import type { ProductOwner } from '@/types/productOwner';
@@ -27,29 +26,6 @@ import type { ProductOwner } from '@/types/productOwner';
 // ============================================================================
 // Constants
 // ============================================================================
-
-/**
- * Form section configuration
- * Defines the 4 progressive disclosure sections with titles and default states
- */
-const FORM_SECTIONS = {
-  PERSONAL: {
-    TITLE: 'Personal Information',
-    DEFAULT_OPEN: true,
-  },
-  CONTACT: {
-    TITLE: 'Contact Information',
-    DEFAULT_OPEN: false,
-  },
-  PROFILING: {
-    TITLE: 'Client Profiling',
-    DEFAULT_OPEN: false,
-  },
-  PROFESSIONAL: {
-    TITLE: 'Professional & Compliance',
-    DEFAULT_OPEN: false,
-  },
-} as const;
 
 /**
  * Button text constants
@@ -385,12 +361,9 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
   }, [dirtyFields, mode, onSubmit]);
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-0">
-      {/* ================================================================== */}
-      {/* Section 1: Personal Information (expanded by default)              */}
-      {/* ================================================================== */}
-      <FormSection title={FORM_SECTIONS.PERSONAL.TITLE} defaultOpen={FORM_SECTIONS.PERSONAL.DEFAULT_OPEN}>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+      {/* Personal Information */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormTextField
             name="title"
             label="Title"
@@ -489,13 +462,9 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
             />
           )}
         </div>
-      </FormSection>
 
-      {/* ================================================================== */}
-      {/* Section 2: Contact Information (collapsed by default)              */}
-      {/* ================================================================== */}
-      <FormSection title={FORM_SECTIONS.CONTACT.TITLE} defaultOpen={FORM_SECTIONS.CONTACT.DEFAULT_OPEN}>
-        <div className="grid grid-cols-1 gap-4">
+      {/* Contact Information */}
+      <div className="grid grid-cols-1 gap-4">
           <FormTextField
             name="email_1"
             label="Primary Email"
@@ -561,13 +530,9 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
             type="date"
           />
         </div>
-      </FormSection>
 
-      {/* ================================================================== */}
-      {/* Section 3: Client Profiling (collapsed by default)                */}
-      {/* ================================================================== */}
-      <FormSection title={FORM_SECTIONS.PROFILING.TITLE} defaultOpen={FORM_SECTIONS.PROFILING.DEFAULT_OPEN}>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      {/* Client Profiling */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormTextField
             name="three_words"
             label="Three Words"
@@ -581,13 +546,9 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
             placeholder="Data sharing preferences"
           />
         </div>
-      </FormSection>
 
-      {/* ================================================================== */}
-      {/* Section 4: Professional & Compliance (collapsed by default)       */}
-      {/* ================================================================== */}
-      <FormSection title={FORM_SECTIONS.PROFESSIONAL.TITLE} defaultOpen={FORM_SECTIONS.PROFESSIONAL.DEFAULT_OPEN}>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      {/* Professional & Compliance */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormTextField
             name="occupation"
             label="Occupation"
@@ -659,9 +620,8 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
             type="date"
           />
         </div>
-      </FormSection>
 
-      {/* ================================================================== */}
+      {/* Form Actions */}
       {/* Notes Field - Always Visible Outside Sections                     */}
       {/* ================================================================== */}
       <Controller

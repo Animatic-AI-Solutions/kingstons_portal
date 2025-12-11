@@ -223,7 +223,7 @@ const SortableColumnHeader: React.FC<SortableColumnHeaderProps> = ({
     <th
       scope="col"
       aria-sort={ariaSortValue}
-      className="px-3 py-1 text-left text-sm font-bold text-gray-900 uppercase tracking-wider"
+      className="text-center text-sm font-bold text-gray-900 uppercase tracking-wider"
     >
       <button
         type="button"
@@ -231,7 +231,9 @@ const SortableColumnHeader: React.FC<SortableColumnHeaderProps> = ({
         onKeyDown={handleKeyDown}
         aria-label={ariaLabel}
         className={`
-          flex items-center gap-1
+          flex items-center justify-center gap-1
+          w-full text-center
+          px-3 py-1
           min-w-[44px]
           hover:text-gray-700
           focus:outline-none

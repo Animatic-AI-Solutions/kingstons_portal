@@ -43,6 +43,7 @@ erDiagram
         text name
         text type
         text status
+        date client_start_date
         date ongoing_start
         date client_declaration
         date privacy_declaration
@@ -444,7 +445,7 @@ These tables represent the foundational entities of the system.
 -   **`profiles`**: Stores user data for application administrators and advisors.
 -   **`authentication`**: Manages user credentials, linked directly to `profiles`.
 -   **`session`**: Stores active user login sessions.
--   **`client_groups`**: The central table for client entities. A group can represent a family, an individual, or a trust. Includes compliance tracking fields (ongoing_start, client_declaration, privacy_declaration, full_fee_agreement) and relationship management fields (last_satisfactory_discussion, notes) to support regulatory requirements and ongoing client relationship management.
+-   **`client_groups`**: The central table for client entities. A group can represent a business, family, or trust. Includes a client_start_date field to track when the client relationship officially began, compliance tracking fields (ongoing_start, client_declaration, privacy_declaration, full_fee_agreement) and relationship management fields (last_satisfactory_discussion, notes) to support regulatory requirements and ongoing client relationship management.
 -   **`product_owners`**: Represents individuals who are owners or beneficiaries of financial products. Includes comprehensive personal information (gender, DOB, place of birth), contact details (email_1, email_2, phone_1, phone_2), employment information (employment_status, occupation), KYC/AML compliance fields (passport_expiry_date, ni_number, aml_result, aml_date), and residential data (moved_in_date, address_id foreign key).
 -   **`addresses`**: Stores physical address information for product owners with five address lines (line_1 through line_5). Linked to `product_owners` via one-to-one relationship through the `address_id` foreign key.
 -   **`special_relationships`**: Stores information about personal and professional relationships associated with product owners. Includes relationship type (personal/professional), demographic information (name, DOB, age), dependency status, contact details, address linkage, and notes. Supports tracking of family members, dependents, business partners, and other significant relationships.

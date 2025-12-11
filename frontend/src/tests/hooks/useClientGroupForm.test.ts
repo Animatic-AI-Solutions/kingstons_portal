@@ -44,10 +44,10 @@ describe('useClientGroupForm', () => {
       const { result } = renderHook(() => useClientGroupForm());
 
       act(() => {
-        result.current.updateClientGroup('type', 'Joint');
+        result.current.updateClientGroup('type', 'Family');
       });
 
-      expect(result.current.clientGroup.type).toBe('Joint');
+      expect(result.current.clientGroup.type).toBe('Family');
     });
 
     it('should update client group status', () => {
@@ -312,7 +312,7 @@ describe('useClientGroupForm', () => {
 
       act(() => {
         result.current.updateClientGroup('name', 'Test Group');
-        result.current.updateClientGroup('type', 'Joint');
+        result.current.updateClientGroup('type', 'Family');
         result.current.reset();
       });
 

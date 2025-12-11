@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, date
 
 # =============================================================================
 # BASE MODELS
@@ -11,11 +11,12 @@ class ClientGroupBase(BaseModel):
     name: Optional[str] = Field(default="")
     status: Optional[str] = Field(default="active")
     type: Optional[str] = Field(default="Family")
+    client_start_date: Optional[date] = Field(default=None, description="Date when client relationship officially began")
     created_at: Optional[datetime] = Field(default=None)  # Allow setting start date when creating/updating
-    
+
     # New advisor relationship field
     advisor_id: Optional[int] = Field(default=None, description="Foreign key to profiles table")
-    
+
     # Legacy advisor field (keep for backward compatibility)
     advisor: Optional[str] = Field(default=None, description="Legacy advisor text field")
 
@@ -37,6 +38,7 @@ class ClientGroupUpdate(BaseModel):
     name: Optional[str] = None
     status: Optional[str] = None
     type: Optional[str] = None
+    client_start_date: Optional[date] = None  # Can update client start date
     created_at: Optional[datetime] = None  # Allow updating client start date
     advisor_id: Optional[int] = None  # Can update advisor assignment
     advisor: Optional[str] = None  # Legacy field

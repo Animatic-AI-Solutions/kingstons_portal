@@ -109,6 +109,7 @@ CREATE TABLE client_groups (
     name text,
     type text DEFAULT 'Family'::text,
     advisor_id bigint(64),
+    client_start_date date, -- Date when the client relationship officially began
 
     -- Compliance and tracking fields
     ongoing_start date,

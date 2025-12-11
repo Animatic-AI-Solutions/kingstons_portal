@@ -67,11 +67,9 @@ export const EMPLOYMENT_STATUS_OPTIONS = [
  * Used in the client group type dropdown field
  */
 export const CLIENT_GROUP_TYPES = [
-  'Individual',
-  'Joint',
+  'Business',
   'Family',
   'Trust',
-  'Corporate',
 ] as const;
 
 /**

@@ -66,13 +66,14 @@ export interface AddressFormData {
 
 /**
  * Form data for creating a client group
- * Matches client_groups database table (10 fields)
+ * Matches client_groups database table (11 fields)
  * Excludes: id, created_at (auto-generated)
  */
 export interface ClientGroupFormData {
   name: string;
   type: string;
   status: string;
+  client_start_date: string;  // ISO date format YYYY-MM-DD - Date when client relationship officially began
   ongoing_start: string;  // ISO date format YYYY-MM-DD
   client_declaration: string;  // ISO date format YYYY-MM-DD
   privacy_declaration: string;  // ISO date format YYYY-MM-DD
@@ -112,6 +113,7 @@ export interface ValidationErrors {
     name?: string;
     type?: string;
     status?: string;
+    client_start_date?: string;
     ongoing_start?: string;
     client_declaration?: string;
     privacy_declaration?: string;

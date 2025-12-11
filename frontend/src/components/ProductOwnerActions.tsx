@@ -21,7 +21,7 @@
 
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import { LapseButton, ActionButton, DeleteButton } from '@/components/ui';
+import { PauseCircleIcon, XCircleIcon, ArrowPathIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { updateProductOwnerStatus } from '@/services/api/updateProductOwner';
 import { deleteProductOwner } from '@/services/api/deleteProductOwner';
 import { formatApiError } from '@/utils/errorHandling';
@@ -297,51 +297,59 @@ const ProductOwnerActions: React.FC<ProductOwnerActionsProps> = ({
    * Lapsed/Deceased status: Show Reactivate and Delete buttons
    */
   if (productOwner.status === 'active') {
-    // Active product owners: Show Lapse and Make Deceased buttons
+    // Active product owners: Show Lapse and Deceased icon buttons
     return (
-      <div className="flex items-center gap-2">
-        {/* Lapse button - minimal design from UI component library */}
-        <LapseButton
+      <div className="flex items-center gap-1">
+        {/* Lapse button - orange icon */}
+        <button
           onClick={handleLapse}
           disabled={isLapsing || isMakingDeceased}
-          loading={isLapsing}
-          size="sm"
-          design="minimal"
-        />
-        {/* Make Deceased button - gray inline style */}
+          className="p-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label="Lapse product owner"
+          title="Lapse"
+        >
+          <PauseCircleIcon className="w-4 h-4" />
+        </button>
+
+        {/* Deceased button - gray icon */}
         <button
           onClick={handleMakeDeceased}
           disabled={isLapsing || isMakingDeceased}
-          className={BUTTON_STYLES.MAKE_DECEASED}
+          className="p-1 text-gray-600 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Mark product owner as deceased"
+          title="Deceased"
         >
-          {isMakingDeceased ? BUTTON_TEXT.MAKE_DECEASED_LOADING : BUTTON_TEXT.MAKE_DECEASED}
+          <XCircleIcon className="w-4 h-4" />
         </button>
       </div>
     );
   }
 
-  // Lapsed or Deceased product owners: Show Reactivate and Delete buttons
+  // Lapsed or Deceased product owners: Show Reactivate and Delete icon buttons
   return (
     <>
-      <div className="flex items-center gap-2">
-        {/* Reactivate button - green inline style */}
+      <div className="flex items-center gap-1">
+        {/* Reactivate button - blue icon */}
         <button
           onClick={handleReactivate}
           disabled={isReactivating || isDeleting}
-          className={BUTTON_STYLES.REACTIVATE}
+          className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Reactivate product owner"
+          title="Reactivate"
         >
-          {isReactivating ? BUTTON_TEXT.REACTIVATE_LOADING : BUTTON_TEXT.REACTIVATE}
+          <ArrowPathIcon className="w-4 h-4" />
         </button>
-        {/* Delete button - minimal design from UI component library */}
-        <DeleteButton
+
+        {/* Delete button - red icon */}
+        <button
           onClick={() => setIsDeleteModalOpen(true)}
           disabled={isReactivating || isDeleting}
-          loading={isDeleting}
-          size="sm"
-          design="minimal"
-        />
+          className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label="Delete product owner"
+          title="Delete"
+        >
+          <TrashIcon className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Delete Confirmation Modal - shown when user clicks Delete button */}

@@ -65,13 +65,8 @@ describe('validateClientGroup', () => {
   });
 
   describe('valid client group types', () => {
-    it('should return null for Individual type', () => {
-      const data = { ...validData, type: 'Individual' };
-      expect(validateClientGroup(data)).toBeNull();
-    });
-
-    it('should return null for Joint type', () => {
-      const data = { ...validData, type: 'Joint' };
+    it('should return null for Business type', () => {
+      const data = { ...validData, type: 'Business' };
       expect(validateClientGroup(data)).toBeNull();
     });
 
@@ -82,11 +77,6 @@ describe('validateClientGroup', () => {
 
     it('should return null for Trust type', () => {
       const data = { ...validData, type: 'Trust' };
-      expect(validateClientGroup(data)).toBeNull();
-    });
-
-    it('should return null for Corporate type', () => {
-      const data = { ...validData, type: 'Corporate' };
       expect(validateClientGroup(data)).toBeNull();
     });
   });
@@ -188,7 +178,7 @@ describe('validateClientGroup', () => {
     it('should return null for valid minimal data', () => {
       const data: ClientGroupFormData = {
         name: 'AB',
-        type: 'Individual',
+        type: 'Family',
         status: 'active',
         ongoing_start: '',
         client_declaration: '',

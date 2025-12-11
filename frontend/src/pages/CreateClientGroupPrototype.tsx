@@ -209,6 +209,14 @@ const CreateClientGroupPrototype: React.FC = () => {
           />
 
           <DateInput
+            label="Client Start Date"
+            value={clientGroup.client_start_date}
+            onChange={(date, formattedDate) => updateClientGroup('client_start_date', formattedDate)}
+            error={validationErrors.clientGroup?.client_start_date}
+            helperText="Date when the client relationship officially began"
+          />
+
+          <DateInput
             label="Ongoing Start Date"
             value={clientGroup.ongoing_start}
             onChange={(date, formattedDate) => updateClientGroup('ongoing_start', formattedDate)}

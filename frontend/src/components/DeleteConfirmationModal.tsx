@@ -149,7 +149,7 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
 
         {/* Modal positioning container - centers modal on screen */}
         <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4 text-center">
+          <div className="flex min-h-full items-start justify-center p-4 pt-16 text-center">
             {/* Modal panel with scale and fade transition */}
             <Transition.Child
               as={Fragment}

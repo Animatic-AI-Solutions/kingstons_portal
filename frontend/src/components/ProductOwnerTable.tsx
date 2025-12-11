@@ -21,7 +21,6 @@
 import React, { useMemo, memo, useCallback, useState } from 'react';
 import StatusBadge from './StatusBadge';
 import ActionButton from './ui/buttons/ActionButton';
-import EditButton from './ui/buttons/EditButton';
 import AddButton from './ui/buttons/AddButton';
 import SortableColumnHeader from './SortableColumnHeader';
 import ProductOwnerActions from './ProductOwnerActions';
@@ -167,54 +166,54 @@ interface ProductOwnerRowProps {
 const ProductOwnerRow = memo<ProductOwnerRowProps>(({ owner, onRefetch, onEdit, onAnnounce }) => {
   return (
     <tr
+      onClick={() => onEdit(owner)}
       className={`hover:bg-gray-50 cursor-pointer transition-colors ${
         owner.isInactive ? 'opacity-50 grayscale-[30%]' : ''
       }`}
       data-testid={`product-owner-row-${owner.id}`}
     >
       {/* Name Column - Pre-formatted full name */}
-      <td className="px-3 py-1 whitespace-nowrap text-base font-medium text-gray-900">
+      <td className="px-3 py-1 whitespace-nowrap text-center text-base font-medium text-gray-900">
         {owner.fullName}
       </td>
 
       {/* Relationship Column */}
-      <td className="px-3 py-1 whitespace-nowrap text-base text-gray-900">
+      <td className="px-3 py-1 whitespace-nowrap text-center text-base text-gray-900">
         {owner.relationship_status || EMPTY_VALUE_PLACEHOLDER}
       </td>
 
       {/* Age Column - Pre-calculated age */}
-      <td className="px-3 py-1 whitespace-nowrap text-base text-gray-900">
+      <td className="px-3 py-1 whitespace-nowrap text-center text-base text-gray-900">
         {owner.age !== null ? owner.age : EMPTY_VALUE_PLACEHOLDER}
       </td>
 
       {/* DOB Column - Pre-formatted date */}
-      <td className="px-3 py-1 whitespace-nowrap text-base text-gray-900">
+      <td className="px-3 py-1 whitespace-nowrap text-center text-base text-gray-900">
         {owner.formattedDOB}
       </td>
 
       {/* Email Column - Primary email */}
-      <td className="px-3 py-1 whitespace-nowrap text-base text-gray-900">
+      <td className="px-3 py-1 whitespace-nowrap text-center text-base text-gray-900">
         {owner.email_1 || EMPTY_VALUE_PLACEHOLDER}
       </td>
 
       {/* Status Column - Badge component */}
-      <td className="px-3 py-1 whitespace-nowrap text-base">
+      <td className="px-3 py-1 whitespace-nowrap text-center text-base">
         <StatusBadge status={owner.status} />
       </td>
 
-      {/* Actions Column - Edit button and status management buttons */}
-      <td className="px-3 py-1 whitespace-nowrap text-base">
-        <EditButton
-          onClick={() => onEdit(owner)}
-          size="sm"
-          design="minimal"
-          aria-label={`Edit ${owner.fullName}`}
-        />
-        <ProductOwnerActions
-          productOwner={owner}
-          onStatusChange={onRefetch}
-          onAnnounce={onAnnounce}
-        />
+      {/* Actions Column - Status management buttons */}
+      <td className="px-3 py-1 whitespace-nowrap text-center text-base">
+        <div
+          className="flex items-center justify-center gap-1"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <ProductOwnerActions
+            productOwner={owner}
+            onStatusChange={onRefetch}
+            onAnnounce={onAnnounce}
+          />
+        </div>
       </td>
     </tr>
   );
@@ -275,9 +274,11 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({ sortConfig, onSort }) =>
         <th
           scope="col"
           aria-sort="none"
-          className="px-3 py-1 text-left text-sm font-bold text-gray-900 uppercase tracking-wider"
+          className="text-center text-sm font-bold text-gray-900 uppercase tracking-wider"
         >
-          Actions
+          <div className="px-3 py-1">
+            Actions
+          </div>
         </th>
       </tr>
     </thead>

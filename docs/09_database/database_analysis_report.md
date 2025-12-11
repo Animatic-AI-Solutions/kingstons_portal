@@ -105,6 +105,7 @@ erDiagram
         text advisor
         text status
         text type
+        date client_start_date
         timestamptz created_at
     }
     

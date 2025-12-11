@@ -18,6 +18,7 @@ interface ClientFormData {
   status: string;
   advisor_id: number | null; // New advisor relationship field
   type: string;
+  client_start_date: string | null;
   created_at: string | null;
 }
 
@@ -30,6 +31,7 @@ const AddClient: React.FC = () => {
     status: 'active',
     advisor_id: null,
     type: 'Family',
+    client_start_date: null,
     created_at: null
   });
   const [error, setError] = useState<string | null>(null);
@@ -171,6 +173,24 @@ const AddClient: React.FC = () => {
                 </svg>
               }
             />
+
+            <div>
+              <DateInput
+                label="Client Start Date"
+                value={formData.client_start_date ? new Date(formData.client_start_date) : undefined}
+                onChange={(date, formattedDate) => {
+                  if (date) {
+                    const isoString = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD for DATE field
+                    setFormData(prev => ({ ...prev, client_start_date: isoString }));
+                  } else {
+                    setFormData(prev => ({ ...prev, client_start_date: null }));
+                  }
+                }}
+                placeholder="dd/mm/yyyy"
+                showCalendarIcon={true}
+                helperText="The date when the client relationship officially began"
+              />
+            </div>
 
             <div>
               <DateInput

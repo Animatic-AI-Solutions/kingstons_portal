@@ -79,7 +79,7 @@ const IRRCalculationModal: React.FC<IRRCalculationModalProps> = ({
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
       
       {/* Modal container - centered on screen */}
-      <div className="fixed inset-0 flex items-center justify-center p-4">
+      <div className="fixed inset-0 flex items-start justify-center p-4 pt-16">
         <Dialog.Panel className="mx-auto max-w-sm rounded bg-white p-6">
           {/* Modal title */}
           <Dialog.Title className="text-lg font-medium text-gray-900 mb-4">

@@ -198,7 +198,7 @@ describe('Client Group Creation API Integration', () => {
     it('should successfully create a client group', async () => {
       const clientGroupData = {
         name: 'Test Client Group',
-        type: 'Joint',
+        type: 'Family',
         status: 'active' as const,
         ongoing_start: '',
         client_declaration: '',
@@ -227,7 +227,7 @@ describe('Client Group Creation API Integration', () => {
     it('should throw error when name is too short', async () => {
       const clientGroupData = {
         name: 'A',
-        type: 'Joint',
+        type: 'Family',
         status: 'active' as const,
         // ... other fields
       } as any;
