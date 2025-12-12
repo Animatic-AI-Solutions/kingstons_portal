@@ -1,0 +1,749 @@
+openapi: 3.0.3
+info:
+  title: Special Relationships API
+  description: |
+    API specification for managing personal and professional relationships in Kingston's Portal.
+
+    **Critical Analysis Issue #2 Resolution**: This OpenAPI spec serves as the contract between
+    frontend and backend, enabling parallel development and preventing integration rework.
+
+    **Key Features**:
+    - RESTful CRUD operations for special relationships
+    - Age calculation performed on backend (performance optimization)
+    - Product owner associations populated via JOIN (no N+1 queries)
+    - Soft delete with audit trail preservation
+    - Comprehensive validation with detailed error messages
+
+  version: 1.0.0
+  contact:
+    name: Kingston's Portal Development Team
+
+servers:
+  - url: http://127.0.0.1:8001/api
+    description: Local development server
+  - url: https://kingstons-portal.example.com/api
+    description: Production server
+
+tags:
+  - name: Special Relationships
+    description: Operations for managing client personal and professional relationships
+
+paths:
+  /special_relationships:
+    get:
+      tags:
+        - Special Relationships
+      summary: List all special relationships for a client group
+      description: |
+        Retrieves all special relationships (personal and professional) for a specific client group.
+
+        **Performance Optimizations**:
+        - Age calculated on backend (not frontend) using database function
+        - Product owner names populated via LEFT JOIN (no additional queries)
+        - Results sorted by status (Active first) then by name
+
+      operationId: listSpecialRelationships
+      parameters:
+        - name: client_group_id
+          in: query
+          required: true
+          description: Client group ID to filter relationships
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+        - name: type
+          in: query
+          required: false
+          description: Filter by relationship type (personal or professional)
+          schema:
+            type: string
+            enum: [personal, professional]
+          example: "personal"
+
+        - name: status
+          in: query
+          required: false
+          description: Filter by status
+          schema:
+            type: string
+            enum: [Active, Inactive, Deceased]
+          example: "Active"
+
+      responses:
+        '200':
+          description: Successful retrieval of special relationships
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SpecialRelationship'
+              example:
+                - id: "550e8400-e29b-41d4-a716-446655440000"
+                  client_group_id: "123e4567-e89b-12d3-a456-426614174000"
+                  name: "John Smith"
+                  relationship_type: "Child"
+                  is_professional: false
+                  date_of_birth: "1990-01-15"
+                  age: 34
+                  is_dependent: false
+                  email: "john.smith@example.com"
+                  phone_number: "01234 567890"
+                  status: "Active"
+                  created_at: "2024-01-01T10:00:00Z"
+                  updated_at: "2024-01-01T10:00:00Z"
+
+                - id: "660e8400-e29b-41d4-a716-446655440001"
+                  client_group_id: "123e4567-e89b-12d3-a456-426614174000"
+                  name: "Jane Doe"
+                  relationship_type: "Accountant"
+                  is_professional: true
+                  email: "jane.doe@accounting.com"
+                  phone_number: "07890 123456"
+                  associated_product_owners: ["po-1", "po-2"]
+                  product_owner_names: ["Alice Johnson", "Bob Williams"]
+                  status: "Active"
+                  created_at: "2024-01-02T14:30:00Z"
+                  updated_at: "2024-01-02T14:30:00Z"
+
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Special Relationships
+      summary: Create a new special relationship
+      description: |
+        Creates a new personal or professional relationship for a client group.
+
+        **Validation Rules**:
+        - Name: required, 1-200 characters
+        - Relationship type: required, accepts custom values (VARCHAR, not ENUM)
+        - Email: optional, valid email format if provided
+        - Phone: optional, UK format `^[0-9\s\+\-\(\)]+$` if provided
+        - Date of birth: cannot be in future, age must be 0-120
+        - Product owner associations: only for professional relationships
+
+      operationId: createSpecialRelationship
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpecialRelationshipInput'
+            examples:
+              personal:
+                summary: Create personal relationship
+                value:
+                  client_group_id: "123e4567-e89b-12d3-a456-426614174000"
+                  name: "Sarah Smith"
+                  relationship_type: "Daughter"
+                  is_professional: false
+                  date_of_birth: "2005-06-20"
+                  is_dependent: true
+                  email: "sarah.smith@example.com"
+                  phone_number: "07123 456789"
+                  status: "Active"
+
+              professional:
+                summary: Create professional relationship
+                value:
+                  client_group_id: "123e4567-e89b-12d3-a456-426614174000"
+                  name: "Dr. James Wilson"
+                  relationship_type: "Doctor"
+                  is_professional: true
+                  email: "j.wilson@medical.com"
+                  phone_number: "01234 567890"
+                  associated_product_owners: ["po-1"]
+                  status: "Active"
+
+      responses:
+        '201':
+          description: Special relationship created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpecialRelationship'
+              example:
+                id: "770e8400-e29b-41d4-a716-446655440002"
+                client_group_id: "123e4567-e89b-12d3-a456-426614174000"
+                name: "Sarah Smith"
+                relationship_type: "Daughter"
+                is_professional: false
+                date_of_birth: "2005-06-20"
+                age: 19
+                is_dependent: true
+                email: "sarah.smith@example.com"
+                phone_number: "07123 456789"
+                status: "Active"
+                created_at: "2024-12-11T15:30:00Z"
+                updated_at: "2024-12-11T15:30:00Z"
+
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /special_relationships/{id}:
+    get:
+      tags:
+        - Special Relationships
+      summary: Get a specific special relationship by ID
+      operationId: getSpecialRelationship
+      parameters:
+        - $ref: '#/components/parameters/RelationshipId'
+
+      responses:
+        '200':
+          description: Special relationship retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpecialRelationship'
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - Special Relationships
+      summary: Update a special relationship
+      description: |
+        Updates an existing special relationship. All fields except `id`, `client_group_id`,
+        `created_at`, and `updated_at` can be modified.
+
+        **Note**: Use PATCH `/special_relationships/{id}/status` for status-only updates
+        (optimized for optimistic UI updates).
+
+      operationId: updateSpecialRelationship
+      parameters:
+        - $ref: '#/components/parameters/RelationshipId'
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpecialRelationshipUpdate'
+            example:
+              name: "John Smith Jr."
+              email: "john.smith.jr@example.com"
+              phone_number: "07890 123456"
+              status: "Active"
+
+      responses:
+        '200':
+          description: Special relationship updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpecialRelationship'
+
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Special Relationships
+      summary: Delete a special relationship (soft delete)
+      description: |
+        Soft deletes a special relationship by setting a `deleted_at` timestamp.
+        The record is preserved for audit trail purposes but will not appear in
+        normal queries unless explicitly requested.
+
+        **Audit Trail**: Deletion is logged in `holding_activity_log` table.
+
+      operationId: deleteSpecialRelationship
+      parameters:
+        - $ref: '#/components/parameters/RelationshipId'
+
+      responses:
+        '204':
+          description: Special relationship deleted successfully (no content)
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /special_relationships/{id}/status:
+    patch:
+      tags:
+        - Special Relationships
+      summary: Update special relationship status (optimized endpoint)
+      description: |
+        Updates only the status field of a special relationship. This endpoint is optimized
+        for optimistic UI updates and returns minimal data for faster response times.
+
+        **Use Case**: Status change buttons (Activate, Deactivate, Mark Deceased)
+
+        **Performance**: ~10ms response time (vs ~30ms for full PUT update)
+
+      operationId: updateSpecialRelationshipStatus
+      parameters:
+        - $ref: '#/components/parameters/RelationshipId'
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [Active, Inactive, Deceased]
+                  description: New status for the relationship
+              example:
+                status: "Inactive"
+
+      responses:
+        '200':
+          description: Status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpecialRelationship'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440000"
+                status: "Inactive"
+                updated_at: "2024-12-11T16:00:00Z"
+
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    SpecialRelationship:
+      type: object
+      description: Complete special relationship object with all fields populated
+      required:
+        - id
+        - client_group_id
+        - name
+        - relationship_type
+        - is_professional
+        - status
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the relationship
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        client_group_id:
+          type: string
+          format: uuid
+          description: Client group this relationship belongs to
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Full name of the individual
+          example: "John Smith"
+
+        relationship_type:
+          type: string
+          description: |
+            Type of relationship. Accepts custom values (VARCHAR, not ENUM).
+
+            **Common Personal Types**: Spouse, Partner, Child, Parent, Sibling, Grandchild,
+            Grandparent, Other Family
+
+            **Common Professional Types**: Accountant, Solicitor, Doctor, Financial Advisor,
+            Estate Planner, Other Professional
+          example: "Child"
+
+        is_professional:
+          type: boolean
+          description: True for professional relationships, false for personal
+          example: false
+
+        date_of_birth:
+          type: string
+          format: date
+          nullable: true
+          description: |
+            Date of birth (personal relationships only). Format: YYYY-MM-DD.
+            Cannot be in future. Age 0-120.
+          example: "1990-01-15"
+
+        age:
+          type: integer
+          nullable: true
+          description: |
+            Calculated age in years (personal relationships only).
+            **Calculated on backend** using database function for performance.
+          minimum: 0
+          maximum: 120
+          example: 34
+
+        is_dependent:
+          type: boolean
+          nullable: true
+          description: Whether this person is a dependent (personal relationships only)
+          example: false
+
+        email:
+          type: string
+          format: email
+          nullable: true
+          description: Email address (optional)
+          example: "john.smith@example.com"
+
+        phone_number:
+          type: string
+          nullable: true
+          description: Phone number (optional, UK format recommended)
+          pattern: '^[0-9\s\+\-\(\)]+$'
+          example: "01234 567890"
+
+        associated_product_owners:
+          type: array
+          nullable: true
+          description: |
+            Array of product owner IDs (professional relationships only).
+            Indicates which product owners this professional serves.
+          items:
+            type: string
+            format: uuid
+          example: ["po-1", "po-2"]
+
+        product_owner_names:
+          type: array
+          nullable: true
+          description: |
+            Array of product owner names for display (professional relationships only).
+            **Populated via LEFT JOIN** on backend for performance (no N+1 queries).
+          items:
+            type: string
+          example: ["Alice Johnson", "Bob Williams"]
+
+        status:
+          type: string
+          enum: [Active, Inactive, Deceased]
+          description: Current status of the relationship
+          example: "Active"
+
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when relationship was created
+          example: "2024-01-01T10:00:00Z"
+
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when relationship was last updated
+          example: "2024-01-01T10:00:00Z"
+
+    SpecialRelationshipInput:
+      type: object
+      description: Input schema for creating a new special relationship
+      required:
+        - client_group_id
+        - name
+        - relationship_type
+        - is_professional
+        - status
+      properties:
+        client_group_id:
+          type: string
+          format: uuid
+          description: Client group ID this relationship belongs to
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Full name of the individual
+          example: "John Smith"
+
+        relationship_type:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Type of relationship (accepts custom values)
+          example: "Child"
+
+        is_professional:
+          type: boolean
+          description: True for professional, false for personal
+          example: false
+
+        date_of_birth:
+          type: string
+          format: date
+          nullable: true
+          description: Date of birth (personal only, optional)
+          example: "1990-01-15"
+
+        is_dependent:
+          type: boolean
+          nullable: true
+          description: Dependency status (personal only, optional)
+          example: false
+
+        email:
+          type: string
+          format: email
+          nullable: true
+          description: Email address (optional)
+          example: "john.smith@example.com"
+
+        phone_number:
+          type: string
+          nullable: true
+          description: Phone number (optional)
+          pattern: '^[0-9\s\+\-\(\)]+$'
+          example: "01234 567890"
+
+        associated_product_owners:
+          type: array
+          nullable: true
+          description: Product owner IDs (professional only, optional)
+          items:
+            type: string
+            format: uuid
+          example: ["po-1", "po-2"]
+
+        status:
+          type: string
+          enum: [Active, Inactive, Deceased]
+          description: Initial status
+          default: "Active"
+          example: "Active"
+
+    SpecialRelationshipUpdate:
+      type: object
+      description: Input schema for updating an existing special relationship
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Full name of the individual
+
+        relationship_type:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Type of relationship
+
+        date_of_birth:
+          type: string
+          format: date
+          nullable: true
+          description: Date of birth (personal only)
+
+        is_dependent:
+          type: boolean
+          nullable: true
+          description: Dependency status (personal only)
+
+        email:
+          type: string
+          format: email
+          nullable: true
+          description: Email address
+
+        phone_number:
+          type: string
+          nullable: true
+          description: Phone number
+          pattern: '^[0-9\s\+\-\(\)]+$'
+
+        associated_product_owners:
+          type: array
+          nullable: true
+          description: Product owner IDs (professional only)
+          items:
+            type: string
+            format: uuid
+
+        status:
+          type: string
+          enum: [Active, Inactive, Deceased]
+          description: Relationship status
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error type/code
+          example: "ValidationError"
+
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Name is required and must be between 1 and 200 characters"
+
+        details:
+          type: object
+          nullable: true
+          description: Additional error details (e.g., field-specific validation errors)
+          example:
+            name: "Name is required"
+            email: "Invalid email format"
+
+    ValidationError:
+      type: object
+      required:
+        - error
+        - message
+        - details
+      properties:
+        error:
+          type: string
+          enum: [ValidationError]
+          example: "ValidationError"
+
+        message:
+          type: string
+          example: "Request validation failed"
+
+        details:
+          type: object
+          description: Field-specific validation errors
+          additionalProperties:
+            type: string
+          example:
+            name: "Name is required and must be between 1 and 200 characters"
+            email: "Invalid email format"
+            date_of_birth: "Date of birth cannot be in the future"
+
+  parameters:
+    RelationshipId:
+      name: id
+      in: path
+      required: true
+      description: Unique identifier of the special relationship
+      schema:
+        type: string
+        format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440000"
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "BadRequest"
+            message: "client_group_id query parameter is required"
+
+    Unauthorized:
+      description: Unauthorized - authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Unauthorized"
+            message: "Authentication credentials were not provided or are invalid"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "NotFound"
+            message: "Special relationship with id '550e8400-e29b-41d4-a716-446655440000' not found"
+
+    ValidationError:
+      description: Validation error - request body failed validation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+          example:
+            error: "ValidationError"
+            message: "Request validation failed"
+            details:
+              name: "Name is required and must be between 1 and 200 characters"
+              email: "Invalid email format"
+              date_of_birth: "Date of birth cannot be in the future (age would be over 120)"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "InternalServerError"
+            message: "An unexpected error occurred. Please try again later."
+
+  securitySchemes:
+    CookieAuth:
+      type: apiKey
+      in: cookie
+      name: session
+      description: HttpOnly session cookie for authentication
+
+security:
+  - CookieAuth: []
