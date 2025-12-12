@@ -417,15 +417,418 @@ export function useUpdateSpecialRelationshipStatus() {
 
 ## Phase 3: TDD Implementation Cycles
 
+### Agent Collaboration Workflow
+
+**How to Use Sub-Agents During TDD**:
+
+Each TDD cycle follows the **RED → GREEN → REFACTOR** pattern with specific agent assignments:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ CYCLE START: Planner-Agent Reviews Acceptance Criteria      │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│ RED PHASE: Tester-Agent Writes Failing Tests                │
+│ • Invoke: Tester-Agent                                      │
+│ • Task: Write comprehensive test suite (unit + integration) │
+│ • Output: Test files that fail (no implementation yet)      │
+│ • Verify: Tests run and fail for the right reasons          │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│ GREEN PHASE: Coder-Agent Implements Minimal Code            │
+│ • Invoke: Coder-Agent                                       │
+│ • Task: Write minimal code to make tests pass               │
+│ • Input: Test suite from Tester-Agent                       │
+│ • Output: Implementation that passes all tests              │
+│ • Verify: All tests pass (npm test)                         │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│ REFACTOR PHASE: Coder-Agent Optimizes Code                  │
+│ • Invoke: Coder-Agent                                       │
+│ • Task: Refactor for clarity, performance, maintainability  │
+│ • Constraint: All tests must still pass                     │
+│ • Output: Optimized code with same behavior                 │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│ VERIFY PHASE: Tester-Agent Validates Quality                │
+│ • Invoke: Tester-Agent                                      │
+│ • Task: Run all tests, check coverage, verify accessibility │
+│ • Checks: 70%+ coverage, zero axe violations, all tests pass│
+│ • Output: Quality report with pass/fail                     │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│ CYCLE END: Planner-Agent Reviews Completion                 │
+│ • Updates todo list (mark cycle complete)                   │
+│ • Verifies acceptance criteria met                          │
+│ • Identifies any blockers or issues                         │
+│ • Proceeds to next cycle or addresses issues                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Agent Invocation Examples
+
+**Starting a Cycle** (Planner-Agent):
+```typescript
+// You (as Planner-Agent) start the cycle
+- Review cycle acceptance criteria
+- Update todo list: Set current cycle to "in_progress"
+- Invoke Tester-Agent for RED phase
+```
+
+**RED Phase** (Tester-Agent):
+```
+Use Task tool:
+- subagent_type: "Tester-Agent"
+- prompt: "Write comprehensive test suite for Cycle 1 (Type Definitions and Utilities).
+
+  Requirements:
+  - Create tests for SpecialRelationship types (personal and professional)
+  - Create tests for utility functions (calculateAge, sortRelationships, filterRelationshipsByType)
+  - Create mock data generators for testing
+  - Tests should FAIL initially (no implementation yet)
+  - Follow TDD red-green-refactor pattern
+  - Ensure tests cover edge cases (null values, invalid dates, empty arrays)
+
+  Test files to create:
+  - src/tests/types/specialRelationship.test.ts
+  - src/tests/utils/specialRelationshipUtils.test.ts
+  - src/tests/mocks/specialRelationshipMocks.ts
+
+  Expected output: Test files that run and fail with clear error messages."
+```
+
+**GREEN Phase** (Coder-Agent):
+```
+Use Task tool:
+- subagent_type: "coder-agent"
+- prompt: "Implement minimal code to pass tests from Cycle 1 (Type Definitions and Utilities).
+
+  Context:
+  - Tests have been written by Tester-Agent (see test files in src/tests/)
+  - All tests currently fail
+  - Need to implement types and utility functions
+
+  Requirements:
+  - Create src/types/specialRelationship.ts with all type definitions
+  - Create src/utils/specialRelationshipUtils.ts with utility functions
+  - Write MINIMAL code to make tests pass (no premature optimization)
+  - Follow existing code patterns in the codebase
+  - Ensure all tests pass (run npm test)
+
+  Reference documentation:
+  - See special_relationships_docs/ux_and_validation_specifications.md for validation rules
+  - See special_relationships_docs/performance_optimization_guide.md for sorting patterns
+
+  Expected output: Implementation files that make all tests pass."
+```
+
+**REFACTOR Phase** (Coder-Agent):
+```
+Use Task tool:
+- subagent_type: "coder-agent"
+- prompt: "Refactor Cycle 1 implementation for code quality while keeping all tests passing.
+
+  Current state:
+  - Tests pass with minimal implementation
+  - Code may have duplication or lack clarity
+
+  Refactoring tasks:
+  - Add JSDoc comments to all exported functions
+  - Extract magic numbers/strings to constants
+  - Improve variable names for clarity
+  - Consider performance optimizations (memoization if needed)
+  - Ensure functions are <50 lines each
+
+  Constraints:
+  - ALL tests must still pass after refactoring
+  - Do not change function signatures (breaks tests)
+  - Follow project coding standards from CLAUDE.md
+
+  Expected output: Refactored code with all tests still passing."
+```
+
+**VERIFY Phase** (Tester-Agent):
+```
+Use Task tool:
+- subagent_type: "Tester-Agent"
+- prompt: "Verify Cycle 1 completion and quality metrics.
+
+  Verification checklist:
+  - [ ] Run full test suite (npm test) - all tests pass?
+  - [ ] Check code coverage (npm run test:coverage) - ≥70%?
+  - [ ] Run build (npm run build) - no TypeScript errors?
+  - [ ] Check file sizes - all files <500 lines?
+  - [ ] Review code quality - follows coding standards?
+
+  If any checks fail:
+  - Document specific failures
+  - Recommend fixes
+  - Do NOT proceed to next cycle
+
+  If all checks pass:
+  - Mark cycle as complete
+  - Provide summary report
+
+  Expected output: Quality report with pass/fail for each check."
+```
+
+---
+
 ### Cycle 1: Type Definitions and Utilities (3 hours)
 
 **📖 READ BEFORE STARTING**:
 - **[`ux_and_validation_specifications.md`](./ux_and_validation_specifications.md#data-validation-service-layer)** - Validation rules for all fields
 - **[`performance_optimization_guide.md`](./performance_optimization_guide.md#sorting-and-filtering-optimizations)** - Memoized sorting patterns
 
-#### RED Phase: Write Failing Tests
+---
 
-**File**: `src/tests/types/specialRelationship.test.ts`
+#### 🔴 RED Phase: Write Failing Tests (Tester-Agent)
+
+**🤖 INVOKE TESTER-AGENT**:
+```
+Use Task tool with:
+- subagent_type: "Tester-Agent"
+- description: "Write failing tests for Cycle 1"
+- prompt: "Write comprehensive test suite for Special Relationships Type Definitions and Utilities (Cycle 1).
+
+CONTEXT:
+- This is Cycle 1 of TDD implementation for Special Relationships feature
+- No implementation exists yet - tests should fail
+- Follow red-green-refactor TDD pattern
+
+REQUIREMENTS:
+1. Create test file: src/tests/types/specialRelationship.test.ts
+   - Test SpecialRelationship interface structure
+   - Test personal vs professional relationship type validation
+   - Test required vs optional fields
+
+2. Create test file: src/tests/utils/specialRelationshipUtils.test.ts
+   - Test calculateAge() function (valid dates, invalid dates, edge cases)
+   - Test sortRelationships() function (ascending, descending, status-based sorting)
+   - Test filterRelationshipsByType() function (personal vs professional filtering)
+   - Test edge cases: null values, empty arrays, invalid data
+
+3. Create test file: src/tests/mocks/specialRelationshipMocks.ts
+   - Mock data generator: createMockPersonalRelationship()
+   - Mock data generator: createMockProfessionalRelationship()
+   - Generators should accept overrides parameter
+
+DOCUMENTATION REFERENCES:
+- See special_relationships_docs/ux_and_validation_specifications.md for validation rules
+- See special_relationships_docs/revised_component_architecture.md for type definitions
+
+TEST REQUIREMENTS:
+- All tests must FAIL initially (no implementation yet)
+- Tests must have clear, descriptive names
+- Tests must cover happy path AND edge cases
+- Use Jest and React Testing Library
+- Follow existing test patterns in frontend/src/tests/
+
+EXPECTED OUTPUT:
+- 3 test files created
+- Tests run with 'npm test' and ALL FAIL
+- Failure messages clearly indicate what implementation is missing
+
+ACCEPTANCE CRITERIA:
+- Minimum 15 test cases across all files
+- Tests fail for the RIGHT reasons (missing implementation, not syntax errors)
+- Test code follows project standards (see CLAUDE.md)"
+```
+
+**Expected Result**: Test files created, all tests fail with clear error messages
+
+---
+
+#### 🟢 GREEN Phase: Minimal Implementation (Coder-Agent)
+
+**🤖 INVOKE CODER-AGENT**:
+```
+Use Task tool with:
+- subagent_type: "coder-agent"
+- description: "Implement code for Cycle 1"
+- prompt: "Implement minimal code to pass all tests for Special Relationships Type Definitions and Utilities (Cycle 1).
+
+CONTEXT:
+- Tester-Agent has written comprehensive tests
+- All tests currently fail
+- Need to implement types and utility functions with MINIMAL code
+
+REQUIREMENTS:
+1. Create file: frontend/src/types/specialRelationship.ts
+   - Export RelationshipType union type (all personal and professional types)
+   - Export RelationshipStatus union type (Active, Inactive, Deceased)
+   - Export SpecialRelationship interface (all fields from spec)
+   - Export SpecialRelationshipFormData interface
+
+2. Create file: frontend/src/utils/specialRelationshipUtils.ts
+   - Implement calculateAge(dateOfBirth: string): number | undefined
+     • Use date-fns library (parseISO, differenceInYears)
+     • Handle invalid dates gracefully
+
+   - Implement sortRelationships(relationships, column, direction)
+     • Sort active relationships first, then inactive, then deceased
+     • Apply column sort within each group
+     • Use stable sort (preserve order for equal elements)
+
+   - Implement filterRelationshipsByType(relationships, type)
+     • Filter by is_professional flag
+     • Return filtered array
+
+3. Update imports in test mock file to use new types
+
+CODE QUALITY:
+- Write MINIMAL code to pass tests (no premature optimization)
+- Follow existing code patterns in codebase
+- Use TypeScript strict mode
+- Add basic JSDoc comments
+- Functions should be <50 lines
+
+CONSTRAINTS:
+- Do NOT add features not required by tests
+- Do NOT optimize prematurely
+- Ensure ALL tests pass
+
+RUN TESTS:
+- Execute 'npm test' from frontend directory
+- All tests must pass before completing
+
+EXPECTED OUTPUT:
+- 2 implementation files created
+- All tests pass (npm test shows 0 failures)
+- No TypeScript errors (npm run build succeeds)"
+```
+
+**Expected Result**: Implementation complete, all tests pass
+
+---
+
+#### 🔵 REFACTOR Phase: Optimize Code (Coder-Agent)
+
+**🤖 INVOKE CODER-AGENT**:
+```
+Use Task tool with:
+- subagent_type: "coder-agent"
+- description: "Refactor Cycle 1 code"
+- prompt: "Refactor Special Relationships Type Definitions and Utilities (Cycle 1) for code quality while keeping all tests passing.
+
+CURRENT STATE:
+- Implementation exists and all tests pass
+- Code may have duplication, unclear naming, or lack documentation
+- Need to improve quality without changing behavior
+
+REFACTORING TASKS:
+1. Code Clarity:
+   - Improve variable and function names
+   - Add comprehensive JSDoc comments to all exported functions
+   - Add inline comments for complex logic
+
+2. Extract Constants:
+   - Extract magic numbers/strings to named constants
+   - Example: Status values → STATUS_ACTIVE, STATUS_INACTIVE, STATUS_DECEASED
+   - Example: Relationship types → RELATIONSHIP_TYPES_PERSONAL, RELATIONSHIP_TYPES_PROFESSIONAL
+
+3. Performance Optimization (if applicable):
+   - Consider memoization for sortRelationships if called frequently
+   - Optimize date calculations if needed
+   - Refer to performance_optimization_guide.md
+
+4. Code Standards:
+   - Ensure functions are <50 lines each
+   - Follow SOLID principles (especially Single Responsibility)
+   - Remove any code duplication
+
+CONSTRAINTS:
+- ALL tests must STILL PASS after refactoring
+- Do NOT change function signatures (will break tests)
+- Do NOT add new features
+- Follow project coding standards from CLAUDE.md
+
+VERIFICATION:
+- Run 'npm test' after each refactoring step
+- Run 'npm run build' to check TypeScript errors
+- Ensure test coverage remains ≥70%
+
+EXPECTED OUTPUT:
+- Refactored code with improved readability
+- All tests still pass
+- Code follows project standards"
+```
+
+**Expected Result**: Refactored code, all tests still pass
+
+---
+
+#### ✅ VERIFY Phase: Quality Check (Tester-Agent)
+
+**🤖 INVOKE TESTER-AGENT**:
+```
+Use Task tool with:
+- subagent_type: "Tester-Agent"
+- description: "Verify Cycle 1 completion"
+- prompt: "Verify Cycle 1 (Type Definitions and Utilities) is complete and meets all quality standards.
+
+VERIFICATION CHECKLIST:
+
+1. Test Execution:
+   - [ ] Run 'npm test' from frontend directory
+   - [ ] All tests pass (0 failures)?
+   - [ ] No skipped tests?
+
+2. Code Coverage:
+   - [ ] Run 'npm run test:coverage'
+   - [ ] Overall coverage ≥70%?
+   - [ ] Types file coverage ≥90%?
+   - [ ] Utils file coverage ≥90%?
+
+3. Build Verification:
+   - [ ] Run 'npm run build'
+   - [ ] No TypeScript errors?
+   - [ ] No ESLint errors?
+
+4. File Size Check:
+   - [ ] specialRelationship.ts <500 lines?
+   - [ ] specialRelationshipUtils.ts <500 lines?
+
+5. Code Quality:
+   - [ ] All functions <50 lines?
+   - [ ] JSDoc comments present?
+   - [ ] No TODO/FIXME comments?
+   - [ ] Follows coding standards from CLAUDE.md?
+
+6. Test Quality:
+   - [ ] Tests have descriptive names?
+   - [ ] Tests cover edge cases?
+   - [ ] Minimum 15 test cases?
+
+FAILURE HANDLING:
+If ANY check fails:
+- Document specific failure
+- Provide detailed recommendation for fix
+- Do NOT mark cycle as complete
+- Do NOT proceed to next cycle
+
+SUCCESS CRITERIA:
+If ALL checks pass:
+- Mark cycle as COMPLETE
+- Provide summary report
+- Ready to proceed to Cycle 2
+
+EXPECTED OUTPUT:
+- Quality report with pass/fail for each checklist item
+- If failures: specific recommendations
+- If success: approval to proceed to next cycle"
+```
+
+**Expected Result**: Quality report confirming cycle completion or identifying issues
+
+---
+
+**Example Test**: `src/tests/types/specialRelationship.test.ts`
 
 ```typescript
 describe('SpecialRelationship Types', () => {
@@ -663,6 +1066,256 @@ export function createMockProfessionalRelationship(overrides = {}): SpecialRelat
 - **[`special_relationships_api_spec.yaml`](./special_relationships_api_spec.yaml)** - Complete API contract (endpoints, validation, error codes)
 - Set up MSW mocks using OpenAPI spec patterns
 
+---
+
+#### 🔴 RED Phase: Write Failing Tests (Tester-Agent)
+
+**Agent Invocation**:
+
+Use Task tool with:
+- **subagent_type**: `"Tester-Agent"`
+- **description**: `"Write failing tests for Cycle 2"`
+- **prompt**: `"Write comprehensive test suite for Special Relationships API Service Layer (Cycle 2).
+
+CONTEXT:
+- This is Cycle 2 of TDD implementation for Special Relationships feature
+- Cycle 1 (Types and Utilities) is complete
+- No API service implementation exists yet - tests should fail
+- Follow red-green-refactor TDD pattern
+- Reference the OpenAPI spec: special_relationships_api_spec.yaml
+
+REQUIREMENTS:
+1. Create test file: frontend/src/tests/services/specialRelationshipsApi.test.ts
+2. Test all API functions based on OpenAPI spec:
+   - fetchSpecialRelationships(clientGroupId)
+   - createSpecialRelationship(data)
+   - updateSpecialRelationship(id, data)
+   - updateSpecialRelationshipStatus(id, status)
+   - deleteSpecialRelationship(id)
+3. Test error scenarios:
+   - Network failures (500 errors)
+   - Validation errors (400 errors)
+   - Unauthorized errors (401 errors)
+   - Not found errors (404 errors)
+4. Mock fetch API using jest.fn()
+5. Verify correct HTTP methods, headers, and request bodies
+
+CONSTRAINTS:
+- Tests must FAIL because services/specialRelationshipsApi.ts does not exist
+- Use mocks from src/tests/mocks/specialRelationshipMocks.ts (created in Cycle 1)
+- Include credentials: 'include' for all fetch calls (cookie auth)
+- Verify Content-Type: application/json headers
+
+EXPECTED OUTPUT:
+- 1 test file created with ~15-20 test cases
+- Tests run with 'npm test' and ALL FAIL with clear error messages
+- Failure messages indicate missing API service file
+- Test coverage for all CRUD operations and error scenarios
+
+ACCEPTANCE CRITERIA:
+- ✅ Minimum 15 test cases covering all API functions
+- ✅ Tests fail for the RIGHT reasons (missing implementation)
+- ✅ No syntax errors or import issues
+- ✅ Clear assertion messages for debugging"
+`
+
+---
+
+#### 🟢 GREEN Phase: Implement Minimal Code (Coder-Agent)
+
+**Agent Invocation**:
+
+Use Task tool with:
+- **subagent_type**: `"coder-agent"`
+- **description**: `"Implement API service for Cycle 2"`
+- **prompt**: `"Implement minimal API service code to pass all tests for Cycle 2 (Special Relationships API Service Layer).
+
+CONTEXT:
+- Cycle 1 (Types and Utilities) is complete
+- Tests from RED phase are failing
+- This is the GREEN phase - write MINIMAL code to pass tests
+- Reference OpenAPI spec: special_relationships_api_spec.yaml
+
+REQUIREMENTS:
+1. Create file: frontend/src/services/specialRelationshipsApi.ts
+2. Implement all API functions to match OpenAPI spec:
+   - fetchSpecialRelationships(clientGroupId): GET /api/special_relationships?client_group_id={id}
+   - createSpecialRelationship(data): POST /api/special_relationships
+   - updateSpecialRelationship(id, data): PUT /api/special_relationships/{id}
+   - updateSpecialRelationshipStatus(id, status): PATCH /api/special_relationships/{id}/status
+   - deleteSpecialRelationship(id): DELETE /api/special_relationships/{id}
+3. Use TypeScript types from src/types/specialRelationship.ts
+4. Include proper error handling with throw statements
+5. Use credentials: 'include' for all fetch calls
+6. Set Content-Type: application/json headers
+
+CODE QUALITY:
+- Write MINIMAL code to pass tests (no premature optimization)
+- Each function should be <50 lines
+- Use async/await pattern
+- Clear error messages with HTTP status codes
+- No hardcoded values - use const API_BASE_URL
+
+FILE SIZE CHECK:
+- Target file size: ~100-150 lines
+- Must be <500 lines (component size limit)
+
+RUN TESTS:
+- Execute 'npm test specialRelationshipsApi' from frontend directory
+- All tests must pass before completing
+- If tests fail, debug and fix until all pass
+
+ACCEPTANCE CRITERIA:
+- ✅ All API functions implemented and working
+- ✅ All tests passing (0 failures)
+- ✅ Proper TypeScript typing
+- ✅ Error handling for all HTTP error codes
+- ✅ File size <500 lines"
+`
+
+---
+
+#### 🔵 REFACTOR Phase: Optimize Code (Coder-Agent)
+
+**Agent Invocation**:
+
+Use Task tool with:
+- **subagent_type**: `"coder-agent"`
+- **description**: `"Refactor API service for Cycle 2"`
+- **prompt**: `"Refactor Special Relationships API Service Layer code (Cycle 2) while maintaining all passing tests.
+
+CONTEXT:
+- GREEN phase is complete - all tests passing
+- Now optimize code quality, maintainability, and performance
+- Follow Kingston's Portal coding standards from CLAUDE.md
+
+REFACTORING TASKS:
+1. **Error Handling**:
+   - Extract common error handling into shared utility function
+   - Add specific error types for different HTTP status codes
+   - Include response body in error messages when available
+
+2. **Code Organization**:
+   - Extract API_BASE_URL to constants if not already done
+   - Add JSDoc comments for all exported functions
+   - Ensure consistent parameter naming
+
+3. **Performance**:
+   - Consider adding request timeout handling (AbortController)
+   - Add proper TypeScript return type annotations
+   - Ensure fetch options are properly typed
+
+4. **Standards Compliance**:
+   - Verify SOLID principles (single responsibility per function)
+   - Check DRY - eliminate any duplication
+   - Ensure file is <500 lines (should be ~100-150)
+   - Each function <50 lines
+
+5. **Future-Proofing**:
+   - Add TODO comments for retry logic (defer to later cycle)
+   - Add TODO for request caching headers (defer to later cycle)
+   - Document any OpenAPI spec deviations
+
+CONSTRAINTS:
+- ALL tests must STILL PASS after refactoring
+- Do NOT add new features or functionality
+- Do NOT change function signatures (breaking change)
+- Keep file size minimal (<200 lines after refactoring)
+
+RUN TESTS:
+- Execute 'npm test specialRelationshipsApi' after each refactoring change
+- Verify 0 failures before moving to next refactoring task
+
+ACCEPTANCE CRITERIA:
+- ✅ All tests still passing
+- ✅ Code follows DRY principle
+- ✅ JSDoc comments added
+- ✅ Error handling extracted to utility
+- ✅ File remains <500 lines"
+`
+
+---
+
+#### ✅ VERIFY Phase: Quality Check (Tester-Agent)
+
+**Agent Invocation**:
+
+Use Task tool with:
+- **subagent_type**: `"Tester-Agent"`
+- **description**: `"Verify Cycle 2 completion"`
+- **prompt**: `"Verify Cycle 2 (API Service Layer) is complete and meets all quality standards before proceeding to Cycle 3.
+
+CONTEXT:
+- Cycle 2: API Service Layer implementation
+- Files created: src/services/specialRelationshipsApi.ts
+- Tests created: src/tests/services/specialRelationshipsApi.test.ts
+
+VERIFICATION CHECKLIST:
+
+1. **Test Execution**:
+   - Run: npm test specialRelationshipsApi
+   - Expected: 0 failures, 15+ passing tests
+   - Check: Coverage ≥70% for specialRelationshipsApi.ts
+
+2. **Code Coverage**:
+   - Run: npm test -- --coverage --collectCoverageFrom='src/services/specialRelationshipsApi.ts'
+   - Verify all functions covered (fetch, create, update, updateStatus, delete)
+   - Check edge cases tested (errors, network failures)
+
+3. **Build Verification**:
+   - Run: npm run build
+   - Expected: No TypeScript errors
+   - Check: No eslint errors in API service file
+
+4. **File Size Check**:
+   - Verify: src/services/specialRelationshipsApi.ts <500 lines (target: ~100-150 lines)
+   - Check: No single function >50 lines
+
+5. **Code Quality**:
+   - Verify: All functions have JSDoc comments
+   - Check: Error handling properly implemented
+   - Verify: No hardcoded URLs or magic strings
+   - Check: Proper TypeScript types used
+
+6. **API Contract Compliance**:
+   - Compare implementation against special_relationships_api_spec.yaml
+   - Verify: All endpoints match OpenAPI spec
+   - Check: Request/response types align with spec
+   - Verify: Error codes match spec (400, 401, 404, 500)
+
+7. **Test Quality**:
+   - Verify: Tests cover all CRUD operations
+   - Check: Error scenarios tested
+   - Verify: Mock data uses Cycle 1 utilities
+   - Check: Clear assertion messages
+
+FAILURE HANDLING:
+If ANY check fails:
+- Document the specific failure with line numbers
+- Create a numbered list of issues found
+- Do NOT proceed to Cycle 3
+- Return detailed failure report
+
+SUCCESS CRITERIA:
+- ✅ All tests passing (0 failures)
+- ✅ Code coverage ≥70%
+- ✅ Build succeeds with no errors
+- ✅ File size <500 lines
+- ✅ All functions <50 lines
+- ✅ API contract matches OpenAPI spec
+- ✅ 15+ test cases implemented
+
+EXPECTED OUTPUT:
+Provide a summary report with:
+- Test results (pass/fail counts)
+- Coverage percentage
+- File size metrics
+- List of verified quality checks
+- GO/NO-GO decision for Cycle 3"
+`
+
+---
+
 #### RED Phase: Write Failing Tests
 
 **File**: `src/tests/services/specialRelationshipsApi.test.ts`
@@ -848,6 +1501,293 @@ export async function deleteSpecialRelationship(id: string): Promise<void> {
 **📖 READ BEFORE STARTING**:
 - **[`performance_optimization_guide.md`](./performance_optimization_guide.md#react-query-cache-strategy)** - Cache configuration and optimistic updates
 - **[`delete_confirmation_undo_specification.md`](./delete_confirmation_undo_specification.md#soft-delete-implementation)** - Undo pattern with React Query
+
+---
+
+#### 🔴 RED Phase: Write Failing Tests (Tester-Agent)
+
+**Agent Invocation**:
+
+Use Task tool with:
+- **subagent_type**: `"Tester-Agent"`
+- **description**: `"Write failing tests for Cycle 3"`
+- **prompt**: `"Write comprehensive test suite for React Query Hooks (Cycle 3).
+
+CONTEXT:
+- This is Cycle 3 of TDD implementation for Special Relationships feature
+- Cycle 1 (Types and Utilities) is complete
+- Cycle 2 (API Service Layer) is complete
+- No React Query hooks implementation exists yet - tests should fail
+- Follow red-green-refactor TDD pattern
+- Reference performance_optimization_guide.md for React Query best practices
+
+REQUIREMENTS:
+1. Create test file: frontend/src/tests/hooks/useSpecialRelationships.test.tsx
+2. Test all React Query hooks:
+   - useSpecialRelationships(clientGroupId) - query hook
+   - useCreateSpecialRelationship() - mutation hook
+   - useUpdateSpecialRelationship() - mutation hook
+   - useUpdateSpecialRelationshipStatus() - mutation hook
+   - useDeleteSpecialRelationship() - mutation hook with undo
+3. Test React Query features:
+   - Cache invalidation after mutations
+   - Optimistic updates for create/update/delete
+   - Rollback on mutation failure
+   - Loading and error states
+   - Query key management
+4. Use @testing-library/react-hooks for testing
+5. Create QueryClient wrapper for tests
+6. Mock API service functions from Cycle 2
+
+CONSTRAINTS:
+- Tests must FAIL because hooks/useSpecialRelationships.ts does not exist
+- Use mocks from src/tests/mocks/specialRelationshipMocks.ts (Cycle 1)
+- Mock services from src/services/specialRelationshipsApi.ts (Cycle 2)
+- Test optimistic update patterns from delete_confirmation_undo_specification.md
+- Verify cache invalidation using queryClient.invalidateQueries
+
+EXPECTED OUTPUT:
+- 1 test file created with ~20-25 test cases
+- Tests run with 'npm test' and ALL FAIL with clear error messages
+- Failure messages indicate missing hooks file
+- Test coverage for all hooks and React Query patterns
+
+ACCEPTANCE CRITERIA:
+- ✅ Minimum 20 test cases covering all hooks
+- ✅ Tests fail for the RIGHT reasons (missing implementation)
+- ✅ No syntax errors or import issues
+- ✅ Clear assertion messages for debugging
+- ✅ QueryClient properly set up in test wrapper"
+`
+
+---
+
+#### 🟢 GREEN Phase: Implement Minimal Code (Coder-Agent)
+
+**Agent Invocation**:
+
+Use Task tool with:
+- **subagent_type**: `"coder-agent"`
+- **description**: `"Implement React Query hooks for Cycle 3"`
+- **prompt**: `"Implement minimal React Query hooks code to pass all tests for Cycle 3.
+
+CONTEXT:
+- Cycle 1 (Types and Utilities) is complete
+- Cycle 2 (API Service Layer) is complete
+- Tests from RED phase are failing
+- This is the GREEN phase - write MINIMAL code to pass tests
+- Reference performance_optimization_guide.md for cache strategy
+
+REQUIREMENTS:
+1. Create file: frontend/src/hooks/useSpecialRelationships.ts
+2. Implement query hook:
+   - useSpecialRelationships(clientGroupId)
+   - staleTime: 5 minutes
+   - gcTime: 10 minutes
+   - refetchOnWindowFocus: false
+3. Implement mutation hooks:
+   - useCreateSpecialRelationship() with optimistic update
+   - useUpdateSpecialRelationship() with optimistic update
+   - useUpdateSpecialRelationshipStatus() with optimistic update
+   - useDeleteSpecialRelationship() with undo capability (5-second window)
+4. Implement cache invalidation:
+   - Invalidate queries after successful mutations
+   - Use query keys: ['specialRelationships', clientGroupId]
+5. Import API functions from services/specialRelationshipsApi.ts (Cycle 2)
+6. Import types from types/specialRelationship.ts (Cycle 1)
+
+CODE QUALITY:
+- Write MINIMAL code to pass tests (no premature optimization)
+- Each hook should be <50 lines
+- Use React Query best practices (staleTime, gcTime, onSuccess, onError)
+- Clear error handling with rollback on failure
+- Export query key factory for reuse
+
+FILE SIZE CHECK:
+- Target file size: ~200-250 lines
+- Must be <500 lines (component size limit)
+
+OPTIMISTIC UPDATE PATTERN:
+For delete with undo (from delete_confirmation_undo_specification.md):
+1. onMutate: Save previous data, update cache optimistically
+2. onError: Rollback using saved data
+3. onSettled: Invalidate queries
+4. Return undo function that calls updateStatus('Active')
+
+RUN TESTS:
+- Execute 'npm test useSpecialRelationships' from frontend directory
+- All tests must pass before completing
+- If tests fail, debug and fix until all pass
+
+ACCEPTANCE CRITERIA:
+- ✅ All hooks implemented and working
+- ✅ All tests passing (0 failures)
+- ✅ Proper TypeScript typing
+- ✅ Optimistic updates with rollback
+- ✅ Cache invalidation working
+- ✅ File size <500 lines"
+`
+
+---
+
+#### 🔵 REFACTOR Phase: Optimize Code (Coder-Agent)
+
+**Agent Invocation**:
+
+Use Task tool with:
+- **subagent_type**: `"coder-agent"`
+- **description**: `"Refactor React Query hooks for Cycle 3"`
+- **prompt**: `"Refactor React Query Hooks code (Cycle 3) while maintaining all passing tests.
+
+CONTEXT:
+- GREEN phase is complete - all tests passing
+- Now optimize code quality, maintainability, and performance
+- Follow Kingston's Portal coding standards from CLAUDE.md
+- Reference performance_optimization_guide.md for React Query optimizations
+
+REFACTORING TASKS:
+1. **Query Key Management**:
+   - Extract query keys into factory object
+   - Example: specialRelationshipsKeys.byClientGroup(id)
+   - Export keys for external use (cache invalidation from other components)
+
+2. **Code Organization**:
+   - Add JSDoc comments for all exported hooks
+   - Group related hooks together (queries, then mutations)
+   - Extract common onSuccess/onError handlers
+
+3. **Performance**:
+   - Verify staleTime and gcTime settings match spec (5min, 10min)
+   - Ensure optimistic updates are properly typed
+   - Verify cache invalidation is specific (not invalidating too much)
+
+4. **Standards Compliance**:
+   - Verify SOLID principles (single responsibility per hook)
+   - Check DRY - eliminate any duplication in mutation hooks
+   - Ensure file is <500 lines (target: ~200-250)
+   - Each hook <50 lines
+
+5. **Error Handling**:
+   - Consistent error messages across all mutations
+   - Ensure rollback works for all optimistic updates
+   - Add toast notifications for mutation success/failure (import from components/ui)
+
+6. **Undo Pattern**:
+   - Refactor delete undo to be reusable
+   - Ensure 5-second undo window is configurable
+   - Verify undo cancels pending deletion
+
+CONSTRAINTS:
+- ALL tests must STILL PASS after refactoring
+- Do NOT add new features or functionality
+- Do NOT change hook signatures (breaking change)
+- Keep file size minimal (<300 lines after refactoring)
+
+RUN TESTS:
+- Execute 'npm test useSpecialRelationships' after each refactoring change
+- Verify 0 failures before moving to next refactoring task
+
+ACCEPTANCE CRITERIA:
+- ✅ All tests still passing
+- ✅ Query keys extracted to factory
+- ✅ JSDoc comments added
+- ✅ Optimistic updates optimized
+- ✅ Error handling consistent
+- ✅ File remains <500 lines"
+`
+
+---
+
+#### ✅ VERIFY Phase: Quality Check (Tester-Agent)
+
+**Agent Invocation**:
+
+Use Task tool with:
+- **subagent_type**: `"Tester-Agent"`
+- **description**: `"Verify Cycle 3 completion"`
+- **prompt**: `"Verify Cycle 3 (React Query Hooks) is complete and meets all quality standards before proceeding to Cycle 4.
+
+CONTEXT:
+- Cycle 3: React Query Hooks implementation
+- Files created: src/hooks/useSpecialRelationships.ts
+- Tests created: src/tests/hooks/useSpecialRelationships.test.tsx
+
+VERIFICATION CHECKLIST:
+
+1. **Test Execution**:
+   - Run: npm test useSpecialRelationships
+   - Expected: 0 failures, 20+ passing tests
+   - Check: Coverage ≥70% for useSpecialRelationships.ts
+
+2. **Code Coverage**:
+   - Run: npm test -- --coverage --collectCoverageFrom='src/hooks/useSpecialRelationships.ts'
+   - Verify all hooks covered (query + 4 mutations)
+   - Check edge cases tested (optimistic updates, rollback, undo)
+
+3. **Build Verification**:
+   - Run: npm run build
+   - Expected: No TypeScript errors
+   - Check: No eslint errors in hooks file
+
+4. **File Size Check**:
+   - Verify: src/hooks/useSpecialRelationships.ts <500 lines (target: ~200-250 lines)
+   - Check: No single hook >50 lines
+
+5. **Code Quality**:
+   - Verify: All hooks have JSDoc comments
+   - Check: Query key factory exported
+   - Verify: Optimistic updates properly implemented
+   - Check: Proper TypeScript types used
+   - Verify: Error handling with rollback
+
+6. **React Query Best Practices**:
+   - Verify: staleTime = 5 * 60 * 1000 (5 minutes)
+   - Check: gcTime = 10 * 60 * 1000 (10 minutes)
+   - Verify: refetchOnWindowFocus = false
+   - Check: Cache invalidation uses specific query keys
+   - Verify: Optimistic updates save previous state for rollback
+
+7. **Undo Pattern Compliance**:
+   - Verify: Delete mutation has undo capability
+   - Check: 5-second undo window implemented
+   - Verify: Undo cancels pending deletion
+   - Check: Toast notification shows undo button
+
+8. **Test Quality**:
+   - Verify: Tests cover all hooks
+   - Check: Optimistic update scenarios tested
+   - Verify: Rollback on error tested
+   - Check: Cache invalidation tested
+   - Verify: Undo functionality tested
+
+FAILURE HANDLING:
+If ANY check fails:
+- Document the specific failure with line numbers
+- Create a numbered list of issues found
+- Do NOT proceed to Cycle 4
+- Return detailed failure report
+
+SUCCESS CRITERIA:
+- ✅ All tests passing (0 failures)
+- ✅ Code coverage ≥70%
+- ✅ Build succeeds with no errors
+- ✅ File size <500 lines
+- ✅ All hooks <50 lines
+- ✅ React Query best practices followed
+- ✅ 20+ test cases implemented
+- ✅ Undo pattern properly implemented
+
+EXPECTED OUTPUT:
+Provide a summary report with:
+- Test results (pass/fail counts)
+- Coverage percentage
+- File size metrics
+- React Query configuration verification
+- List of verified quality checks
+- GO/NO-GO decision for Cycle 4"
+`
+
+---
 
 #### RED Phase: Write Failing Tests
 
@@ -1054,9 +1994,107 @@ export function useDeleteSpecialRelationship() {
 **Note**: Cycles 4-8 follow the same TDD pattern (RED → GREEN → REFACTOR) for:
 
 #### Cycle 4: SpecialRelationshipActions Component (2 hours)
-**Additional Reading**:
+
+**📖 READ BEFORE STARTING**:
 - **[`delete_confirmation_undo_specification.md`](./delete_confirmation_undo_specification.md)** - Delete confirmation modal design
 - **[`accessibility_implementation_guide.md`](./accessibility_implementation_guide.md#button-accessibility)** - ARIA labels for action buttons
+
+---
+
+**🔴 RED Phase (Tester-Agent)**: Write failing tests for SpecialRelationshipActions.tsx and DeleteConfirmationModal.tsx with accessibility validation (jest-axe)
+
+**Agent Invocation**: Use Task tool with subagent_type `"Tester-Agent"`, description `"Write failing tests for Cycle 4"`, prompt:
+```
+Write comprehensive test suite for SpecialRelationshipActions Component (Cycle 4).
+
+CONTEXT:
+- Cycles 1-3 complete (Types, API, Hooks)
+- Create component tests for Actions and Delete Confirmation Modal
+- Include accessibility testing with jest-axe
+
+REQUIREMENTS:
+1. Test file: frontend/src/tests/components/SpecialRelationshipActions.test.tsx
+2. Test file: frontend/src/tests/components/DeleteConfirmationModal.test.tsx
+3. Test scenarios: Button rendering, onClick handlers, keyboard navigation, ARIA labels, delete confirmation flow
+4. Use jest-axe for accessibility checks
+5. Minimum 15 test cases across both files
+
+ACCEPTANCE CRITERIA:
+- Tests FAIL (components don't exist yet)
+- No syntax/import errors
+- Clear failure messages
+```
+
+**🟢 GREEN Phase (Coder-Agent)**: Implement minimal SpecialRelationshipActions.tsx (~100 lines) and DeleteConfirmationModal.tsx (~150 lines) to pass tests
+
+**Agent Invocation**: Use Task tool with subagent_type `"coder-agent"`, description `"Implement Actions component for Cycle 4"`, prompt:
+```
+Implement SpecialRelationshipActions and DeleteConfirmationModal components (Cycle 4).
+
+CONTEXT:
+- Cycles 1-3 complete
+- RED phase tests are failing
+- Write MINIMAL code to pass tests
+
+REQUIREMENTS:
+1. Create: frontend/src/components/SpecialRelationshipActions.tsx (~100 lines)
+   - Edit, Delete, Change Status buttons
+   - ARIA labels from accessibility_implementation_guide.md
+2. Create: frontend/src/components/DeleteConfirmationModal.tsx (~150 lines)
+   - Confirmation modal with Cancel/Delete buttons
+   - Focus trap pattern
+3. Run tests - all must pass
+
+ACCEPTANCE CRITERIA:
+- All tests passing
+- File sizes <500 lines
+- Proper ARIA attributes
+- TypeScript types correct
+```
+
+**🔵 REFACTOR Phase (Coder-Agent)**: Extract common button patterns, add JSDoc, verify accessibility
+
+**Agent Invocation**: Use Task tool with subagent_type `"coder-agent"`, description `"Refactor Actions component for Cycle 4"`, prompt:
+```
+Refactor SpecialRelationshipActions and DeleteConfirmationModal (Cycle 4) while maintaining passing tests.
+
+REFACTORING TASKS:
+1. Extract common button styles/patterns
+2. Add JSDoc comments
+3. Verify ARIA compliance (check against accessibility_implementation_guide.md)
+4. Ensure keyboard navigation works
+5. Check DRY principle
+
+CONSTRAINTS:
+- All tests must STILL PASS
+- Files remain <500 lines
+- No breaking changes
+
+RUN TESTS after each change - verify 0 failures
+```
+
+**✅ VERIFY Phase (Tester-Agent)**: Run tests, verify coverage ≥70%, check build, confirm file sizes <500 lines, validate WCAG 2.1 AA compliance
+
+**Agent Invocation**: Use Task tool with subagent_type `"Tester-Agent"`, description `"Verify Cycle 4 completion"`, prompt:
+```
+Verify Cycle 4 (SpecialRelationshipActions Component) meets all quality standards.
+
+VERIFICATION CHECKLIST:
+1. Test Execution: npm test SpecialRelationshipActions (0 failures?)
+2. Coverage: ≥70%?
+3. Build: npm run build (no errors?)
+4. File Sizes: <500 lines each?
+5. Accessibility: jest-axe passes? ARIA labels present?
+6. Test Quality: 15+ test cases?
+
+FAILURE HANDLING:
+If ANY check fails, document failure and DO NOT proceed to Cycle 5.
+
+SUCCESS CRITERIA:
+✅ All checks passing → GO for Cycle 5
+```
+
+---
 
 **Deliverables**:
 - SpecialRelationshipActions.tsx (~100 lines)
@@ -1066,9 +2104,111 @@ export function useDeleteSpecialRelationship() {
 ---
 
 #### Cycle 5: SpecialRelationshipRow Component (3 hours)
-**Additional Reading**:
+
+**📖 READ BEFORE STARTING**:
 - **[`performance_optimization_guide.md`](./performance_optimization_guide.md#memoize-table-rows)** - React.memo with custom comparison
 - **[`ux_and_validation_specifications.md`](./ux_and_validation_specifications.md#age-display-enhancement)** - Age display pattern
+
+---
+
+**🔴 RED Phase (Tester-Agent)**: Write failing tests for SpecialRelationshipRow.tsx with both Personal/Professional views, conditional rendering tests
+
+**Agent Invocation**: Use Task tool with subagent_type `"Tester-Agent"`, description `"Write failing tests for Cycle 5"`, prompt:
+```
+Write comprehensive test suite for SpecialRelationshipRow Component (Cycle 5).
+
+CONTEXT:
+- Cycles 1-4 complete
+- Row component displays different fields for Personal vs Professional relationships
+- Must test React.memo optimization
+
+REQUIREMENTS:
+1. Test file: frontend/src/tests/components/SpecialRelationshipRow.test.tsx
+2. Test scenarios:
+   - Personal relationship rendering (shows DOB, age, is_dependent)
+   - Professional relationship rendering (shows associated_product_owners)
+   - Status-based styling (Active/Inactive/Deceased)
+   - Action buttons integration
+   - React.memo preventing unnecessary re-renders
+3. Minimum 15 test cases
+
+ACCEPTANCE CRITERIA:
+- Tests FAIL (component doesn't exist yet)
+- No syntax/import errors
+- Tests cover both relationship types
+```
+
+**🟢 GREEN Phase (Coder-Agent)**: Implement SpecialRelationshipRow.tsx (~150 lines) wrapped in React.memo with custom comparison function
+
+**Agent Invocation**: Use Task tool with subagent_type `"coder-agent"`, description `"Implement Row component for Cycle 5"`, prompt:
+```
+Implement SpecialRelationshipRow component (Cycle 5).
+
+CONTEXT:
+- Cycles 1-4 complete
+- RED phase tests are failing
+- Write MINIMAL code to pass tests
+- Reference performance_optimization_guide.md for React.memo pattern
+
+REQUIREMENTS:
+1. Create: frontend/src/components/SpecialRelationshipRow.tsx (~150 lines)
+   - Conditional rendering: Personal shows DOB/age/is_dependent, Professional shows associated_product_owners
+   - Status-based styling (green for Active, gray for Inactive, black for Deceased)
+   - Integrate SpecialRelationshipActions component (from Cycle 4)
+   - Wrap in React.memo with custom arePropsEqual comparison
+2. Run tests - all must pass
+
+ACCEPTANCE CRITERIA:
+- All tests passing
+- File size <500 lines
+- React.memo properly implemented
+- Conditional rendering works for both types
+```
+
+**🔵 REFACTOR Phase (Coder-Agent)**: Optimize React.memo comparison, extract status styling, add JSDoc
+
+**Agent Invocation**: Use Task tool with subagent_type `"coder-agent"`, description `"Refactor Row component for Cycle 5"`, prompt:
+```
+Refactor SpecialRelationshipRow (Cycle 5) while maintaining passing tests.
+
+REFACTORING TASKS:
+1. Optimize arePropsEqual function (only check necessary fields)
+2. Extract status styling to utility function
+3. Add JSDoc comments
+4. Verify conditional rendering is clear and maintainable
+5. Check DRY principle
+
+CONSTRAINTS:
+- All tests must STILL PASS
+- File remains <500 lines
+- React.memo optimization verified
+
+RUN TESTS after each change - verify 0 failures
+```
+
+**✅ VERIFY Phase (Tester-Agent)**: Run tests, verify coverage ≥70%, check build, confirm React.memo optimization working (no unnecessary re-renders)
+
+**Agent Invocation**: Use Task tool with subagent_type `"Tester-Agent"`, description `"Verify Cycle 5 completion"`, prompt:
+```
+Verify Cycle 5 (SpecialRelationshipRow Component) meets all quality standards.
+
+VERIFICATION CHECKLIST:
+1. Test Execution: npm test SpecialRelationshipRow (0 failures?)
+2. Coverage: ≥70%?
+3. Build: npm run build (no errors?)
+4. File Size: <500 lines?
+5. React.memo: Verified preventing unnecessary re-renders?
+6. Conditional Rendering: Both Personal/Professional types work?
+7. Test Quality: 15+ test cases?
+
+FAILURE HANDLING:
+If ANY check fails, document failure and DO NOT proceed to Cycle 6.
+
+SUCCESS CRITERIA:
+✅ All checks passing → GO for Cycle 6
+```
+
+---
 
 **Deliverables**:
 - SpecialRelationshipRow.tsx (~150 lines, wrapped in React.memo)
@@ -1078,10 +2218,130 @@ export function useDeleteSpecialRelationship() {
 ---
 
 #### Cycle 6: Table Components (5 hours)
-**Additional Reading**:
+
+**📖 READ BEFORE STARTING**:
 - **[`empty_states_specification.md`](./empty_states_specification.md)** - All empty/loading/error states
 - **[`accessibility_implementation_guide.md`](./accessibility_implementation_guide.md#sortable-table-accessibility)** - Sortable table ARIA patterns
 - **[`ux_and_validation_specifications.md`](./ux_and_validation_specifications.md#responsive-design-for-tablet)** - Tablet responsive design (768-1023px)
+
+---
+
+**🔴 RED Phase (Tester-Agent)**: Write failing tests for PersonalRelationshipsTable, ProfessionalRelationshipsTable, TableSortHeader, and all empty states with ARIA validation
+
+**Agent Invocation**: Use Task tool with subagent_type `"Tester-Agent"`, description `"Write failing tests for Cycle 6"`, prompt:
+```
+Write comprehensive test suite for Table Components (Cycle 6).
+
+CONTEXT:
+- Cycles 1-5 complete
+- Two table components (Personal/Professional) with sortable headers
+- Empty states for no data, loading, errors
+- Responsive design for tablet (768-1023px)
+
+REQUIREMENTS:
+1. Test files:
+   - frontend/src/tests/components/PersonalRelationshipsTable.test.tsx
+   - frontend/src/tests/components/ProfessionalRelationshipsTable.test.tsx
+   - frontend/src/tests/components/TableSortHeader.test.tsx
+   - frontend/src/tests/components/EmptyStatePersonal.test.tsx (and other empty states)
+2. Test scenarios:
+   - Table rendering with data
+   - Sorting by columns (Name, Status, DOB for Personal; Product Owners for Professional)
+   - ARIA attributes for sortable headers (aria-sort, aria-label)
+   - Keyboard navigation (Enter/Space to sort)
+   - Empty states (no data, loading, error)
+   - Responsive tablet design (hide columns on 768-1023px)
+3. Use jest-axe for accessibility
+4. Minimum 25 test cases across all files
+
+ACCEPTANCE CRITERIA:
+- Tests FAIL (components don't exist yet)
+- ARIA patterns from accessibility_implementation_guide.md
+- Empty states match empty_states_specification.md
+```
+
+**🟢 GREEN Phase (Coder-Agent)**: Implement PersonalRelationshipsTable (~250 lines), ProfessionalRelationshipsTable (~250 lines), TableSortHeader (~70 lines), empty state components
+
+**Agent Invocation**: Use Task tool with subagent_type `"coder-agent"`, description `"Implement Table components for Cycle 6"`, prompt:
+```
+Implement Table Components (Cycle 6).
+
+CONTEXT:
+- Cycles 1-5 complete
+- RED phase tests are failing
+- Write MINIMAL code to pass tests
+- Reference accessibility_implementation_guide.md for sortable table ARIA pattern
+
+REQUIREMENTS:
+1. Create: frontend/src/components/PersonalRelationshipsTable.tsx (~250 lines)
+   - Columns: Name, Relationship Type, DOB, Age, Dependent, Email, Phone, Status, Actions
+   - Sortable by Name, Status, DOB (Age calculated)
+   - Responsive: Hide Email/Phone/DOB on 768-1023px
+2. Create: frontend/src/components/ProfessionalRelationshipsTable.tsx (~250 lines)
+   - Columns: Name, Relationship Type, Associated Product Owners, Email, Phone, Status, Actions
+   - Sortable by Name, Status
+3. Create: frontend/src/components/TableSortHeader.tsx (~70 lines, reusable)
+   - ARIA attributes: aria-sort, aria-label
+   - Keyboard support: Enter/Space to sort
+   - Visual indicator: arrow up/down
+4. Create empty state components:
+   - EmptyStatePersonal, EmptyStateProfessional
+   - SkeletonTable, ErrorState
+5. Run tests - all must pass
+
+ACCEPTANCE CRITERIA:
+- All tests passing
+- File sizes <500 lines each
+- ARIA compliance verified
+- Responsive design works
+```
+
+**🔵 REFACTOR Phase (Coder-Agent)**: Extract common table patterns, optimize sort logic, verify accessibility and responsive design
+
+**Agent Invocation**: Use Task tool with subagent_type `"coder-agent"`, description `"Refactor Table components for Cycle 6"`, prompt:
+```
+Refactor Table Components (Cycle 6) while maintaining passing tests.
+
+REFACTORING TASKS:
+1. Extract common table styles/structure (DRY between Personal/Professional tables)
+2. Optimize sort logic (ensure Active > Inactive > Deceased ordering preserved)
+3. Add JSDoc comments
+4. Verify ARIA compliance (sortable table pattern)
+5. Test responsive design (768-1023px breakpoint)
+6. Ensure empty states follow specification
+
+CONSTRAINTS:
+- All tests must STILL PASS
+- Files remain <500 lines each
+- Accessibility verified
+
+RUN TESTS after each change - verify 0 failures
+```
+
+**✅ VERIFY Phase (Tester-Agent)**: Run tests, verify coverage ≥70%, check build, validate ARIA for sortable tables, test responsive design on tablet width
+
+**Agent Invocation**: Use Task tool with subagent_type `"Tester-Agent"`, description `"Verify Cycle 6 completion"`, prompt:
+```
+Verify Cycle 6 (Table Components) meets all quality standards.
+
+VERIFICATION CHECKLIST:
+1. Test Execution: npm test *Table (0 failures?)
+2. Coverage: ≥70%?
+3. Build: npm run build (no errors?)
+4. File Sizes: All <500 lines?
+5. Accessibility: jest-axe passes? Sortable table ARIA correct?
+6. Responsive Design: Columns hide on 768-1023px?
+7. Empty States: All 4+ states implemented?
+8. Test Quality: 25+ test cases?
+
+FAILURE HANDLING:
+If ANY check fails, document failure and DO NOT proceed to Cycle 7.
+
+SUCCESS CRITERIA:
+✅ All checks passing → GO for Cycle 7
+```
+
+---
 
 **Deliverables**:
 - PersonalRelationshipsTable.tsx (~250 lines)
@@ -1093,7 +2353,8 @@ export function useDeleteSpecialRelationship() {
 ---
 
 #### Cycle 7: Create/Edit Modal Components (7-10 hours)
-**Additional Reading**:
+
+**📖 READ BEFORE STARTING**:
 - **[`ux_and_validation_specifications.md`](./ux_and_validation_specifications.md#modal-form-validation-specification)** - Complete form validation guide
 - **[`editable_dropdown_specification.md`](./editable_dropdown_specification.md)** - Editable dropdown implementation (CRITICAL)
 - **[`accessibility_implementation_guide.md`](./accessibility_implementation_guide.md#modal-focus-management)** - Focus trap pattern
@@ -1103,6 +2364,135 @@ Investigate existing ComboDropdown component:
 - If supports custom values: Use as-is (2h total)
 - If needs extension: Extend component (3-4h total)
 - If doesn't exist/broken: Implement with downshift library (6-8h total)
+
+---
+
+**🔴 RED Phase (Tester-Agent)**: Write failing tests for ModalShell, RelationshipFormFields, useRelationshipValidation hook, CreateModal, EditModal with accessibility (focus trap) and validation tests
+
+**Agent Invocation**: Use Task tool with subagent_type `"Tester-Agent"`, description `"Write failing tests for Cycle 7"`, prompt:
+```
+Write comprehensive test suite for Modal Components (Cycle 7).
+
+CONTEXT:
+- Cycles 1-6 complete
+- Complex modals with form validation, focus management, editable dropdowns
+- Most complex cycle - requires thorough testing
+
+REQUIREMENTS:
+1. Test files:
+   - frontend/src/tests/components/ModalShell.test.tsx
+   - frontend/src/tests/components/RelationshipFormFields.test.tsx
+   - frontend/src/tests/hooks/useRelationshipValidation.test.ts
+   - frontend/src/tests/components/CreateSpecialRelationshipModal.test.tsx
+   - frontend/src/tests/components/EditSpecialRelationshipModal.test.tsx
+2. Test scenarios:
+   - Modal open/close with focus trap (focus returns to trigger button on close)
+   - Form field validation (on blur, on submit)
+   - Error messages display (Name required, Email format, Phone UK format, DOB not future)
+   - Editable dropdown (select existing or type custom value)
+   - Conditional fields (Personal vs Professional)
+   - Submit with valid/invalid data
+   - Cancel button
+3. Use jest-axe for accessibility
+4. Minimum 35 test cases across all files
+
+ACCEPTANCE CRITERIA:
+- Tests FAIL (components don't exist yet)
+- Focus trap pattern tested
+- Form validation comprehensive
+- Editable dropdown functionality tested
+```
+
+**🟢 GREEN Phase (Coder-Agent)**: Implement ModalShell (~80 lines) with focus trap, RelationshipFormFields (~200 lines), useRelationshipValidation (~100 lines), CreateModal (~150 lines), EditModal (~150 lines)
+
+**Agent Invocation**: Use Task tool with subagent_type `"coder-agent"`, description `"Implement Modal components for Cycle 7"`, prompt:
+```
+Implement Modal Components (Cycle 7).
+
+CONTEXT:
+- Cycles 1-6 complete
+- RED phase tests are failing
+- Write MINIMAL code to pass tests
+- Reference editable_dropdown_specification.md for dropdown implementation decision
+
+REQUIREMENTS:
+1. FIRST: Investigate existing ComboDropdown component (1 hour)
+   - Check if supports custom values
+   - Choose implementation path (use, extend, or implement new)
+2. Create: frontend/src/components/ModalShell.tsx (~80 lines)
+   - Focus trap using focus-trap-react library
+   - Save previous focus, restore on close
+   - ESC key to close
+3. Create: frontend/src/components/RelationshipFormFields.tsx (~200 lines)
+   - All form fields with labels
+   - Conditional rendering (Personal shows DOB/Dependent, Professional shows Product Owners)
+   - Use editable dropdown for Relationship Type
+4. Create: frontend/src/hooks/useRelationshipValidation.ts (~100 lines)
+   - Validation on blur for each field
+   - Validation on submit
+   - Error state management
+5. Create: frontend/src/components/CreateSpecialRelationshipModal.tsx (~150 lines)
+   - Use ModalShell, RelationshipFormFields, useRelationshipValidation
+   - Call useCreateSpecialRelationship hook (Cycle 3)
+6. Create: frontend/src/components/EditSpecialRelationshipModal.tsx (~150 lines)
+   - Similar to Create but pre-populates fields
+7. Run tests - all must pass
+
+ACCEPTANCE CRITERIA:
+- All tests passing
+- File sizes <500 lines each
+- Focus trap works
+- Form validation works
+- Editable dropdown implemented
+```
+
+**🔵 REFACTOR Phase (Coder-Agent)**: Extract validation rules to constants, optimize form field rendering, verify focus management and ARIA
+
+**Agent Invocation**: Use Task tool with subagent_type `"coder-agent"`, description `"Refactor Modal components for Cycle 7"`, prompt:
+```
+Refactor Modal Components (Cycle 7) while maintaining passing tests.
+
+REFACTORING TASKS:
+1. Extract validation rules to constants file (DRY)
+2. Optimize form field rendering (reduce duplication between Create/Edit)
+3. Add JSDoc comments
+4. Verify focus trap pattern correct
+5. Verify ARIA compliance (labels, error messages linked with aria-describedby)
+6. Ensure validation messages match UX spec
+
+CONSTRAINTS:
+- All tests must STILL PASS
+- Files remain <500 lines each
+- Focus management verified
+
+RUN TESTS after each change - verify 0 failures
+```
+
+**✅ VERIFY Phase (Tester-Agent)**: Run tests, verify coverage ≥70%, check build, validate focus trap, test form validation with all edge cases, verify editable dropdown works
+
+**Agent Invocation**: Use Task tool with subagent_type `"Tester-Agent"`, description `"Verify Cycle 7 completion"`, prompt:
+```
+Verify Cycle 7 (Modal Components) meets all quality standards.
+
+VERIFICATION CHECKLIST:
+1. Test Execution: npm test *Modal (0 failures?)
+2. Coverage: ≥70%?
+3. Build: npm run build (no errors?)
+4. File Sizes: All <500 lines?
+5. Accessibility: jest-axe passes? Focus trap works? ARIA labels correct?
+6. Form Validation: All validation rules working?
+7. Editable Dropdown: Can select existing AND type custom value?
+8. Conditional Fields: Personal/Professional fields show correctly?
+9. Test Quality: 35+ test cases?
+
+FAILURE HANDLING:
+If ANY check fails, document failure and DO NOT proceed to Cycle 8.
+
+SUCCESS CRITERIA:
+✅ All checks passing → GO for Cycle 8
+```
+
+---
 
 **Deliverables**:
 - ModalShell.tsx (~80 lines, reusable wrapper with focus trap)
@@ -1114,8 +2504,125 @@ Investigate existing ComboDropdown component:
 ---
 
 #### Cycle 8: Container Component (3 hours)
-**Additional Reading**:
+
+**📖 READ BEFORE STARTING**:
 - **[`revised_component_architecture.md`](./revised_component_architecture.md#specialrelationshipssubtab)** - Container component spec
+
+---
+
+**🔴 RED Phase (Tester-Agent)**: Write failing tests for SpecialRelationshipsSubTab container and TabNavigation with integration tests for full component tree
+
+**Agent Invocation**: Use Task tool with subagent_type `"Tester-Agent"`, description `"Write failing tests for Cycle 8"`, prompt:
+```
+Write comprehensive test suite for Container Component (Cycle 8).
+
+CONTEXT:
+- Cycles 1-7 complete
+- Final frontend component - integrates all previous cycles
+- Container orchestrates Personal/Professional tabs, modals, data fetching
+
+REQUIREMENTS:
+1. Test files:
+   - frontend/src/tests/components/SpecialRelationshipsSubTab.test.tsx
+   - frontend/src/tests/components/TabNavigation.test.tsx
+2. Test scenarios:
+   - Tab switching between Personal/Professional
+   - Data fetching with useSpecialRelationships hook (Cycle 3)
+   - Create button opens CreateModal (Cycle 7)
+   - Loading state shows skeleton
+   - Error state shows error component
+   - Empty state shows appropriate empty state
+   - Integration: Full component tree renders without errors
+3. Use jest-axe for accessibility
+4. Minimum 20 test cases
+
+ACCEPTANCE CRITERIA:
+- Tests FAIL (components don't exist yet)
+- Integration tests cover full component tree
+- All states tested (loading, error, empty, data)
+```
+
+**🟢 GREEN Phase (Coder-Agent)**: Implement SpecialRelationshipsSubTab (~150 lines) and TabNavigation (~50 lines) integrating all previous components
+
+**Agent Invocation**: Use Task tool with subagent_type `"coder-agent"`, description `"Implement Container component for Cycle 8"`, prompt:
+```
+Implement Container Component (Cycle 8).
+
+CONTEXT:
+- Cycles 1-7 complete
+- RED phase tests are failing
+- Write MINIMAL code to pass tests
+- This is the final frontend integration component
+
+REQUIREMENTS:
+1. Create: frontend/src/components/SpecialRelationshipsSubTab.tsx (~150 lines)
+   - Use useSpecialRelationships hook (Cycle 3) to fetch data
+   - Tab navigation (Personal/Professional)
+   - Create button opens CreateModal (Cycle 7)
+   - Render PersonalRelationshipsTable or ProfessionalRelationshipsTable (Cycle 6)
+   - Handle loading, error, empty states
+2. Create: frontend/src/components/TabNavigation.tsx (~50 lines)
+   - Two tabs: Personal, Professional
+   - ARIA attributes (role="tablist", aria-selected)
+   - Keyboard navigation (Arrow keys)
+3. Run tests - all must pass
+
+ACCEPTANCE CRITERIA:
+- All tests passing
+- File sizes <500 lines each
+- Full integration working (data flows from hook → table → modals)
+- All states render correctly
+```
+
+**🔵 REFACTOR Phase (Coder-Agent)**: Optimize state management, extract tab logic if needed, verify integration with all child components
+
+**Agent Invocation**: Use Task tool with subagent_type `"coder-agent"`, description `"Refactor Container component for Cycle 8"`, prompt:
+```
+Refactor Container Component (Cycle 8) while maintaining passing tests.
+
+REFACTORING TASKS:
+1. Optimize state management (minimize re-renders)
+2. Verify tab navigation ARIA compliance
+3. Add JSDoc comments
+4. Ensure error handling is comprehensive
+5. Check DRY principle
+6. Verify all child components integrated correctly
+
+CONSTRAINTS:
+- All tests must STILL PASS
+- Files remain <500 lines each
+- Integration verified
+
+RUN TESTS after each change - verify 0 failures
+```
+
+**✅ VERIFY Phase (Tester-Agent)**: Run all tests (entire test suite), verify coverage ≥70%, check build, test full user flow end-to-end
+
+**Agent Invocation**: Use Task tool with subagent_type `"Tester-Agent"`, description `"Verify Cycle 8 completion"`, prompt:
+```
+Verify Cycle 8 (Container Component) meets all quality standards.
+
+VERIFICATION CHECKLIST:
+1. Test Execution: npm test SpecialRelationships (0 failures?)
+2. ALL Tests: npm test (run entire test suite - 0 failures?)
+3. Coverage: npm test -- --coverage (≥70%?)
+4. Build: npm run build (no errors?)
+5. File Sizes: All <500 lines?
+6. Accessibility: jest-axe passes for container?
+7. Integration: Full component tree renders?
+8. User Flow: Can create/edit/delete relationship end-to-end?
+9. Test Quality: 20+ test cases for container?
+
+FAILURE HANDLING:
+If ANY check fails, document failure. Fix before proceeding to backend (Cycle 9).
+
+SUCCESS CRITERIA:
+✅ All checks passing
+✅ Complete frontend implementation verified
+✅ GO for Cycle 9 (Backend API Implementation)
+```
+
+---
 
 **Deliverables**:
 - SpecialRelationshipsSubTab.tsx (~150 lines)
@@ -1226,31 +2733,326 @@ See full implementation details in the complete plan document.
    - Buffer includes time for tab state management and component coordination
 
 9. **Backend API Implementation - PARALLEL Week 1** (Estimated: 6 hours, +50% buffer)
-   - **📖 READ**: [`special_relationships_api_spec.yaml`](./special_relationships_api_spec.yaml) - Implement ALL endpoints exactly as specified
-   - **📖 READ**: [`ux_and_validation_specifications.md`](./ux_and_validation_specifications.md#data-validation-service-layer) - Backend validation rules
-   - **📖 READ**: [`delete_confirmation_undo_specification.md`](./delete_confirmation_undo_specification.md#soft-delete-implementation) - Soft delete pattern
-   - Create FastAPI routes in `backend/app/api/routes/special_relationships.py`
-   - Implement CRUD operations with database queries
-   - Add validation with Pydantic models (match OpenAPI spec exactly)
-   - Write backend tests with pytest
-   - Verify database migrations if needed
-   - Create database indexes for performance
-   - Add `deleted_at` column for soft delete support
-   - Buffer includes time for complex queries, validation logic, and database optimization
-   - **⚠️ CRITICAL**: Develop in parallel with frontend using OpenAPI spec contract
+
+   **📖 READ BEFORE STARTING**:
+   - **[`special_relationships_api_spec.yaml`](./special_relationships_api_spec.yaml)** - Implement ALL endpoints exactly as specified
+   - **[`ux_and_validation_specifications.md`](./ux_and_validation_specifications.md#data-validation-service-layer)** - Backend validation rules
+   - **[`delete_confirmation_undo_specification.md`](./delete_confirmation_undo_specification.md#soft-delete-implementation)** - Soft delete pattern
+
+   **⚠️ CRITICAL**: Develop in parallel with frontend using OpenAPI spec contract
+
+   ---
+
+   **🔴 RED Phase (Tester-Agent)**: Write failing backend tests for all API endpoints with pytest
+
+   **Agent Invocation**: Use Task tool with subagent_type `"Tester-Agent"`, description `"Write failing backend tests"`, prompt:
+   ```
+   Write comprehensive pytest test suite for Backend API (Cycle 9).
+
+   CONTEXT:
+   - Frontend Cycles 1-8 complete (or in progress)
+   - Backend API developed in parallel using OpenAPI spec contract
+   - Python/FastAPI backend with PostgreSQL database
+
+   REQUIREMENTS:
+   1. Test file: backend/tests/test_special_relationships_routes.py
+   2. Test all endpoints from OpenAPI spec:
+      - GET /api/special_relationships?client_group_id={id}
+      - POST /api/special_relationships
+      - PUT /api/special_relationships/{id}
+      - PATCH /api/special_relationships/{id}/status
+      - DELETE /api/special_relationships/{id}
+   3. Test scenarios:
+      - Successful CRUD operations
+      - Validation errors (400) - Name too long, invalid email, invalid phone, future DOB
+      - Authentication errors (401)
+      - Not found errors (404)
+      - Server errors (500)
+      - Soft delete (deleted_at timestamp set, not hard delete)
+   4. Use pytest fixtures for database setup/teardown
+   5. Minimum 20 test cases
+
+   ACCEPTANCE CRITERIA:
+   - Tests FAIL (routes don't exist yet)
+   - No syntax errors
+   - Database fixtures properly configured
+   ```
+
+   **🟢 GREEN Phase (Coder-Agent)**: Implement FastAPI routes and database operations
+
+   **Agent Invocation**: Use Task tool with subagent_type `"coder-agent"`, description `"Implement backend API"`, prompt:
+   ```
+   Implement Backend API for Special Relationships (Cycle 9).
+
+   CONTEXT:
+   - RED phase tests are failing
+   - Frontend using OpenAPI spec contract (can develop in parallel)
+   - Write MINIMAL code to pass tests
+
+   REQUIREMENTS:
+   1. Create: backend/app/api/routes/special_relationships.py
+   2. Implement all endpoints matching OpenAPI spec exactly:
+      - GET endpoint with client_group_id filter
+      - POST endpoint with Pydantic validation
+      - PUT endpoint for full updates
+      - PATCH endpoint for status updates only
+      - DELETE endpoint with soft delete (set deleted_at timestamp)
+   3. Create Pydantic models: backend/app/models/special_relationship.py
+   4. Database operations:
+      - Add deleted_at column to special_relationships table (migration if needed)
+      - Create indexes on client_group_id and deleted_at
+      - Filter out soft-deleted records in GET endpoint
+   5. Validation rules from ux_and_validation_specifications.md:
+      - Name: 1-200 chars, required
+      - Email: valid format or empty
+      - Phone: UK format or empty
+      - DOB: not in future, age 0-120
+   6. Run tests - all must pass
+
+   ACCEPTANCE CRITERIA:
+   - All tests passing
+   - OpenAPI spec compliance verified
+   - Soft delete working (not hard delete)
+   - Validation errors return 400 with error messages
+   ```
+
+   **🔵 REFACTOR Phase (Coder-Agent)**: Extract validation to service layer, optimize queries, add database indexes
+
+   **Agent Invocation**: Use Task tool with subagent_type `"coder-agent"`, description `"Refactor backend API"`, prompt:
+   ```
+   Refactor Backend API (Cycle 9) while maintaining passing tests.
+
+   REFACTORING TASKS:
+   1. Extract validation logic to service layer (DRY)
+   2. Optimize database queries (add indexes, use joins for product_owner_names)
+   3. Add error handling for database connection failures
+   4. Add logging for all operations
+   5. Verify SQL injection prevention (parameterized queries)
+   6. Add API documentation docstrings
+
+   CONSTRAINTS:
+   - All tests must STILL PASS
+   - OpenAPI spec compliance maintained
+
+   RUN TESTS after each change - verify 0 failures
+   ```
+
+   **✅ VERIFY Phase (Tester-Agent)**: Run backend tests, verify OpenAPI compliance, test with Postman/curl, check database soft deletes
+
+   **Agent Invocation**: Use Task tool with subagent_type `"Tester-Agent"`, description `"Verify backend API completion"`, prompt:
+   ```
+   Verify Backend API (Cycle 9) meets all quality standards.
+
+   VERIFICATION CHECKLIST:
+   1. Test Execution: pytest backend/tests/test_special_relationships_routes.py (0 failures?)
+   2. Coverage: ≥70% for routes file?
+   3. OpenAPI Compliance: All endpoints match spec exactly?
+   4. Database: deleted_at column exists? Indexes created?
+   5. Soft Delete: DELETE sets deleted_at, doesn't remove row?
+   6. Validation: All validation rules working (Name, Email, Phone, DOB)?
+   7. Manual Testing: Test with Postman/curl - all endpoints work?
+   8. Error Handling: 400/401/404/500 errors return correct formats?
+
+   FAILURE HANDLING:
+   If ANY check fails, document failure and DO NOT proceed to Cycle 10.
+
+   SUCCESS CRITERIA:
+   ✅ All checks passing
+   ✅ Backend ready for frontend integration
+   ✅ GO for Cycle 10 (Integration & E2E Testing)
+   ```
+
+   ---
+
+   **Deliverables**:
+   - backend/app/api/routes/special_relationships.py
+   - backend/app/models/special_relationship.py
+   - backend/tests/test_special_relationships_routes.py
+   - Database migration (if needed) for deleted_at column and indexes
 
 10. **Integration & End-to-End Testing** (Estimated: 3 hours, +50% buffer)
-    - **📖 READ**: [`integration_test_scenarios.md`](./integration_test_scenarios.md) - Execute ALL 15 test scenarios
-    - **📖 READ**: [`accessibility_implementation_guide.md`](./accessibility_implementation_guide.md#testing-procedures) - Accessibility testing checklist
-    - Integrate SpecialRelationshipsSubTab into BasicDetailsTab
-    - Test end-to-end flow (create, edit, delete, status changes)
-    - Verify data persistence across page refreshes
-    - Run full test suite (frontend and backend)
-    - Test with real database and production-like data
-    - **REQUIRED**: Run jest-axe on all components (zero violations)
-    - **REQUIRED**: Manual keyboard navigation testing (30 min per component)
-    - **REQUIRED**: NVDA screen reader testing (15 min per component)
-    - Buffer includes time for debugging integration issues
+
+    **📖 READ BEFORE STARTING**:
+    - **[`integration_test_scenarios.md`](./integration_test_scenarios.md)** - Execute ALL 15 test scenarios
+    - **[`accessibility_implementation_guide.md`](./accessibility_implementation_guide.md#testing-procedures)** - Accessibility testing checklist
+
+    ---
+
+    **🔴 RED Phase (Tester-Agent)**: Write failing integration and E2E tests covering all 15 scenarios from integration_test_scenarios.md
+
+    **Agent Invocation**: Use Task tool with subagent_type `"Tester-Agent"`, description `"Write integration & E2E tests"`, prompt:
+    ```
+    Write comprehensive Integration and E2E test suite (Cycle 10).
+
+    CONTEXT:
+    - Cycles 1-9 complete (frontend and backend)
+    - Final testing cycle before UAT
+    - Must verify full stack integration
+
+    REQUIREMENTS:
+    1. Test file: frontend/src/tests/integration/SpecialRelationships.integration.test.tsx
+    2. Execute ALL 15 test scenarios from integration_test_scenarios.md:
+       - Scenario 1: Create personal relationship - full flow
+       - Scenario 2: Create professional relationship with product owners
+       - Scenario 3: Edit relationship and verify persistence
+       - Scenario 4: Status change flow (Active → Inactive → Deceased)
+       - Scenario 5: Delete with undo (5-second window)
+       - Scenario 6: Delete undo timeout (permanent deletion)
+       - Scenario 7: Optimistic update rollback on API failure
+       - Scenario 8: Sort by multiple columns
+       - Scenario 9: Focus trap in create modal
+       - Scenario 10: Tab navigation between Personal/Professional
+       - Scenario 11: Empty state → Create → Data state
+       - Scenario 12: Form validation errors
+       - Scenario 13: Responsive design (tablet view)
+       - Scenario 14: Page refresh data persistence
+       - Scenario 15: API error handling - network failure
+    3. Use real backend (not mocks) or MSW for realistic API simulation
+    4. Minimum 15 test cases (one per scenario)
+
+    ACCEPTANCE CRITERIA:
+    - Tests FAIL (integration not complete yet)
+    - All 15 scenarios covered
+    - Tests use realistic data flows
+    ```
+
+    **🟢 GREEN Phase (Coder-Agent)**: Integrate SpecialRelationshipsSubTab into BasicDetailsTab, fix integration issues to pass tests
+
+    **Agent Invocation**: Use Task tool with subagent_type `"coder-agent"`, description `"Complete integration"`, prompt:
+    ```
+    Complete Integration of Special Relationships feature (Cycle 10).
+
+    CONTEXT:
+    - Cycles 1-9 complete
+    - RED phase integration tests are failing
+    - Need to integrate into existing Client Group Suite
+
+    REQUIREMENTS:
+    1. Integrate SpecialRelationshipsSubTab into BasicDetailsTab.tsx:
+       ```typescript
+       case 'relationships':
+         return (
+           <div className="bg-white rounded-lg shadow p-6">
+             <SpecialRelationshipsSubTab clientGroupId={clientGroupId} />
+           </div>
+         );
+       ```
+    2. Fix any integration issues discovered by tests:
+       - CORS issues
+       - Authentication/cookie issues
+       - Data format mismatches between frontend/backend
+       - React Query cache conflicts
+    3. Verify end-to-end flows work:
+       - Create → persists to database → shows in UI
+       - Edit → updates database → UI updates
+       - Delete → soft delete in database → UI removes with undo
+       - Status change → database updated → UI reflects change
+    4. Run all integration tests - all must pass
+
+    ACCEPTANCE CRITERIA:
+    - All integration tests passing
+    - Feature integrated into existing app
+    - No regressions in existing features
+    - Full user flow working end-to-end
+    ```
+
+    **🔵 REFACTOR Phase (Coder-Agent)**: Optimize integration code, remove debug logs, verify no memory leaks
+
+    **Agent Invocation**: Use Task tool with subagent_type `"coder-agent"`, description `"Refactor integration"`, prompt:
+    ```
+    Refactor Integration code (Cycle 10) while maintaining passing tests.
+
+    REFACTORING TASKS:
+    1. Remove all debug console.logs added during integration
+    2. Verify no memory leaks (close modals properly, clean up listeners)
+    3. Optimize React Query cache settings
+    4. Remove any temporary workarounds
+    5. Verify error handling is production-ready
+    6. Check for any hardcoded values that should be config
+
+    CONSTRAINTS:
+    - All tests must STILL PASS
+    - No regressions in existing features
+
+    RUN TESTS after each change - verify 0 failures
+    ```
+
+    **✅ VERIFY Phase (Tester-Agent)**: Run COMPLETE test suite (frontend + backend), accessibility testing (jest-axe + manual), performance testing, final quality check
+
+    **Agent Invocation**: Use Task tool with subagent_type `"Tester-Agent"`, description `"Final verification"`, prompt:
+    ```
+    Final Verification - Special Relationships feature complete (Cycle 10).
+
+    VERIFICATION CHECKLIST:
+
+    1. **Complete Test Suite**:
+       - Frontend: npm test (0 failures?)
+       - Backend: pytest (0 failures?)
+       - Integration: All 15 scenarios passing?
+       - Coverage: ≥70% overall?
+
+    2. **Accessibility Testing**:
+       - jest-axe: Run on all components (0 violations?)
+       - Manual keyboard navigation: Test all components (30 min)
+       - NVDA screen reader: Test all components (15 min)
+       - Color contrast: Verify 4.5:1 minimum
+       - Focus management: Modal focus trap works?
+
+    3. **Performance Testing**:
+       - Table render: <100ms with 50 relationships?
+       - Sort performance: Acceptable with large dataset?
+       - Memory leaks: None detected?
+       - React Query cache: Working efficiently?
+
+    4. **User Flow Testing**:
+       - Create personal relationship → Success?
+       - Create professional relationship → Success?
+       - Edit relationship → Success?
+       - Status change → Success?
+       - Delete with undo → Success?
+       - Page refresh → Data persists?
+
+    5. **Cross-Browser Testing**:
+       - Chrome: All features work?
+       - Firefox: All features work?
+       - Edge: All features work?
+
+    6. **Build Verification**:
+       - npm run build: No errors?
+       - Backend starts: No errors?
+       - Production mode: All features work?
+
+    7. **Code Quality**:
+       - All files <500 lines?
+       - All functions <50 lines?
+       - No hardcoded secrets?
+       - Kingston preferences met (fonts, dates, etc.)?
+
+    FAILURE HANDLING:
+    If ANY check fails, document failure and DO NOT proceed to UAT.
+
+    SUCCESS CRITERIA:
+    ✅ All checks passing
+    ✅ Feature complete and production-ready
+    ✅ GO for UAT (User Acceptance Testing)
+
+    EXPECTED OUTPUT:
+    Provide comprehensive report with:
+    - Test results summary
+    - Accessibility audit results
+    - Performance metrics
+    - Any issues found and resolved
+    - Final GO/NO-GO decision for UAT
+    ```
+
+    ---
+
+    **Deliverables**:
+    - Integration of SpecialRelationshipsSubTab into BasicDetailsTab
+    - Complete integration test suite
+    - Accessibility testing report (zero violations)
+    - Performance testing report
+    - Production-ready feature
 
 **Core Development Subtotal**: 35 hours
 
