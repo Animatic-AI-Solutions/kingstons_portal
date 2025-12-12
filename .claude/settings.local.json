@@ -16,7 +16,9 @@
       "Bash(Select-String \"●\")",
       "Bash(Select-Object -First 35)",
       "Bash(findstr:*)",
-      "Bash(npx jest --clearCache)"
+      "Bash(npx jest --clearCache)",
+      "Bash(dir:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

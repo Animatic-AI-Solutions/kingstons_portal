@@ -2,6 +2,7 @@
 // allows you to do things like:
 // expect(element).toHaveTextContent(/react/i)
 // learn more: https://github.com/testing-library/jest-dom
+import React from 'react';
 import '@testing-library/jest-dom';
 
 // Mock the AuthContext
@@ -32,6 +33,16 @@ jest.mock('react-router-dom', () => ({
   useNavigate: () => jest.fn(),
   useParams: () => ({ id: '1' }),
   useLocation: () => ({ pathname: '/', search: '', hash: '', state: null })
+}));
+
+// Mock lucide-react icons to avoid rendering issues in tests
+jest.mock('lucide-react', () => ({
+  Users: () => React.createElement('svg', { 'data-testid': 'users-icon', 'aria-hidden': 'true' }),
+  Briefcase: () => React.createElement('svg', { 'data-testid': 'briefcase-icon', 'aria-hidden': 'true' }),
+  WifiOff: () => React.createElement('svg', { 'data-testid': 'wifi-off-icon', 'aria-hidden': 'true' }),
+  AlertCircle: () => React.createElement('svg', { 'data-testid': 'alert-circle-icon', 'aria-hidden': 'true' }),
+  Edit2: () => React.createElement('svg', { 'data-testid': 'edit-icon', 'aria-hidden': 'true' }),
+  Trash2: () => React.createElement('svg', { 'data-testid': 'trash-icon', 'aria-hidden': 'true' }),
 }));
 
 // Mock @faker-js/faker to avoid ESM issues

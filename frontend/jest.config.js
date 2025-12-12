@@ -26,7 +26,7 @@ module.exports = {
     }
   },
   transformIgnorePatterns: [
-    '/node_modules/(?!(axios|@faker-js))/'
+    '/node_modules/(?!(axios|@faker-js|lucide-react))/'
   ],
   globals: {
     'ts-jest': {

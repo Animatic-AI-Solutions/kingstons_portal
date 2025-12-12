@@ -1999,7 +1999,7 @@ async def calculate_multiple_portfolio_funds_historical_irr(portfolio_fund_ids: 
             activities_response = await db.fetch('\n                SELECT * FROM holding_activity_log \n                WHERE portfolio_fund_id = ANY($1::int[]) \n                AND activity_timestamp <= $2 \n                ORDER BY activity_timestamp\n            ', portfolio_fund_ids, date_end_of_day)
             activities = [dict(record) for record in activities_response]
             fund_valuations = {}
-            batch_valuation_response = await db.fetch('\n                SELECT portfolio_fund_id, valuation, valuation_date \n                FROM portfolio_fund_valuations \n                WHERE portfolio_fund_id = ANY($1::int[]) \n                  AND valuation_date <= $2 \n                ORDER BY portfolio_fund_id, valuation_date DESC\n            ', portfolio_fund_ids, date_obj)
+            batch_valuation_response = await db.fetch('SELECT portfolio_fund_id, valuation, valuation_date \n                FROM portfolio_fund_valuations \n                WHERE portfolio_fund_id = ANY($1::int[])\nAND valuation_date <= $2\nORDER BY portfolio_fund_id, valuation_date DESC', portfolio_fund_ids, date_obj)
             seen_funds = set()
             if batch_valuation_response:
                 for valuation_record_row in batch_valuation_response:
