@@ -19,22 +19,17 @@ logger.info("Environment variables loaded")
 
 # Get PostgreSQL connection details from environment variables
 # Phase 2: Check for DATABASE_URL_PHASE2 first (takes priority for phase_2 branch)
-# Fall back to DATABASE_URL if DATABASE_URL_PHASE2 is not set
-DATABASE_URL = os.getenv("DATABASE_URL_PHASE2") or os.getenv("DATABASE_URL")
-
-# Log which database configuration is being used
-if os.getenv("DATABASE_URL_PHASE2"):
-    logger.info("Using DATABASE_URL_PHASE2 (Phase 2 development database)")
-else:
-    logger.info("Using DATABASE_URL (production/main database)")
+# Do not fall back to DATABASE_URL if DATABASE_URL_PHASE2 is not set as we must preserve the data
+# structure in the phase 1 database
+DATABASE_URL = os.getenv("DATABASE_URL_PHASE2")
 
 logger.info(f"Database URL present: {bool(DATABASE_URL)}")
 
 if not DATABASE_URL:
-    logger.error("DATABASE_URL or DATABASE_URL_PHASE2 must be set in environment variables.")
+    logger.error("DATABASE_URL_PHASE2 must be set in environment variables.")
     logger.error("Expected format: postgresql://username:password@host:port/database")
     logger.error(f"Available environment variables: {[key for key in os.environ.keys() if 'KEY' not in key.upper() and 'SECRET' not in key.upper() and 'PASSWORD' not in key.upper()]}")
-    raise ValueError("DATABASE_URL or DATABASE_URL_PHASE2 must be set in environment variables.")
+    raise ValueError("DATABASE_URL_PHASE2 must be set in environment variables.")
 
 # Global connection pool
 _pool: Optional[asyncpg.Pool] = None

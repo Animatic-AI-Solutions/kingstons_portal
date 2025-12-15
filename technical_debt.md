@@ -1,9 +1,3 @@
-Check account irr cazluclation and if it's being used
-
-what techical debt would cause the most problems:
-- unused functinos which are never called
-- unused or deprecated files which are never imported
-
 # Terms
 
 ## Client Group: 
@@ -37,17 +31,32 @@ what techical debt would cause the most problems:
 - Blueprint portfolios which can be plugged in when creating a product, this just gives a commonly used portfolio a name and saves time creating new products
 
 ## Phase 2:
-- Thsi is used in many places to indicate documentation or compponents for the next phase for the system which is mainly adding lots more data for clients
+- This is used in many places to indicate documentation or compponents for the next phase for the system which is mainly adding lots more data for clients
 - Some of this functinoality is implemented already and not explicitly labled phase 2
 
-Things for Danny to look out for (major known technical debt):
-- There is maybe 40% coverage for tests, some are broken and the rest need to be built. The question is hwo much coverage actually is there and which files/functinoality dont have tests? There may eb a tool to help us with this (there probably is)?
-- There are still naming incosistencies across files, database functions/views/tables/indexes, variables, and function names. We coul use grep to scan for known ones. Look out for the old terms 'holding' which is a portfolio fund, 'account' which is a portfolio or product, and 'activities' which are transactions.
-- IRR calculation functinoality is functinoal bu very messy. Except there to be minimum DRY, complex to follow, and poor naming for functions. The key files are irr_cascade_service.py inside backend services and the portfolio_funds route. The latar in perticular is extreamly verbose and messy. Other files support the functinoality such a the portfolio_valuations.py and fund_valuations.py routes.
+## Things for Danny to look out for (major known technical debt):
+- There is maybe 40% coverage for tests, some are broken and the rest need to be built. The question is how much coverage actually is there and which files/functionality dont have tests? There may be an npm tool to help us with this (or some other library)?
+
+- There are still naming inconsistencies across files, database functions/views/tables/indexes, variables, and function names. We could use grep to scan for known ones to replace them. Look out for the old terms 'holding' which is a portfolio fund (becaseu it is an instance of a fund belonging to a portfolio), 'account' which is a portfolio or product, and 'activities' which are transactions.
+
+- IRR calculation functinoality is functional but very messy. Expect there to be minimum DRY, complex to follow, and poor naming/inconsistent for functions. The key files are irr_cascade_service.py inside backend services and the portfolio_funds route. The latar, in particular, is extreamly verbose and messy. Other files support the functionality such a the portfolio_valuations.py and fund_valuations.py routes.
+
 - There may be hardcoded database urls/passwords, env variables, and mock implimentations (which AI loves writting).
+
 - There are many unused imports and SOME components which are exported but never imported. I already know some files are never used or have been deprecated in favour of working ones. Some code may also have been commented out while debugging and never removed.
+
 - Be careful not to trust comments too wholey as many are outdated and never updated after refactors or debugging.
-- Some files severely violate file size constraints. I am aiming for below 500 line file sizes ubiquitously, however this is a constant battle. Lots of funtions can probably be tranferred to service files or whole new servcies made our of them
+
+- Some files severely violate file size constraints. I am aiming for below 500 line file sizes ubiquitously, however this is a constant battle. Lots of funtions can probably be tranferred to service files or make up whole new servies.
+
 - Some inline sql statements dont have readible formats
+
 - The dedicated database client is not always used where sql is written to postgres directly
-- global CSS (tailwind) is often overidden and not followed universally 
+
+- global CSS (tailwind) is often overidden and underutilised
+
+- some functions are hundreds of lines long. Can be split into utility functions in service files.
+
+- Empty init files (API)
+
+- Should not fallback to connect to the phase 1 database
