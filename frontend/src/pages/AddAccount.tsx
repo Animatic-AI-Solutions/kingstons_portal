@@ -1153,6 +1153,7 @@ const AddAccount: React.FC = () => {
         onClose={() => setIsAddFundModalOpen(false)}
         onSuccess={handleFundAdded}
       />
+      </div>
     </DynamicPageContainer>
   );
 };

@@ -1,17 +1,5 @@
-spoecial reltaionhsip shoudl be solkit further into 2 tabs: personal and professional
+is_dependent actually represents if the associated products owners are dependent on the special relationship
 
-each should have a table
+in the edit special relyaionships modal it says the product owner fetching for a specila reltaioship is a TO-DO
 
-the columns of the perosnla table are: name, date of birth, age, relationship, dependency, email, phone number, status, actions
-
-the columns for professional are: name, relationship, relationship with in pills (which are the special reltaionships product owner associations), phon number, email, status, actions
-
-use the structure and styling of the table we have already created for product owners so you do not have to start form scratch
-
-clicking on a rown  brings up the edit modal for that special reltaionship where the user can edit adn view all detaisl for that special relationship
-
-have the ame actino buttons as in the product owners
-
-inactive or decesed speicla reltaionships shoudl drop to the bottom of the tabel and be greyed out
-
-allow the usert to sort by any of the columns but by default order the speicla reltaionhsips by name
+instea dof alwasy writing to the same logfile, each time the script is run to create a backup generate a logfile just for that session, I'll create a folder called backup_logs and store the log files organised by months (in month folders), tsi way I can actually keep track of errors that happen insteaf of all logs bing in one massive text file

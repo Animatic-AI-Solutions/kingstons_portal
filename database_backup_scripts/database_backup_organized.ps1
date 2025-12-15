@@ -74,23 +74,32 @@ Write-BackupLog "=== Starting $($BackupType.ToUpper()) Database Backup ===" "Cya
 Write-BackupLog "Backup file: $backupFile" "Gray"
 Write-BackupLog "Format: $format" "Gray"
 
-# Load password from .env file
+# Load password from .env file (no hardcoded fallback)
 $envFile = "C:\Users\kingstonadmin\Documents\kingstons_portal\.env"
-$password = "KingstonApp2024!"
+$password = $null
 
-if (Test-Path $envFile) {
-    try {
-        $envContent = Get-Content $envFile
-        foreach ($line in $envContent) {
-            if ($line.StartsWith("PGPASSWORD=")) {
-                $password = $line.Substring(11).Trim()
-                Write-BackupLog "Password loaded from .env file" "Green"
-                break
-            }
+if (-not (Test-Path $envFile)) {
+    Write-BackupLog "ERROR: .env file not found at $envFile" "Red"
+    exit 1
+}
+
+try {
+    $envContent = Get-Content $envFile
+    foreach ($line in $envContent) {
+        if ($line.StartsWith("PGPASSWORD=")) {
+            $password = $line.Substring(11).Trim()
+            Write-BackupLog "Password loaded from .env file" "Green"
+            break
         }
-    } catch {
-        Write-BackupLog "Using fallback password" "Yellow"
     }
+} catch {
+    Write-BackupLog "ERROR: Failed to read .env file - $($_.Exception.Message)" "Red"
+    exit 1
+}
+
+if (-not $password) {
+    Write-BackupLog "ERROR: PGPASSWORD not found in .env file" "Red"
+    exit 1
 }
 
 $env:PGPASSWORD = $password

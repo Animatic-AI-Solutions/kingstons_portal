@@ -1,32 +1,52 @@
 /**
  * CreateSpecialRelationshipModal Component (Cycle 7)
  *
- * Modal for creating a new special relationship (personal or professional).
- * - Uses ModalShell for accessibility features
- * - Uses RelationshipFormFields for form UI
- * - Uses useRelationshipValidation for validation
- * - Calls useCreateSpecialRelationship hook for API interaction
- * - Handles loading, success, and error states
+ * Modal dialog for creating a new special relationship (personal or professional).
+ * Provides full form validation, error handling, and accessibility features.
+ *
+ * @module CreateSpecialRelationshipModal
+ *
+ * Features:
+ * - Form validation using useRelationshipValidation hook
+ * - API integration via useCreateSpecialRelationship hook
+ * - Loading, success, and error state management
+ * - Automatic focus management for validation errors
+ * - Form reset on modal close
+ * - API error display
+ *
+ * Accessibility:
+ * - Uses ModalShell for focus trap and keyboard navigation
  * - Focuses first invalid field on validation error
+ * - Disabled state prevents interaction during submission
+ *
+ * Architecture:
+ * - ModalShell: Provides modal container with accessibility
+ * - RelationshipFormFields: Renders form fields consistently
+ * - useRelationshipValidation: Handles all validation logic
+ * - useCreateSpecialRelationship: Manages API mutation
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ModalShell from './ModalShell';
 import RelationshipFormFields from './RelationshipFormFields';
 import { useRelationshipValidation, RelationshipFormData } from '@/hooks/useRelationshipValidation';
+import { focusFirstError, detectChangedField } from '@/hooks/useRelationshipFormHandlers';
 import { useCreateSpecialRelationship } from '@/hooks/useSpecialRelationships';
 import { SpecialRelationship, RelationshipStatus } from '@/types/specialRelationship';
 
+/**
+ * Props for CreateSpecialRelationshipModal component
+ */
 export interface CreateSpecialRelationshipModalProps {
-  /** Whether modal is open */
+  /** Whether modal is currently open */
   isOpen: boolean;
-  /** Callback when modal should close */
+  /** Callback invoked when modal should close */
   onClose: () => void;
-  /** Client group ID to associate relationship with */
+  /** Client group ID to associate the new relationship with */
   clientGroupId: string;
-  /** Whether this is a professional relationship */
+  /** Whether this is a professional relationship (affects available fields) */
   isProfessional: boolean;
-  /** Optional success callback */
+  /** Optional callback invoked after successful creation with the new relationship */
   onSuccess?: (relationship: SpecialRelationship) => void;
 }
 
@@ -45,6 +65,9 @@ const CreateSpecialRelationshipModal: React.FC<CreateSpecialRelationshipModalPro
     date_of_birth: '',
     email: '',
     phone_number: '',
+    is_dependent: false,          // Default false for personal relationships
+    relationship_with: [],         // Default empty array for professional relationships
+    is_professional: isProfessional,
   });
 
   // API error state
@@ -56,9 +79,6 @@ const CreateSpecialRelationshipModal: React.FC<CreateSpecialRelationshipModalPro
   // Mutation hook
   const { mutateAsync, isPending } = useCreateSpecialRelationship();
 
-  // Ref for first invalid field
-  const nameInputRef = useRef<HTMLInputElement>(null);
-
   // Reset form when modal closes
   useEffect(() => {
     if (!isOpen) {
@@ -69,102 +89,113 @@ const CreateSpecialRelationshipModal: React.FC<CreateSpecialRelationshipModalPro
         date_of_birth: '',
         email: '',
         phone_number: '',
+        is_dependent: false,
+        relationship_with: [],
+        is_professional: isProfessional,
       });
       clearAllErrors();
       setApiError('');
     }
-  }, [isOpen, clearAllErrors]);
+  }, [isOpen, clearAllErrors, isProfessional]);
 
   // Focus first invalid field when errors change
   useEffect(() => {
-    if (Object.keys(errors).length > 0) {
-      const firstErrorField = Object.keys(errors)[0];
-      if (firstErrorField === 'name') {
-        const nameInput = document.getElementById('name') as HTMLInputElement;
-        if (nameInput) {
-          nameInput.focus();
-        }
-      }
-    }
+    focusFirstError(errors);
   }, [errors]);
 
   /**
-   * Handle field change
+   * Handle field value change
+   * Clears API error when user makes changes to allow retry
+   * @param newFormData - Updated form data object
    */
-  const handleFieldChange = useCallback((field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    // Use hook's handleChange for validation
-    handleChange(field as keyof RelationshipFormData, value);
-    // Clear API error when user makes changes
-    if (apiError) {
-      setApiError('');
-    }
-  }, [handleChange, apiError]);
+  const handleFieldChange = useCallback(
+    (newFormData: RelationshipFormData) => {
+      const changedField = detectChangedField(formData, newFormData);
+      setFormData(newFormData);
+
+      // Use hook's handleChange for validation if we identified the changed field
+      if (changedField) {
+        handleChange(changedField, newFormData[changedField]);
+      }
+
+      // Clear API error when user makes changes
+      if (apiError) {
+        setApiError('');
+      }
+    },
+    [formData, handleChange, apiError]
+  );
 
   /**
-   * Handle field blur - validate field
+   * Handle field blur event - triggers validation
+   * @param field - Field name that was blurred
+   * @param value - Current field value (uses formData if not provided)
    */
-  const handleFieldBlur = useCallback((field: string, value?: any) => {
-    const valueToValidate = value !== undefined ? value : formData[field as keyof RelationshipFormData];
-    // Use hook's handleBlur for validation
-    handleBlur(field as keyof RelationshipFormData, valueToValidate);
-  }, [handleBlur, formData]);
+  const handleFieldBlur = useCallback(
+    (field: string, value?: any) => {
+      const valueToValidate = value !== undefined ? value : formData[field as keyof RelationshipFormData];
+      handleBlur(field as keyof RelationshipFormData, valueToValidate);
+    },
+    [formData, handleBlur]
+  );
+
+  /**
+   * Prepare form data for API submission
+   * @returns API-ready object with required and optional fields
+   */
+  const prepareCreateData = useCallback(() => {
+    return {
+      client_group_id: clientGroupId,
+      name: formData.name,
+      relationship_type: formData.relationship_type,
+      status: formData.status,
+      is_professional: isProfessional,
+      ...(formData.date_of_birth && { date_of_birth: formData.date_of_birth }),
+      ...(formData.email && { email: formData.email }),
+      ...(formData.phone_number && { phone_number: formData.phone_number }),
+      // Include is_dependent for personal relationships
+      ...(!isProfessional && { is_dependent: formData.is_dependent || false }),
+      // Include relationship_with for professional relationships
+      ...(isProfessional && formData.relationship_with && formData.relationship_with.length > 0 && {
+        relationship_with: formData.relationship_with
+      }),
+    };
+  }, [clientGroupId, formData, isProfessional]);
 
   /**
    * Handle form submission
+   * Validates form, calls API, and handles success/error cases
+   * @param e - Form submit event
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Clear any previous API errors
     setApiError('');
 
-    // Validate form
+    // Validate form and focus first invalid field if errors exist
     const formErrors = validateForm(formData);
-    const isValid = Object.keys(formErrors).length === 0;
-
-    if (!isValid) {
-      // Focus first invalid field
-      const firstErrorField = Object.keys(formErrors)[0];
-      const input = document.getElementById(firstErrorField) as HTMLInputElement;
-      if (input) {
-        input.focus();
-      }
+    if (Object.keys(formErrors).length > 0) {
+      focusFirstError(formErrors);
       return;
     }
 
     try {
-      // Prepare data for API
-      const createData = {
-        client_group_id: clientGroupId,
-        name: formData.name,
-        relationship_type: formData.relationship_type,
-        status: formData.status,
-        is_professional: isProfessional,
-        ...(formData.date_of_birth && { date_of_birth: formData.date_of_birth }),
-        ...(formData.email && { email: formData.email }),
-        ...(formData.phone_number && { phone_number: formData.phone_number }),
-      };
-
+      const createData = prepareCreateData();
       const newRelationship = await mutateAsync(createData as any);
 
-      // Call success callback if provided
       if (onSuccess && newRelationship) {
         onSuccess(newRelationship);
       }
 
-      // Close modal
       onClose();
     } catch (error: any) {
-      // Display API error message
       const errorMessage = error?.message || 'An unexpected error occurred';
       setApiError(errorMessage);
-      console.error('Failed to create relationship:', error);
     }
   };
 
   /**
-   * Handle cancel
+   * Handle cancel button click
+   * Clears errors and closes modal
    */
   const handleCancel = () => {
     clearAllErrors();
@@ -194,6 +225,7 @@ const CreateSpecialRelationshipModal: React.FC<CreateSpecialRelationshipModalPro
           errors={errors}
           isProfessional={isProfessional}
           disabled={isPending}
+          productOwners={[]}  // TODO: Fetch actual product owners from client group
         />
 
         {/* Form Actions */}

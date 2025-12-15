@@ -34,7 +34,7 @@
 - This is used in many places to indicate documentation or compponents for the next phase for the system which is mainly adding lots more data for clients
 - Some of this functinoality is implemented already and not explicitly labled phase 2
 
-## Things for Danny to look out for (major known technical debt):
+## Known Technical Debt:
 - There is maybe 40% coverage for tests, some are broken and the rest need to be built. The question is how much coverage actually is there and which files/functionality dont have tests? There may be an npm tool to help us with this (or some other library)?
 
 - There are still naming inconsistencies across files, database functions/views/tables/indexes, variables, and function names. We could use grep to scan for known ones to replace them. Look out for the old terms 'holding' which is a portfolio fund (becaseu it is an instance of a fund belonging to a portfolio), 'account' which is a portfolio or product, and 'activities' which are transactions.
@@ -60,3 +60,15 @@
 - Empty init files (API)
 
 - Should not fallback to connect to the phase 1 database
+
+- We're using *some* deprecated third part library components
+
+- Bespoke class for communicating with the database that mimics the supabase library (did this to make the initial refactoring tasks easier but eventaully needs to be reverted to use standard postgres classes again). No actual effect on performance but is still unnecessary complexity.
+
+- claude readme needs to be updated alonwith the docs folder to reflect new workflows from phase 2
+
+- all endpoint paths should be hyphonated not underscored
+
+- we have all these mpty init files
+
+- db.fetch row has poorly formatted sql statement strings

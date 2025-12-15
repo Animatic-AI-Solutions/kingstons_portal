@@ -274,9 +274,10 @@ const ComboDropdown = React.forwardRef<HTMLInputElement, ComboDropdownProps>(({
           aria-expanded={isOpen}
           aria-haspopup="listbox"
           aria-autocomplete="list"
+          aria-required={required ? 'true' : undefined}
           aria-invalid={error ? 'true' : 'false'}
           aria-describedby={
-            error ? `${comboId}-error` : 
+            error ? `${comboId}-error` :
             helperText ? `${comboId}-helper` : undefined
           }
           className={inputClasses}

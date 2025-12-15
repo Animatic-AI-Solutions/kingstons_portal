@@ -1,23 +1,36 @@
 /**
  * useRelationshipValidation Hook (Cycle 7)
  *
- * Provides form validation for special relationship modals.
+ * Provides form validation for special relationship modals with comprehensive
+ * field-level and form-level validation.
+ *
+ * @module useRelationshipValidation
+ *
+ * Features:
  * - Validation on blur for each field
- * - Validation on submit
- * - Error state management
+ * - Real-time validation for email and phone fields
+ * - Form-level validation on submit
+ * - Centralized error state management
  *
  * Validation Rules:
  * - Name: required, 1-200 chars
  * - Relationship Type: required, 1-50 chars
  * - DOB: optional, valid date, not future, age 0-120
- * - Email: optional, valid format
+ * - Email: optional, valid RFC 5322 format
  * - Phone: optional, UK format (10-15 digits)
- * - Status: required
+ * - Status: required, one of 'Active', 'Inactive', 'Deceased'
  */
 
 import { useState, useCallback } from 'react';
 import { RelationshipStatus, RelationshipType } from '@/types/specialRelationship';
 
+// ============================================================================
+// Type Definitions
+// ============================================================================
+
+/**
+ * Form data structure for special relationship modals
+ */
 export interface RelationshipFormData {
   name: string;
   relationship_type: string;
@@ -25,8 +38,14 @@ export interface RelationshipFormData {
   date_of_birth?: string;
   email?: string;
   phone_number?: string;
+  is_dependent?: boolean;        // For personal relationships - indicates if person is a dependent
+  relationship_with?: string[];  // For professional relationships - array of product owner IDs
+  is_professional?: boolean;     // Whether this is a professional relationship (affects field visibility)
 }
 
+/**
+ * Validation errors keyed by form field name
+ */
 export interface ValidationErrors {
   name?: string;
   relationship_type?: string;
@@ -34,38 +53,127 @@ export interface ValidationErrors {
   date_of_birth?: string;
   email?: string;
   phone_number?: string;
+  is_dependent?: string;
+  relationship_with?: string;
 }
 
+/**
+ * Return type for useRelationshipValidation hook
+ */
 export interface UseRelationshipValidationReturn {
+  /** Current validation errors by field */
   errors: ValidationErrors;
+  /** Whether any validation errors exist */
   hasErrors: boolean;
+  /** Validate a single field and return error message if invalid */
   validateField: (field: keyof RelationshipFormData, value: any) => string | undefined;
+  /** Handle blur event - validates field and updates error state */
   handleBlur: (field: keyof RelationshipFormData, value: any) => void;
+  /** Handle change event - validates email/phone, clears errors for other fields */
   handleChange: (field: keyof RelationshipFormData, value: any) => void;
+  /** Validate entire form and return all errors */
   validateForm: (data: Partial<RelationshipFormData>) => ValidationErrors;
+  /** Clear error for a specific field */
   clearError: (field: keyof ValidationErrors) => void;
+  /** Clear all validation errors (alias for clearAllErrors) */
   clearErrors: () => void;
+  /** Clear all validation errors */
   clearAllErrors: () => void;
+  /** Set validation errors (for API errors) */
   setErrors: (errors: ValidationErrors) => void;
 }
 
-/**
- * Email validation regex
- * Basic email format validation
- */
+// ============================================================================
+// Validation Constants
+// ============================================================================
+
+/** Email validation regex - Basic RFC 5322 format */
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** Phone number validation - UK format allowing +, spaces, dashes, parentheses */
+const PHONE_ALLOWED_CHARS_REGEX = /^[\d\s\-+()]+$/;
+
+/** Field length constraints */
+const VALIDATION_LIMITS = {
+  NAME_MAX_LENGTH: 200,
+  RELATIONSHIP_TYPE_MAX_LENGTH: 50,
+  PHONE_MIN_DIGITS: 10,
+  PHONE_MAX_DIGITS: 15,
+  MAX_AGE_YEARS: 120,
+} as const;
+
 /**
- * Phone number validation
- * UK format: 10-15 digits (allowing spaces, dashes, parentheses)
+ * Validation error messages
+ * Exported for potential reuse in components
  */
-const PHONE_REGEX = /^[\d\s\-()]{10,15}$/;
+export const ERROR_MESSAGES = {
+  NAME_REQUIRED: 'Name is required',
+  NAME_TOO_LONG: 'Name must be 200 characters or less',
+  RELATIONSHIP_TYPE_REQUIRED: 'Relationship type is required',
+  RELATIONSHIP_TYPE_TOO_LONG: 'Relationship type must be 50 characters or less',
+  DATE_INVALID: 'Please enter a valid date',
+  DATE_FUTURE: 'Date cannot be in the future',
+  AGE_INVALID: 'Age must be between 0 and 120 years',
+  EMAIL_INVALID: 'Please enter a valid email address',
+  PHONE_INVALID: 'Please enter a valid phone number',
+  PHONE_TOO_SHORT: 'Phone number must be at least 10 digits',
+  PHONE_TOO_LONG: 'Phone number must be no more than 15 digits',
+  STATUS_REQUIRED: 'Status is required',
+  STATUS_INVALID: 'Invalid status value',
+} as const;
+
+/** Valid status values for relationship status field */
+const VALID_STATUS_VALUES: readonly RelationshipStatus[] = ['Active', 'Inactive', 'Deceased'] as const;
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
 
 /**
  * Extract digits from phone number for length validation
+ * @param phone - Phone number string with formatting characters
+ * @returns String containing only digits
  */
 const extractDigits = (phone: string): string => {
   return phone.replace(/[^\d]/g, '');
+};
+
+// ============================================================================
+// Validation Functions
+// ============================================================================
+
+/**
+ * Validate name field
+ * @param name - Name value to validate
+ * @returns Error message if invalid, undefined if valid
+ */
+const validateName = (name: string): string | undefined => {
+  if (!name || name.trim().length === 0) {
+    return ERROR_MESSAGES.NAME_REQUIRED;
+  }
+
+  if (name.length > VALIDATION_LIMITS.NAME_MAX_LENGTH) {
+    return ERROR_MESSAGES.NAME_TOO_LONG;
+  }
+
+  return undefined;
+};
+
+/**
+ * Validate relationship type field
+ * @param type - Relationship type value to validate
+ * @returns Error message if invalid, undefined if valid
+ */
+const validateRelationshipType = (type: string): string | undefined => {
+  if (!type || type.trim().length === 0) {
+    return ERROR_MESSAGES.RELATIONSHIP_TYPE_REQUIRED;
+  }
+
+  if (type.length > VALIDATION_LIMITS.RELATIONSHIP_TYPE_MAX_LENGTH) {
+    return ERROR_MESSAGES.RELATIONSHIP_TYPE_TOO_LONG;
+  }
+
+  return undefined;
 };
 
 /**
@@ -73,6 +181,8 @@ const extractDigits = (phone: string): string => {
  * - Must be valid date
  * - Not in future
  * - Age between 0-120 years
+ * @param dob - Date of birth string (ISO format)
+ * @returns Error message if invalid, undefined if valid
  */
 const validateDateOfBirth = (dob: string): string | undefined => {
   if (!dob) return undefined; // Optional field
@@ -82,12 +192,12 @@ const validateDateOfBirth = (dob: string): string | undefined => {
 
   // Check if valid date
   if (isNaN(date.getTime())) {
-    return 'Please enter a valid date';
+    return ERROR_MESSAGES.DATE_INVALID;
   }
 
   // Check if not in future
   if (date > now) {
-    return 'Date cannot be in the future';
+    return ERROR_MESSAGES.DATE_FUTURE;
   }
 
   // Check age range (0-120 years)
@@ -100,8 +210,8 @@ const validateDateOfBirth = (dob: string): string | undefined => {
     age--;
   }
 
-  if (age > 120) {
-    return 'Age must be between 0 and 120 years';
+  if (age > VALIDATION_LIMITS.MAX_AGE_YEARS) {
+    return ERROR_MESSAGES.AGE_INVALID;
   }
 
   return undefined;
@@ -109,76 +219,78 @@ const validateDateOfBirth = (dob: string): string | undefined => {
 
 /**
  * Validate email format
+ * @param email - Email address to validate
+ * @returns Error message if invalid, undefined if valid
  */
 const validateEmail = (email: string): string | undefined => {
   if (!email) return undefined; // Optional field
 
   if (!EMAIL_REGEX.test(email)) {
-    return 'Please enter a valid email address';
+    return ERROR_MESSAGES.EMAIL_INVALID;
   }
 
   return undefined;
 };
 
 /**
- * Validate phone number
+ * Validate phone number (UK format)
+ * @param phone - Phone number to validate
+ * @returns Error message if invalid, undefined if valid
  */
 const validatePhone = (phone: string): string | undefined => {
   if (!phone) return undefined; // Optional field
 
   // Check for invalid characters (only digits, spaces, dashes, parentheses, and + allowed)
-  if (!/^[\d\s\-+()]+$/.test(phone)) {
-    return 'Please enter a valid phone number';
+  if (!PHONE_ALLOWED_CHARS_REGEX.test(phone)) {
+    return ERROR_MESSAGES.PHONE_INVALID;
   }
 
   const digits = extractDigits(phone);
 
-  if (digits.length < 10) {
-    return 'Phone number must be at least 10 digits';
+  if (digits.length < VALIDATION_LIMITS.PHONE_MIN_DIGITS) {
+    return ERROR_MESSAGES.PHONE_TOO_SHORT;
   }
 
-  if (digits.length > 15) {
-    return 'Phone number must be no more than 15 digits';
-  }
-
-  return undefined;
-};
-
-/**
- * Validate name field
- */
-const validateName = (name: string): string | undefined => {
-  if (!name || name.trim().length === 0) {
-    return 'Name is required';
-  }
-
-  if (name.length > 200) {
-    return 'Name must be 200 characters or less';
+  if (digits.length > VALIDATION_LIMITS.PHONE_MAX_DIGITS) {
+    return ERROR_MESSAGES.PHONE_TOO_LONG;
   }
 
   return undefined;
 };
 
 /**
- * Validate relationship type
+ * Validate status field
+ * @param status - Status value to validate
+ * @returns Error message if invalid, undefined if valid
  */
-const validateRelationshipType = (type: string): string | undefined => {
-  if (!type || type.trim().length === 0) {
-    return 'Relationship type is required';
+const validateStatus = (status: string): string | undefined => {
+  if (!status) {
+    return ERROR_MESSAGES.STATUS_REQUIRED;
   }
 
-  if (type.length > 50) {
-    return 'Relationship type must be 50 characters or less';
+  if (!VALID_STATUS_VALUES.includes(status as RelationshipStatus)) {
+    return ERROR_MESSAGES.STATUS_INVALID;
   }
 
   return undefined;
 };
 
+// ============================================================================
+// Hook Implementation
+// ============================================================================
+
+/**
+ * Custom hook for validating special relationship form data
+ * @returns Validation state and methods
+ */
 export const useRelationshipValidation = (): UseRelationshipValidationReturn => {
   const [errors, setErrors] = useState<ValidationErrors>({});
 
   /**
-   * Validate a single field
+   * Validate a single form field
+   * @param field - Field name to validate
+   * @param value - Field value to validate
+   * @returns Error message if invalid, undefined if valid
    */
   const validateField = useCallback(
     (field: keyof RelationshipFormData, value: any): string | undefined => {
@@ -192,11 +304,7 @@ export const useRelationshipValidation = (): UseRelationshipValidationReturn => 
           error = validateRelationshipType(value);
           break;
         case 'status':
-          if (!value) {
-            error = 'Status is required';
-          } else if (value !== 'Active' && value !== 'Inactive' && value !== 'Deceased') {
-            error = 'Invalid status value';
-          }
+          error = validateStatus(value);
           break;
         case 'date_of_birth':
           error = validateDateOfBirth(value);
@@ -229,33 +337,35 @@ export const useRelationshipValidation = (): UseRelationshipValidationReturn => 
 
   /**
    * Validate entire form
-   * Returns errors object (empty if valid)
+   * @param data - Form data to validate (partial for flexibility)
+   * @returns Object with validation errors (empty object if valid)
    */
   const validateForm = useCallback(
     (data: Partial<RelationshipFormData>): ValidationErrors => {
       const newErrors: ValidationErrors = {};
 
-      // Validate name
+      // Validate name (required)
       if (data.name !== undefined) {
         const error = validateName(data.name);
         if (error) newErrors.name = error;
       } else {
-        newErrors.name = 'Name is required';
+        newErrors.name = ERROR_MESSAGES.NAME_REQUIRED;
       }
 
-      // Validate relationship type
+      // Validate relationship type (required)
       if (data.relationship_type !== undefined) {
         const error = validateRelationshipType(data.relationship_type);
         if (error) newErrors.relationship_type = error;
       } else {
-        newErrors.relationship_type = 'Relationship type is required';
+        newErrors.relationship_type = ERROR_MESSAGES.RELATIONSHIP_TYPE_REQUIRED;
       }
 
-      // Validate status
-      if (!data.status) {
-        newErrors.status = 'Status is required';
-      } else if (data.status !== 'Active' && data.status !== 'Inactive' && data.status !== 'Deceased') {
-        newErrors.status = 'Invalid status value';
+      // Validate status (required)
+      if (data.status) {
+        const error = validateStatus(data.status);
+        if (error) newErrors.status = error;
+      } else {
+        newErrors.status = ERROR_MESSAGES.STATUS_REQUIRED;
       }
 
       // Validate optional fields
@@ -281,7 +391,8 @@ export const useRelationshipValidation = (): UseRelationshipValidationReturn => 
   );
 
   /**
-   * Clear error for specific field
+   * Clear validation error for a specific field
+   * @param field - Field name to clear error for
    */
   const clearError = useCallback((field: keyof ValidationErrors) => {
     setErrors((prev) => {
@@ -292,23 +403,26 @@ export const useRelationshipValidation = (): UseRelationshipValidationReturn => 
   }, []);
 
   /**
-   * Clear all errors
+   * Clear all validation errors
    */
   const clearAllErrors = useCallback(() => {
     setErrors({});
   }, []);
 
   /**
-   * Handle blur event - validate field
-   * Wrapper around validateField for blur event handling
+   * Handle blur event - validates field and updates error state
+   * @param field - Field name that was blurred
+   * @param value - Current field value
    */
   const handleBlur = useCallback((field: keyof RelationshipFormData, value: any) => {
     validateField(field, value);
   }, [validateField]);
 
   /**
-   * Handle change event - only validates email and phone for real-time feedback
-   * Clears error for other fields when user types
+   * Handle change event - provides real-time validation for email/phone
+   * For other fields, clears error when user types to allow correction
+   * @param field - Field name that changed
+   * @param value - New field value
    */
   const handleChange = useCallback((field: keyof RelationshipFormData, value: any) => {
     // Only validate email and phone on change for real-time feedback

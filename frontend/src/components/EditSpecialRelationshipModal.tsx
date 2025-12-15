@@ -1,31 +1,51 @@
 /**
  * EditSpecialRelationshipModal Component (Cycle 7)
  *
- * Modal for editing an existing special relationship.
+ * Modal dialog for editing an existing special relationship.
+ * Pre-populates form with existing data and tracks changes for efficient updates.
+ *
+ * @module EditSpecialRelationshipModal
+ *
+ * Features:
  * - Pre-populates form with existing relationship data
- * - Uses ModalShell for accessibility features
- * - Uses RelationshipFormFields for form UI
- * - Uses useRelationshipValidation for validation
- * - Calls useUpdateSpecialRelationship hook for API interaction
- * - Detects changed fields (only sends changes to API)
- * - Handles loading, success, and error states
+ * - Change detection (only sends modified fields to API)
+ * - Form validation using useRelationshipValidation hook
+ * - API integration via useUpdateSpecialRelationship hook
+ * - Loading, success, and error state management
+ * - Automatic focus management for validation errors
+ * - Form reset when relationship changes
+ *
+ * Accessibility:
+ * - Uses ModalShell for focus trap and keyboard navigation
+ * - Focuses first invalid field on validation error
+ * - Disabled state prevents interaction during submission
+ *
+ * Architecture:
+ * - ModalShell: Provides modal container with accessibility
+ * - RelationshipFormFields: Renders form fields consistently
+ * - useRelationshipValidation: Handles all validation logic
+ * - useUpdateSpecialRelationship: Manages API mutation
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
 import ModalShell from './ModalShell';
 import RelationshipFormFields from './RelationshipFormFields';
 import { useRelationshipValidation, RelationshipFormData } from '@/hooks/useRelationshipValidation';
+import { focusFirstError, detectChangedField } from '@/hooks/useRelationshipFormHandlers';
 import { useUpdateSpecialRelationship } from '@/hooks/useSpecialRelationships';
 import { SpecialRelationship, PROFESSIONAL_RELATIONSHIP_TYPES } from '@/types/specialRelationship';
 
+/**
+ * Props for EditSpecialRelationshipModal component
+ */
 export interface EditSpecialRelationshipModalProps {
-  /** Whether modal is open */
+  /** Whether modal is currently open */
   isOpen: boolean;
-  /** Callback when modal should close */
+  /** Callback invoked when modal should close */
   onClose: () => void;
-  /** Relationship to edit */
+  /** Relationship object to edit (pre-populates form) */
   relationship: SpecialRelationship;
-  /** Optional success callback */
+  /** Optional callback invoked after successful update with updated relationship */
   onSuccess?: (relationship: SpecialRelationship) => void;
 }
 
@@ -38,7 +58,12 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
   // Determine if professional based on relationship type
   const isProfessional = PROFESSIONAL_RELATIONSHIP_TYPES.includes(relationship.relationship_type);
 
-  // Helper to get name from relationship
+  /**
+   * Extract name from relationship object
+   * Uses 'name' field if present, otherwise combines first_name and last_name
+   * @param rel - Relationship object
+   * @returns Combined name string
+   */
   const getNameFromRelationship = (rel: any): string => {
     // If relationship has a name field, use it
     if (rel.name) {
@@ -48,7 +73,12 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
     return `${rel.first_name || ''} ${rel.last_name || ''}`.trim();
   };
 
-  // Helper to get phone number from relationship (prioritize mobile, then home, then work)
+  /**
+   * Extract phone number from relationship object
+   * Prioritizes mobile_phone, falls back to home_phone, then work_phone
+   * @param rel - Relationship object
+   * @returns First available phone number or empty string
+   */
   const getPhoneFromRelationship = (rel: SpecialRelationship): string => {
     return rel.mobile_phone || rel.home_phone || rel.work_phone || '';
   };
@@ -61,6 +91,9 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
     date_of_birth: relationship.date_of_birth || '',
     email: relationship.email || '',
     phone_number: getPhoneFromRelationship(relationship),
+    is_dependent: (relationship as any).is_dependent || false,
+    relationship_with: (relationship as any).relationship_with || [],
+    is_professional: isProfessional,
   });
 
   // API error state
@@ -74,6 +107,9 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
     date_of_birth: relationship.date_of_birth || '',
     email: relationship.email || '',
     phone_number: getPhoneFromRelationship(relationship),
+    is_dependent: (relationship as any).is_dependent || false,
+    relationship_with: (relationship as any).relationship_with || [],
+    is_professional: isProfessional,
   });
 
   // Validation hook
@@ -92,37 +128,64 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
         date_of_birth: relationship.date_of_birth || '',
         email: relationship.email || '',
         phone_number: getPhoneFromRelationship(relationship),
+        is_dependent: (relationship as any).is_dependent || false,
+        relationship_with: (relationship as any).relationship_with || [],
+        is_professional: isProfessional,
       };
       setFormData(newFormData);
       clearAllErrors();
       setApiError('');
     }
-  }, [isOpen, relationship, clearAllErrors]);
+  }, [isOpen, relationship, clearAllErrors, isProfessional]);
 
   /**
-   * Handle field change
+   * Handle field value change
+   * Clears API error when user makes changes to allow retry
+   * @param newFormData - Updated form data object
    */
-  const handleFieldChange = useCallback((field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    // Use hook's handleChange for validation
-    handleChange(field as keyof RelationshipFormData, value);
-    // Clear API error when user makes changes
-    if (apiError) {
-      setApiError('');
-    }
-  }, [handleChange, apiError]);
+  const handleFieldChange = useCallback(
+    (newFormData: RelationshipFormData) => {
+      const changedField = detectChangedField(formData, newFormData);
+      setFormData(newFormData);
+
+      // Use hook's handleChange for validation if we identified the changed field
+      if (changedField) {
+        handleChange(changedField, newFormData[changedField]);
+      }
+
+      // Clear API error when user makes changes
+      if (apiError) {
+        setApiError('');
+      }
+    },
+    [formData, handleChange, apiError]
+  );
 
   /**
-   * Handle field blur - validate field
+   * Handle field blur event - triggers validation
+   * @param field - Field name that was blurred
+   * @param value - Current field value (uses formData if not provided)
    */
-  const handleFieldBlur = useCallback((field: string, value?: any) => {
-    const valueToValidate = value !== undefined ? value : formData[field as keyof RelationshipFormData];
-    // Use hook's handleBlur for validation
-    handleBlur(field as keyof RelationshipFormData, valueToValidate);
-  }, [handleBlur, formData]);
+  const handleFieldBlur = useCallback(
+    (field: string, value?: any) => {
+      const valueToValidate = value !== undefined ? value : formData[field as keyof RelationshipFormData];
+      handleBlur(field as keyof RelationshipFormData, valueToValidate);
+    },
+    [formData, handleBlur]
+  );
 
   /**
-   * Detect changed fields
+   * Detect which fields have changed from original values.
+   * Only changed fields are sent to API for efficient updates.
+   *
+   * Compares current form data against original data and returns an object
+   * containing only the fields that have been modified. Empty/null values
+   * are properly handled to allow clearing optional fields.
+   *
+   * For array fields (relationship_with), performs deep comparison after sorting
+   * to detect changes regardless of order.
+   *
+   * @returns Object containing only the fields that changed, with null for cleared values
    */
   const getChangedFields = () => {
     const changes: any = {};
@@ -145,38 +208,39 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
     if (formData.phone_number !== originalData.phone_number) {
       changes.phone_number = formData.phone_number || null;
     }
+    if (formData.is_dependent !== originalData.is_dependent) {
+      changes.is_dependent = formData.is_dependent;
+    }
+    // Compare arrays for relationship_with
+    const originalRelWith = originalData.relationship_with || [];
+    const currentRelWith = formData.relationship_with || [];
+    if (JSON.stringify(originalRelWith.sort()) !== JSON.stringify(currentRelWith.sort())) {
+      changes.relationship_with = currentRelWith;
+    }
 
     return changes;
   };
 
   /**
    * Handle form submission
+   * Validates form, detects changes, calls API, and handles success/error cases
+   * If no changes detected, simply closes modal without API call
+   * @param e - Form submit event
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Clear any previous API errors
     setApiError('');
 
-    // Validate form
+    // Validate form and focus first invalid field if errors exist
     const formErrors = validateForm(formData);
-    const isValid = Object.keys(formErrors).length === 0;
-
-    if (!isValid) {
-      // Focus first invalid field
-      const firstErrorField = Object.keys(formErrors)[0];
-      const input = document.getElementById(firstErrorField) as HTMLInputElement;
-      if (input) {
-        input.focus();
-      }
+    if (Object.keys(formErrors).length > 0) {
+      focusFirstError(formErrors);
       return;
     }
 
     try {
-      // Get only changed fields
+      // Get only changed fields - if no changes, just close
       const changes = getChangedFields();
-
-      // If no changes, just close
       if (Object.keys(changes).length === 0) {
         onClose();
         return;
@@ -188,23 +252,20 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
         updates: changes,
       } as any);
 
-      // Call success callback if provided
       if (onSuccess && updatedRelationship) {
         onSuccess(updatedRelationship);
       }
 
-      // Close modal
       onClose();
     } catch (error: any) {
-      // Display API error message
       const errorMessage = error?.message || 'An unexpected error occurred';
       setApiError(errorMessage);
-      console.error('Failed to update relationship:', error);
     }
   };
 
   /**
-   * Handle cancel
+   * Handle cancel button click
+   * Clears errors and closes modal
    */
   const handleCancel = () => {
     clearAllErrors();
@@ -234,6 +295,7 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
           errors={errors}
           isProfessional={isProfessional}
           disabled={isPending}
+          productOwners={[]}  // TODO: Fetch actual product owners from client group
         />
 
         {/* Form Actions */}

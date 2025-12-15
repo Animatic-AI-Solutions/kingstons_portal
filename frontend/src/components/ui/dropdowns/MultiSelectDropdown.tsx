@@ -393,6 +393,7 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
         {/* Input Field */}
         <input
           ref={searchInputRef}
+          id={dropdownId}
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -400,10 +401,13 @@ const MultiSelectDropdown = React.forwardRef<HTMLDivElement, MultiSelectDropdown
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
+          role="combobox"
           aria-expanded={isOpen}
+          aria-haspopup="listbox"
+          aria-autocomplete="list"
           aria-activedescendant={focusedIndex >= 0 ? `${dropdownId}-option-${focusedIndex}` : undefined}
           aria-describedby={
-            error ? `${dropdownId}-error` : 
+            error ? `${dropdownId}-error` :
             helperText ? `${dropdownId}-helper` : undefined
           }
           className={`
