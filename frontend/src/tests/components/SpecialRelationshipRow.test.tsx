@@ -41,7 +41,7 @@ jest.mock('@/components/SpecialRelationshipActions', () => {
   return function MockSpecialRelationshipActions({ relationship }: any) {
     return (
       <div data-testid="mock-actions">
-        Actions for {relationship.first_name} {relationship.last_name}
+        Actions for {relationship.name}
       </div>
     );
   };
@@ -73,18 +73,17 @@ const createTestQueryClient = () => {
 const createPersonalRelationship = (
   overrides?: Partial<SpecialRelationship>
 ): SpecialRelationship => ({
-  id: 'rel-personal-1',
-  client_group_id: 'cg-123',
-  relationship_type: 'Spouse',
+  id: 101,
+  product_owner_ids: [123],
+  type: 'Personal',
+  relationship: 'Spouse',
   status: 'Active',
   title: 'Mrs',
-  first_name: 'Jane',
-  last_name: 'Smith',
+  name: 'Jane Smith',
   date_of_birth: '1975-06-15',
   email: 'jane.smith@example.com',
-  mobile_phone: '+44-7700-900001',
-  home_phone: '+44-20-7946-0001',
-  work_phone: null,
+  phone_number: '+44-7700-900001',
+  address_id: null,
   address_line1: '123 Main St',
   address_line2: 'Apt 4B',
   city: 'London',
@@ -92,9 +91,8 @@ const createPersonalRelationship = (
   postcode: 'SW1A 1AA',
   country: 'United Kingdom',
   notes: 'Primary contact',
-  company_name: null,
-  position: null,
-  professional_id: null,
+  firm_name: null,
+  dependency: false,
   created_at: '2024-01-01T10:00:00Z',
   updated_at: '2024-01-01T10:00:00Z',
   ...overrides,
@@ -102,24 +100,23 @@ const createPersonalRelationship = (
 
 /**
  * Creates a Professional relationship (e.g., Accountant, Solicitor)
- * Professional relationships have company_name, position, professional_id
+ * Professional relationships have firm_name
  * and typically no date_of_birth
  */
 const createProfessionalRelationship = (
   overrides?: Partial<SpecialRelationship>
 ): SpecialRelationship => ({
-  id: 'rel-professional-1',
-  client_group_id: 'cg-123',
-  relationship_type: 'Accountant',
+  id: 201,
+  product_owner_ids: [123],
+  type: 'Professional',
+  relationship: 'Accountant',
   status: 'Active',
   title: 'Mr',
-  first_name: 'John',
-  last_name: 'Johnson',
+  name: 'John Johnson',
   date_of_birth: null,
   email: 'john.johnson@accounting.co.uk',
-  mobile_phone: '+44-7700-900002',
-  home_phone: null,
-  work_phone: '+44-20-7946-0002',
+  phone_number: '+44-7700-900002',
+  address_id: null,
   address_line1: '456 Business Ave',
   address_line2: 'Suite 200',
   city: 'London',
@@ -127,9 +124,8 @@ const createProfessionalRelationship = (
   postcode: 'EC1A 1BB',
   country: 'United Kingdom',
   notes: null,
-  company_name: 'Johnson & Associates',
-  position: 'Senior Partner',
-  professional_id: 'ACCA-12345',
+  firm_name: 'Johnson & Associates',
+  dependency: false,
   created_at: '2024-01-01T10:00:00Z',
   updated_at: '2024-01-01T10:00:00Z',
   ...overrides,
@@ -142,7 +138,7 @@ const createInactiveRelationship = (
   overrides?: Partial<SpecialRelationship>
 ): SpecialRelationship => ({
   ...createPersonalRelationship(),
-  id: 'rel-inactive-1',
+  id: 102,
   status: 'Inactive',
   ...overrides,
 });
@@ -154,7 +150,7 @@ const createDeceasedRelationship = (
   overrides?: Partial<SpecialRelationship>
 ): SpecialRelationship => ({
   ...createPersonalRelationship(),
-  id: 'rel-deceased-1',
+  id: 103,
   status: 'Deceased',
   ...overrides,
 });
@@ -207,20 +203,18 @@ describe('SpecialRelationshipRow Component', () => {
   describe('Personal Relationship Rendering', () => {
     it('renders all fields for personal relationship (Spouse)', () => {
       const relationship = createPersonalRelationship({
-        relationship_type: 'Spouse',
-        first_name: 'Alice',
-        last_name: 'Johnson',
+        relationship: 'Spouse',
+        name: 'Alice Johnson',
         date_of_birth: '1980-03-15',
         email: 'alice@example.com',
-        mobile_phone: '+44-7700-900123',
+        phone_number: '+44-7700-900123',
         status: 'Active',
       });
 
       render(<SpecialRelationshipRow relationship={relationship} />, { wrapper });
 
       // Check all expected fields are displayed
-      expect(screen.getByText('Alice')).toBeInTheDocument();
-      expect(screen.getByText('Johnson')).toBeInTheDocument();
+      expect(screen.getByText('Alice Johnson')).toBeInTheDocument();
       expect(screen.getByText('Spouse')).toBeInTheDocument();
       expect(screen.getByText('alice@example.com')).toBeInTheDocument();
       expect(screen.getByText('+44-7700-900123')).toBeInTheDocument();
@@ -264,16 +258,15 @@ describe('SpecialRelationshipRow Component', () => {
 
     it('renders Child relationship type correctly', () => {
       const relationship = createPersonalRelationship({
-        relationship_type: 'Child',
-        first_name: 'Emma',
-        last_name: 'Smith',
+        relationship: 'Child',
+        name: 'Emma Smith',
         date_of_birth: '2010-05-20',
       });
 
       render(<SpecialRelationshipRow relationship={relationship} />, { wrapper });
 
       expect(screen.getByText('Child')).toBeInTheDocument();
-      expect(screen.getByText('Emma')).toBeInTheDocument();
+      expect(screen.getByText('Emma Smith')).toBeInTheDocument();
     });
   });
 
@@ -284,43 +277,36 @@ describe('SpecialRelationshipRow Component', () => {
   describe('Professional Relationship Rendering', () => {
     it('renders all fields for professional relationship (Accountant)', () => {
       const relationship = createProfessionalRelationship({
-        relationship_type: 'Accountant',
-        first_name: 'Robert',
-        last_name: 'Brown',
-        company_name: 'Brown & Co',
-        position: 'Managing Director',
+        relationship: 'Accountant',
+        name: 'Robert Brown',
+        firm_name: 'Brown & Co',
         email: 'robert@brown.com',
-        mobile_phone: '+44-7700-900456',
+        phone_number: '+44-7700-900456',
         status: 'Active',
       });
 
       render(<SpecialRelationshipRow relationship={relationship} />, { wrapper });
 
       // Check all expected fields are displayed
-      expect(screen.getByText('Robert')).toBeInTheDocument();
-      expect(screen.getByText('Brown')).toBeInTheDocument();
+      expect(screen.getByText('Robert Brown')).toBeInTheDocument();
       expect(screen.getByText('Accountant')).toBeInTheDocument();
       expect(screen.getByText('Brown & Co')).toBeInTheDocument();
-      expect(screen.getByText('Managing Director')).toBeInTheDocument();
       expect(screen.getByText('robert@brown.com')).toBeInTheDocument();
       expect(screen.getByText('+44-7700-900456')).toBeInTheDocument();
     });
 
     it('renders Solicitor relationship type correctly', () => {
       const relationship = createProfessionalRelationship({
-        relationship_type: 'Solicitor',
-        first_name: 'Sarah',
-        last_name: 'Williams',
-        company_name: 'Williams Legal',
-        position: 'Partner',
+        relationship: 'Solicitor',
+        name: 'Sarah Williams',
+        firm_name: 'Williams Legal',
       });
 
       render(<SpecialRelationshipRow relationship={relationship} />, { wrapper });
 
       expect(screen.getByText('Solicitor')).toBeInTheDocument();
-      expect(screen.getByText('Sarah')).toBeInTheDocument();
+      expect(screen.getByText('Sarah Williams')).toBeInTheDocument();
       expect(screen.getByText('Williams Legal')).toBeInTheDocument();
-      expect(screen.getByText('Partner')).toBeInTheDocument();
     });
 
     it('does not display date_of_birth or age for professional relationships', () => {
@@ -335,17 +321,15 @@ describe('SpecialRelationshipRow Component', () => {
 
     it('renders Financial Advisor relationship type correctly', () => {
       const relationship = createProfessionalRelationship({
-        relationship_type: 'Financial Advisor',
-        first_name: 'Michael',
-        last_name: 'Davis',
-        company_name: 'Davis Financial Services',
-        position: 'Senior Advisor',
+        relationship: 'Financial Advisor',
+        name: 'Michael Davis',
+        firm_name: 'Davis Financial Services',
       });
 
       render(<SpecialRelationshipRow relationship={relationship} />, { wrapper });
 
       expect(screen.getByText('Financial Advisor')).toBeInTheDocument();
-      expect(screen.getByText('Michael')).toBeInTheDocument();
+      expect(screen.getByText('Michael Davis')).toBeInTheDocument();
     });
   });
 
@@ -423,8 +407,7 @@ describe('SpecialRelationshipRow Component', () => {
 
     it('passes relationship prop to SpecialRelationshipActions', () => {
       const relationship = createPersonalRelationship({
-        first_name: 'TestFirst',
-        last_name: 'TestLast',
+        name: 'TestFirst TestLast',
       });
 
       render(<SpecialRelationshipRow relationship={relationship} />, { wrapper });
@@ -466,22 +449,22 @@ describe('SpecialRelationshipRow Component', () => {
     });
 
     it('re-renders when relationship data changes', () => {
-      const relationship = createPersonalRelationship({ first_name: 'Original' });
+      const relationship = createPersonalRelationship({ name: 'Original Name' });
 
       const { rerender } = render(
         <SpecialRelationshipRow relationship={relationship} />,
         { wrapper }
       );
 
-      expect(screen.getByText('Original')).toBeInTheDocument();
+      expect(screen.getByText('Original Name')).toBeInTheDocument();
 
       // Change relationship data
-      const updatedRelationship = { ...relationship, first_name: 'Updated' };
+      const updatedRelationship = { ...relationship, name: 'Updated Name' };
       rerender(<SpecialRelationshipRow relationship={updatedRelationship} />);
 
       // Should show updated data
-      expect(screen.getByText('Updated')).toBeInTheDocument();
-      expect(screen.queryByText('Original')).not.toBeInTheDocument();
+      expect(screen.getByText('Updated Name')).toBeInTheDocument();
+      expect(screen.queryByText('Original Name')).not.toBeInTheDocument();
     });
 
     it('re-renders when status changes', () => {
@@ -525,8 +508,7 @@ describe('SpecialRelationshipRow Component', () => {
 
     it('displays "-" when phone is null', () => {
       const relationship = createPersonalRelationship({
-        mobile_phone: null,
-        home_phone: null,
+        phone_number: null,
       });
 
       render(<SpecialRelationshipRow relationship={relationship} />, { wrapper });
@@ -536,19 +518,9 @@ describe('SpecialRelationshipRow Component', () => {
       expect(placeholders.length).toBeGreaterThan(0);
     });
 
-    it('displays "-" when company_name is null for professional', () => {
+    it('displays "-" when firm_name is null for professional', () => {
       const relationship = createProfessionalRelationship({
-        company_name: null,
-      });
-
-      render(<SpecialRelationshipRow relationship={relationship} />, { wrapper });
-
-      expect(screen.getByText('-')).toBeInTheDocument();
-    });
-
-    it('displays "-" when position is null for professional', () => {
-      const relationship = createProfessionalRelationship({
-        position: null,
+        firm_name: null,
       });
 
       render(<SpecialRelationshipRow relationship={relationship} />, { wrapper });
@@ -570,7 +542,7 @@ describe('SpecialRelationshipRow Component', () => {
     it('handles empty string fields', () => {
       const relationship = createPersonalRelationship({
         email: '',
-        mobile_phone: '',
+        phone_number: '',
       });
 
       render(<SpecialRelationshipRow relationship={relationship} />, { wrapper });
@@ -596,7 +568,7 @@ describe('SpecialRelationshipRow Component', () => {
         { wrapper }
       );
 
-      const row = screen.getByText('Jane').closest('tr');
+      const row = screen.getByText('Jane Smith').closest('tr');
       expect(row).toBeInTheDocument();
 
       if (row) {
@@ -685,7 +657,7 @@ describe('SpecialRelationshipRow Component', () => {
         { wrapper }
       );
 
-      const row = screen.getByText('Jane').closest('tr');
+      const row = screen.getByText('Jane Smith').closest('tr');
 
       if (row) {
         row.focus();
@@ -704,15 +676,13 @@ describe('SpecialRelationshipRow Component', () => {
   describe('Edge Cases', () => {
     it('handles very long names gracefully', () => {
       const relationship = createPersonalRelationship({
-        first_name: 'VeryLongFirstNameThatExceedsNormalLength',
-        last_name: 'VeryLongLastNameThatExceedsNormalLength',
+        name: 'VeryLongFirstNameThatExceedsNormalLength VeryLongLastNameThatExceedsNormalLength',
       });
 
       render(<SpecialRelationshipRow relationship={relationship} />, { wrapper });
 
       // Should render without breaking layout
-      expect(screen.getByText('VeryLongFirstNameThatExceedsNormalLength')).toBeInTheDocument();
-      expect(screen.getByText('VeryLongLastNameThatExceedsNormalLength')).toBeInTheDocument();
+      expect(screen.getByText('VeryLongFirstNameThatExceedsNormalLength VeryLongLastNameThatExceedsNormalLength')).toBeInTheDocument();
     });
 
     it('handles future dates in date_of_birth', () => {
@@ -735,14 +705,12 @@ describe('SpecialRelationshipRow Component', () => {
 
     it('handles special characters in names', () => {
       const relationship = createPersonalRelationship({
-        first_name: "O'Brien",
-        last_name: 'Müller-Smith',
+        name: "O'Brien Müller-Smith",
       });
 
       render(<SpecialRelationshipRow relationship={relationship} />, { wrapper });
 
-      expect(screen.getByText("O'Brien")).toBeInTheDocument();
-      expect(screen.getByText('Müller-Smith')).toBeInTheDocument();
+      expect(screen.getByText("O'Brien Müller-Smith")).toBeInTheDocument();
     });
   });
 });

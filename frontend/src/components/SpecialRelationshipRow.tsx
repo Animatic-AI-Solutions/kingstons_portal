@@ -6,7 +6,7 @@
  * status-based styling, and integrated action buttons.
  *
  * Features:
- * - Conditional rendering: Personal shows date_of_birth/age, Professional shows company_name/position
+ * - Conditional rendering: Personal shows date_of_birth/age, Professional shows firm_name
  * - Status-based styling: Active (green), Inactive (gray), Deceased (red/dark)
  * - React.memo optimization to prevent unnecessary re-renders
  * - Age calculation from date_of_birth using calculateAge utility
@@ -33,7 +33,6 @@ import { format } from 'date-fns';
 import {
   SpecialRelationship,
   RelationshipStatus,
-  PROFESSIONAL_RELATIONSHIP_TYPES,
 } from '@/types/specialRelationship';
 import { calculateAge } from '@/utils/specialRelationshipUtils';
 import SpecialRelationshipActions from '@/components/SpecialRelationshipActions';
@@ -100,7 +99,7 @@ interface SpecialRelationshipRowProps {
   onDelete: (relationship: SpecialRelationship) => void;
 
   /** Callback when status is changed */
-  onStatusChange: (id: string, status: RelationshipStatus) => void;
+  onStatusChange: (id: number, status: RelationshipStatus) => void;
 }
 
 // ==========================
@@ -108,16 +107,15 @@ interface SpecialRelationshipRowProps {
 // ==========================
 
 /**
- * Determine if a relationship is professional based on type
+ * Determine if a relationship is professional based on type field
  *
- * Professional types include: Accountant, Solicitor, Financial Advisor, etc.
- * Uses the PROFESSIONAL_RELATIONSHIP_TYPES constant for type checking
+ * Uses the 'type' field which is either 'Personal' or 'Professional'
  *
- * @param relationshipType - The type of relationship
+ * @param relationship - The relationship object
  * @returns True if professional, false if personal
  */
-const isProfessional = (relationshipType: string): boolean => {
-  return PROFESSIONAL_RELATIONSHIP_TYPES.includes(relationshipType as any);
+const isProfessional = (relationship: SpecialRelationship): boolean => {
+  return relationship.type === 'Professional';
 };
 
 /**
@@ -167,15 +165,14 @@ const formatDate = (dateString: string | null): string => {
 /**
  * Format phone number for display
  *
- * Handles multiple phone fields with priority: mobile_phone > home_phone > work_phone
- * Returns the first available non-empty phone number or placeholder
+ * Uses the single phone_number field from the relationship
+ * Returns the phone number or placeholder if not available
  *
- * @param relationship - The relationship object containing phone fields
+ * @param phoneNumber - The phone number value from the relationship
  * @returns Formatted phone number or "-" if no phone available
  */
-const formatPhone = (relationship: SpecialRelationship): string => {
-  const phone = relationship.mobile_phone || relationship.home_phone || relationship.work_phone;
-  return phone && phone.trim() !== '' ? phone : '-';
+const formatPhone = (phoneNumber: string | null): string => {
+  return phoneNumber && phoneNumber.trim() !== '' ? phoneNumber : '-';
 };
 
 /**
@@ -254,9 +251,9 @@ const arePropsEqual = (
  *
  * Renders a table row with conditional fields based on relationship type:
  * - Personal relationships display: date_of_birth, age
- * - Professional relationships display: company_name, position
+ * - Professional relationships display: firm_name
  *
- * Both types share: first_name, last_name, relationship_type, email, phone, status
+ * Both types share: name, relationship, email, phone, status
  *
  * Includes status-based styling, action buttons, and accessibility features
  * Optimized with React.memo to prevent unnecessary re-renders
@@ -271,7 +268,7 @@ const SpecialRelationshipRow: React.FC<SpecialRelationshipRowProps> = ({
   onDelete,
   onStatusChange,
 }) => {
-  const isProf = isProfessional(relationship.relationship_type);
+  const isProf = isProfessional(relationship);
 
   /**
    * Handle row click
@@ -309,25 +306,19 @@ const SpecialRelationshipRow: React.FC<SpecialRelationshipRowProps> = ({
       onKeyDown={handleKeyDown}
       tabIndex={onClick ? 0 : undefined}
       role={onClick ? 'button' : undefined}
-      aria-label={onClick ? `View details for ${relationship.first_name} ${relationship.last_name}` : undefined}
+      aria-label={onClick ? `View details for ${relationship.name}` : undefined}
     >
-      {/* First Name */}
-      <td className={TABLE_CELL_CLASS}>{displayValue(relationship.first_name)}</td>
+      {/* Name */}
+      <td className={TABLE_CELL_CLASS}>{displayValue(relationship.name)}</td>
 
-      {/* Last Name */}
-      <td className={TABLE_CELL_CLASS}>{displayValue(relationship.last_name)}</td>
-
-      {/* Relationship Type */}
-      <td className={TABLE_CELL_CLASS}>{relationship.relationship_type}</td>
+      {/* Relationship */}
+      <td className={TABLE_CELL_CLASS}>{relationship.relationship}</td>
 
       {/* Conditional Fields: Personal vs Professional */}
       {isProf ? (
         <>
-          {/* Professional: Company Name */}
-          <td className={TABLE_CELL_CLASS}>{displayValue(relationship.company_name)}</td>
-
-          {/* Professional: Position */}
-          <td className={TABLE_CELL_CLASS}>{displayValue(relationship.position)}</td>
+          {/* Professional: Firm Name */}
+          <td className={TABLE_CELL_CLASS}>{displayValue(relationship.firm_name)}</td>
         </>
       ) : (
         <>
@@ -347,7 +338,7 @@ const SpecialRelationshipRow: React.FC<SpecialRelationshipRowProps> = ({
       <td className={TABLE_CELL_CLASS}>{displayValue(relationship.email)}</td>
 
       {/* Phone */}
-      <td className={TABLE_CELL_CLASS}>{formatPhone(relationship)}</td>
+      <td className={TABLE_CELL_CLASS}>{formatPhone(relationship.phone_number)}</td>
 
       {/* Status */}
       <td className={TABLE_CELL_CLASS}>

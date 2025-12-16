@@ -6,9 +6,10 @@
 import { parseISO, differenceInYears, isValid } from 'date-fns';
 import {
   SpecialRelationship,
-  RelationshipType,
+  Relationship,
+  RelationshipCategory,
   RelationshipStatus,
-  PROFESSIONAL_RELATIONSHIP_TYPES,
+  PROFESSIONAL_RELATIONSHIPS,
   STATUS_PRIORITY_ORDER,
 } from '@/types/specialRelationship';
 
@@ -127,63 +128,49 @@ export function sortRelationships(
 /**
  * Filter relationships by personal or professional type
  * @param relationships - Array of relationships to filter
- * @param type - 'personal' for family/personal connections, 'professional' for advisors/professionals
+ * @param type - 'Personal' for family/personal connections, 'Professional' for advisors/professionals
  * @returns Filtered array of relationships (new array, does not mutate input)
  * @example
- * const personalOnly = filterRelationshipsByType(allRelationships, 'personal');
+ * const personalOnly = filterRelationshipsByType(allRelationships, 'Personal');
  * // Returns only Spouse, Partner, Child, Parent, Sibling, etc.
  */
 export function filterRelationshipsByType(
   relationships: SpecialRelationship[],
-  type: 'personal' | 'professional'
+  type: RelationshipCategory
 ): SpecialRelationship[] {
   return relationships.filter(
-    (relationship) => getRelationshipCategory(relationship.relationship_type) === type
+    (relationship) => relationship.type === type
   );
 }
 
 /**
- * Get the category of a relationship type
+ * Get the category of a relationship
  * Determines if a relationship is personal (family) or professional (advisor/service provider)
- * @param relationshipType - The type of relationship to categorize
- * @returns 'personal' for family relationships, 'professional' for advisor relationships
+ * @param relationship - The relationship value (e.g., 'Spouse', 'Solicitor')
+ * @returns 'Personal' for family relationships, 'Professional' for advisor relationships
  * @example
- * getRelationshipCategory('Spouse') // Returns 'personal'
- * getRelationshipCategory('Solicitor') // Returns 'professional'
+ * getRelationshipCategory('Spouse') // Returns 'Personal'
+ * getRelationshipCategory('Solicitor') // Returns 'Professional'
  */
 export function getRelationshipCategory(
-  relationshipType: RelationshipType
-): 'personal' | 'professional' {
-  return PROFESSIONAL_RELATIONSHIP_TYPES.includes(relationshipType)
-    ? 'professional'
-    : 'personal';
+  relationship: Relationship
+): RelationshipCategory {
+  return PROFESSIONAL_RELATIONSHIPS.includes(relationship as any)
+    ? 'Professional'
+    : 'Personal';
 }
 
 /**
  * Format relationship name for display
- * Combines title, first name, and last name into a formatted display string
- * @param relationship - The relationship object containing name fields
- * @returns Formatted string like "Mr John Doe" or "Jane Smith" (without title)
+ * Returns the name field from the relationship
+ * @param relationship - The relationship object containing name field
+ * @returns The formatted name
  * @example
- * formatRelationshipName({ title: 'Dr', first_name: 'Jane', last_name: 'Smith', ... })
- * // Returns "Dr Jane Smith"
+ * formatRelationshipName({ name: 'John Doe', ... })
+ * // Returns "John Doe"
  */
 export function formatRelationshipName(
   relationship: SpecialRelationship
 ): string {
-  const parts: string[] = [];
-
-  if (relationship.title) {
-    parts.push(relationship.title);
-  }
-
-  if (relationship.first_name) {
-    parts.push(relationship.first_name);
-  }
-
-  if (relationship.last_name) {
-    parts.push(relationship.last_name);
-  }
-
-  return parts.join(' ').trim();
+  return relationship.name || '';
 }

@@ -83,9 +83,8 @@ describe('PersonalRelationshipsTable', () => {
 
     test('renders relationship data correctly', () => {
       const relationship = createMockPersonalRelationship({
-        first_name: 'Jane',
-        last_name: 'Smith',
-        relationship_type: 'Spouse',
+        name: 'Jane Smith',
+        relationship: 'Spouse',
       });
 
       render(
@@ -104,9 +103,9 @@ describe('PersonalRelationshipsTable', () => {
   describe('Sorting', () => {
     test('sorts by first name ascending by default', () => {
       const relationships = [
-        createMockPersonalRelationship({ first_name: 'Charlie' }),
-        createMockPersonalRelationship({ first_name: 'Alice' }),
-        createMockPersonalRelationship({ first_name: 'Bob' }),
+        createMockPersonalRelationship({ name: 'Charlie Brown' }),
+        createMockPersonalRelationship({ name: 'Alice Cooper' }),
+        createMockPersonalRelationship({ name: 'Bob Dylan' }),
       ];
 
       render(
@@ -147,9 +146,9 @@ describe('PersonalRelationshipsTable', () => {
     test('sorts by last name when header clicked', async () => {
       const user = userEvent.setup();
       const relationships = [
-        createMockPersonalRelationship({ last_name: 'Zebra' }),
-        createMockPersonalRelationship({ last_name: 'Apple' }),
-        createMockPersonalRelationship({ last_name: 'Mango' }),
+        createMockPersonalRelationship({ name: 'John Zebra' }),
+        createMockPersonalRelationship({ name: 'Jane Apple' }),
+        createMockPersonalRelationship({ name: 'Bob Mango' }),
       ];
 
       render(

@@ -58,11 +58,11 @@ describe('Special Relationships API Service', () => {
   // fetchSpecialRelationships - GET /special_relationships
   // =========================================================================
   describe('fetchSpecialRelationships', () => {
-    const clientGroupId = 'group-001';
+    const productOwnerId = 123;
 
-    it('should fetch all special relationships for a client group', async () => {
+    it('should fetch all special relationships for a product owner', async () => {
       const mockRelationships = createMockRelationshipArray(3, {
-        client_group_id: clientGroupId,
+        product_owner_ids: [productOwnerId],
         type: 'mixed',
       });
 
@@ -70,18 +70,18 @@ describe('Special Relationships API Service', () => {
         data: mockRelationships,
       });
 
-      const result = await fetchSpecialRelationships(clientGroupId);
+      const result = await fetchSpecialRelationships(productOwnerId);
 
       expect(mockedApi.get).toHaveBeenCalledWith('/special_relationships', {
-        params: { client_group_id: clientGroupId },
+        params: { product_owner_id: productOwnerId },
       });
       expect(result).toEqual(mockRelationships);
       expect(result).toHaveLength(3);
     });
 
-    it('should fetch relationships filtered by type (personal)', async () => {
+    it('should fetch relationships filtered by type (Personal)', async () => {
       const mockRelationships = createMockRelationshipArray(2, {
-        client_group_id: clientGroupId,
+        product_owner_ids: [productOwnerId],
         type: 'personal',
       });
 
@@ -89,17 +89,17 @@ describe('Special Relationships API Service', () => {
         data: mockRelationships,
       });
 
-      const result = await fetchSpecialRelationships(clientGroupId, { type: 'personal' });
+      const result = await fetchSpecialRelationships(productOwnerId, { type: 'Personal' });
 
       expect(mockedApi.get).toHaveBeenCalledWith('/special_relationships', {
-        params: { client_group_id: clientGroupId, type: 'personal' },
+        params: { product_owner_id: productOwnerId, type: 'Personal' },
       });
       expect(result).toEqual(mockRelationships);
     });
 
     it('should fetch relationships filtered by status (Active)', async () => {
       const mockRelationships = createMockRelationshipArray(5, {
-        client_group_id: clientGroupId,
+        product_owner_ids: [productOwnerId],
         status: 'Active',
       });
 
@@ -107,10 +107,10 @@ describe('Special Relationships API Service', () => {
         data: mockRelationships,
       });
 
-      const result = await fetchSpecialRelationships(clientGroupId, { status: 'Active' });
+      const result = await fetchSpecialRelationships(productOwnerId, { status: 'Active' });
 
       expect(mockedApi.get).toHaveBeenCalledWith('/special_relationships', {
-        params: { client_group_id: clientGroupId, status: 'Active' },
+        params: { product_owner_id: productOwnerId, status: 'Active' },
       });
       expect(result).toHaveLength(5);
     });
@@ -120,24 +120,24 @@ describe('Special Relationships API Service', () => {
         data: [],
       });
 
-      const result = await fetchSpecialRelationships(clientGroupId);
+      const result = await fetchSpecialRelationships(productOwnerId);
 
       expect(result).toEqual([]);
     });
 
-    it('should throw error with message when client_group_id is missing', async () => {
+    it('should throw error with message when product_owner_id is missing', async () => {
       mockedApi.get.mockRejectedValueOnce({
         response: {
           status: 400,
           data: {
             error: 'BadRequest',
-            message: 'client_group_id query parameter is required',
+            message: 'product_owner_id query parameter is required',
           },
         },
       });
 
-      await expect(fetchSpecialRelationships('')).rejects.toThrow(
-        'client_group_id query parameter is required'
+      await expect(fetchSpecialRelationships(0)).rejects.toThrow(
+        'product_owner_id query parameter is required'
       );
     });
 
@@ -152,7 +152,7 @@ describe('Special Relationships API Service', () => {
         },
       });
 
-      await expect(fetchSpecialRelationships(clientGroupId)).rejects.toThrow(
+      await expect(fetchSpecialRelationships(productOwnerId)).rejects.toThrow(
         'Authentication credentials were not provided or are invalid'
       );
     });
@@ -168,7 +168,7 @@ describe('Special Relationships API Service', () => {
         },
       });
 
-      await expect(fetchSpecialRelationships(clientGroupId)).rejects.toThrow(
+      await expect(fetchSpecialRelationships(productOwnerId)).rejects.toThrow(
         'An unexpected error occurred'
       );
     });
@@ -180,31 +180,22 @@ describe('Special Relationships API Service', () => {
   describe('createSpecialRelationship', () => {
     it('should successfully create a personal relationship', async () => {
       const personalData = {
-        client_group_id: 'group-001',
-        relationship_type: 'Spouse',
+        product_owner_ids: [123],
+        name: 'Jane Smith',
+        type: 'Personal' as const,
+        relationship: 'Spouse',
         status: 'Active' as const,
-        title: 'Mrs',
-        first_name: 'Jane',
-        last_name: 'Smith',
         date_of_birth: '1985-06-15',
+        dependency: false,
         email: 'jane.smith@example.com',
-        mobile_phone: '+44-7700-900000',
-        home_phone: null,
-        work_phone: null,
-        address_line1: '123 Main Street',
-        address_line2: null,
-        city: 'London',
-        county: 'Greater London',
-        postcode: 'SW1A 1AA',
-        country: 'United Kingdom',
+        phone_number: '+44-7700-900000',
+        address_id: 1,
         notes: null,
-        company_name: null,
-        position: null,
-        professional_id: null,
+        firm_name: null,
       };
 
       const mockCreatedRelationship = createMockPersonalRelationship({
-        id: 'rel-new-001',
+        id: 101,
         ...personalData,
         created_at: '2024-12-11T15:30:00Z',
         updated_at: '2024-12-11T15:30:00Z',
@@ -217,39 +208,30 @@ describe('Special Relationships API Service', () => {
       const result = await createSpecialRelationship(personalData);
 
       expect(mockedApi.post).toHaveBeenCalledWith('/special_relationships', personalData);
-      expect(result.id).toBe('rel-new-001');
-      expect(result.first_name).toBe('Jane');
-      expect(result.relationship_type).toBe('Spouse');
+      expect(result.id).toBe(101);
+      expect(result.name).toBe('Jane Smith');
+      expect(result.relationship).toBe('Spouse');
       expect(result.status).toBe('Active');
     });
 
     it('should successfully create a professional relationship', async () => {
       const professionalData = {
-        client_group_id: 'group-001',
-        relationship_type: 'Financial Advisor',
+        product_owner_ids: [123, 456],
+        name: 'Dr Robert Johnson',
+        type: 'Professional' as const,
+        relationship: 'Financial Advisor',
         status: 'Active' as const,
-        title: 'Dr',
-        first_name: 'Robert',
-        last_name: 'Johnson',
         date_of_birth: null,
+        dependency: false,
         email: 'robert.johnson@advisor.com',
-        mobile_phone: null,
-        home_phone: null,
-        work_phone: '+44-20-7946-0123',
-        address_line1: '456 Business Park',
-        address_line2: 'Suite 200',
-        city: 'London',
-        county: 'Greater London',
-        postcode: 'EC1A 1BB',
-        country: 'United Kingdom',
+        phone_number: '+44-20-7946-0123',
+        address_id: 2,
         notes: 'Senior financial advisor',
-        company_name: 'Financial Advisors Ltd',
-        position: 'Senior Advisor',
-        professional_id: 'FCA-123456',
+        firm_name: 'Financial Advisors Ltd',
       };
 
       const mockCreatedRelationship = createMockProfessionalRelationship({
-        id: 'rel-professional-new',
+        id: 102,
         ...professionalData,
         created_at: '2024-12-11T15:30:00Z',
         updated_at: '2024-12-11T15:30:00Z',
@@ -262,16 +244,15 @@ describe('Special Relationships API Service', () => {
       const result = await createSpecialRelationship(professionalData);
 
       expect(mockedApi.post).toHaveBeenCalledWith('/special_relationships', professionalData);
-      expect(result.id).toBe('rel-professional-new');
-      expect(result.relationship_type).toBe('Financial Advisor');
-      expect(result.company_name).toBe('Financial Advisors Ltd');
-      expect(result.professional_id).toBe('FCA-123456');
+      expect(result.id).toBe(102);
+      expect(result.relationship).toBe('Financial Advisor');
+      expect(result.firm_name).toBe('Financial Advisors Ltd');
     });
 
     it('should throw validation error when required fields are missing (422)', async () => {
       const invalidData = {
-        client_group_id: 'group-001',
-        relationship_type: '',
+        product_owner_ids: [123],
+        relationship: '',
         status: 'Active' as const,
       };
 
@@ -282,9 +263,9 @@ describe('Special Relationships API Service', () => {
             error: 'ValidationError',
             message: 'Request validation failed',
             details: {
-              first_name: 'First name is required',
-              last_name: 'Last name is required',
-              relationship_type: 'Relationship type is required and must be between 1 and 100 characters',
+              name: 'Name is required',
+              type: 'Type is required',
+              relationship: 'Relationship is required and must be between 1 and 100 characters',
             },
           },
         },
@@ -297,11 +278,12 @@ describe('Special Relationships API Service', () => {
 
     it('should throw error when email format is invalid', async () => {
       const invalidEmailData = {
-        client_group_id: 'group-001',
-        relationship_type: 'Spouse',
+        product_owner_ids: [123],
+        name: 'John Doe',
+        type: 'Personal' as const,
+        relationship: 'Spouse',
         status: 'Active' as const,
-        first_name: 'John',
-        last_name: 'Doe',
+        dependency: false,
         email: 'invalid-email',
       };
 
@@ -325,11 +307,12 @@ describe('Special Relationships API Service', () => {
 
     it('should throw error when date of birth is in the future', async () => {
       const futureDobData = {
-        client_group_id: 'group-001',
-        relationship_type: 'Child',
+        product_owner_ids: [123],
+        name: 'Future Baby',
+        type: 'Personal' as const,
+        relationship: 'Child',
         status: 'Active' as const,
-        first_name: 'Future',
-        last_name: 'Baby',
+        dependency: true,
         date_of_birth: '2030-01-01',
       };
 
@@ -364,8 +347,8 @@ describe('Special Relationships API Service', () => {
 
       await expect(
         createSpecialRelationship({
-          client_group_id: 'group-001',
-          relationship_type: 'Spouse',
+          product_owner_ids: [123],
+          relationship: 'Spouse',
           status: 'Active',
         } as any)
       ).rejects.toThrow('Authentication credentials were not provided or are invalid');
@@ -376,14 +359,13 @@ describe('Special Relationships API Service', () => {
   // updateSpecialRelationship - PUT /special_relationships/:id
   // =========================================================================
   describe('updateSpecialRelationship', () => {
-    const relationshipId = 'rel-001';
+    const relationshipId = 123;
 
     it('should successfully update a relationship', async () => {
       const updateData = {
-        first_name: 'John',
-        last_name: 'Smith Jr.',
+        name: 'John Smith Jr.',
         email: 'john.smith.jr@example.com',
-        mobile_phone: '+44-7890-123456',
+        phone_number: '+44-7890-123456',
         status: 'Active' as const,
       };
 
@@ -404,17 +386,14 @@ describe('Special Relationships API Service', () => {
         updateData
       );
       expect(result.id).toBe(relationshipId);
-      expect(result.first_name).toBe('John');
-      expect(result.last_name).toBe('Smith Jr.');
+      expect(result.name).toBe('John Smith Jr.');
       expect(result.email).toBe('john.smith.jr@example.com');
     });
 
     it('should successfully update professional relationship details', async () => {
       const updateData = {
-        company_name: 'New Financial Corp',
-        position: 'Lead Advisor',
-        professional_id: 'FCA-999999',
-        work_phone: '+44-20-1234-5678',
+        firm_name: 'New Financial Corp',
+        phone_number: '+44-20-1234-5678',
       };
 
       const mockUpdatedRelationship = createMockProfessionalRelationship({
@@ -429,9 +408,7 @@ describe('Special Relationships API Service', () => {
 
       const result = await updateSpecialRelationship(relationshipId, updateData);
 
-      expect(result.company_name).toBe('New Financial Corp');
-      expect(result.position).toBe('Lead Advisor');
-      expect(result.professional_id).toBe('FCA-999999');
+      expect(result.firm_name).toBe('New Financial Corp');
     });
 
     it('should throw error when relationship not found (404)', async () => {
@@ -446,14 +423,14 @@ describe('Special Relationships API Service', () => {
       });
 
       await expect(
-        updateSpecialRelationship(relationshipId, { first_name: 'Test' } as any)
+        updateSpecialRelationship(relationshipId, { name: 'Test' } as any)
       ).rejects.toThrow(`Special relationship with id '${relationshipId}' not found`);
     });
 
     it('should throw validation error on invalid update data (422)', async () => {
       const invalidData = {
         email: 'not-an-email',
-        mobile_phone: 'invalid-phone-format',
+        phone_number: 'invalid-phone-format',
       };
 
       mockedApi.put.mockRejectedValueOnce({
@@ -486,7 +463,7 @@ describe('Special Relationships API Service', () => {
       });
 
       await expect(
-        updateSpecialRelationship(relationshipId, { first_name: 'Test' } as any)
+        updateSpecialRelationship(relationshipId, { name: 'Test' } as any)
       ).rejects.toThrow('Authentication credentials were not provided or are invalid');
     });
   });
@@ -495,7 +472,7 @@ describe('Special Relationships API Service', () => {
   // updateSpecialRelationshipStatus - PATCH /special_relationships/:id/status
   // =========================================================================
   describe('updateSpecialRelationshipStatus', () => {
-    const relationshipId = 'rel-001';
+    const relationshipId = 123;
 
     it('should successfully update status to Inactive', async () => {
       const mockUpdatedRelationship = createMockPersonalRelationship({
@@ -592,9 +569,9 @@ describe('Special Relationships API Service', () => {
   // deleteSpecialRelationship - DELETE /special_relationships/:id
   // =========================================================================
   describe('deleteSpecialRelationship', () => {
-    const relationshipId = 'rel-001';
+    const relationshipId = 123;
 
-    it('should successfully delete a relationship (soft delete)', async () => {
+    it('should successfully delete a relationship (hard delete)', async () => {
       mockedApi.delete.mockResolvedValueOnce({
         status: 204,
         data: null,

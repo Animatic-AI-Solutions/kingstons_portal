@@ -40,14 +40,22 @@ export const sortRelationships = (
     let bValue: any;
 
     switch (sortConfig.column) {
-      case 'first_name':
-        aValue = a.first_name?.toLowerCase() || '';
-        bValue = b.first_name?.toLowerCase() || '';
+      case 'first_name': {
+        // Split name into first name (first word)
+        const aNameParts = (a.name || '').trim().split(/\s+/);
+        const bNameParts = (b.name || '').trim().split(/\s+/);
+        aValue = (aNameParts[0] || '').toLowerCase();
+        bValue = (bNameParts[0] || '').toLowerCase();
         break;
-      case 'last_name':
-        aValue = a.last_name?.toLowerCase() || '';
-        bValue = b.last_name?.toLowerCase() || '';
+      }
+      case 'last_name': {
+        // Split name into last name (everything after first word)
+        const aNameParts = (a.name || '').trim().split(/\s+/);
+        const bNameParts = (b.name || '').trim().split(/\s+/);
+        aValue = (aNameParts.length > 1 ? aNameParts.slice(1).join(' ') : '').toLowerCase();
+        bValue = (bNameParts.length > 1 ? bNameParts.slice(1).join(' ') : '').toLowerCase();
         break;
+      }
       case 'status':
         // Use STATUS_PRIORITY_ORDER for proper Active > Inactive > Deceased ordering
         const statusComparison = STATUS_PRIORITY_ORDER[a.status] - STATUS_PRIORITY_ORDER[b.status];
@@ -57,18 +65,18 @@ export const sortRelationships = (
         bValue = b.date_of_birth ? new Date(b.date_of_birth).getTime() : 0;
         break;
       case 'company_name':
-        aValue = a.company_name?.toLowerCase() || '';
-        bValue = b.company_name?.toLowerCase() || '';
+        aValue = a.firm_name?.toLowerCase() || '';
+        bValue = b.firm_name?.toLowerCase() || '';
         // Sort null values to end
-        if (!a.company_name && b.company_name) return 1;
-        if (a.company_name && !b.company_name) return -1;
+        if (!a.firm_name && b.firm_name) return 1;
+        if (a.firm_name && !b.firm_name) return -1;
         break;
       case 'position':
-        aValue = a.position?.toLowerCase() || '';
-        bValue = b.position?.toLowerCase() || '';
+        aValue = (a as any).position?.toLowerCase() || '';
+        bValue = (b as any).position?.toLowerCase() || '';
         // Sort null values to end
-        if (!a.position && b.position) return 1;
-        if (a.position && !b.position) return -1;
+        if (!(a as any).position && (b as any).position) return 1;
+        if ((a as any).position && !(b as any).position) return -1;
         break;
       default:
         return 0;
@@ -109,27 +117,6 @@ export const getEffectiveSortConfig = (sortConfig: SortConfig): SortConfig => {
 // Data Formatting Functions
 // ==========================
 
-/**
- * Format phone number by prioritizing mobile > home > work.
- * Returns placeholder if all phone fields are empty.
- *
- * @param relationship - Relationship object with phone fields
- * @returns Formatted phone string or placeholder
- *
- * @example
- * ```typescript
- * const phone = formatPhoneNumber({ mobile_phone: '555-1234', home_phone: null, work_phone: null });
- * // Returns: '555-1234'
- * ```
- */
-export const formatPhoneNumber = (relationship: SpecialRelationship): string => {
-  return (
-    relationship.mobile_phone ||
-    relationship.home_phone ||
-    relationship.work_phone ||
-    EMPTY_VALUE_PLACEHOLDER
-  );
-};
 
 /**
  * Get the CSS classes for a status badge based on status value.

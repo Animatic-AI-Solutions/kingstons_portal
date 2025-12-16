@@ -24,7 +24,7 @@ import {
   SpecialRelationship,
   SpecialRelationshipFormData,
   RelationshipStatus,
-  RelationshipType,
+  RelationshipCategory,
 } from '@/types/specialRelationship';
 
 // =============================================================================
@@ -35,53 +35,28 @@ import {
  * Filter options for fetching special relationships
  */
 export interface SpecialRelationshipFilters {
-  /** Filter by relationship type (personal/professional) */
-  type?: 'personal' | 'professional';
+  /** Filter by relationship category (Personal/Professional) */
+  type?: RelationshipCategory;
   /** Filter by relationship status */
   status?: RelationshipStatus;
 }
 
 /**
  * Data structure for creating a new special relationship
+ * Uses SpecialRelationshipFormData plus product_owner_ids array
  */
-export interface CreateSpecialRelationshipData {
-  client_group_id: string;
-  relationship_type: RelationshipType;
-  status: RelationshipStatus;
-  title?: string | null;
-  first_name: string;
-  last_name: string;
-  date_of_birth?: string | null;
-  email?: string | null;
-  mobile_phone?: string | null;
-  home_phone?: string | null;
-  work_phone?: string | null;
-  address_line1?: string | null;
-  address_line2?: string | null;
-  city?: string | null;
-  county?: string | null;
-  postcode?: string | null;
-  country?: string | null;
-  notes?: string | null;
-  company_name?: string | null;
-  position?: string | null;
-  professional_id?: string | null;
+export interface CreateSpecialRelationshipData extends SpecialRelationshipFormData {
+  /** Product owner IDs to associate with this relationship */
+  product_owner_ids: number[];
 }
 
 /**
  * Data structure for updating an existing special relationship
+ * All fields are optional for partial updates
  */
-export interface UpdateSpecialRelationshipData {
-  first_name?: string;
-  last_name?: string;
-  email?: string | null;
-  mobile_phone?: string | null;
-  home_phone?: string | null;
-  work_phone?: string | null;
-  status?: RelationshipStatus;
-  company_name?: string | null;
-  position?: string | null;
-  professional_id?: string | null;
+export interface UpdateSpecialRelationshipData extends Partial<SpecialRelationshipFormData> {
+  /** Update product owner associations (optional) */
+  product_owner_ids?: number[];
 }
 
 // =============================================================================
@@ -122,31 +97,31 @@ const handleApiError = (error: any): never => {
 // =============================================================================
 
 /**
- * Fetches special relationships for a client group with optional filters
+ * Fetches special relationships for a product owner with optional filters
  *
- * @param clientGroupId - Client group ID to fetch relationships for
+ * @param productOwnerId - Product owner ID to fetch relationships for
  * @param filters - Optional filters (type, status)
  * @returns Promise resolving to array of special relationships
  * @throws {ApiError} Error with status code and message on API failure
  *
  * @example
  * // Fetch all relationships
- * const relationships = await fetchSpecialRelationships('group-001');
+ * const relationships = await fetchSpecialRelationships(123);
  *
  * @example
  * // Fetch only active personal relationships
- * const activePersonal = await fetchSpecialRelationships('group-001', {
- *   type: 'personal',
+ * const activePersonal = await fetchSpecialRelationships(123, {
+ *   type: 'Personal',
  *   status: 'Active'
  * });
  */
 export const fetchSpecialRelationships = async (
-  clientGroupId: string,
+  productOwnerId: number,
   filters?: SpecialRelationshipFilters
 ): Promise<SpecialRelationship[]> => {
   try {
-    const params: Record<string, string> = {
-      client_group_id: clientGroupId,
+    const params: Record<string, string | number> = {
+      product_owner_id: productOwnerId,
     };
 
     if (filters?.type) {
@@ -167,19 +142,32 @@ export const fetchSpecialRelationships = async (
 /**
  * Creates a new special relationship
  *
- * @param data - Special relationship data (required: client_group_id, relationship_type, status, first_name, last_name)
+ * @param data - Special relationship data (required: product_owner_ids, type, relationship, status, name)
  * @returns Promise resolving to created special relationship with generated ID
  * @throws {ApiError} Error with status code and message on API failure (400, 401, 422, 500)
  *
  * @example
  * // Create a personal relationship
  * const spouse = await createSpecialRelationship({
- *   client_group_id: 'group-001',
- *   relationship_type: 'Spouse',
+ *   product_owner_ids: [123],
+ *   name: 'Jane Doe',
+ *   type: 'Personal',
+ *   relationship: 'Spouse',
  *   status: 'Active',
- *   first_name: 'Jane',
- *   last_name: 'Doe',
- *   email: 'jane@example.com'
+ *   email: 'jane@example.com',
+ *   dependency: false
+ * });
+ *
+ * @example
+ * // Create a professional relationship
+ * const accountant = await createSpecialRelationship({
+ *   product_owner_ids: [123, 456],
+ *   name: 'Robert Johnson',
+ *   type: 'Professional',
+ *   relationship: 'Accountant',
+ *   status: 'Active',
+ *   firm_name: 'Accounting Partners Ltd',
+ *   email: 'rjohnson@accountingpartners.com'
  * });
  */
 export const createSpecialRelationship = async (
@@ -203,13 +191,19 @@ export const createSpecialRelationship = async (
  *
  * @example
  * // Update contact information
- * const updated = await updateSpecialRelationship('rel-001', {
+ * const updated = await updateSpecialRelationship(123, {
  *   email: 'newemail@example.com',
- *   mobile_phone: '+44-7700-900000'
+ *   phone_number: '+44-7700-900000'
+ * });
+ *
+ * @example
+ * // Update professional firm name
+ * const updated = await updateSpecialRelationship(456, {
+ *   firm_name: 'New Accounting Firm Ltd'
  * });
  */
 export const updateSpecialRelationship = async (
-  id: string,
+  id: number,
   data: UpdateSpecialRelationshipData
 ): Promise<SpecialRelationship> => {
   try {
@@ -230,10 +224,10 @@ export const updateSpecialRelationship = async (
  *
  * @example
  * // Mark relationship as inactive
- * const updated = await updateSpecialRelationshipStatus('rel-001', 'Inactive');
+ * const updated = await updateSpecialRelationshipStatus(123, 'Inactive');
  */
 export const updateSpecialRelationshipStatus = async (
-  id: string,
+  id: number,
   status: RelationshipStatus
 ): Promise<SpecialRelationship> => {
   try {
@@ -247,17 +241,17 @@ export const updateSpecialRelationshipStatus = async (
 };
 
 /**
- * Deletes a special relationship (soft delete - marks as deleted, doesn't remove from database)
+ * Deletes a special relationship (hard delete - permanently removes from database)
  *
  * @param id - Relationship ID to delete
  * @returns Promise resolving when deletion is complete (void)
  * @throws {ApiError} Error with status code and message on API failure (401, 404, 500)
  *
  * @example
- * // Soft delete a relationship
- * await deleteSpecialRelationship('rel-001');
+ * // Delete a relationship
+ * await deleteSpecialRelationship(123);
  */
-export const deleteSpecialRelationship = async (id: string): Promise<void> => {
+export const deleteSpecialRelationship = async (id: number): Promise<void> => {
   try {
     await api.delete(`/special_relationships/${id}`);
   } catch (error: any) {

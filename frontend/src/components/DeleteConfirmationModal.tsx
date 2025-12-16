@@ -126,11 +126,7 @@ const getProductOwnerDisplayName = (productOwner: ProductOwner): string => {
  * @returns Display name string for modal description
  */
 const getRelationshipDisplayName = (relationship: SpecialRelationship): string => {
-  if (relationship.first_name && relationship.last_name) {
-    return `${relationship.first_name} ${relationship.last_name}`;
-  }
-
-  return relationship.first_name || relationship.last_name || MODAL_TEXT.FALLBACK_NAME_RELATIONSHIP;
+  return relationship.name || MODAL_TEXT.FALLBACK_NAME_RELATIONSHIP;
 };
 
 // ==========================
@@ -199,7 +195,7 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
     ? MODAL_TEXT.DESCRIPTION_SUFFIX_SOFT
     : MODAL_TEXT.DESCRIPTION_SUFFIX_PERMANENT;
   const descriptionPrefix = isRelationship
-    ? `${MODAL_TEXT.DESCRIPTION_PREFIX} the ${relationship!.relationship_type.toLowerCase()}`
+    ? `${MODAL_TEXT.DESCRIPTION_PREFIX} the ${relationship!.relationship.toLowerCase()}`
     : MODAL_TEXT.DESCRIPTION_PREFIX;
 
   /**

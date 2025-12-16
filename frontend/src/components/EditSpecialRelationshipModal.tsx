@@ -1,8 +1,9 @@
 /**
- * EditSpecialRelationshipModal Component (Cycle 7)
+ * EditSpecialRelationshipModal Component (Phase 4 - Refactored)
  *
  * Modal dialog for editing an existing special relationship.
  * Pre-populates form with existing data and tracks changes for efficient updates.
+ * Supports both old and new schema for backwards compatibility during migration.
  *
  * @module EditSpecialRelationshipModal
  *
@@ -14,6 +15,7 @@
  * - Loading, success, and error state management
  * - Automatic focus management for validation errors
  * - Form reset when relationship changes
+ * - Backwards compatibility with old schema
  *
  * Accessibility:
  * - Uses ModalShell for focus trap and keyboard navigation
@@ -33,7 +35,11 @@ import RelationshipFormFields from './RelationshipFormFields';
 import { useRelationshipValidation, RelationshipFormData } from '@/hooks/useRelationshipValidation';
 import { focusFirstError, detectChangedField } from '@/hooks/useRelationshipFormHandlers';
 import { useUpdateSpecialRelationship } from '@/hooks/useSpecialRelationships';
-import { SpecialRelationship, PROFESSIONAL_RELATIONSHIP_TYPES } from '@/types/specialRelationship';
+import {
+  SpecialRelationship,
+  RelationshipCategory,
+  PROFESSIONAL_RELATIONSHIPS,
+} from '@/types/specialRelationship';
 
 /**
  * Props for EditSpecialRelationshipModal component
@@ -55,45 +61,55 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
   relationship,
   onSuccess,
 }) => {
-  // Determine if professional based on relationship type
-  const isProfessional = PROFESSIONAL_RELATIONSHIP_TYPES.includes(relationship.relationship_type);
-
   /**
-   * Extract name from relationship object
-   * Uses 'name' field if present, otherwise combines first_name and last_name
+   * Extract type and relationship from relationship object
+   * Handles both old schema (relationship_type only) and new schema (type + relationship)
    * @param rel - Relationship object
-   * @returns Combined name string
+   * @returns Tuple of [type, relationship]
    */
-  const getNameFromRelationship = (rel: any): string => {
-    // If relationship has a name field, use it
-    if (rel.name) {
-      return rel.name;
+  const getTypeAndRelationship = (rel: any): [RelationshipCategory, string] => {
+    // New schema: has both type and relationship fields
+    if (rel.type && rel.relationship) {
+      return [rel.type as RelationshipCategory, rel.relationship];
     }
-    // Otherwise combine first and last name
-    return `${rel.first_name || ''} ${rel.last_name || ''}`.trim();
+
+    // Old schema: only has relationship_type field
+    // Determine type based on whether it's in professional list
+    const isProfessional = PROFESSIONAL_RELATIONSHIPS.includes(rel.relationship_type);
+    const type: RelationshipCategory = isProfessional ? 'Professional' : 'Personal';
+    return [type, rel.relationship_type];
   };
 
   /**
    * Extract phone number from relationship object
-   * Prioritizes mobile_phone, falls back to home_phone, then work_phone
+   * Handles both old schema (mobile_phone, home_phone, work_phone) and new schema (phone_number)
    * @param rel - Relationship object
-   * @returns First available phone number or empty string
+   * @returns First available phone number or null
    */
-  const getPhoneFromRelationship = (rel: SpecialRelationship): string => {
-    return rel.mobile_phone || rel.home_phone || rel.work_phone || '';
+  const getPhoneFromRelationship = (rel: any): string | null => {
+    // New schema
+    if (rel.phone_number !== undefined) {
+      return rel.phone_number;
+    }
+    // Old schema - prioritize mobile, then home, then work
+    return rel.mobile_phone || rel.home_phone || rel.work_phone || null;
   };
+
+  const [type, relationshipValue] = getTypeAndRelationship(relationship);
 
   // Form state - initialized from relationship
   const [formData, setFormData] = useState<RelationshipFormData>({
-    name: getNameFromRelationship(relationship),
-    relationship_type: relationship.relationship_type,
+    name: relationship.name,
+    type: type,
+    relationship: relationshipValue,
     status: relationship.status,
-    date_of_birth: relationship.date_of_birth || '',
-    email: relationship.email || '',
+    date_of_birth: relationship.date_of_birth || null,
+    email: relationship.email || null,
     phone_number: getPhoneFromRelationship(relationship),
-    is_dependent: (relationship as any).is_dependent || false,
-    relationship_with: (relationship as any).relationship_with || [],
-    is_professional: isProfessional,
+    dependency: relationship.dependency || false,
+    firm_name: relationship.firm_name || null,
+    address_id: relationship.address_id || null,
+    notes: relationship.notes || null,
   });
 
   // API error state
@@ -101,15 +117,17 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
 
   // Track original form data to detect changes
   const [originalData] = useState<RelationshipFormData>({
-    name: getNameFromRelationship(relationship),
-    relationship_type: relationship.relationship_type,
+    name: relationship.name,
+    type: type,
+    relationship: relationshipValue,
     status: relationship.status,
-    date_of_birth: relationship.date_of_birth || '',
-    email: relationship.email || '',
+    date_of_birth: relationship.date_of_birth || null,
+    email: relationship.email || null,
     phone_number: getPhoneFromRelationship(relationship),
-    is_dependent: (relationship as any).is_dependent || false,
-    relationship_with: (relationship as any).relationship_with || [],
-    is_professional: isProfessional,
+    dependency: relationship.dependency || false,
+    firm_name: relationship.firm_name || null,
+    address_id: relationship.address_id || null,
+    notes: relationship.notes || null,
   });
 
   // Validation hook
@@ -121,22 +139,25 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
   // Reset form when relationship changes
   useEffect(() => {
     if (isOpen) {
+      const [newType, newRelationshipValue] = getTypeAndRelationship(relationship);
       const newFormData = {
-        name: getNameFromRelationship(relationship),
-        relationship_type: relationship.relationship_type,
+        name: relationship.name,
+        type: newType,
+        relationship: newRelationshipValue,
         status: relationship.status,
-        date_of_birth: relationship.date_of_birth || '',
-        email: relationship.email || '',
+        date_of_birth: relationship.date_of_birth || null,
+        email: relationship.email || null,
         phone_number: getPhoneFromRelationship(relationship),
-        is_dependent: (relationship as any).is_dependent || false,
-        relationship_with: (relationship as any).relationship_with || [],
-        is_professional: isProfessional,
+        dependency: relationship.dependency || false,
+        firm_name: relationship.firm_name || null,
+        address_id: relationship.address_id || null,
+        notes: relationship.notes || null,
       };
       setFormData(newFormData);
       clearAllErrors();
       setApiError('');
     }
-  }, [isOpen, relationship, clearAllErrors, isProfessional]);
+  }, [isOpen, relationship, clearAllErrors]);
 
   /**
    * Handle field value change
@@ -182,9 +203,6 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
    * containing only the fields that have been modified. Empty/null values
    * are properly handled to allow clearing optional fields.
    *
-   * For array fields (relationship_with), performs deep comparison after sorting
-   * to detect changes regardless of order.
-   *
    * @returns Object containing only the fields that changed, with null for cleared values
    */
   const getChangedFields = () => {
@@ -193,8 +211,11 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
     if (formData.name !== originalData.name) {
       changes.name = formData.name;
     }
-    if (formData.relationship_type !== originalData.relationship_type) {
-      changes.relationship_type = formData.relationship_type;
+    if (formData.type !== originalData.type) {
+      changes.type = formData.type;
+    }
+    if (formData.relationship !== originalData.relationship) {
+      changes.relationship = formData.relationship;
     }
     if (formData.status !== originalData.status) {
       changes.status = formData.status;
@@ -208,14 +229,17 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
     if (formData.phone_number !== originalData.phone_number) {
       changes.phone_number = formData.phone_number || null;
     }
-    if (formData.is_dependent !== originalData.is_dependent) {
-      changes.is_dependent = formData.is_dependent;
+    if (formData.dependency !== originalData.dependency) {
+      changes.dependency = formData.dependency;
     }
-    // Compare arrays for relationship_with
-    const originalRelWith = originalData.relationship_with || [];
-    const currentRelWith = formData.relationship_with || [];
-    if (JSON.stringify(originalRelWith.sort()) !== JSON.stringify(currentRelWith.sort())) {
-      changes.relationship_with = currentRelWith;
+    if (formData.firm_name !== originalData.firm_name) {
+      changes.firm_name = formData.firm_name || null;
+    }
+    if (formData.address_id !== originalData.address_id) {
+      changes.address_id = formData.address_id || null;
+    }
+    if (formData.notes !== originalData.notes) {
+      changes.notes = formData.notes || null;
     }
 
     return changes;
@@ -276,7 +300,7 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
     <ModalShell
       isOpen={isOpen}
       onClose={handleCancel}
-      title={isProfessional ? 'Edit Professional Relationship' : 'Edit Personal Relationship'}
+      title={formData.type === 'Professional' ? 'Edit Professional Relationship' : 'Edit Personal Relationship'}
       size="md"
       closeOnBackdropClick={!isPending}
     >
@@ -293,9 +317,9 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
           onChange={handleFieldChange}
           onBlur={handleFieldBlur}
           errors={errors}
-          isProfessional={isProfessional}
           disabled={isPending}
-          productOwners={[]}  // TODO: Fetch actual product owners from client group
+          addresses={[]}  // TODO: Fetch actual addresses
+          onCreateAddress={undefined}  // TODO: Implement address creation
         />
 
         {/* Form Actions */}

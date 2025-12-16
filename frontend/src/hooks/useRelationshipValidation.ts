@@ -22,7 +22,12 @@
  */
 
 import { useState, useCallback } from 'react';
-import { RelationshipStatus, RelationshipType } from '@/types/specialRelationship';
+import {
+  RelationshipStatus,
+  RelationshipCategory,
+  Relationship,
+  SpecialRelationshipFormData,
+} from '@/types/specialRelationship';
 
 // ============================================================================
 // Type Definitions
@@ -30,31 +35,23 @@ import { RelationshipStatus, RelationshipType } from '@/types/specialRelationshi
 
 /**
  * Form data structure for special relationship modals
+ * Re-exports SpecialRelationshipFormData from types for consistency
  */
-export interface RelationshipFormData {
-  name: string;
-  relationship_type: string;
-  status: RelationshipStatus;
-  date_of_birth?: string;
-  email?: string;
-  phone_number?: string;
-  is_dependent?: boolean;        // For personal relationships - indicates if person is a dependent
-  relationship_with?: string[];  // For professional relationships - array of product owner IDs
-  is_professional?: boolean;     // Whether this is a professional relationship (affects field visibility)
-}
+export type RelationshipFormData = SpecialRelationshipFormData;
 
 /**
  * Validation errors keyed by form field name
  */
 export interface ValidationErrors {
   name?: string;
-  relationship_type?: string;
+  type?: string;
+  relationship?: string;
   status?: string;
   date_of_birth?: string;
   email?: string;
   phone_number?: string;
-  is_dependent?: string;
-  relationship_with?: string;
+  dependency?: string;
+  firm_name?: string;
 }
 
 /**
@@ -96,7 +93,8 @@ const PHONE_ALLOWED_CHARS_REGEX = /^[\d\s\-+()]+$/;
 /** Field length constraints */
 const VALIDATION_LIMITS = {
   NAME_MAX_LENGTH: 200,
-  RELATIONSHIP_TYPE_MAX_LENGTH: 50,
+  RELATIONSHIP_MAX_LENGTH: 50,
+  FIRM_NAME_MAX_LENGTH: 200,
   PHONE_MIN_DIGITS: 10,
   PHONE_MAX_DIGITS: 15,
   MAX_AGE_YEARS: 120,
@@ -109,8 +107,10 @@ const VALIDATION_LIMITS = {
 export const ERROR_MESSAGES = {
   NAME_REQUIRED: 'Name is required',
   NAME_TOO_LONG: 'Name must be 200 characters or less',
-  RELATIONSHIP_TYPE_REQUIRED: 'Relationship type is required',
-  RELATIONSHIP_TYPE_TOO_LONG: 'Relationship type must be 50 characters or less',
+  TYPE_REQUIRED: 'Relationship category is required',
+  TYPE_INVALID: 'Relationship category must be Personal or Professional',
+  RELATIONSHIP_REQUIRED: 'Relationship is required',
+  RELATIONSHIP_TOO_LONG: 'Relationship must be 50 characters or less',
   DATE_INVALID: 'Please enter a valid date',
   DATE_FUTURE: 'Date cannot be in the future',
   AGE_INVALID: 'Age must be between 0 and 120 years',
@@ -120,10 +120,14 @@ export const ERROR_MESSAGES = {
   PHONE_TOO_LONG: 'Phone number must be no more than 15 digits',
   STATUS_REQUIRED: 'Status is required',
   STATUS_INVALID: 'Invalid status value',
+  FIRM_NAME_TOO_LONG: 'Firm name must be 200 characters or less',
 } as const;
 
 /** Valid status values for relationship status field */
 const VALID_STATUS_VALUES: readonly RelationshipStatus[] = ['Active', 'Inactive', 'Deceased'] as const;
+
+/** Valid relationship category values */
+const VALID_CATEGORY_VALUES: readonly RelationshipCategory[] = ['Personal', 'Professional'] as const;
 
 // ============================================================================
 // Helper Functions
@@ -160,17 +164,34 @@ const validateName = (name: string): string | undefined => {
 };
 
 /**
- * Validate relationship type field
- * @param type - Relationship type value to validate
+ * Validate relationship category (type) field
+ * @param type - Relationship category value to validate
  * @returns Error message if invalid, undefined if valid
  */
-const validateRelationshipType = (type: string): string | undefined => {
+const validateType = (type: string): string | undefined => {
   if (!type || type.trim().length === 0) {
-    return ERROR_MESSAGES.RELATIONSHIP_TYPE_REQUIRED;
+    return ERROR_MESSAGES.TYPE_REQUIRED;
   }
 
-  if (type.length > VALIDATION_LIMITS.RELATIONSHIP_TYPE_MAX_LENGTH) {
-    return ERROR_MESSAGES.RELATIONSHIP_TYPE_TOO_LONG;
+  if (!VALID_CATEGORY_VALUES.includes(type as RelationshipCategory)) {
+    return ERROR_MESSAGES.TYPE_INVALID;
+  }
+
+  return undefined;
+};
+
+/**
+ * Validate relationship field (specific relationship like 'Spouse', 'Accountant')
+ * @param relationship - Relationship value to validate
+ * @returns Error message if invalid, undefined if valid
+ */
+const validateRelationship = (relationship: string): string | undefined => {
+  if (!relationship || relationship.trim().length === 0) {
+    return ERROR_MESSAGES.RELATIONSHIP_REQUIRED;
+  }
+
+  if (relationship.length > VALIDATION_LIMITS.RELATIONSHIP_MAX_LENGTH) {
+    return ERROR_MESSAGES.RELATIONSHIP_TOO_LONG;
   }
 
   return undefined;
@@ -300,8 +321,11 @@ export const useRelationshipValidation = (): UseRelationshipValidationReturn => 
         case 'name':
           error = validateName(value);
           break;
-        case 'relationship_type':
-          error = validateRelationshipType(value);
+        case 'type':
+          error = validateType(value);
+          break;
+        case 'relationship':
+          error = validateRelationship(value);
           break;
         case 'status':
           error = validateStatus(value);
@@ -352,12 +376,20 @@ export const useRelationshipValidation = (): UseRelationshipValidationReturn => 
         newErrors.name = ERROR_MESSAGES.NAME_REQUIRED;
       }
 
-      // Validate relationship type (required)
-      if (data.relationship_type !== undefined) {
-        const error = validateRelationshipType(data.relationship_type);
-        if (error) newErrors.relationship_type = error;
+      // Validate type (required)
+      if (data.type !== undefined) {
+        const error = validateType(data.type);
+        if (error) newErrors.type = error;
       } else {
-        newErrors.relationship_type = ERROR_MESSAGES.RELATIONSHIP_TYPE_REQUIRED;
+        newErrors.type = ERROR_MESSAGES.TYPE_REQUIRED;
+      }
+
+      // Validate relationship (required)
+      if (data.relationship !== undefined) {
+        const error = validateRelationship(data.relationship);
+        if (error) newErrors.relationship = error;
+      } else {
+        newErrors.relationship = ERROR_MESSAGES.RELATIONSHIP_REQUIRED;
       }
 
       // Validate status (required)
@@ -382,6 +414,10 @@ export const useRelationshipValidation = (): UseRelationshipValidationReturn => 
       if (data.phone_number) {
         const error = validatePhone(data.phone_number);
         if (error) newErrors.phone_number = error;
+      }
+
+      if (data.firm_name && data.firm_name.length > VALIDATION_LIMITS.FIRM_NAME_MAX_LENGTH) {
+        newErrors.firm_name = ERROR_MESSAGES.FIRM_NAME_TOO_LONG;
       }
 
       setErrors(newErrors);

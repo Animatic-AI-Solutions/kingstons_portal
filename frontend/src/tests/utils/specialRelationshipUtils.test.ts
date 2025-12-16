@@ -17,8 +17,8 @@ import type { SpecialRelationship } from '@/types/specialRelationship';
 describe('Special Relationship Utilities', () => {
   describe('calculateAge', () => {
     it('should calculate correct age from date of birth string', () => {
-      // Test with a known date - assuming current date is 2025-12-12
-      const dateOfBirth = '1980-12-12'; // Exactly 45 years old
+      // Test with a known date - assuming current date is 2025-12-16
+      const dateOfBirth = '1980-12-16'; // Exactly 45 years old
       const age = calculateAge(dateOfBirth);
       expect(age).toBe(45);
     });
@@ -70,80 +70,53 @@ describe('Special Relationship Utilities', () => {
   describe('sortRelationships', () => {
     const mockRelationships: SpecialRelationship[] = [
       {
-        id: '1',
-        client_group_id: 'cg-1',
-        relationship_type: 'Spouse',
+        id: 1,
+        name: 'Alice Smith',
+        type: 'Personal',
+        relationship: 'Spouse',
         status: 'Deceased',
-        first_name: 'Alice',
-        last_name: 'Smith',
-        title: null,
         date_of_birth: null,
+        dependency: false,
         email: null,
-        mobile_phone: null,
-        home_phone: null,
-        work_phone: null,
-        address_line1: null,
-        address_line2: null,
-        city: null,
-        county: null,
-        postcode: null,
-        country: null,
+        phone_number: null,
+        address_id: null,
         notes: null,
-        company_name: null,
-        position: null,
-        professional_id: null,
+        firm_name: null,
+        product_owner_ids: [1],
         created_at: '2025-01-01T10:00:00Z',
         updated_at: '2025-01-01T10:00:00Z'
       },
       {
-        id: '2',
-        client_group_id: 'cg-1',
-        relationship_type: 'Child',
+        id: 2,
+        name: 'Bob Smith',
+        type: 'Personal',
+        relationship: 'Child',
         status: 'Active',
-        first_name: 'Bob',
-        last_name: 'Smith',
-        title: null,
         date_of_birth: null,
+        dependency: false,
         email: null,
-        mobile_phone: null,
-        home_phone: null,
-        work_phone: null,
-        address_line1: null,
-        address_line2: null,
-        city: null,
-        county: null,
-        postcode: null,
-        country: null,
+        phone_number: null,
+        address_id: null,
         notes: null,
-        company_name: null,
-        position: null,
-        professional_id: null,
+        firm_name: null,
+        product_owner_ids: [1],
         created_at: '2025-01-02T10:00:00Z',
         updated_at: '2025-01-02T10:00:00Z'
       },
       {
-        id: '3',
-        client_group_id: 'cg-1',
-        relationship_type: 'Sibling',
+        id: 3,
+        name: 'Charlie Smith',
+        type: 'Personal',
+        relationship: 'Sibling',
         status: 'Inactive',
-        first_name: 'Charlie',
-        last_name: 'Smith',
-        title: null,
         date_of_birth: null,
+        dependency: false,
         email: null,
-        mobile_phone: null,
-        home_phone: null,
-        work_phone: null,
-        address_line1: null,
-        address_line2: null,
-        city: null,
-        county: null,
-        postcode: null,
-        country: null,
+        phone_number: null,
+        address_id: null,
         notes: null,
-        company_name: null,
-        position: null,
-        professional_id: null,
+        firm_name: null,
+        product_owner_ids: [1],
         created_at: '2025-01-03T10:00:00Z',
         updated_at: '2025-01-03T10:00:00Z'
       }
@@ -157,53 +130,39 @@ describe('Special Relationship Utilities', () => {
       expect(sorted[2].status).toBe('Deceased');
     });
 
-    it('should sort by first_name alphabetically in ascending order', () => {
-      const sorted = sortRelationships(mockRelationships, 'first_name', 'asc');
+    it('should sort by name alphabetically in ascending order', () => {
+      const sorted = sortRelationships(mockRelationships, 'name', 'asc');
 
-      expect(sorted[0].first_name).toBe('Alice');
-      expect(sorted[1].first_name).toBe('Bob');
-      expect(sorted[2].first_name).toBe('Charlie');
+      expect(sorted[0].name).toBe('Alice Smith');
+      expect(sorted[1].name).toBe('Bob Smith');
+      expect(sorted[2].name).toBe('Charlie Smith');
     });
 
-    it('should sort by first_name alphabetically in descending order', () => {
-      const sorted = sortRelationships(mockRelationships, 'first_name', 'desc');
+    it('should sort by name alphabetically in descending order', () => {
+      const sorted = sortRelationships(mockRelationships, 'name', 'desc');
 
-      expect(sorted[0].first_name).toBe('Charlie');
-      expect(sorted[1].first_name).toBe('Bob');
-      expect(sorted[2].first_name).toBe('Alice');
+      expect(sorted[0].name).toBe('Charlie Smith');
+      expect(sorted[1].name).toBe('Bob Smith');
+      expect(sorted[2].name).toBe('Alice Smith');
     });
 
-    it('should sort by last_name alphabetically', () => {
-      const mixed: SpecialRelationship[] = [
-        { ...mockRelationships[0], last_name: 'Zulu' },
-        { ...mockRelationships[1], last_name: 'Alpha' },
-        { ...mockRelationships[2], last_name: 'Beta' }
-      ];
-
-      const sorted = sortRelationships(mixed, 'last_name', 'asc');
-
-      expect(sorted[0].last_name).toBe('Alpha');
-      expect(sorted[1].last_name).toBe('Beta');
-      expect(sorted[2].last_name).toBe('Zulu');
-    });
-
-    it('should sort by relationship_type alphabetically', () => {
-      const sorted = sortRelationships(mockRelationships, 'relationship_type', 'asc');
+    it('should sort by relationship alphabetically', () => {
+      const sorted = sortRelationships(mockRelationships, 'relationship', 'asc');
 
       // Child < Sibling < Spouse alphabetically
-      expect(sorted[0].relationship_type).toBe('Child');
-      expect(sorted[1].relationship_type).toBe('Sibling');
-      expect(sorted[2].relationship_type).toBe('Spouse');
+      expect(sorted[0].relationship).toBe('Child');
+      expect(sorted[1].relationship).toBe('Sibling');
+      expect(sorted[2].relationship).toBe('Spouse');
     });
 
     it('should maintain status priority within same-name sorting', () => {
       const sameName: SpecialRelationship[] = [
-        { ...mockRelationships[0], first_name: 'John', status: 'Deceased' },
-        { ...mockRelationships[1], first_name: 'John', status: 'Active' },
-        { ...mockRelationships[2], first_name: 'John', status: 'Inactive' }
+        { ...mockRelationships[0], name: 'John', status: 'Deceased' },
+        { ...mockRelationships[1], name: 'John', status: 'Active' },
+        { ...mockRelationships[2], name: 'John', status: 'Inactive' }
       ];
 
-      const sorted = sortRelationships(sameName, 'first_name', 'asc');
+      const sorted = sortRelationships(sameName, 'name', 'asc');
 
       // When names are same, should maintain status priority
       expect(sorted[0].status).toBe('Active');
@@ -212,7 +171,7 @@ describe('Special Relationship Utilities', () => {
     });
 
     it('should handle empty array gracefully', () => {
-      const sorted = sortRelationships([], 'first_name', 'asc');
+      const sorted = sortRelationships([], 'name', 'asc');
       expect(sorted).toEqual([]);
     });
   });
@@ -220,277 +179,214 @@ describe('Special Relationship Utilities', () => {
   describe('filterRelationshipsByType', () => {
     const mockRelationships: SpecialRelationship[] = [
       {
-        id: '1',
-        client_group_id: 'cg-1',
-        relationship_type: 'Spouse',
+        id: 1,
+        name: 'Personal1 Smith',
+        type: 'Personal',
+        relationship: 'Spouse',
         status: 'Active',
-        first_name: 'Personal1',
-        last_name: 'Smith',
-        title: null,
         date_of_birth: null,
+        dependency: false,
         email: null,
-        mobile_phone: null,
-        home_phone: null,
-        work_phone: null,
-        address_line1: null,
-        address_line2: null,
-        city: null,
-        county: null,
-        postcode: null,
-        country: null,
+        phone_number: null,
+        address_id: null,
         notes: null,
-        company_name: null,
-        position: null,
-        professional_id: null,
+        firm_name: null,
+        product_owner_ids: [1],
         created_at: '2025-01-01T10:00:00Z',
         updated_at: '2025-01-01T10:00:00Z'
       },
       {
-        id: '2',
-        client_group_id: 'cg-1',
-        relationship_type: 'Solicitor',
+        id: 2,
+        name: 'Professional1 Jones',
+        type: 'Professional',
+        relationship: 'Solicitor',
         status: 'Active',
-        first_name: 'Professional1',
-        last_name: 'Jones',
-        title: null,
         date_of_birth: null,
+        dependency: false,
         email: null,
-        mobile_phone: null,
-        home_phone: null,
-        work_phone: null,
-        address_line1: null,
-        address_line2: null,
-        city: null,
-        county: null,
-        postcode: null,
-        country: null,
+        phone_number: null,
+        address_id: null,
         notes: null,
-        company_name: 'Law Firm',
-        position: null,
-        professional_id: null,
+        firm_name: 'Law Firm',
+        product_owner_ids: [1],
         created_at: '2025-01-02T10:00:00Z',
         updated_at: '2025-01-02T10:00:00Z'
       },
       {
-        id: '3',
-        client_group_id: 'cg-1',
-        relationship_type: 'Child',
+        id: 3,
+        name: 'Personal2 Smith',
+        type: 'Personal',
+        relationship: 'Child',
         status: 'Active',
-        first_name: 'Personal2',
-        last_name: 'Smith',
-        title: null,
         date_of_birth: null,
+        dependency: false,
         email: null,
-        mobile_phone: null,
-        home_phone: null,
-        work_phone: null,
-        address_line1: null,
-        address_line2: null,
-        city: null,
-        county: null,
-        postcode: null,
-        country: null,
+        phone_number: null,
+        address_id: null,
         notes: null,
-        company_name: null,
-        position: null,
-        professional_id: null,
+        firm_name: null,
+        product_owner_ids: [1],
         created_at: '2025-01-03T10:00:00Z',
         updated_at: '2025-01-03T10:00:00Z'
       },
       {
-        id: '4',
-        client_group_id: 'cg-1',
-        relationship_type: 'Accountant',
+        id: 4,
+        name: 'Professional2 Brown',
+        type: 'Professional',
+        relationship: 'Accountant',
         status: 'Active',
-        first_name: 'Professional2',
-        last_name: 'Brown',
-        title: null,
         date_of_birth: null,
+        dependency: false,
         email: null,
-        mobile_phone: null,
-        home_phone: null,
-        work_phone: null,
-        address_line1: null,
-        address_line2: null,
-        city: null,
-        county: null,
-        postcode: null,
-        country: null,
+        phone_number: null,
+        address_id: null,
         notes: null,
-        company_name: 'Accounting Co',
-        position: null,
-        professional_id: null,
+        firm_name: 'Accounting Co',
+        product_owner_ids: [1],
         created_at: '2025-01-04T10:00:00Z',
         updated_at: '2025-01-04T10:00:00Z'
       }
     ];
 
     it('should filter personal relationships only', () => {
-      const filtered = filterRelationshipsByType(mockRelationships, 'personal');
+      const filtered = filterRelationshipsByType(mockRelationships, 'Personal');
 
       expect(filtered).toHaveLength(2);
-      expect(filtered[0].relationship_type).toBe('Spouse');
-      expect(filtered[1].relationship_type).toBe('Child');
+      expect(filtered[0].relationship).toBe('Spouse');
+      expect(filtered[1].relationship).toBe('Child');
     });
 
     it('should filter professional relationships only', () => {
-      const filtered = filterRelationshipsByType(mockRelationships, 'professional');
+      const filtered = filterRelationshipsByType(mockRelationships, 'Professional');
 
       expect(filtered).toHaveLength(2);
-      expect(filtered[0].relationship_type).toBe('Solicitor');
-      expect(filtered[1].relationship_type).toBe('Accountant');
+      expect(filtered[0].relationship).toBe('Solicitor');
+      expect(filtered[1].relationship).toBe('Accountant');
     });
 
     it('should handle empty array gracefully', () => {
-      const filtered = filterRelationshipsByType([], 'personal');
+      const filtered = filterRelationshipsByType([], 'Personal');
       expect(filtered).toEqual([]);
     });
 
     it('should recognize all personal types', () => {
       const personalTypes: SpecialRelationship[] = [
-        { ...mockRelationships[0], relationship_type: 'Partner' },
-        { ...mockRelationships[0], relationship_type: 'Parent' },
-        { ...mockRelationships[0], relationship_type: 'Sibling' },
-        { ...mockRelationships[0], relationship_type: 'Grandchild' },
-        { ...mockRelationships[0], relationship_type: 'Grandparent' },
-        { ...mockRelationships[0], relationship_type: 'Other Family' }
+        { ...mockRelationships[0], relationship: 'Partner' },
+        { ...mockRelationships[0], relationship: 'Parent' },
+        { ...mockRelationships[0], relationship: 'Sibling' },
+        { ...mockRelationships[0], relationship: 'Grandchild' },
+        { ...mockRelationships[0], relationship: 'Grandparent' },
+        { ...mockRelationships[0], relationship: 'Other Family' }
       ];
 
-      const filtered = filterRelationshipsByType(personalTypes, 'personal');
+      const filtered = filterRelationshipsByType(personalTypes, 'Personal');
       expect(filtered).toHaveLength(6);
     });
 
     it('should recognize all professional types', () => {
       const professionalTypes: SpecialRelationship[] = [
-        { ...mockRelationships[1], relationship_type: 'Doctor' },
-        { ...mockRelationships[1], relationship_type: 'Financial Advisor' },
-        { ...mockRelationships[1], relationship_type: 'Estate Planner' },
-        { ...mockRelationships[1], relationship_type: 'Other Professional' },
-        { ...mockRelationships[1], relationship_type: 'Guardian' },
-        { ...mockRelationships[1], relationship_type: 'Power of Attorney' }
+        { ...mockRelationships[1], relationship: 'Doctor' },
+        { ...mockRelationships[1], relationship: 'Financial Advisor' },
+        { ...mockRelationships[1], relationship: 'Estate Planner' },
+        { ...mockRelationships[1], relationship: 'Other Professional' },
+        { ...mockRelationships[1], relationship: 'Guardian' },
+        { ...mockRelationships[1], relationship: 'Power of Attorney' }
       ];
 
-      const filtered = filterRelationshipsByType(professionalTypes, 'professional');
+      const filtered = filterRelationshipsByType(professionalTypes, 'Professional');
       expect(filtered).toHaveLength(6);
     });
   });
 
   describe('getRelationshipCategory', () => {
-    it('should return "personal" for personal relationship types', () => {
-      expect(getRelationshipCategory('Spouse')).toBe('personal');
-      expect(getRelationshipCategory('Partner')).toBe('personal');
-      expect(getRelationshipCategory('Child')).toBe('personal');
-      expect(getRelationshipCategory('Parent')).toBe('personal');
-      expect(getRelationshipCategory('Sibling')).toBe('personal');
-      expect(getRelationshipCategory('Grandchild')).toBe('personal');
-      expect(getRelationshipCategory('Grandparent')).toBe('personal');
-      expect(getRelationshipCategory('Other Family')).toBe('personal');
+    it('should return "Personal" for personal relationship types', () => {
+      expect(getRelationshipCategory('Spouse')).toBe('Personal');
+      expect(getRelationshipCategory('Partner')).toBe('Personal');
+      expect(getRelationshipCategory('Child')).toBe('Personal');
+      expect(getRelationshipCategory('Parent')).toBe('Personal');
+      expect(getRelationshipCategory('Sibling')).toBe('Personal');
+      expect(getRelationshipCategory('Grandchild')).toBe('Personal');
+      expect(getRelationshipCategory('Grandparent')).toBe('Personal');
+      expect(getRelationshipCategory('Other Family')).toBe('Personal');
     });
 
-    it('should return "professional" for professional relationship types', () => {
-      expect(getRelationshipCategory('Accountant')).toBe('professional');
-      expect(getRelationshipCategory('Solicitor')).toBe('professional');
-      expect(getRelationshipCategory('Doctor')).toBe('professional');
-      expect(getRelationshipCategory('Financial Advisor')).toBe('professional');
-      expect(getRelationshipCategory('Estate Planner')).toBe('professional');
-      expect(getRelationshipCategory('Other Professional')).toBe('professional');
-      expect(getRelationshipCategory('Guardian')).toBe('professional');
-      expect(getRelationshipCategory('Power of Attorney')).toBe('professional');
+    it('should return "Professional" for professional relationship types', () => {
+      expect(getRelationshipCategory('Accountant')).toBe('Professional');
+      expect(getRelationshipCategory('Solicitor')).toBe('Professional');
+      expect(getRelationshipCategory('Doctor')).toBe('Professional');
+      expect(getRelationshipCategory('Financial Advisor')).toBe('Professional');
+      expect(getRelationshipCategory('Estate Planner')).toBe('Professional');
+      expect(getRelationshipCategory('Other Professional')).toBe('Professional');
+      expect(getRelationshipCategory('Guardian')).toBe('Professional');
+      expect(getRelationshipCategory('Power of Attorney')).toBe('Professional');
     });
   });
 
   describe('formatRelationshipName', () => {
-    it('should format name with title when available', () => {
+    it('should format name correctly', () => {
       const relationship: SpecialRelationship = {
-        id: '1',
-        client_group_id: 'cg-1',
-        relationship_type: 'Spouse',
+        id: 1,
+        name: 'John Doe',
+        type: 'Personal',
+        relationship: 'Spouse',
         status: 'Active',
-        first_name: 'John',
-        last_name: 'Doe',
-        title: 'Mr',
         date_of_birth: null,
+        dependency: false,
         email: null,
-        mobile_phone: null,
-        home_phone: null,
-        work_phone: null,
-        address_line1: null,
-        address_line2: null,
-        city: null,
-        county: null,
-        postcode: null,
-        country: null,
+        phone_number: null,
+        address_id: null,
         notes: null,
-        company_name: null,
-        position: null,
-        professional_id: null,
+        firm_name: null,
+        product_owner_ids: [1],
         created_at: '2025-01-01T10:00:00Z',
         updated_at: '2025-01-01T10:00:00Z'
       };
 
-      expect(formatRelationshipName(relationship)).toBe('Mr John Doe');
+      expect(formatRelationshipName(relationship)).toBe('John Doe');
     });
 
-    it('should format name without title when not available', () => {
+    it('should handle name with title', () => {
       const relationship: SpecialRelationship = {
-        id: '1',
-        client_group_id: 'cg-1',
-        relationship_type: 'Child',
+        id: 1,
+        name: 'Dr Jane Smith',
+        type: 'Professional',
+        relationship: 'Doctor',
         status: 'Active',
-        first_name: 'Jane',
-        last_name: 'Smith',
-        title: null,
         date_of_birth: null,
+        dependency: false,
         email: null,
-        mobile_phone: null,
-        home_phone: null,
-        work_phone: null,
-        address_line1: null,
-        address_line2: null,
-        city: null,
-        county: null,
-        postcode: null,
-        country: null,
+        phone_number: null,
+        address_id: null,
         notes: null,
-        company_name: null,
-        position: null,
-        professional_id: null,
+        firm_name: null,
+        product_owner_ids: [1],
         created_at: '2025-01-01T10:00:00Z',
         updated_at: '2025-01-01T10:00:00Z'
       };
 
-      expect(formatRelationshipName(relationship)).toBe('Jane Smith');
+      expect(formatRelationshipName(relationship)).toBe('Dr Jane Smith');
     });
 
-    it('should handle missing last name', () => {
+    it('should handle empty name', () => {
       const relationship: SpecialRelationship = {
-        id: '1',
-        client_group_id: 'cg-1',
-        relationship_type: 'Other Family',
+        id: 1,
+        name: '',
+        type: 'Personal',
+        relationship: 'Other Family',
         status: 'Active',
-        first_name: 'Bob',
-        last_name: '',
-        title: null,
         date_of_birth: null,
+        dependency: false,
         email: null,
-        mobile_phone: null,
-        home_phone: null,
-        work_phone: null,
-        address_line1: null,
-        address_line2: null,
-        city: null,
-        county: null,
-        postcode: null,
-        country: null,
+        phone_number: null,
+        address_id: null,
         notes: null,
-        company_name: null,
-        position: null,
-        professional_id: null,
+        firm_name: null,
+        product_owner_ids: [1],
         created_at: '2025-01-01T10:00:00Z',
         updated_at: '2025-01-01T10:00:00Z'
       };
 
-      expect(formatRelationshipName(relationship)).toBe('Bob');
+      expect(formatRelationshipName(relationship)).toBe('');
     });
   });
 });

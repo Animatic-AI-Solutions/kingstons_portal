@@ -49,9 +49,9 @@ const GC_TIME = 10 * 60 * 1000; // 10 minutes
  * // Invalidate all special relationships queries
  * queryClient.invalidateQueries({ queryKey: specialRelationshipsKeys.all });
  *
- * // Invalidate specific client group
+ * // Invalidate specific product owner
  * queryClient.invalidateQueries({
- *   queryKey: specialRelationshipsKeys.byClientGroup('cg-123')
+ *   queryKey: specialRelationshipsKeys.byProductOwner(123)
  * });
  * ```
  */
@@ -59,10 +59,10 @@ export const specialRelationshipsKeys = {
   /** Base key for all special relationships queries */
   all: ['specialRelationships'] as const,
   /**
-   * Key for client group-specific queries
-   * @param clientGroupId - The client group ID
+   * Key for product owner-specific queries
+   * @param productOwnerId - The product owner ID
    */
-  byClientGroup: (clientGroupId: string) => ['specialRelationships', clientGroupId] as const,
+  byProductOwner: (productOwnerId: number) => ['specialRelationships', productOwnerId] as const,
 };
 
 // =============================================================================
@@ -159,15 +159,15 @@ function invalidateAllQueries(queryClient: QueryClient): void {
 // =============================================================================
 
 /**
- * Query hook for fetching special relationships for a client group.
+ * Query hook for fetching special relationships for a product owner.
  * Supports optional filtering by relationship type and status.
  *
  * Features:
  * - Automatic caching with 5-minute stale time
- * - Disabled when clientGroupId is null/undefined
+ * - Disabled when productOwnerId is null/undefined
  * - No refetch on window focus (prevents unnecessary API calls)
  *
- * @param clientGroupId - Client group ID (query disabled if null/undefined)
+ * @param productOwnerId - Product owner ID (query disabled if null/undefined)
  * @param options - Optional configuration
  * @param options.filters - Filters for relationship type and/or status
  * @returns React Query result with relationships data, loading, and error states
@@ -175,11 +175,11 @@ function invalidateAllQueries(queryClient: QueryClient): void {
  * @example
  * ```tsx
  * // Fetch all relationships
- * const { data, isLoading, error } = useSpecialRelationships('cg-123');
+ * const { data, isLoading, error } = useSpecialRelationships(123);
  *
  * // Fetch with filters
- * const { data } = useSpecialRelationships('cg-123', {
- *   filters: { type: 'personal', status: 'Active' }
+ * const { data } = useSpecialRelationships(123, {
+ *   filters: { type: 'Personal', status: 'Active' }
  * });
  *
  * // Disabled query (doesn't fetch)
@@ -187,13 +187,13 @@ function invalidateAllQueries(queryClient: QueryClient): void {
  * ```
  */
 export function useSpecialRelationships(
-  clientGroupId: string | null | undefined,
+  productOwnerId: number | null | undefined,
   options?: { filters?: SpecialRelationshipFilters }
 ) {
   return useQuery({
-    queryKey: specialRelationshipsKeys.byClientGroup(clientGroupId || ''),
-    queryFn: () => fetchSpecialRelationships(clientGroupId!, options?.filters),
-    enabled: !!clientGroupId,
+    queryKey: specialRelationshipsKeys.byProductOwner(productOwnerId || 0),
+    queryFn: () => fetchSpecialRelationships(productOwnerId!, options?.filters),
+    enabled: !!productOwnerId,
     staleTime: STALE_TIME,
     gcTime: GC_TIME,
     refetchOnWindowFocus: false,
@@ -219,11 +219,12 @@ export function useSpecialRelationships(
  *
  * const handleCreate = () => {
  *   createMutation.mutate({
- *     client_group_id: 'cg-123',
- *     relationship_type: 'Spouse',
+ *     product_owner_ids: [123],
+ *     name: 'Jane Doe',
+ *     type: 'Personal',
+ *     relationship: 'Spouse',
  *     status: 'Active',
- *     first_name: 'Jane',
- *     last_name: 'Doe',
+ *     dependency: false,
  *   }, {
  *     onSuccess: (newRelationship) => {
  *       console.log('Created:', newRelationship);
@@ -258,12 +259,12 @@ export function useCreateSpecialRelationship() {
  * ```tsx
  * const updateMutation = useUpdateSpecialRelationship();
  *
- * const handleUpdate = (relationshipId: string) => {
+ * const handleUpdate = (relationshipId: number) => {
  *   updateMutation.mutate({
  *     id: relationshipId,
  *     data: {
  *       email: 'newemail@example.com',
- *       mobile_phone: '+44-7700-900001',
+ *       phone_number: '+44-7700-900001',
  *     }
  *   }, {
  *     onSuccess: (updated) => {
@@ -280,7 +281,7 @@ export function useUpdateSpecialRelationship() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateSpecialRelationshipData }) =>
+    mutationFn: ({ id, data }: { id: number; data: UpdateSpecialRelationshipData }) =>
       updateSpecialRelationship(id, data),
     onMutate: async ({ id, data }) => {
       // Perform optimistic update with helper function
@@ -314,7 +315,7 @@ export function useUpdateSpecialRelationship() {
  * ```tsx
  * const updateStatusMutation = useUpdateSpecialRelationshipStatus();
  *
- * const handleStatusChange = (relationshipId: string) => {
+ * const handleStatusChange = (relationshipId: number) => {
  *   updateStatusMutation.mutate({
  *     id: relationshipId,
  *     status: 'Inactive',
@@ -330,7 +331,7 @@ export function useUpdateSpecialRelationshipStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: RelationshipStatus }) =>
+    mutationFn: ({ id, status }: { id: number; status: RelationshipStatus }) =>
       updateSpecialRelationshipStatus(id, status),
     onMutate: async ({ id, status }) => {
       // Perform optimistic update with helper function
@@ -350,13 +351,12 @@ export function useUpdateSpecialRelationshipStatus() {
 }
 
 /**
- * Mutation hook for soft-deleting special relationships.
+ * Mutation hook for deleting special relationships (hard delete - permanent removal).
  *
  * Features:
  * - Optimistic updates for immediate UI feedback (removes from list instantly)
  * - Automatic rollback on error (restores deleted item)
  * - Cache invalidation after mutation settles
- * - Supports undo pattern (5-second window implemented in calling component)
  *
  * @returns React Query mutation result with mutate/mutateAsync functions
  *
@@ -364,11 +364,10 @@ export function useUpdateSpecialRelationshipStatus() {
  * ```tsx
  * const deleteMutation = useDeleteSpecialRelationship();
  *
- * const handleDelete = (relationshipId: string) => {
+ * const handleDelete = (relationshipId: number) => {
  *   deleteMutation.mutate(relationshipId, {
  *     onSuccess: () => {
- *       // Show undo toast notification (5-second window)
- *       showUndoNotification();
+ *       console.log('Relationship deleted successfully');
  *     },
  *     onError: (error) => {
  *       console.error('Delete failed:', error);
@@ -383,7 +382,7 @@ export function useDeleteSpecialRelationship() {
 
   return useMutation({
     mutationFn: deleteSpecialRelationship,
-    onMutate: async (id: string) => {
+    onMutate: async (id: number) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({
         queryKey: specialRelationshipsKeys.all,

@@ -205,7 +205,7 @@ describe('EditSpecialRelationshipModal Component', () => {
 
     it('pre-fills relationship type field', () => {
       const relationship = createMockPersonalRelationship({
-        relationship_type: 'Spouse',
+        relationship: 'Spouse',
       });
 
       render(
@@ -239,7 +239,7 @@ describe('EditSpecialRelationshipModal Component', () => {
 
     it('pre-fills phone number field', () => {
       const relationship = createMockPersonalRelationship({
-        mobile_phone: '01234567890',
+        phone_number: '01234567890',
       });
 
       render(
@@ -274,7 +274,7 @@ describe('EditSpecialRelationshipModal Component', () => {
 
     it('pre-fills dependency checkbox for personal relationships', () => {
       const relationship = createMockPersonalRelationship({
-        is_dependent: true,
+        dependency: true,
       });
 
       render(
@@ -286,7 +286,7 @@ describe('EditSpecialRelationshipModal Component', () => {
         { wrapper }
       );
 
-      const dependencyCheckbox = screen.getByLabelText(/is dependent/i);
+      const dependencyCheckbox = screen.getByLabelText(/dependent/i);
       expect(dependencyCheckbox).toBeChecked();
     });
 
@@ -349,7 +349,7 @@ describe('EditSpecialRelationshipModal Component', () => {
       await waitFor(() => {
         expect(mockMutateAsync).toHaveBeenCalledWith({
           id: 'rel-001',
-          data: expect.objectContaining({
+          updates: expect.objectContaining({
             email: 'new@example.com',
           }),
         });
@@ -362,10 +362,10 @@ describe('EditSpecialRelationshipModal Component', () => {
         id: 'rel-001',
         name: 'John Smith',
         email: 'john@example.com',
-        mobile_phone: '01234567890',
+        phone_number: '01234567890',
       });
 
-      mockMutateAsync.mockResolvedValueOnce({ ...relationship, mobile_phone: '09876543210' });
+      mockMutateAsync.mockResolvedValueOnce({ ...relationship, phone_number: '09876543210' });
 
       render(
         <EditSpecialRelationshipModal
@@ -385,9 +385,9 @@ describe('EditSpecialRelationshipModal Component', () => {
 
       await waitFor(() => {
         expect(mockMutateAsync).toHaveBeenCalledWith({
-          id: 'rel-001',
-          data: expect.objectContaining({
-            mobile_phone: '09876543210',
+          id: expect.any(String),
+          updates: expect.objectContaining({
+            phone_number: '09876543210',
           }),
         });
       });
@@ -728,6 +728,15 @@ describe('EditSpecialRelationshipModal Component', () => {
       // Cancel
       await user.click(screen.getByRole('button', { name: /cancel/i }));
 
+      // Close modal
+      rerender(
+        <EditSpecialRelationshipModal
+          isOpen={false}
+          onClose={mockOnClose}
+          relationship={relationship}
+        />
+      );
+
       // Reopen modal
       rerender(
         <EditSpecialRelationshipModal
@@ -738,7 +747,9 @@ describe('EditSpecialRelationshipModal Component', () => {
       );
 
       // Original data should be restored
-      expect(screen.getByDisplayValue('Original Name')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByDisplayValue('Original Name')).toBeInTheDocument();
+      });
     });
   });
 
@@ -808,10 +819,10 @@ describe('EditSpecialRelationshipModal Component', () => {
     it('handles relationship with minimal data', () => {
       const relationship = createMockPersonalRelationship({
         name: 'Minimal',
-        relationship_type: 'Other',
+        relationship: 'Other',
         status: 'Active',
         email: null,
-        mobile_phone: null,
+        phone_number: null,
         date_of_birth: null,
       });
 
@@ -832,11 +843,11 @@ describe('EditSpecialRelationshipModal Component', () => {
     it('handles relationship with all optional fields filled', () => {
       const relationship = createMockPersonalRelationship({
         name: 'Complete Person',
-        relationship_type: 'Spouse',
+        relationship: 'Spouse',
         email: 'complete@example.com',
-        mobile_phone: '01234567890',
+        phone_number: '01234567890',
         date_of_birth: '1980-01-01',
-        is_dependent: true,
+        dependency: true,
         status: 'Active',
       });
 
@@ -852,7 +863,7 @@ describe('EditSpecialRelationshipModal Component', () => {
       expect(screen.getByDisplayValue('Complete Person')).toBeInTheDocument();
       expect(screen.getByDisplayValue('complete@example.com')).toBeInTheDocument();
       expect(screen.getByDisplayValue('01234567890')).toBeInTheDocument();
-      expect(screen.getByLabelText(/is dependent/i)).toBeChecked();
+      expect(screen.getByLabelText(/dependent/i)).toBeChecked();
     });
 
     it('handles deceased personal relationship', () => {
@@ -900,7 +911,7 @@ describe('EditSpecialRelationshipModal Component', () => {
       await waitFor(() => {
         expect(mockMutateAsync).toHaveBeenCalledWith({
           id: 'rel-001',
-          data: expect.objectContaining({
+          updates: expect.objectContaining({
             status: 'Deceased',
           }),
         });

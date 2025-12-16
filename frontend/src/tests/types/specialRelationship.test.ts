@@ -9,7 +9,8 @@
 import * as SpecialRelationshipTypes from '@/types/specialRelationship';
 
 import type {
-  RelationshipType,
+  Relationship,
+  RelationshipCategory,
   RelationshipStatus,
   SpecialRelationship,
   SpecialRelationshipFormData
@@ -20,15 +21,27 @@ describe('Special Relationship Type Definitions', () => {
     // This test verifies the module exists and exports the right types
     expect(SpecialRelationshipTypes).toBeDefined();
     // TypeScript will fail compilation if these types don't exist
-    type RelationshipTypeCheck = RelationshipType;
+    type RelationshipCheck = Relationship;
+    type RelationshipCategoryCheck = RelationshipCategory;
     type RelationshipStatusCheck = RelationshipStatus;
     type SpecialRelationshipCheck = SpecialRelationship;
     type SpecialRelationshipFormDataCheck = SpecialRelationshipFormData;
   });
 
-  describe('RelationshipType', () => {
-    it('should accept all 16 valid relationship type values', () => {
-      const validTypes: RelationshipType[] = [
+  describe('RelationshipCategory', () => {
+    it('should accept Personal and Professional values', () => {
+      const validCategories: RelationshipCategory[] = ['Personal', 'Professional'];
+
+      validCategories.forEach(category => {
+        const testCategory: RelationshipCategory = category;
+        expect(testCategory).toBe(category);
+      });
+    });
+  });
+
+  describe('Relationship', () => {
+    it('should accept all 16 valid relationship values', () => {
+      const validRelationships: Relationship[] = [
         'Spouse',
         'Partner',
         'Child',
@@ -48,14 +61,14 @@ describe('Special Relationship Type Definitions', () => {
       ];
 
       // Type assertion - if this compiles, the union type is correct
-      validTypes.forEach(type => {
-        const testType: RelationshipType = type;
-        expect(testType).toBe(type);
+      validRelationships.forEach(rel => {
+        const testRel: Relationship = rel;
+        expect(testRel).toBe(rel);
       });
     });
 
-    it('should categorize personal relationship types correctly', () => {
-      const personalTypes: RelationshipType[] = [
+    it('should categorize personal relationships correctly', () => {
+      const personalRelationships: Relationship[] = [
         'Spouse',
         'Partner',
         'Child',
@@ -66,14 +79,14 @@ describe('Special Relationship Type Definitions', () => {
         'Other Family'
       ];
 
-      personalTypes.forEach(type => {
-        const testType: RelationshipType = type;
-        expect(typeof testType).toBe('string');
+      personalRelationships.forEach(rel => {
+        const testRel: Relationship = rel;
+        expect(typeof testRel).toBe('string');
       });
     });
 
-    it('should categorize professional relationship types correctly', () => {
-      const professionalTypes: RelationshipType[] = [
+    it('should categorize professional relationships correctly', () => {
+      const professionalRelationships: Relationship[] = [
         'Accountant',
         'Solicitor',
         'Doctor',
@@ -84,9 +97,9 @@ describe('Special Relationship Type Definitions', () => {
         'Power of Attorney'
       ];
 
-      professionalTypes.forEach(type => {
-        const testType: RelationshipType = type;
-        expect(typeof testType).toBe('string');
+      professionalRelationships.forEach(rel => {
+        const testRel: Relationship = rel;
+        expect(typeof testRel).toBe('string');
       });
     });
   });
@@ -116,135 +129,121 @@ describe('Special Relationship Type Definitions', () => {
   describe('SpecialRelationship Interface', () => {
     it('should define complete relationship structure with all required fields', () => {
       const mockRelationship: SpecialRelationship = {
-        id: 'rel-123',
-        client_group_id: 'cg-456',
-        relationship_type: 'Spouse',
+        id: 123,
+        name: 'John Doe',
+        type: 'Personal',
+        relationship: 'Spouse',
         status: 'Active',
-        first_name: 'John',
-        last_name: 'Doe',
-        title: 'Mr',
         date_of_birth: '1980-05-15',
+        dependency: false,
         email: 'john.doe@example.com',
-        mobile_phone: '+44 7700 900000',
-        home_phone: '+44 20 7946 0958',
-        work_phone: null,
-        address_line1: '123 Main St',
-        address_line2: 'Apt 4B',
-        city: 'London',
-        county: 'Greater London',
-        postcode: 'SW1A 1AA',
-        country: 'United Kingdom',
+        phone_number: '+44 7700 900000',
+        address_id: 456,
         notes: 'Primary emergency contact',
-        company_name: null,
-        position: null,
-        professional_id: null,
+        firm_name: null,
+        product_owner_ids: [1, 2],
         created_at: '2025-01-01T10:00:00Z',
         updated_at: '2025-01-01T10:00:00Z'
       };
 
       expect(mockRelationship).toBeDefined();
-      expect(mockRelationship.id).toBe('rel-123');
-      expect(mockRelationship.relationship_type).toBe('Spouse');
+      expect(mockRelationship.id).toBe(123);
+      expect(mockRelationship.name).toBe('John Doe');
+      expect(mockRelationship.type).toBe('Personal');
+      expect(mockRelationship.relationship).toBe('Spouse');
       expect(mockRelationship.status).toBe('Active');
-      expect(mockRelationship.first_name).toBe('John');
     });
 
     it('should allow professional-specific fields for professional relationships', () => {
       const professionalRelationship: SpecialRelationship = {
-        id: 'rel-789',
-        client_group_id: 'cg-456',
-        relationship_type: 'Solicitor',
+        id: 789,
+        name: 'Ms Jane Smith',
+        type: 'Professional',
+        relationship: 'Solicitor',
         status: 'Active',
-        first_name: 'Jane',
-        last_name: 'Smith',
-        title: 'Ms',
         date_of_birth: null,
+        dependency: false,
         email: 'jane.smith@lawfirm.com',
-        mobile_phone: null,
-        home_phone: null,
-        work_phone: '+44 20 7946 0123',
-        address_line1: '456 Legal Ave',
-        address_line2: null,
-        city: 'London',
-        county: null,
-        postcode: 'EC1A 1BB',
-        country: 'United Kingdom',
+        phone_number: '+44 20 7946 0123',
+        address_id: 100,
         notes: 'Handles estate planning',
-        company_name: 'Smith & Associates Law',
-        position: 'Senior Partner',
-        professional_id: 'SRA-123456',
+        firm_name: 'Smith & Associates Law',
+        product_owner_ids: [1, 2],
         created_at: '2025-01-01T11:00:00Z',
         updated_at: '2025-01-01T11:00:00Z'
       };
 
-      expect(professionalRelationship.company_name).toBe('Smith & Associates Law');
-      expect(professionalRelationship.position).toBe('Senior Partner');
-      expect(professionalRelationship.professional_id).toBe('SRA-123456');
+      expect(professionalRelationship.firm_name).toBe('Smith & Associates Law');
+      expect(professionalRelationship.type).toBe('Professional');
+      expect(professionalRelationship.relationship).toBe('Solicitor');
     });
 
     it('should allow null values for optional fields', () => {
       const minimalRelationship: SpecialRelationship = {
-        id: 'rel-001',
-        client_group_id: 'cg-001',
-        relationship_type: 'Child',
+        id: 1,
+        name: 'Alice Johnson',
+        type: 'Personal',
+        relationship: 'Child',
         status: 'Active',
-        first_name: 'Alice',
-        last_name: 'Johnson',
-        title: null,
         date_of_birth: null,
+        dependency: false,
         email: null,
-        mobile_phone: null,
-        home_phone: null,
-        work_phone: null,
-        address_line1: null,
-        address_line2: null,
-        city: null,
-        county: null,
-        postcode: null,
-        country: null,
+        phone_number: null,
+        address_id: null,
         notes: null,
-        company_name: null,
-        position: null,
-        professional_id: null,
+        firm_name: null,
+        product_owner_ids: [],
         created_at: '2025-01-01T12:00:00Z',
         updated_at: '2025-01-01T12:00:00Z'
       };
 
-      expect(minimalRelationship.first_name).toBe('Alice');
+      expect(minimalRelationship.name).toBe('Alice Johnson');
       expect(minimalRelationship.email).toBeNull();
       expect(minimalRelationship.date_of_birth).toBeNull();
+    });
+
+    it('should support dependency field for personal relationships', () => {
+      const dependentRelationship: SpecialRelationship = {
+        id: 10,
+        name: 'Young Child',
+        type: 'Personal',
+        relationship: 'Child',
+        status: 'Active',
+        date_of_birth: '2020-01-01',
+        dependency: true,
+        email: null,
+        phone_number: null,
+        address_id: 1,
+        notes: null,
+        firm_name: null,
+        product_owner_ids: [1],
+        created_at: '2025-01-01T10:00:00Z',
+        updated_at: '2025-01-01T10:00:00Z'
+      };
+
+      expect(dependentRelationship.dependency).toBe(true);
     });
   });
 
   describe('SpecialRelationshipFormData Interface', () => {
     it('should define form data structure without id and timestamps', () => {
       const formData: SpecialRelationshipFormData = {
-        client_group_id: 'cg-789',
-        relationship_type: 'Parent',
+        name: 'Robert Williams',
+        type: 'Personal',
+        relationship: 'Parent',
         status: 'Active',
-        first_name: 'Robert',
-        last_name: 'Williams',
-        title: 'Dr',
         date_of_birth: '1955-03-20',
+        dependency: false,
         email: 'robert.williams@example.com',
-        mobile_phone: '+44 7700 900111',
-        home_phone: null,
-        work_phone: null,
-        address_line1: '789 Oak Road',
-        address_line2: null,
-        city: 'Manchester',
-        county: 'Greater Manchester',
-        postcode: 'M1 1AA',
-        country: 'United Kingdom',
+        phone_number: '+44 7700 900111',
+        address_id: 789,
         notes: 'Retired doctor',
-        company_name: null,
-        position: null,
-        professional_id: null
+        firm_name: null
       };
 
       expect(formData).toBeDefined();
-      expect(formData.first_name).toBe('Robert');
-      expect(formData.relationship_type).toBe('Parent');
+      expect(formData.name).toBe('Robert Williams');
+      expect(formData.relationship).toBe('Parent');
       // Form data should not have id, created_at, updated_at
       expect('id' in formData).toBe(false);
       expect('created_at' in formData).toBe(false);
@@ -253,39 +252,30 @@ describe('Special Relationship Type Definitions', () => {
 
     it('should be compatible with SpecialRelationship interface structure', () => {
       const formData: SpecialRelationshipFormData = {
-        client_group_id: 'cg-100',
-        relationship_type: 'Accountant',
+        name: 'Sarah Johnson',
+        type: 'Professional',
+        relationship: 'Accountant',
         status: 'Active',
-        first_name: 'Sarah',
-        last_name: 'Johnson',
-        title: 'Mrs',
         date_of_birth: null,
+        dependency: false,
         email: 'sarah@accountingfirm.com',
-        mobile_phone: null,
-        home_phone: null,
-        work_phone: '+44 20 7946 0456',
-        address_line1: '100 Finance St',
-        address_line2: null,
-        city: 'Birmingham',
-        county: null,
-        postcode: 'B1 1AA',
-        country: 'United Kingdom',
+        phone_number: '+44 20 7946 0456',
+        address_id: 100,
         notes: null,
-        company_name: 'Johnson Accounting Ltd',
-        position: 'Director',
-        professional_id: 'ACCA-789012'
+        firm_name: 'Johnson Accounting Ltd'
       };
 
       // Should be able to create SpecialRelationship from form data by adding id and timestamps
       const fullRelationship: SpecialRelationship = {
         ...formData,
-        id: 'rel-new',
+        id: 1,
+        product_owner_ids: [1],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
 
-      expect(fullRelationship.first_name).toBe(formData.first_name);
-      expect(fullRelationship.company_name).toBe(formData.company_name);
+      expect(fullRelationship.name).toBe(formData.name);
+      expect(fullRelationship.firm_name).toBe(formData.firm_name);
     });
   });
 });

@@ -5,8 +5,8 @@
  * Includes sortable columns, responsive design, and state management.
  *
  * Features:
- * - Columns: First Name, Last Name, Relationship, Company, Position, Email, Phone, Status, Actions
- * - Sortable by: First Name, Last Name, Company, Position, Status
+ * - Columns: First Name, Last Name, Relationship, Company, Email, Phone, Status, Actions
+ * - Sortable by: First Name, Last Name, Company, Status
  * - Responsive: Hide Email/Phone on tablet (768-1023px)
  * - Empty/Loading/Error states
  * - Product owner count display
@@ -43,7 +43,6 @@ import {
 import {
   sortRelationships,
   getEffectiveSortConfig,
-  formatPhoneNumber,
   formatProductOwnerCount,
 } from '@/components/relationshipTable';
 
@@ -175,12 +174,6 @@ const ProfessionalRelationshipsTable: React.FC<ProfessionalRelationshipsTablePro
               sortConfig={sortConfig}
               onSort={handleSort}
             />
-            <TableSortHeader
-              label={COLUMN_LABELS.position}
-              column="position"
-              sortConfig={sortConfig}
-              onSort={handleSort}
-            />
             <th
               scope="col"
               className={`${HEADER_CLASSES.base} ${HEADER_CLASSES.hiddenOnTablet}`}
@@ -206,8 +199,13 @@ const ProfessionalRelationshipsTable: React.FC<ProfessionalRelationshipsTablePro
         </thead>
         <tbody className={TABLE_CLASSES.tbody}>
           {sortedRelationships.map((relationship) => {
-            const phone = formatPhoneNumber(relationship);
-            const productOwnerCount = (relationship as any).product_owner_count;
+            const phone = relationship.phone_number || EMPTY_VALUE_PLACEHOLDER;
+            const productOwnerCount = relationship.product_owner_ids?.length;
+
+            // Split name into first and last name
+            const nameParts = (relationship.name || '').trim().split(/\s+/);
+            const firstName = nameParts[0] || EMPTY_VALUE_PLACEHOLDER;
+            const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : EMPTY_VALUE_PLACEHOLDER;
 
             return (
               <tr
@@ -216,10 +214,10 @@ const ProfessionalRelationshipsTable: React.FC<ProfessionalRelationshipsTablePro
                 className={ROW_CLASSES.base}
               >
                 <td className={CELL_CLASSES.base}>
-                  {relationship.first_name || EMPTY_VALUE_PLACEHOLDER}
+                  {firstName}
                 </td>
                 <td className={CELL_CLASSES.base}>
-                  {relationship.last_name || EMPTY_VALUE_PLACEHOLDER}
+                  {lastName}
                   {productOwnerCount !== undefined && (
                     <div className="text-xs text-gray-500 mt-1">
                       {formatProductOwnerCount(productOwnerCount)}
@@ -227,13 +225,10 @@ const ProfessionalRelationshipsTable: React.FC<ProfessionalRelationshipsTablePro
                   )}
                 </td>
                 <td className={CELL_CLASSES.base}>
-                  {relationship.relationship_type}
+                  {relationship.relationship}
                 </td>
                 <td className={CELL_CLASSES.base}>
-                  {relationship.company_name || EMPTY_VALUE_PLACEHOLDER}
-                </td>
-                <td className={CELL_CLASSES.base}>
-                  {relationship.position || EMPTY_VALUE_PLACEHOLDER}
+                  {relationship.firm_name || EMPTY_VALUE_PLACEHOLDER}
                 </td>
                 <td className={CELL_CLASSES.hiddenOnTablet}>
                   {relationship.email || EMPTY_VALUE_PLACEHOLDER}
@@ -258,14 +253,14 @@ const ProfessionalRelationshipsTable: React.FC<ProfessionalRelationshipsTablePro
                     <button
                       onClick={() => onEdit(relationship)}
                       className={ACTION_CLASSES.editButton}
-                      aria-label={`Edit ${relationship.first_name} ${relationship.last_name}`}
+                      aria-label={`Edit ${relationship.name}`}
                     >
                       <Edit2 size={16} />
                     </button>
                     <button
                       onClick={() => onDelete(relationship)}
                       className={ACTION_CLASSES.deleteButton}
-                      aria-label={`Delete ${relationship.first_name} ${relationship.last_name}`}
+                      aria-label={`Delete ${relationship.name}`}
                     >
                       <Trash2 size={16} />
                     </button>

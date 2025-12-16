@@ -44,7 +44,6 @@ import {
 import {
   sortRelationships,
   getEffectiveSortConfig,
-  formatPhoneNumber,
 } from '@/components/relationshipTable';
 
 // ==========================
@@ -208,7 +207,12 @@ const PersonalRelationshipsTable: React.FC<PersonalRelationshipsTableProps> = ({
             const dob = relationship.date_of_birth
               ? format(new Date(relationship.date_of_birth), 'dd/MM/yyyy')
               : EMPTY_VALUE_PLACEHOLDER;
-            const phone = formatPhoneNumber(relationship);
+            const phone = relationship.phone_number || EMPTY_VALUE_PLACEHOLDER;
+
+            // Split name into first and last name
+            const nameParts = (relationship.name || '').trim().split(/\s+/);
+            const firstName = nameParts[0] || EMPTY_VALUE_PLACEHOLDER;
+            const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : EMPTY_VALUE_PLACEHOLDER;
 
             return (
               <tr
@@ -217,13 +221,13 @@ const PersonalRelationshipsTable: React.FC<PersonalRelationshipsTableProps> = ({
                 className={ROW_CLASSES.base}
               >
                 <td className={CELL_CLASSES.base}>
-                  {relationship.first_name || EMPTY_VALUE_PLACEHOLDER}
+                  {firstName}
                 </td>
                 <td className={CELL_CLASSES.base}>
-                  {relationship.last_name || EMPTY_VALUE_PLACEHOLDER}
+                  {lastName}
                 </td>
                 <td className={CELL_CLASSES.base}>
-                  {relationship.relationship_type}
+                  {relationship.relationship}
                 </td>
                 <td className={CELL_CLASSES.hiddenOnTablet}>
                   {dob}
@@ -254,14 +258,14 @@ const PersonalRelationshipsTable: React.FC<PersonalRelationshipsTableProps> = ({
                     <button
                       onClick={() => onEdit(relationship)}
                       className={ACTION_CLASSES.editButton}
-                      aria-label={`Edit ${relationship.first_name} ${relationship.last_name}`}
+                      aria-label={`Edit ${relationship.name}`}
                     >
                       <Edit2 size={16} />
                     </button>
                     <button
                       onClick={() => onDelete(relationship)}
                       className={ACTION_CLASSES.deleteButton}
-                      aria-label={`Delete ${relationship.first_name} ${relationship.last_name}`}
+                      aria-label={`Delete ${relationship.name}`}
                     >
                       <Trash2 size={16} />
                     </button>

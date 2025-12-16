@@ -1,5 +1,5 @@
 /**
- * CreateSpecialRelationshipModal Component (Cycle 7)
+ * CreateSpecialRelationshipModal Component (Phase 4 - Refactored)
  *
  * Modal dialog for creating a new special relationship (personal or professional).
  * Provides full form validation, error handling, and accessibility features.
@@ -13,6 +13,8 @@
  * - Automatic focus management for validation errors
  * - Form reset on modal close
  * - API error display
+ * - Support for new schema with type + relationship fields
+ * - Product owner IDs instead of client group ID
  *
  * Accessibility:
  * - Uses ModalShell for focus trap and keyboard navigation
@@ -26,13 +28,13 @@
  * - useCreateSpecialRelationship: Manages API mutation
  */
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ModalShell from './ModalShell';
 import RelationshipFormFields from './RelationshipFormFields';
 import { useRelationshipValidation, RelationshipFormData } from '@/hooks/useRelationshipValidation';
 import { focusFirstError, detectChangedField } from '@/hooks/useRelationshipFormHandlers';
 import { useCreateSpecialRelationship } from '@/hooks/useSpecialRelationships';
-import { SpecialRelationship, RelationshipStatus } from '@/types/specialRelationship';
+import { SpecialRelationship, RelationshipCategory } from '@/types/specialRelationship';
 
 /**
  * Props for CreateSpecialRelationshipModal component
@@ -42,10 +44,10 @@ export interface CreateSpecialRelationshipModalProps {
   isOpen: boolean;
   /** Callback invoked when modal should close */
   onClose: () => void;
-  /** Client group ID to associate the new relationship with */
-  clientGroupId: string;
-  /** Whether this is a professional relationship (affects available fields) */
-  isProfessional: boolean;
+  /** Product owner IDs to associate the relationship with */
+  productOwnerIds: number[];
+  /** Initial relationship type (Personal or Professional) */
+  initialType?: RelationshipCategory;
   /** Optional callback invoked after successful creation with the new relationship */
   onSuccess?: (relationship: SpecialRelationship) => void;
 }
@@ -53,21 +55,23 @@ export interface CreateSpecialRelationshipModalProps {
 const CreateSpecialRelationshipModal: React.FC<CreateSpecialRelationshipModalProps> = ({
   isOpen,
   onClose,
-  clientGroupId,
-  isProfessional,
+  productOwnerIds,
+  initialType = 'Personal',
   onSuccess,
 }) => {
   // Form state
   const [formData, setFormData] = useState<RelationshipFormData>({
     name: '',
-    relationship_type: '',
+    type: initialType,
+    relationship: '',
     status: 'Active',
-    date_of_birth: '',
-    email: '',
-    phone_number: '',
-    is_dependent: false,          // Default false for personal relationships
-    relationship_with: [],         // Default empty array for professional relationships
-    is_professional: isProfessional,
+    date_of_birth: null,
+    email: null,
+    phone_number: null,
+    dependency: false,
+    firm_name: null,
+    address_id: null,
+    notes: null,
   });
 
   // API error state
@@ -84,19 +88,21 @@ const CreateSpecialRelationshipModal: React.FC<CreateSpecialRelationshipModalPro
     if (!isOpen) {
       setFormData({
         name: '',
-        relationship_type: '',
+        type: initialType,
+        relationship: '',
         status: 'Active',
-        date_of_birth: '',
-        email: '',
-        phone_number: '',
-        is_dependent: false,
-        relationship_with: [],
-        is_professional: isProfessional,
+        date_of_birth: null,
+        email: null,
+        phone_number: null,
+        dependency: false,
+        firm_name: null,
+        address_id: null,
+        notes: null,
       });
       clearAllErrors();
       setApiError('');
     }
-  }, [isOpen, clearAllErrors, isProfessional]);
+  }, [isOpen, clearAllErrors, initialType]);
 
   // Focus first invalid field when errors change
   useEffect(() => {
@@ -145,22 +151,20 @@ const CreateSpecialRelationshipModal: React.FC<CreateSpecialRelationshipModalPro
    */
   const prepareCreateData = useCallback(() => {
     return {
-      client_group_id: clientGroupId,
+      product_owner_ids: productOwnerIds,
       name: formData.name,
-      relationship_type: formData.relationship_type,
+      type: formData.type,
+      relationship: formData.relationship,
       status: formData.status,
-      is_professional: isProfessional,
       ...(formData.date_of_birth && { date_of_birth: formData.date_of_birth }),
       ...(formData.email && { email: formData.email }),
       ...(formData.phone_number && { phone_number: formData.phone_number }),
-      // Include is_dependent for personal relationships
-      ...(!isProfessional && { is_dependent: formData.is_dependent || false }),
-      // Include relationship_with for professional relationships
-      ...(isProfessional && formData.relationship_with && formData.relationship_with.length > 0 && {
-        relationship_with: formData.relationship_with
-      }),
+      ...(formData.dependency !== undefined && { dependency: formData.dependency }),
+      ...(formData.firm_name && { firm_name: formData.firm_name }),
+      ...(formData.address_id && { address_id: formData.address_id }),
+      ...(formData.notes && { notes: formData.notes }),
     };
-  }, [clientGroupId, formData, isProfessional]);
+  }, [productOwnerIds, formData]);
 
   /**
    * Handle form submission
@@ -206,7 +210,7 @@ const CreateSpecialRelationshipModal: React.FC<CreateSpecialRelationshipModalPro
     <ModalShell
       isOpen={isOpen}
       onClose={handleCancel}
-      title={isProfessional ? 'Add Professional Relationship' : 'Add Personal Relationship'}
+      title={formData.type === 'Professional' ? 'Add Professional Relationship' : 'Add Personal Relationship'}
       size="md"
       closeOnBackdropClick={!isPending}
     >
@@ -223,9 +227,9 @@ const CreateSpecialRelationshipModal: React.FC<CreateSpecialRelationshipModalPro
           onChange={handleFieldChange}
           onBlur={handleFieldBlur}
           errors={errors}
-          isProfessional={isProfessional}
           disabled={isPending}
-          productOwners={[]}  // TODO: Fetch actual product owners from client group
+          addresses={[]}  // TODO: Fetch actual addresses
+          onCreateAddress={undefined}  // TODO: Implement address creation
         />
 
         {/* Form Actions */}

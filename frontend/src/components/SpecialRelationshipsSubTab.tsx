@@ -30,7 +30,6 @@ import { useSpecialRelationships } from '@/hooks/useSpecialRelationships';
 import {
   SpecialRelationship,
   RelationshipStatus,
-  PROFESSIONAL_RELATIONSHIP_TYPES
 } from '@/types/specialRelationship';
 
 // ==========================
@@ -71,8 +70,8 @@ const BUTTON_CLASSES = {
  * Props for SpecialRelationshipsSubTab component
  */
 export interface SpecialRelationshipsSubTabProps {
-  /** Client group ID to fetch relationships for */
-  clientGroupId: string;
+  /** Product owner ID to fetch relationships for */
+  productOwnerId: number;
 }
 
 // ==========================
@@ -98,16 +97,16 @@ export interface SpecialRelationshipsSubTabProps {
  * - React Query provides intelligent caching (5min stale, 10min gc)
  *
  * @param {SpecialRelationshipsSubTabProps} props - Component props
- * @param {string} props.clientGroupId - Client group ID to fetch relationships for
+ * @param {number} props.productOwnerId - Product owner ID to fetch relationships for
  * @returns {JSX.Element} Complete special relationships interface
  *
  * @example
  * ```tsx
- * <SpecialRelationshipsSubTab clientGroupId="123" />
+ * <SpecialRelationshipsSubTab productOwnerId={123} />
  * ```
  */
 const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
-  clientGroupId,
+  productOwnerId,
 }) => {
   // ==========================
   // State
@@ -128,10 +127,7 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
     isError,
     error,
     refetch,
-  } = useSpecialRelationships(clientGroupId, {
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-  });
+  } = useSpecialRelationships(productOwnerId);
 
   // ==========================
   // Filtered Data
@@ -139,17 +135,15 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
 
   /**
    * Filter relationships based on active tab
-   * Personal tab shows relationships with personal relationship types
-   * Professional tab shows relationships with professional relationship types
+   * Personal tab shows relationships where type === 'Personal'
+   * Professional tab shows relationships where type === 'Professional'
    */
   const filteredRelationships = useMemo(() => {
     return relationships.filter((rel) => {
-      const isProfessional = PROFESSIONAL_RELATIONSHIP_TYPES.includes(rel.relationship_type);
-
       if (activeTab === 'personal') {
-        return !isProfessional;
+        return rel.type === 'Personal';
       } else {
-        return isProfessional;
+        return rel.type === 'Professional';
       }
     });
   }, [relationships, activeTab]);
@@ -196,7 +190,7 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
    * Handle status change (placeholder - would integrate with update mutation)
    * Wrapped in useCallback to provide stable reference to table components
    */
-  const handleStatusChange = useCallback((id: string, status: RelationshipStatus) => {
+  const handleStatusChange = useCallback((id: number, status: RelationshipStatus) => {
     // TODO: Integrate with useUpdateSpecialRelationshipStatus hook
     console.log('Update status:', id, status);
   }, []);
@@ -241,11 +235,11 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
   }, [activeTab]);
 
   /**
-   * Determine if current tab should be treated as professional
+   * Determine initial type for create modal based on active tab
    * Memoized for stable reference in modal props
    */
-  const isProfessionalTab = useMemo(() => {
-    return activeTab === 'professional';
+  const initialType = useMemo(() => {
+    return activeTab === 'professional' ? 'Professional' : 'Personal';
   }, [activeTab]);
 
   // ==========================
@@ -303,8 +297,8 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
         <CreateSpecialRelationshipModal
           isOpen={showCreateModal}
           onClose={handleCreateModalClose}
-          clientGroupId={clientGroupId}
-          isProfessional={isProfessionalTab}
+          productOwnerIds={[productOwnerId]}
+          initialType={initialType}
         />
       </div>
     );
@@ -353,8 +347,8 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
       <CreateSpecialRelationshipModal
         isOpen={showCreateModal}
         onClose={handleCreateModalClose}
-        clientGroupId={clientGroupId}
-        isProfessional={isProfessionalTab}
+        productOwnerIds={[productOwnerId]}
+        initialType={initialType}
       />
 
       {editingRelationship && (

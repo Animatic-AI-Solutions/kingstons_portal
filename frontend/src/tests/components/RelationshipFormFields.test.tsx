@@ -34,16 +34,16 @@ describe('RelationshipFormFields Component', () => {
 
   const defaultPersonalFormData: Partial<SpecialRelationshipFormData> = {
     name: '',
-    relationship_type: '',
+    type: 'Personal',
+    relationship: '',
     status: 'Active',
-    is_professional: false,
   };
 
   const defaultProfessionalFormData: Partial<SpecialRelationshipFormData> = {
     name: '',
-    relationship_type: '',
+    type: 'Professional',
+    relationship: '',
     status: 'Active',
-    is_professional: true,
   };
 
   beforeEach(() => {
@@ -81,7 +81,7 @@ describe('RelationshipFormFields Component', () => {
         />
       );
 
-      expect(screen.getByLabelText(/relationship type/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^type/i)).toBeInTheDocument();
     });
 
     it('renders date of birth field for personal relationships', () => {
@@ -107,7 +107,7 @@ describe('RelationshipFormFields Component', () => {
         />
       );
 
-      expect(screen.getByLabelText(/is dependent/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/dependent/i)).toBeInTheDocument();
     });
 
     it('renders email field', () => {
@@ -195,7 +195,7 @@ describe('RelationshipFormFields Component', () => {
         />
       );
 
-      expect(screen.queryByLabelText(/is dependent/i)).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(/dependency/i)).not.toBeInTheDocument();
     });
 
     it('renders relationship with field for professional relationships', () => {
@@ -205,14 +205,10 @@ describe('RelationshipFormFields Component', () => {
           onChange={mockOnChange}
           onBlur={mockOnBlur}
           errors={{}}
-          productOwners={[
-            { id: '1', firstname: 'John', surname: 'Smith' },
-            { id: '2', firstname: 'Jane', surname: 'Doe' },
-          ]}
         />
       );
 
-      expect(screen.getByLabelText(/relationship with/i)).toBeInTheDocument();
+      expect(screen.getByRole('combobox', { name: /relationship/i })).toBeInTheDocument();
     });
 
     it('does not show Deceased option for professional status', () => {
@@ -254,7 +250,7 @@ describe('RelationshipFormFields Component', () => {
     });
 
     it('displays relationship type error message', () => {
-      const errors = { relationship_type: 'Relationship type is required' };
+      const errors = { type: 'Type is required' };
 
       render(
         <RelationshipFormFields
@@ -265,7 +261,7 @@ describe('RelationshipFormFields Component', () => {
         />
       );
 
-      expect(screen.getByText('Relationship type is required')).toBeInTheDocument();
+      expect(screen.getByText('Type is required')).toBeInTheDocument();
     });
 
     it('displays date of birth error message', () => {
@@ -429,12 +425,12 @@ describe('RelationshipFormFields Component', () => {
         />
       );
 
-      const dependencyCheckbox = screen.getByLabelText(/is dependent/i);
+      const dependencyCheckbox = screen.getByLabelText(/dependent/i);
       await user.click(dependencyCheckbox);
 
       await waitFor(() => {
         expect(mockOnChange).toHaveBeenCalledWith(
-          expect.objectContaining({ is_dependent: true })
+          expect.objectContaining({ dependency: true })
         );
       });
     });
@@ -477,8 +473,8 @@ describe('RelationshipFormFields Component', () => {
         />
       );
 
-      const relationshipTypeInput = screen.getByLabelText(/relationship type/i);
-      expect(relationshipTypeInput).toBeInTheDocument();
+      const relationshipInput = screen.getByRole('combobox', { name: /relationship/i });
+      expect(relationshipInput).toBeInTheDocument();
     });
 
     it('allows custom relationship type input', async () => {
@@ -493,8 +489,8 @@ describe('RelationshipFormFields Component', () => {
         />
       );
 
-      const relationshipTypeInput = screen.getByLabelText(/relationship type/i);
-      await user.type(relationshipTypeInput, 'Godchild');
+      const relationshipInput = screen.getByRole('combobox', { name: /relationship/i });
+      await user.type(relationshipInput, 'Godchild');
 
       // user.type() triggers onChange for each character typed
       // Verify onChange was called (input is controlled so value won't change in test without updating formData)
@@ -515,8 +511,8 @@ describe('RelationshipFormFields Component', () => {
         />
       );
 
-      const relationshipTypeInput = screen.getByLabelText(/relationship type/i);
-      await user.type(relationshipTypeInput, 'Sp');
+      const relationshipInput = screen.getByRole('combobox', { name: /relationship/i });
+      await user.type(relationshipInput, 'Sp');
 
       // Dropdown should filter to show "Spouse"
       await waitFor(() => {
@@ -551,7 +547,6 @@ describe('RelationshipFormFields Component', () => {
           onChange={mockOnChange}
           onBlur={mockOnBlur}
           errors={{}}
-          productOwners={[{ id: '1', firstname: 'John', surname: 'Smith' }]}
         />
       );
 
@@ -569,8 +564,9 @@ describe('RelationshipFormFields Component', () => {
         />
       );
 
-      expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/relationship type/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^name/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^type/i)).toBeInTheDocument();
+      expect(screen.getByRole('combobox', { name: /relationship/i })).toBeInTheDocument();
       expect(screen.getByLabelText(/date of birth/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/phone number/i)).toBeInTheDocument();
@@ -603,12 +599,14 @@ describe('RelationshipFormFields Component', () => {
         />
       );
 
-      const nameInput = screen.getByLabelText(/name/i);
-      const relationshipTypeInput = screen.getByLabelText(/relationship type/i);
+      const nameInput = screen.getByLabelText(/^name/i);
+      const typeSelect = screen.getByLabelText(/^type/i);
+      const relationshipInput = screen.getByRole('combobox', { name: /relationship/i });
       const statusDropdown = screen.getByLabelText(/status/i);
 
       expect(nameInput).toHaveAttribute('aria-required', 'true');
-      expect(relationshipTypeInput).toHaveAttribute('aria-required', 'true');
+      expect(typeSelect).toHaveAttribute('aria-required', 'true');
+      expect(relationshipInput).toHaveAttribute('aria-required', 'true');
       expect(statusDropdown).toHaveAttribute('aria-required', 'true');
     });
 
@@ -661,12 +659,11 @@ describe('RelationshipFormFields Component', () => {
           onChange={mockOnChange}
           onBlur={mockOnBlur}
           errors={{}}
-          productOwners={[]}
         />
       );
 
-      // Should still render relationship with field
-      expect(screen.getByLabelText(/relationship with/i)).toBeInTheDocument();
+      // Should still render relationship field
+      expect(screen.getByRole('combobox', { name: /relationship/i })).toBeInTheDocument();
     });
 
     it('handles undefined product owners', () => {
@@ -680,17 +677,17 @@ describe('RelationshipFormFields Component', () => {
       );
 
       // Should still render without errors
-      expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^name/i)).toBeInTheDocument();
     });
 
     it('handles pre-filled form data', () => {
       const filledFormData: Partial<SpecialRelationshipFormData> = {
         name: 'John Smith',
-        relationship_type: 'Spouse',
+        type: 'Personal',
+        relationship: 'Spouse',
         status: 'Active',
         email: 'john@example.com',
         phone_number: '01234567890',
-        is_professional: false,
       };
 
       render(
@@ -729,7 +726,7 @@ describe('RelationshipFormFields Component', () => {
       );
 
       expect(screen.queryByLabelText(/date of birth/i)).not.toBeInTheDocument();
-      expect(screen.getByLabelText(/relationship with/i)).toBeInTheDocument();
+      expect(screen.getByRole('combobox', { name: /relationship/i })).toBeInTheDocument();
     });
   });
 });

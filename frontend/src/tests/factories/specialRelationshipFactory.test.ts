@@ -19,9 +19,8 @@ describe('Special Relationship Mock Data Generators', () => {
 
       expect(mock).toBeDefined();
       expect(mock.id).toBeDefined();
-      expect(mock.client_group_id).toBeDefined();
-      expect(mock.first_name).toBeDefined();
-      expect(mock.last_name).toBeDefined();
+      expect(mock.name).toBeDefined();
+      expect(mock.type).toBe('Personal');
       expect(mock.status).toBe('Active');
       expect(mock.created_at).toBeDefined();
       expect(mock.updated_at).toBeDefined();
@@ -30,7 +29,7 @@ describe('Special Relationship Mock Data Generators', () => {
     it('should create relationship with personal type', () => {
       const mock = createMockPersonalRelationship();
 
-      const personalTypes = [
+      const personalRelationships = [
         'Spouse',
         'Partner',
         'Child',
@@ -41,23 +40,21 @@ describe('Special Relationship Mock Data Generators', () => {
         'Other Family'
       ];
 
-      expect(personalTypes).toContain(mock.relationship_type);
+      expect(personalRelationships).toContain(mock.relationship);
     });
 
     it('should allow overriding default values', () => {
       const overrides = {
-        first_name: 'CustomFirstName',
-        last_name: 'CustomLastName',
-        relationship_type: 'Spouse' as const,
+        name: 'CustomName',
+        relationship: 'Spouse' as const,
         email: 'custom@example.com',
         status: 'Inactive' as const
       };
 
       const mock = createMockPersonalRelationship(overrides);
 
-      expect(mock.first_name).toBe('CustomFirstName');
-      expect(mock.last_name).toBe('CustomLastName');
-      expect(mock.relationship_type).toBe('Spouse');
+      expect(mock.name).toBe('CustomName');
+      expect(mock.relationship).toBe('Spouse');
       expect(mock.email).toBe('custom@example.com');
       expect(mock.status).toBe('Inactive');
     });
@@ -65,9 +62,7 @@ describe('Special Relationship Mock Data Generators', () => {
     it('should not include professional-specific fields in personal relationships', () => {
       const mock = createMockPersonalRelationship();
 
-      expect(mock.company_name).toBeNull();
-      expect(mock.position).toBeNull();
-      expect(mock.professional_id).toBeNull();
+      expect(mock.firm_name).toBeNull();
     });
 
     it('should generate valid date of birth for personal relationships', () => {
@@ -84,18 +79,13 @@ describe('Special Relationship Mock Data Generators', () => {
       const mock = createMockPersonalRelationship();
 
       // Should have at least one form of contact
-      const hasContact = mock.email || mock.mobile_phone || mock.home_phone;
+      const hasContact = mock.email || mock.phone_number;
       expect(hasContact).toBeTruthy();
     });
 
-    it('should generate valid UK address when address is included', () => {
+    it('should have dependency field', () => {
       const mock = createMockPersonalRelationship();
-
-      if (mock.postcode) {
-        // UK postcode format validation
-        expect(mock.postcode).toMatch(/^[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d[A-Z]{2}$/i);
-        expect(mock.country).toBe('United Kingdom');
-      }
+      expect(typeof mock.dependency).toBe('boolean');
     });
   });
 
@@ -105,9 +95,8 @@ describe('Special Relationship Mock Data Generators', () => {
 
       expect(mock).toBeDefined();
       expect(mock.id).toBeDefined();
-      expect(mock.client_group_id).toBeDefined();
-      expect(mock.first_name).toBeDefined();
-      expect(mock.last_name).toBeDefined();
+      expect(mock.name).toBeDefined();
+      expect(mock.type).toBe('Professional');
       expect(mock.status).toBe('Active');
       expect(mock.created_at).toBeDefined();
       expect(mock.updated_at).toBeDefined();
@@ -116,7 +105,7 @@ describe('Special Relationship Mock Data Generators', () => {
     it('should create relationship with professional type', () => {
       const mock = createMockProfessionalRelationship();
 
-      const professionalTypes = [
+      const professionalRelationships = [
         'Accountant',
         'Solicitor',
         'Doctor',
@@ -127,43 +116,37 @@ describe('Special Relationship Mock Data Generators', () => {
         'Power of Attorney'
       ];
 
-      expect(professionalTypes).toContain(mock.relationship_type);
+      expect(professionalRelationships).toContain(mock.relationship);
     });
 
     it('should include professional-specific fields', () => {
       const mock = createMockProfessionalRelationship();
 
-      // Professional relationships should typically have company name
-      expect(mock.company_name).toBeDefined();
-      expect(typeof mock.company_name).toBe('string');
+      // Professional relationships should typically have firm name
+      expect(mock.firm_name).toBeDefined();
+      expect(typeof mock.firm_name).toBe('string');
     });
 
     it('should allow overriding default values', () => {
       const overrides = {
-        first_name: 'Dr.',
-        last_name: 'Professional',
-        relationship_type: 'Solicitor' as const,
-        company_name: 'Law Firm LLP',
-        position: 'Senior Partner',
-        professional_id: 'SRA-123456',
+        name: 'Dr. Professional',
+        relationship: 'Solicitor' as const,
+        firm_name: 'Law Firm LLP',
         status: 'Active' as const
       };
 
       const mock = createMockProfessionalRelationship(overrides);
 
-      expect(mock.first_name).toBe('Dr.');
-      expect(mock.last_name).toBe('Professional');
-      expect(mock.relationship_type).toBe('Solicitor');
-      expect(mock.company_name).toBe('Law Firm LLP');
-      expect(mock.position).toBe('Senior Partner');
-      expect(mock.professional_id).toBe('SRA-123456');
+      expect(mock.name).toBe('Dr. Professional');
+      expect(mock.relationship).toBe('Solicitor');
+      expect(mock.firm_name).toBe('Law Firm LLP');
     });
 
     it('should generate work contact information for professional relationships', () => {
       const mock = createMockProfessionalRelationship();
 
-      // Professional should have work email or work phone
-      const hasWorkContact = mock.email || mock.work_phone;
+      // Professional should have work email or phone
+      const hasWorkContact = mock.email || mock.phone_number;
       expect(hasWorkContact).toBeTruthy();
     });
 
@@ -173,12 +156,11 @@ describe('Special Relationship Mock Data Generators', () => {
       expect(mock.date_of_birth).toBeNull();
     });
 
-    it('should generate business address when address is included', () => {
+    it('should have address_id when address is included', () => {
       const mock = createMockProfessionalRelationship();
 
-      if (mock.address_line1) {
-        expect(mock.city).toBeDefined();
-        expect(mock.country).toBe('United Kingdom');
+      if (mock.address_id) {
+        expect(typeof mock.address_id).toBe('number');
       }
     });
   });
@@ -194,7 +176,7 @@ describe('Special Relationship Mock Data Generators', () => {
     it('should create mix of personal and professional relationships by default', () => {
       const mocks = createMockRelationshipArray(10);
 
-      const personalTypes = [
+      const personalRelationships = [
         'Spouse',
         'Partner',
         'Child',
@@ -204,7 +186,7 @@ describe('Special Relationship Mock Data Generators', () => {
         'Grandparent',
         'Other Family'
       ];
-      const professionalTypes = [
+      const professionalRelationships = [
         'Accountant',
         'Solicitor',
         'Doctor',
@@ -215,8 +197,8 @@ describe('Special Relationship Mock Data Generators', () => {
         'Power of Attorney'
       ];
 
-      const hasPersonal = mocks.some(m => personalTypes.includes(m.relationship_type));
-      const hasProfessional = mocks.some(m => professionalTypes.includes(m.relationship_type));
+      const hasPersonal = mocks.some(m => personalRelationships.includes(m.relationship));
+      const hasProfessional = mocks.some(m => professionalRelationships.includes(m.relationship));
 
       expect(hasPersonal || hasProfessional).toBe(true);
     });
@@ -238,7 +220,7 @@ describe('Special Relationship Mock Data Generators', () => {
     it('should allow filtering by category', () => {
       const personalOnly = createMockRelationshipArray(5, { category: 'personal' });
 
-      const personalTypes = [
+      const personalRelationships = [
         'Spouse',
         'Partner',
         'Child',
@@ -250,16 +232,17 @@ describe('Special Relationship Mock Data Generators', () => {
       ];
 
       personalOnly.forEach(relationship => {
-        expect(personalTypes).toContain(relationship.relationship_type);
+        expect(personalRelationships).toContain(relationship.relationship);
+        expect(relationship.type).toBe('Personal');
       });
     });
 
-    it('should allow setting same client_group_id for all relationships', () => {
-      const clientGroupId = 'cg-test-123';
-      const mocks = createMockRelationshipArray(5, { client_group_id: clientGroupId });
+    it('should allow setting same product_owner_ids for all relationships', () => {
+      const productOwnerIds = [1, 2, 3];
+      const mocks = createMockRelationshipArray(5, { product_owner_ids: productOwnerIds });
 
       mocks.forEach(relationship => {
-        expect(relationship.client_group_id).toBe(clientGroupId);
+        expect(relationship.product_owner_ids).toEqual(productOwnerIds);
       });
     });
 

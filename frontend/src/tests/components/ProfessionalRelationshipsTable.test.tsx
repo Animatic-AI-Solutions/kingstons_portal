@@ -57,9 +57,8 @@ describe('ProfessionalRelationshipsTable', () => {
     test('renders professional-specific columns', () => {
       render(<ProfessionalRelationshipsTable {...defaultProps} />);
 
-      // Professional tables should have Company and Position columns
+      // Professional tables should have Company column
       expect(screen.getByText('Company')).toBeInTheDocument();
-      expect(screen.getByText('Position')).toBeInTheDocument();
     });
 
     test('does not render personal-specific columns', () => {
@@ -77,7 +76,6 @@ describe('ProfessionalRelationshipsTable', () => {
       expect(screen.getByText('Last Name')).toBeInTheDocument();
       expect(screen.getByText('Relationship')).toBeInTheDocument();
       expect(screen.getByText('Company')).toBeInTheDocument();
-      expect(screen.getByText('Position')).toBeInTheDocument();
       expect(screen.getByText('Email')).toBeInTheDocument();
       expect(screen.getByText('Phone')).toBeInTheDocument();
       expect(screen.getByText('Status')).toBeInTheDocument();
@@ -86,11 +84,9 @@ describe('ProfessionalRelationshipsTable', () => {
 
     test('renders professional relationship data correctly', () => {
       const relationship = createMockProfessionalRelationship({
-        first_name: 'Robert',
-        last_name: 'Johnson',
-        relationship_type: 'Financial Advisor',
-        company_name: 'Wealth Management Ltd',
-        position: 'Senior Advisor',
+        name: 'Robert Johnson',
+        relationship: 'Financial Advisor',
+        firm_name: 'Wealth Management Ltd',
       });
 
       render(
@@ -104,12 +100,11 @@ describe('ProfessionalRelationshipsTable', () => {
       expect(screen.getByText('Johnson')).toBeInTheDocument();
       expect(screen.getByText('Financial Advisor')).toBeInTheDocument();
       expect(screen.getByText('Wealth Management Ltd')).toBeInTheDocument();
-      expect(screen.getByText('Senior Advisor')).toBeInTheDocument();
     });
 
     test('displays placeholder for missing company name', () => {
       const relationship = createMockProfessionalRelationship({
-        company_name: null,
+        firm_name: null,
       });
 
       render(
@@ -119,24 +114,7 @@ describe('ProfessionalRelationshipsTable', () => {
         />
       );
 
-      // Should show "-" for null company name
-      const rows = screen.getAllByRole('row');
-      expect(rows[1]).toHaveTextContent('-');
-    });
-
-    test('displays placeholder for missing position', () => {
-      const relationship = createMockProfessionalRelationship({
-        position: null,
-      });
-
-      render(
-        <ProfessionalRelationshipsTable
-          {...defaultProps}
-          relationships={[relationship]}
-        />
-      );
-
-      // Should show "-" for null position
+      // Should show "-" for null firm name
       const rows = screen.getAllByRole('row');
       expect(rows[1]).toHaveTextContent('-');
     });
@@ -145,9 +123,9 @@ describe('ProfessionalRelationshipsTable', () => {
   describe('Sorting', () => {
     test('sorts by first name ascending by default', () => {
       const relationships = [
-        createMockProfessionalRelationship({ first_name: 'Charlie' }),
-        createMockProfessionalRelationship({ first_name: 'Alice' }),
-        createMockProfessionalRelationship({ first_name: 'Bob' }),
+        createMockProfessionalRelationship({ name: 'Charlie Brown' }),
+        createMockProfessionalRelationship({ name: 'Alice Cooper' }),
+        createMockProfessionalRelationship({ name: 'Bob Dylan' }),
       ];
 
       render(
@@ -167,9 +145,9 @@ describe('ProfessionalRelationshipsTable', () => {
     test('sorts by company name when header clicked', async () => {
       const user = userEvent.setup();
       const relationships = [
-        createMockProfessionalRelationship({ company_name: 'Zebra Corp' }),
-        createMockProfessionalRelationship({ company_name: 'Alpha Inc' }),
-        createMockProfessionalRelationship({ company_name: 'Beta LLC' }),
+        createMockProfessionalRelationship({ firm_name: 'Zebra Corp' }),
+        createMockProfessionalRelationship({ firm_name: 'Alpha Inc' }),
+        createMockProfessionalRelationship({ firm_name: 'Beta LLC' }),
       ];
 
       render(
@@ -188,36 +166,12 @@ describe('ProfessionalRelationshipsTable', () => {
       expect(rows[3]).toHaveTextContent('Zebra Corp');
     });
 
-    test('sorts by position when header clicked', async () => {
-      const user = userEvent.setup();
-      const relationships = [
-        createMockProfessionalRelationship({ position: 'Accountant' }),
-        createMockProfessionalRelationship({ position: 'Partner' }),
-        createMockProfessionalRelationship({ position: 'Associate' }),
-      ];
-
-      render(
-        <ProfessionalRelationshipsTable
-          {...defaultProps}
-          relationships={relationships}
-        />
-      );
-
-      const positionHeader = screen.getByRole('button', { name: /Position/i });
-      await user.click(positionHeader);
-
-      const rows = screen.getAllByRole('row');
-      expect(rows[1]).toHaveTextContent('Accountant');
-      expect(rows[2]).toHaveTextContent('Associate');
-      expect(rows[3]).toHaveTextContent('Partner');
-    });
-
     test('handles null values in sorting gracefully', async () => {
       const user = userEvent.setup();
       const relationships = [
-        createMockProfessionalRelationship({ company_name: 'Beta Inc' }),
-        createMockProfessionalRelationship({ company_name: null }),
-        createMockProfessionalRelationship({ company_name: 'Alpha Corp' }),
+        createMockProfessionalRelationship({ firm_name: 'Beta Inc' }),
+        createMockProfessionalRelationship({ firm_name: null }),
+        createMockProfessionalRelationship({ firm_name: 'Alpha Corp' }),
       ];
 
       render(
@@ -258,20 +212,14 @@ describe('ProfessionalRelationshipsTable', () => {
   describe('Product Owner Association', () => {
     test('displays product owner count when available', () => {
       const relationship = createMockProfessionalRelationship({
-        first_name: 'John',
-        last_name: 'Advisor',
+        name: 'John Advisor',
+        product_owner_ids: [1, 2, 3, 4, 5],
       });
-
-      // Mock relationship with product owner metadata
-      const relationshipWithProducts = {
-        ...relationship,
-        product_owner_count: 5,
-      };
 
       render(
         <ProfessionalRelationshipsTable
           {...defaultProps}
-          relationships={[relationshipWithProducts]}
+          relationships={[relationship]}
         />
       );
 
@@ -280,16 +228,14 @@ describe('ProfessionalRelationshipsTable', () => {
     });
 
     test('shows zero product owners gracefully', () => {
-      const relationship = createMockProfessionalRelationship();
-      const relationshipWithProducts = {
-        ...relationship,
-        product_owner_count: 0,
-      };
+      const relationship = createMockProfessionalRelationship({
+        product_owner_ids: [],
+      });
 
       render(
         <ProfessionalRelationshipsTable
           {...defaultProps}
-          relationships={[relationshipWithProducts]}
+          relationships={[relationship]}
         />
       );
 

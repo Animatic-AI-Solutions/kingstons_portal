@@ -125,9 +125,8 @@ const SpecialRelationshipActions: React.FC<SpecialRelationshipActionsProps> = ({
 
   /**
    * Get full name for ARIA labels
-   * Trims whitespace to handle cases where first_name or last_name might be empty
    */
-  const fullName = `${relationship.first_name} ${relationship.last_name}`.trim();
+  const fullName = relationship.name;
 
   /**
    * Reset clicked button tracking when status update completes

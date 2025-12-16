@@ -9,7 +9,8 @@
  * @hook useRelationshipValidation
  * @requirements
  * - Validate name (required, 1-200 characters)
- * - Validate relationship type (required, 1-50 characters)
+ * - Validate relationship category/type (required, 'Personal' or 'Professional')
+ * - Validate relationship (required, 1-50 characters, e.g., 'Spouse', 'Accountant')
  * - Validate date of birth (valid date, not in future, age 0-120)
  * - Validate email (valid format, optional)
  * - Validate phone (UK format, optional, 10-15 digits)
@@ -95,59 +96,126 @@ describe('useRelationshipValidation Hook', () => {
   });
 
   // =================================================================
-  // Relationship Type Validation Tests
+  // Relationship Category (Type) Validation Tests
   // =================================================================
 
-  describe('Relationship Type Validation', () => {
-    it('should return error when relationship type is empty', () => {
+  describe('Relationship Category (Type) Validation', () => {
+    it('should return error when type is empty', () => {
       const { result } = renderHook(() => useRelationshipValidation());
 
       act(() => {
-        result.current.handleBlur('relationship_type', '');
+        result.current.handleBlur('type', '');
       });
 
-      expect(result.current.errors.relationship_type).toBe('Relationship type is required');
+      expect(result.current.errors.type).toBe('Relationship category is required');
     });
 
-    it('should return error when relationship type is only whitespace', () => {
+    it('should return error when type is only whitespace', () => {
       const { result } = renderHook(() => useRelationshipValidation());
 
       act(() => {
-        result.current.handleBlur('relationship_type', '   ');
+        result.current.handleBlur('type', '   ');
       });
 
-      expect(result.current.errors.relationship_type).toBe('Relationship type is required');
+      expect(result.current.errors.type).toBe('Relationship category is required');
     });
 
-    it('should return error when relationship type exceeds 50 characters', () => {
+    it('should return error when type is invalid', () => {
       const { result } = renderHook(() => useRelationshipValidation());
-      const longType = 'A'.repeat(51);
 
       act(() => {
-        result.current.handleBlur('relationship_type', longType);
+        result.current.handleBlur('type', 'InvalidCategory');
       });
 
-      expect(result.current.errors.relationship_type).toBe('Relationship type must be 50 characters or less');
+      expect(result.current.errors.type).toBe('Relationship category must be Personal or Professional');
     });
 
-    it('should accept valid relationship type', () => {
+    it('should accept Personal as valid type', () => {
       const { result } = renderHook(() => useRelationshipValidation());
 
       act(() => {
-        result.current.handleBlur('relationship_type', 'Spouse');
+        result.current.handleBlur('type', 'Personal');
       });
 
-      expect(result.current.errors.relationship_type).toBeUndefined();
+      expect(result.current.errors.type).toBeUndefined();
     });
 
-    it('should accept custom relationship type', () => {
+    it('should accept Professional as valid type', () => {
       const { result } = renderHook(() => useRelationshipValidation());
 
       act(() => {
-        result.current.handleBlur('relationship_type', 'Godchild');
+        result.current.handleBlur('type', 'Professional');
       });
 
-      expect(result.current.errors.relationship_type).toBeUndefined();
+      expect(result.current.errors.type).toBeUndefined();
+    });
+  });
+
+  // =================================================================
+  // Relationship Validation Tests
+  // =================================================================
+
+  describe('Relationship Validation', () => {
+    it('should return error when relationship is empty', () => {
+      const { result } = renderHook(() => useRelationshipValidation());
+
+      act(() => {
+        result.current.handleBlur('relationship', '');
+      });
+
+      expect(result.current.errors.relationship).toBe('Relationship is required');
+    });
+
+    it('should return error when relationship is only whitespace', () => {
+      const { result } = renderHook(() => useRelationshipValidation());
+
+      act(() => {
+        result.current.handleBlur('relationship', '   ');
+      });
+
+      expect(result.current.errors.relationship).toBe('Relationship is required');
+    });
+
+    it('should return error when relationship exceeds 50 characters', () => {
+      const { result } = renderHook(() => useRelationshipValidation());
+      const longRelationship = 'A'.repeat(51);
+
+      act(() => {
+        result.current.handleBlur('relationship', longRelationship);
+      });
+
+      expect(result.current.errors.relationship).toBe('Relationship must be 50 characters or less');
+    });
+
+    it('should accept valid relationship (Spouse)', () => {
+      const { result } = renderHook(() => useRelationshipValidation());
+
+      act(() => {
+        result.current.handleBlur('relationship', 'Spouse');
+      });
+
+      expect(result.current.errors.relationship).toBeUndefined();
+    });
+
+    it('should accept valid relationship (Accountant)', () => {
+      const { result } = renderHook(() => useRelationshipValidation());
+
+      act(() => {
+        result.current.handleBlur('relationship', 'Accountant');
+      });
+
+      expect(result.current.errors.relationship).toBeUndefined();
+    });
+
+    it('should accept relationship at maximum length (50 chars)', () => {
+      const { result } = renderHook(() => useRelationshipValidation());
+      const maxRelationship = 'A'.repeat(50);
+
+      act(() => {
+        result.current.handleBlur('relationship', maxRelationship);
+      });
+
+      expect(result.current.errors.relationship).toBeUndefined();
     });
   });
 
@@ -505,7 +573,8 @@ describe('useRelationshipValidation Hook', () => {
 
       const formData: Partial<SpecialRelationshipFormData> = {
         name: 'John Smith',
-        relationship_type: 'Spouse',
+        type: 'Personal',
+        relationship: 'Spouse',
         status: 'Active',
       };
 
@@ -522,7 +591,8 @@ describe('useRelationshipValidation Hook', () => {
 
       const formData: Partial<SpecialRelationshipFormData> = {
         name: '',
-        relationship_type: '',
+        type: '',
+        relationship: '',
         status: '',
         email: 'invalid-email',
         phone_number: '123',
@@ -534,7 +604,8 @@ describe('useRelationshipValidation Hook', () => {
       });
 
       expect(errors.name).toBeDefined();
-      expect(errors.relationship_type).toBeDefined();
+      expect(errors.type).toBeDefined();
+      expect(errors.relationship).toBeDefined();
       expect(errors.status).toBeDefined();
       expect(errors.email).toBeDefined();
       expect(errors.phone_number).toBeDefined();
@@ -545,7 +616,8 @@ describe('useRelationshipValidation Hook', () => {
 
       const formData: Partial<SpecialRelationshipFormData> = {
         name: 'John Smith',
-        relationship_type: 'Spouse',
+        type: 'Personal',
+        relationship: 'Spouse',
         status: 'Active',
         email: 'john@example.com',
         phone_number: '01234567890',
@@ -565,7 +637,8 @@ describe('useRelationshipValidation Hook', () => {
 
       const formData: Partial<SpecialRelationshipFormData> = {
         name: '',
-        relationship_type: 'Spouse',
+        type: 'Personal',
+        relationship: 'Spouse',
         status: 'Active',
       };
 
@@ -574,6 +647,40 @@ describe('useRelationshipValidation Hook', () => {
       });
 
       expect(result.current.errors.name).toBe('Name is required');
+    });
+
+    it('should return errors when type is missing', () => {
+      const { result } = renderHook(() => useRelationshipValidation());
+
+      const formData: Partial<SpecialRelationshipFormData> = {
+        name: 'John Smith',
+        relationship: 'Spouse',
+        status: 'Active',
+      };
+
+      let errors: any;
+      act(() => {
+        errors = result.current.validateForm(formData as SpecialRelationshipFormData);
+      });
+
+      expect(errors.type).toBe('Relationship category is required');
+    });
+
+    it('should return errors when relationship is missing', () => {
+      const { result } = renderHook(() => useRelationshipValidation());
+
+      const formData: Partial<SpecialRelationshipFormData> = {
+        name: 'John Smith',
+        type: 'Personal',
+        status: 'Active',
+      };
+
+      let errors: any;
+      act(() => {
+        errors = result.current.validateForm(formData as SpecialRelationshipFormData);
+      });
+
+      expect(errors.relationship).toBe('Relationship is required');
     });
   });
 
@@ -634,12 +741,14 @@ describe('useRelationshipValidation Hook', () => {
       // Set multiple errors
       act(() => {
         result.current.handleBlur('name', '');
-        result.current.handleBlur('relationship_type', '');
+        result.current.handleBlur('type', '');
+        result.current.handleBlur('relationship', '');
         result.current.handleBlur('status', '');
       });
 
       expect(result.current.errors.name).toBeDefined();
-      expect(result.current.errors.relationship_type).toBeDefined();
+      expect(result.current.errors.type).toBeDefined();
+      expect(result.current.errors.relationship).toBeDefined();
       expect(result.current.errors.status).toBeDefined();
 
       // Clear all errors

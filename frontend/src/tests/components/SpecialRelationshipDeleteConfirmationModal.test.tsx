@@ -34,28 +34,19 @@ expect.extend(toHaveNoViolations);
 const createInactiveRelationship = (
   overrides?: Partial<SpecialRelationship>
 ): SpecialRelationship => ({
-  id: 'rel-1',
-  client_group_id: 'cg-123',
-  relationship_type: 'Spouse',
+  id: 1,
+  name: 'Jane Smith',
+  type: 'Personal',
+  relationship: 'Spouse',
   status: 'Inactive',
-  title: 'Mrs',
-  first_name: 'Jane',
-  last_name: 'Smith',
   date_of_birth: '1960-05-15',
+  dependency: false,
   email: 'jane.smith@example.com',
-  mobile_phone: '+44-7700-900001',
-  home_phone: null,
-  work_phone: null,
-  address_line1: '123 Main St',
-  address_line2: null,
-  city: 'London',
-  county: null,
-  postcode: 'SW1A 1AA',
-  country: 'United Kingdom',
+  phone_number: '+44-7700-900001',
+  address_id: 1,
   notes: null,
-  company_name: null,
-  position: null,
-  professional_id: null,
+  firm_name: null,
+  product_owner_ids: [1, 2],
   created_at: '2024-01-01T10:00:00Z',
   updated_at: '2024-01-01T10:00:00Z',
   ...overrides,
@@ -115,8 +106,7 @@ describe('DeleteConfirmationModal Component (Special Relationships)', () => {
 
     it('shows relationship full name in confirmation message', () => {
       const relationship = createInactiveRelationship({
-        first_name: 'Jane',
-        last_name: 'Doe',
+        name: 'Jane Doe',
       });
 
       render(
@@ -133,7 +123,7 @@ describe('DeleteConfirmationModal Component (Special Relationships)', () => {
 
     it('shows relationship type in confirmation message', () => {
       const relationship = createInactiveRelationship({
-        relationship_type: 'Spouse',
+        relationship: 'Spouse',
       });
 
       render(
@@ -671,8 +661,7 @@ describe('DeleteConfirmationModal Component (Special Relationships)', () => {
   describe('Edge Cases', () => {
     it('handles missing relationship name gracefully', () => {
       const relationship = createInactiveRelationship({
-        first_name: '',
-        last_name: '',
+        name: '',
       });
 
       render(
@@ -694,8 +683,7 @@ describe('DeleteConfirmationModal Component (Special Relationships)', () => {
     it('handles very long relationship names', () => {
       const longName = 'A'.repeat(100);
       const relationship = createInactiveRelationship({
-        first_name: longName,
-        last_name: longName,
+        name: `${longName} ${longName}`,
       });
 
       render(
@@ -751,8 +739,7 @@ describe('DeleteConfirmationModal Component (Special Relationships)', () => {
 
     it('works with deceased relationships', () => {
       const deceasedRelationship = createDeceasedRelationship({
-        first_name: 'Robert',
-        last_name: 'Brown',
+        name: 'Robert Brown',
       });
 
       render(
@@ -773,9 +760,9 @@ describe('DeleteConfirmationModal Component (Special Relationships)', () => {
 
     it('works with professional relationships', () => {
       const professionalRelationship = createInactiveRelationship({
-        relationship_type: 'Solicitor',
-        company_name: 'Smith & Associates',
-        position: 'Senior Partner',
+        type: 'Professional',
+        relationship: 'Solicitor',
+        firm_name: 'Smith & Associates',
       });
 
       render(

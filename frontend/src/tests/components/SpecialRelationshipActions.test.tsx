@@ -61,18 +61,17 @@ const createTestQueryClient = () => {
 const createActiveRelationship = (
   overrides?: Partial<SpecialRelationship>
 ): SpecialRelationship => ({
-  id: 'rel-1',
-  client_group_id: 'cg-123',
-  relationship_type: 'Spouse',
+  id: 101,
+  product_owner_ids: [123],
+  type: 'Personal',
+  relationship: 'Spouse',
   status: 'Active',
   title: 'Mrs',
-  first_name: 'Jane',
-  last_name: 'Smith',
+  name: 'Jane Smith',
   date_of_birth: '1960-05-15',
   email: 'jane.smith@example.com',
-  mobile_phone: '+44-7700-900001',
-  home_phone: null,
-  work_phone: null,
+  phone_number: '+44-7700-900001',
+  address_id: null,
   address_line1: '123 Main St',
   address_line2: null,
   city: 'London',
@@ -80,9 +79,8 @@ const createActiveRelationship = (
   postcode: 'SW1A 1AA',
   country: 'United Kingdom',
   notes: null,
-  company_name: null,
-  position: null,
-  professional_id: null,
+  firm_name: null,
+  dependency: false,
   created_at: '2024-01-01T10:00:00Z',
   updated_at: '2024-01-01T10:00:00Z',
   ...overrides,
@@ -92,7 +90,7 @@ const createInactiveRelationship = (
   overrides?: Partial<SpecialRelationship>
 ): SpecialRelationship => ({
   ...createActiveRelationship(),
-  id: 'rel-2',
+  id: 102,
   status: 'Inactive',
   ...overrides,
 });
@@ -101,7 +99,7 @@ const createDeceasedRelationship = (
   overrides?: Partial<SpecialRelationship>
 ): SpecialRelationship => ({
   ...createActiveRelationship(),
-  id: 'rel-3',
+  id: 103,
   status: 'Deceased',
   ...overrides,
 });
@@ -253,7 +251,7 @@ describe('SpecialRelationshipActions Component', () => {
   describe('Status Change Interactions', () => {
     it('calls status change mutation on Deactivate button click', async () => {
       const user = userEvent.setup();
-      const activeRelationship = createActiveRelationship({ id: 'rel-123' });
+      const activeRelationship = createActiveRelationship({ id: 123 });
 
       render(
         <SpecialRelationshipActions relationship={activeRelationship} />,
@@ -267,7 +265,7 @@ describe('SpecialRelationshipActions Component', () => {
 
       await waitFor(() => {
         expect(mockMutate).toHaveBeenCalledWith({
-          id: 'rel-123',
+          id: 123,
           status: 'Inactive',
         });
       });
@@ -275,7 +273,7 @@ describe('SpecialRelationshipActions Component', () => {
 
     it('calls status change mutation on Make Deceased button click', async () => {
       const user = userEvent.setup();
-      const activeRelationship = createActiveRelationship({ id: 'rel-456' });
+      const activeRelationship = createActiveRelationship({ id: 456 });
 
       render(
         <SpecialRelationshipActions relationship={activeRelationship} />,
@@ -289,7 +287,7 @@ describe('SpecialRelationshipActions Component', () => {
 
       await waitFor(() => {
         expect(mockMutate).toHaveBeenCalledWith({
-          id: 'rel-456',
+          id: 456,
           status: 'Deceased',
         });
       });
@@ -298,7 +296,7 @@ describe('SpecialRelationshipActions Component', () => {
     it('calls status change mutation on Activate button click', async () => {
       const user = userEvent.setup();
       const inactiveRelationship = createInactiveRelationship({
-        id: 'rel-789',
+        id: 789,
       });
 
       render(
@@ -311,7 +309,7 @@ describe('SpecialRelationshipActions Component', () => {
 
       await waitFor(() => {
         expect(mockMutate).toHaveBeenCalledWith({
-          id: 'rel-789',
+          id: 789,
           status: 'Active',
         });
       });
@@ -413,7 +411,7 @@ describe('SpecialRelationshipActions Component', () => {
     it('calls delete mutation when deletion confirmed', async () => {
       const user = userEvent.setup();
       const inactiveRelationship = createInactiveRelationship({
-        id: 'rel-999',
+        id: 999,
       });
 
       render(
@@ -436,7 +434,7 @@ describe('SpecialRelationshipActions Component', () => {
       await user.click(confirmButton);
 
       await waitFor(() => {
-        expect(mockDeleteMutate).toHaveBeenCalledWith('rel-999');
+        expect(mockDeleteMutate).toHaveBeenCalledWith(999);
       });
     });
 
@@ -523,7 +521,7 @@ describe('SpecialRelationshipActions Component', () => {
 
     it('supports Enter key to activate buttons', async () => {
       const user = userEvent.setup();
-      const activeRelationship = createActiveRelationship({ id: 'rel-111' });
+      const activeRelationship = createActiveRelationship({ id: 111 });
 
       render(
         <SpecialRelationshipActions relationship={activeRelationship} />,
@@ -539,7 +537,7 @@ describe('SpecialRelationshipActions Component', () => {
 
       await waitFor(() => {
         expect(mockMutate).toHaveBeenCalledWith({
-          id: 'rel-111',
+          id: 111,
           status: 'Inactive',
         });
       });
@@ -547,7 +545,7 @@ describe('SpecialRelationshipActions Component', () => {
 
     it('supports Space key to activate buttons', async () => {
       const user = userEvent.setup();
-      const activeRelationship = createActiveRelationship({ id: 'rel-222' });
+      const activeRelationship = createActiveRelationship({ id: 222 });
 
       render(
         <SpecialRelationshipActions relationship={activeRelationship} />,
@@ -563,7 +561,7 @@ describe('SpecialRelationshipActions Component', () => {
 
       await waitFor(() => {
         expect(mockMutate).toHaveBeenCalledWith({
-          id: 'rel-222',
+          id: 222,
           status: 'Deceased',
         });
       });
@@ -613,8 +611,7 @@ describe('SpecialRelationshipActions Component', () => {
 
     it('has descriptive ARIA labels on buttons with relationship name', () => {
       const activeRelationship = createActiveRelationship({
-        first_name: 'Jane',
-        last_name: 'Smith',
+        name: 'Jane Smith',
       });
 
       render(

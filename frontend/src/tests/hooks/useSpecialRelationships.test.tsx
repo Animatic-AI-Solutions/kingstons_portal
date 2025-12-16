@@ -81,14 +81,14 @@ describe('useSpecialRelationships Hook (Query)', () => {
 
   describe('Fetch Behavior', () => {
     it('should fetch special relationships on mount', async () => {
-      const clientGroupId = 'group-001';
+      const productOwnerId = 123;
       const mockRelationships = createMockRelationshipArray(3, {
-        client_group_id: clientGroupId,
+        product_owner_ids: [productOwnerId],
       });
 
       mockedFetch.mockResolvedValueOnce(mockRelationships);
 
-      const { result } = renderHook(() => useSpecialRelationships(clientGroupId), {
+      const { result } = renderHook(() => useSpecialRelationships(productOwnerId), {
         wrapper,
       });
 
@@ -98,19 +98,19 @@ describe('useSpecialRelationships Hook (Query)', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(mockedFetch).toHaveBeenCalledWith(clientGroupId, undefined);
+      expect(mockedFetch).toHaveBeenCalledWith(productOwnerId, undefined);
       expect(result.current.data).toEqual(mockRelationships);
       expect(result.current.data).toHaveLength(3);
     });
 
-    it('should not fetch when clientGroupId is null', () => {
+    it('should not fetch when productOwnerId is null', () => {
       const { result } = renderHook(() => useSpecialRelationships(null), { wrapper });
 
       expect(result.current.isLoading).toBe(false);
       expect(mockedFetch).not.toHaveBeenCalled();
     });
 
-    it('should not fetch when clientGroupId is undefined', () => {
+    it('should not fetch when productOwnerId is undefined', () => {
       const { result } = renderHook(() => useSpecialRelationships(undefined), {
         wrapper,
       });
@@ -119,12 +119,12 @@ describe('useSpecialRelationships Hook (Query)', () => {
       expect(mockedFetch).not.toHaveBeenCalled();
     });
 
-    it('should refetch when clientGroupId changes', async () => {
+    it('should refetch when productOwnerId changes', async () => {
       const mockRelationships1 = createMockRelationshipArray(2, {
-        client_group_id: 'group-001',
+        product_owner_ids: [101],
       });
       const mockRelationships2 = createMockRelationshipArray(3, {
-        client_group_id: 'group-002',
+        product_owner_ids: [102],
       });
 
       mockedFetch.mockResolvedValueOnce(mockRelationships1);
@@ -133,7 +133,7 @@ describe('useSpecialRelationships Hook (Query)', () => {
         ({ id }) => useSpecialRelationships(id),
         {
           wrapper,
-          initialProps: { id: 'group-001' },
+          initialProps: { id: 101 },
         }
       );
 
@@ -143,32 +143,32 @@ describe('useSpecialRelationships Hook (Query)', () => {
 
       expect(result.current.data).toEqual(mockRelationships1);
 
-      // Change clientGroupId
+      // Change productOwnerId
       mockedFetch.mockResolvedValueOnce(mockRelationships2);
-      rerender({ id: 'group-002' });
+      rerender({ id: 102 });
 
       await waitFor(() => {
         expect(result.current.data).toEqual(mockRelationships2);
       });
 
       expect(mockedFetch).toHaveBeenCalledTimes(2);
-      expect(mockedFetch).toHaveBeenNthCalledWith(1, 'group-001', undefined);
-      expect(mockedFetch).toHaveBeenNthCalledWith(2, 'group-002', undefined);
+      expect(mockedFetch).toHaveBeenNthCalledWith(1, 101, undefined);
+      expect(mockedFetch).toHaveBeenNthCalledWith(2, 102, undefined);
     });
 
     it('should fetch with filters when provided', async () => {
-      const clientGroupId = 'group-001';
+      const productOwnerId = 123;
       const mockPersonalRelationships = createMockRelationshipArray(2, {
         type: 'personal',
-        client_group_id: clientGroupId,
+        product_owner_ids: [productOwnerId],
       });
 
       mockedFetch.mockResolvedValueOnce(mockPersonalRelationships);
 
       const { result } = renderHook(
         () =>
-          useSpecialRelationships(clientGroupId, {
-            filters: { type: 'personal', status: 'Active' },
+          useSpecialRelationships(productOwnerId, {
+            filters: { type: 'Personal', status: 'Active' },
           }),
         { wrapper }
       );
@@ -177,8 +177,8 @@ describe('useSpecialRelationships Hook (Query)', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(mockedFetch).toHaveBeenCalledWith(clientGroupId, {
-        type: 'personal',
+      expect(mockedFetch).toHaveBeenCalledWith(productOwnerId, {
+        type: 'Personal',
         status: 'Active',
       });
       expect(result.current.data).toEqual(mockPersonalRelationships);
@@ -187,7 +187,7 @@ describe('useSpecialRelationships Hook (Query)', () => {
 
   describe('Loading State', () => {
     it('should set isLoading to true while fetching', async () => {
-      const clientGroupId = 'group-001';
+      const productOwnerId = 123;
       const mockRelationships = createMockRelationshipArray(2);
 
       mockedFetch.mockImplementation(
@@ -197,7 +197,7 @@ describe('useSpecialRelationships Hook (Query)', () => {
           })
       );
 
-      const { result } = renderHook(() => useSpecialRelationships(clientGroupId), {
+      const { result } = renderHook(() => useSpecialRelationships(productOwnerId), {
         wrapper,
       });
 
@@ -212,12 +212,12 @@ describe('useSpecialRelationships Hook (Query)', () => {
     });
 
     it('should provide isFetching status separately from isLoading', async () => {
-      const clientGroupId = 'group-001';
+      const productOwnerId = 123;
       const mockRelationships = createMockRelationshipArray(1);
 
       mockedFetch.mockResolvedValueOnce(mockRelationships);
 
-      const { result } = renderHook(() => useSpecialRelationships(clientGroupId), {
+      const { result } = renderHook(() => useSpecialRelationships(productOwnerId), {
         wrapper,
       });
 
@@ -231,12 +231,12 @@ describe('useSpecialRelationships Hook (Query)', () => {
 
   describe('Error State', () => {
     it('should set error state when fetch fails', async () => {
-      const clientGroupId = 'group-001';
+      const productOwnerId = 123;
       const errorMessage = 'Failed to fetch special relationships';
 
       mockedFetch.mockRejectedValueOnce(new Error(errorMessage));
 
-      const { result } = renderHook(() => useSpecialRelationships(clientGroupId), {
+      const { result } = renderHook(() => useSpecialRelationships(productOwnerId), {
         wrapper,
       });
 
@@ -249,13 +249,13 @@ describe('useSpecialRelationships Hook (Query)', () => {
     });
 
     it('should allow retry after error', async () => {
-      const clientGroupId = 'group-001';
+      const productOwnerId = 123;
       const mockRelationships = createMockRelationshipArray(2);
 
       // First call fails
       mockedFetch.mockRejectedValueOnce(new Error('Temporary error'));
 
-      const { result } = renderHook(() => useSpecialRelationships(clientGroupId), {
+      const { result } = renderHook(() => useSpecialRelationships(productOwnerId), {
         wrapper,
       });
 
@@ -277,11 +277,11 @@ describe('useSpecialRelationships Hook (Query)', () => {
 
   describe('Success State', () => {
     it('should handle empty relationships list', async () => {
-      const clientGroupId = 'group-001';
+      const productOwnerId = 123;
 
       mockedFetch.mockResolvedValueOnce([]);
 
-      const { result } = renderHook(() => useSpecialRelationships(clientGroupId), {
+      const { result } = renderHook(() => useSpecialRelationships(productOwnerId), {
         wrapper,
       });
 
@@ -294,15 +294,15 @@ describe('useSpecialRelationships Hook (Query)', () => {
     });
 
     it('should return mixed personal and professional relationships', async () => {
-      const clientGroupId = 'group-001';
+      const productOwnerId = 123;
       const mockRelationships = [
-        createMockPersonalRelationship({ client_group_id: clientGroupId }),
-        createMockProfessionalRelationship({ client_group_id: clientGroupId }),
+        createMockPersonalRelationship({ product_owner_ids: [productOwnerId] }),
+        createMockProfessionalRelationship({ product_owner_ids: [productOwnerId] }),
       ];
 
       mockedFetch.mockResolvedValueOnce(mockRelationships);
 
-      const { result } = renderHook(() => useSpecialRelationships(clientGroupId), {
+      const { result } = renderHook(() => useSpecialRelationships(productOwnerId), {
         wrapper,
       });
 
@@ -311,20 +311,20 @@ describe('useSpecialRelationships Hook (Query)', () => {
       });
 
       expect(result.current.data).toHaveLength(2);
-      expect(result.current.data?.[0].relationship_type).toBe('Spouse');
-      expect(result.current.data?.[1].relationship_type).toBe('Financial Advisor');
+      expect(result.current.data?.[0].relationship).toBe('Spouse');
+      expect(result.current.data?.[1].relationship).toBe('Financial Advisor');
     });
   });
 
   describe('Caching Behavior', () => {
     it('should cache data for subsequent renders', async () => {
-      const clientGroupId = 'group-001';
+      const productOwnerId = 123;
       const mockRelationships = createMockRelationshipArray(2);
 
       mockedFetch.mockResolvedValueOnce(mockRelationships);
 
       const { result, unmount } = renderHook(
-        () => useSpecialRelationships(clientGroupId),
+        () => useSpecialRelationships(productOwnerId),
         { wrapper }
       );
 
@@ -338,7 +338,7 @@ describe('useSpecialRelationships Hook (Query)', () => {
 
       // Re-render hook
       const { result: result2 } = renderHook(
-        () => useSpecialRelationships(clientGroupId),
+        () => useSpecialRelationships(productOwnerId),
         { wrapper }
       );
 
@@ -368,9 +368,8 @@ describe('useCreateSpecialRelationship Hook (Mutation)', () => {
   describe('Create Mutation', () => {
     it('should create a new special relationship', async () => {
       const newRelationship = createMockPersonalRelationship({
-        id: 'rel-new-001',
-        first_name: 'New',
-        last_name: 'Person',
+        id: 101,
+        name: 'New Person',
       });
 
       mockedCreate.mockResolvedValueOnce(newRelationship);
@@ -378,11 +377,11 @@ describe('useCreateSpecialRelationship Hook (Mutation)', () => {
       const { result } = renderHook(() => useCreateSpecialRelationship(), { wrapper });
 
       const createData = {
-        client_group_id: 'group-001',
-        relationship_type: 'Spouse' as const,
+        product_owner_ids: [123],
+        relationship: 'Spouse' as const,
         status: 'Active' as const,
-        first_name: 'New',
-        last_name: 'Person',
+        name: 'New Person',
+        type: 'Personal' as const,
       };
 
       result.current.mutate(createData);
@@ -396,18 +395,18 @@ describe('useCreateSpecialRelationship Hook (Mutation)', () => {
     });
 
     it('should invalidate query cache after successful creation', async () => {
-      const clientGroupId = 'group-001';
+      const productOwnerId = 123;
       const existingRelationships = createMockRelationshipArray(2, {
-        client_group_id: clientGroupId,
+        product_owner_ids: [productOwnerId],
       });
       const newRelationship = createMockPersonalRelationship({
-        client_group_id: clientGroupId,
+        product_owner_ids: [productOwnerId],
       });
 
       // Pre-populate cache
       mockedFetch.mockResolvedValueOnce(existingRelationships);
       const { result: queryResult } = renderHook(
-        () => useSpecialRelationships(clientGroupId),
+        () => useSpecialRelationships(productOwnerId),
         { wrapper }
       );
 
@@ -425,11 +424,11 @@ describe('useCreateSpecialRelationship Hook (Mutation)', () => {
       );
 
       mutationResult.current.mutate({
-        client_group_id: clientGroupId,
-        relationship_type: 'Spouse',
+        product_owner_ids: [productOwnerId],
+        relationship: 'Spouse',
         status: 'Active',
-        first_name: 'New',
-        last_name: 'Person',
+        name: 'New Person',
+        type: 'Personal',
       });
 
       await waitFor(() => {
@@ -457,11 +456,11 @@ describe('useCreateSpecialRelationship Hook (Mutation)', () => {
       const { result } = renderHook(() => useCreateSpecialRelationship(), { wrapper });
 
       result.current.mutate({
-        client_group_id: 'group-001',
-        relationship_type: 'Spouse',
+        product_owner_ids: [123],
+        relationship: 'Spouse',
         status: 'Active',
-        first_name: 'Duplicate',
-        last_name: 'Email',
+        name: 'Duplicate Email',
+        type: 'Personal',
         email: 'duplicate@example.com',
       });
 
@@ -485,11 +484,11 @@ describe('useCreateSpecialRelationship Hook (Mutation)', () => {
       const { result } = renderHook(() => useCreateSpecialRelationship(), { wrapper });
 
       result.current.mutate({
-        client_group_id: 'group-001',
-        relationship_type: 'Spouse',
+        product_owner_ids: [123],
+        relationship: 'Spouse',
         status: 'Active',
-        first_name: 'New',
-        last_name: 'Person',
+        name: 'New Person',
+        type: 'Personal',
       });
 
       await waitFor(() => {
@@ -524,14 +523,14 @@ describe('useUpdateSpecialRelationship Hook (Mutation)', () => {
   describe('Update Mutation', () => {
     it('should update an existing special relationship', async () => {
       const originalRelationship = createMockPersonalRelationship({
-        id: 'rel-001',
+        id: 101,
         email: 'old@example.com',
       });
 
       const updatedRelationship = {
         ...originalRelationship,
         email: 'new@example.com',
-        mobile_phone: '+44-7700-900001',
+        phone_number: '+44-7700-900001',
       };
 
       mockedUpdate.mockResolvedValueOnce(updatedRelationship);
@@ -539,10 +538,10 @@ describe('useUpdateSpecialRelationship Hook (Mutation)', () => {
       const { result } = renderHook(() => useUpdateSpecialRelationship(), { wrapper });
 
       result.current.mutate({
-        id: 'rel-001',
+        id: 101,
         data: {
           email: 'new@example.com',
-          mobile_phone: '+44-7700-900001',
+          phone_number: '+44-7700-900001',
         },
       });
 
@@ -550,27 +549,31 @@ describe('useUpdateSpecialRelationship Hook (Mutation)', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(mockedUpdate).toHaveBeenCalledWith('rel-001', {
+      expect(mockedUpdate).toHaveBeenCalledWith(101, {
         email: 'new@example.com',
-        mobile_phone: '+44-7700-900001',
+        phone_number: '+44-7700-900001',
       });
       expect(result.current.data).toEqual(updatedRelationship);
     });
 
     it('should use optimistic updates for immediate UI feedback', async () => {
-      const clientGroupId = 'group-001';
+      const productOwnerId = 123;
       const relationships = createMockRelationshipArray(3, {
-        client_group_id: clientGroupId,
+        product_owner_ids: [productOwnerId],
       });
 
       // Pre-populate cache
       mockedFetch.mockResolvedValueOnce(relationships);
       const { result: queryResult } = renderHook(
-        () => useSpecialRelationships(clientGroupId),
+        () => useSpecialRelationships(productOwnerId),
         { wrapper }
       );
 
-      // Wait for all background operations to complete before testing optimistic update
+      // Wait for initial query to succeed and all operations to complete
+      await waitFor(() => {
+        expect(queryResult.current.isSuccess).toBe(true);
+      });
+
       await waitFor(() => {
         expect(queryClient.isFetching()).toBe(0);
       });
@@ -578,10 +581,16 @@ describe('useUpdateSpecialRelationship Hook (Mutation)', () => {
       const relationshipToUpdate = relationships[0];
       const updatedRelationship = {
         ...relationshipToUpdate,
-        first_name: 'UpdatedName',
+        name: 'UpdatedName',
       };
 
-      mockedUpdate.mockResolvedValueOnce(updatedRelationship);
+      // Delay the mock response to ensure optimistic update is visible
+      mockedUpdate.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            setTimeout(() => resolve(updatedRelationship), 100);
+          })
+      );
 
       const { result: mutationResult } = renderHook(
         () => useUpdateSpecialRelationship(),
@@ -590,16 +599,16 @@ describe('useUpdateSpecialRelationship Hook (Mutation)', () => {
 
       mutationResult.current.mutate({
         id: relationshipToUpdate.id,
-        data: { first_name: 'UpdatedName' },
+        data: { name: 'UpdatedName' },
       });
 
       // Optimistic update should apply immediately
       await waitFor(() => {
         const cachedData = queryClient.getQueryData<SpecialRelationship[]>([
           'specialRelationships',
-          clientGroupId,
+          productOwnerId,
         ]);
-        expect(cachedData?.[0].first_name).toBe('UpdatedName');
+        expect(cachedData?.[0].name).toBe('UpdatedName');
       });
 
       await waitFor(() => {
@@ -608,15 +617,15 @@ describe('useUpdateSpecialRelationship Hook (Mutation)', () => {
     });
 
     it('should rollback optimistic update on error', async () => {
-      const clientGroupId = 'group-001';
+      const productOwnerId = 123;
       const relationships = createMockRelationshipArray(2, {
-        client_group_id: clientGroupId,
+        product_owner_ids: [productOwnerId],
       });
 
       // Pre-populate cache
       mockedFetch.mockResolvedValueOnce(relationships);
       const { result: queryResult } = renderHook(
-        () => useSpecialRelationships(clientGroupId),
+        () => useSpecialRelationships(productOwnerId),
         { wrapper }
       );
 
@@ -636,7 +645,7 @@ describe('useUpdateSpecialRelationship Hook (Mutation)', () => {
 
       mutationResult.current.mutate({
         id: relationshipToUpdate.id,
-        data: { first_name: 'FailedUpdate' },
+        data: { name: 'FailedUpdate' },
       });
 
       await waitFor(() => {
@@ -646,32 +655,32 @@ describe('useUpdateSpecialRelationship Hook (Mutation)', () => {
       // Cache should rollback to original data
       const cachedData = queryClient.getQueryData<SpecialRelationship[]>([
         'specialRelationships',
-        clientGroupId,
+        productOwnerId,
       ]);
       expect(cachedData).toEqual(originalData);
     });
 
     it('should invalidate query cache after successful update', async () => {
-      const clientGroupId = 'group-001';
+      const productOwnerId = 123;
       const relationships = createMockRelationshipArray(2, {
-        client_group_id: clientGroupId,
+        product_owner_ids: [productOwnerId],
       });
 
       mockedFetch.mockResolvedValueOnce(relationships);
-      renderHook(() => useSpecialRelationships(clientGroupId), { wrapper });
+      renderHook(() => useSpecialRelationships(productOwnerId), { wrapper });
 
       await waitFor(() => {
         expect(queryClient.isFetching()).toBe(0);
       });
 
-      const updatedRelationship = { ...relationships[0], first_name: 'Updated' };
+      const updatedRelationship = { ...relationships[0], name: 'Updated' };
       mockedUpdate.mockResolvedValueOnce(updatedRelationship);
 
       const { result } = renderHook(() => useUpdateSpecialRelationship(), { wrapper });
 
       result.current.mutate({
         id: relationships[0].id,
-        data: { first_name: 'Updated' },
+        data: { name: 'Updated' },
       });
 
       await waitFor(() => {
@@ -679,7 +688,7 @@ describe('useUpdateSpecialRelationship Hook (Mutation)', () => {
       });
 
       // Should trigger refetch
-      expect(queryClient.getQueryState(['specialRelationships', clientGroupId]))
+      expect(queryClient.getQueryState(['specialRelationships', productOwnerId]))
         .toBeTruthy();
     });
   });
@@ -704,7 +713,7 @@ describe('useUpdateSpecialRelationshipStatus Hook (Mutation)', () => {
   describe('Status Update Mutation', () => {
     it('should update relationship status', async () => {
       const relationship = createMockPersonalRelationship({
-        id: 'rel-001',
+        id: 101,
         status: 'Active',
       });
 
@@ -717,7 +726,7 @@ describe('useUpdateSpecialRelationshipStatus Hook (Mutation)', () => {
       });
 
       result.current.mutate({
-        id: 'rel-001',
+        id: 101,
         status: 'Inactive',
       });
 
@@ -725,13 +734,13 @@ describe('useUpdateSpecialRelationshipStatus Hook (Mutation)', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(mockedUpdateStatus).toHaveBeenCalledWith('rel-001', 'Inactive');
+      expect(mockedUpdateStatus).toHaveBeenCalledWith(101, 'Inactive');
       expect(result.current.data?.status).toBe('Inactive');
     });
 
     it('should handle status update to Deceased', async () => {
       const relationship = createMockPersonalRelationship({
-        id: 'rel-001',
+        id: 101,
         status: 'Active',
       });
 
@@ -744,7 +753,7 @@ describe('useUpdateSpecialRelationshipStatus Hook (Mutation)', () => {
       });
 
       result.current.mutate({
-        id: 'rel-001',
+        id: 101,
         status: 'Deceased',
       });
 
@@ -756,14 +765,14 @@ describe('useUpdateSpecialRelationshipStatus Hook (Mutation)', () => {
     });
 
     it('should use optimistic updates for status changes', async () => {
-      const clientGroupId = 'group-001';
+      const productOwnerId = 123;
       const relationships = createMockRelationshipArray(2, {
-        client_group_id: clientGroupId,
+        product_owner_ids: [productOwnerId],
         status: 'Active',
       });
 
       mockedFetch.mockResolvedValueOnce(relationships);
-      renderHook(() => useSpecialRelationships(clientGroupId), { wrapper });
+      renderHook(() => useSpecialRelationships(productOwnerId), { wrapper });
 
       await waitFor(() => {
         expect(queryClient.isFetching()).toBe(0);
@@ -785,7 +794,7 @@ describe('useUpdateSpecialRelationshipStatus Hook (Mutation)', () => {
       await waitFor(() => {
         const cachedData = queryClient.getQueryData<SpecialRelationship[]>([
           'specialRelationships',
-          clientGroupId,
+          productOwnerId,
         ]);
         expect(cachedData?.[0].status).toBe('Inactive');
       });
@@ -840,24 +849,24 @@ describe('useDeleteSpecialRelationship Hook (Mutation with Undo)', () => {
 
       const { result } = renderHook(() => useDeleteSpecialRelationship(), { wrapper });
 
-      result.current.mutate('rel-001');
+      result.current.mutate(101);
 
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(mockedDelete).toHaveBeenCalledWith('rel-001');
+      expect(mockedDelete).toHaveBeenCalledWith(101);
     });
 
     it('should use optimistic updates to remove relationship immediately', async () => {
-      const clientGroupId = 'group-001';
+      const productOwnerId = 123;
       const relationships = createMockRelationshipArray(3, {
-        client_group_id: clientGroupId,
+        product_owner_ids: [productOwnerId],
       });
 
       // Pre-populate cache
       mockedFetch.mockResolvedValueOnce(relationships);
-      renderHook(() => useSpecialRelationships(clientGroupId), { wrapper });
+      renderHook(() => useSpecialRelationships(productOwnerId), { wrapper });
 
       await waitFor(() => {
         expect(queryClient.isFetching()).toBe(0);
@@ -874,7 +883,7 @@ describe('useDeleteSpecialRelationship Hook (Mutation with Undo)', () => {
       await waitFor(() => {
         const cachedData = queryClient.getQueryData<SpecialRelationship[]>([
           'specialRelationships',
-          clientGroupId,
+          productOwnerId,
         ]);
         expect(cachedData?.length).toBe(2);
         expect(cachedData?.find((r) => r.id === relationshipToDelete.id)).toBeUndefined();
@@ -882,14 +891,14 @@ describe('useDeleteSpecialRelationship Hook (Mutation with Undo)', () => {
     });
 
     it('should rollback optimistic delete on error', async () => {
-      const clientGroupId = 'group-001';
+      const productOwnerId = 123;
       const relationships = createMockRelationshipArray(3, {
-        client_group_id: clientGroupId,
+        product_owner_ids: [productOwnerId],
       });
 
       // Pre-populate cache
       mockedFetch.mockResolvedValueOnce(relationships);
-      renderHook(() => useSpecialRelationships(clientGroupId), { wrapper });
+      renderHook(() => useSpecialRelationships(productOwnerId), { wrapper });
 
       await waitFor(() => {
         expect(queryClient.isFetching()).toBe(0);
@@ -909,20 +918,20 @@ describe('useDeleteSpecialRelationship Hook (Mutation with Undo)', () => {
       // Cache should rollback to include deleted relationship
       const cachedData = queryClient.getQueryData<SpecialRelationship[]>([
         'specialRelationships',
-        clientGroupId,
+        productOwnerId,
       ]);
       expect(cachedData?.length).toBe(3);
       expect(cachedData?.find((r) => r.id === relationshipToDelete.id)).toBeDefined();
     });
 
     it('should invalidate query cache after successful deletion', async () => {
-      const clientGroupId = 'group-001';
+      const productOwnerId = 123;
       const relationships = createMockRelationshipArray(2, {
-        client_group_id: clientGroupId,
+        product_owner_ids: [productOwnerId],
       });
 
       mockedFetch.mockResolvedValueOnce(relationships);
-      renderHook(() => useSpecialRelationships(clientGroupId), { wrapper });
+      renderHook(() => useSpecialRelationships(productOwnerId), { wrapper });
 
       await waitFor(() => {
         expect(queryClient.isFetching()).toBe(0);
@@ -949,7 +958,7 @@ describe('useDeleteSpecialRelationship Hook (Mutation with Undo)', () => {
 
       const { result } = renderHook(() => useDeleteSpecialRelationship(), { wrapper });
 
-      result.current.mutate('rel-001');
+      result.current.mutate(101);
 
       await waitFor(() => {
         expect(result.current.isError).toBe(true);
@@ -968,7 +977,7 @@ describe('useDeleteSpecialRelationship Hook (Mutation with Undo)', () => {
 
       const { result } = renderHook(() => useDeleteSpecialRelationship(), { wrapper });
 
-      result.current.mutate('rel-001');
+      result.current.mutate(101);
 
       await waitFor(() => {
         expect(result.current.isPending).toBe(true);
@@ -984,13 +993,13 @@ describe('useDeleteSpecialRelationship Hook (Mutation with Undo)', () => {
 
   describe('Query Key Management', () => {
     it('should use consistent query keys for cache invalidation', async () => {
-      const clientGroupId = 'group-001';
+      const productOwnerId = 123;
       const relationships = createMockRelationshipArray(2, {
-        client_group_id: clientGroupId,
+        product_owner_ids: [productOwnerId],
       });
 
       mockedFetch.mockResolvedValueOnce(relationships);
-      renderHook(() => useSpecialRelationships(clientGroupId), { wrapper });
+      renderHook(() => useSpecialRelationships(productOwnerId), { wrapper });
 
       await waitFor(() => {
         expect(queryClient.isFetching()).toBe(0);
@@ -999,24 +1008,24 @@ describe('useDeleteSpecialRelationship Hook (Mutation with Undo)', () => {
       // Verify query key structure
       const queryState = queryClient.getQueryState([
         'specialRelationships',
-        clientGroupId,
+        productOwnerId,
       ]);
       expect(queryState).toBeDefined();
 
       // Create mutation should invalidate same query key
       const newRelationship = createMockPersonalRelationship({
-        client_group_id: clientGroupId,
+        product_owner_ids: [productOwnerId],
       });
       mockedCreate.mockResolvedValueOnce(newRelationship);
 
       const { result } = renderHook(() => useCreateSpecialRelationship(), { wrapper });
 
       result.current.mutate({
-        client_group_id: clientGroupId,
-        relationship_type: 'Spouse',
+        product_owner_ids: [productOwnerId],
+        relationship: 'Spouse',
         status: 'Active',
-        first_name: 'Test',
-        last_name: 'User',
+        name: 'Test User',
+        type: 'Personal',
       });
 
       await waitFor(() => {
