@@ -7,6 +7,7 @@ import {
   ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 import PeopleSubTab from './components/PeopleSubTab';
+import SpecialRelationshipsWrapper from './components/SpecialRelationshipsWrapper';
 
 interface BasicDetailsTabProps {
   clientGroupId: string;
@@ -44,16 +45,7 @@ const BasicDetailsTab: React.FC<BasicDetailsTabProps> = ({ clientGroupId }) => {
           </div>
         );
       case 'relationships':
-        return (
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">Special Relationships content coming soon</p>
-              <p className="text-gray-400 text-sm mt-2">
-                Accountants, solicitors, and family relationships
-              </p>
-            </div>
-          </div>
-        );
+        return <SpecialRelationshipsWrapper />;
       case 'health':
         return (
           <div className="bg-white rounded-lg shadow p-6">
