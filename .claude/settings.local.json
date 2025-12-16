@@ -18,7 +18,8 @@
       "Bash(findstr:*)",
       "Bash(npx jest --clearCache)",
       "Bash(dir:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npm run test:coverage:*)"
     ],
     "deny": [],
     "ask": []

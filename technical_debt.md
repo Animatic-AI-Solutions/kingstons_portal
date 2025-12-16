@@ -72,3 +72,5 @@
 - we have all these mpty init files
 
 - db.fetch row has poorly formatted sql statement strings
+
+- frontend components and backedn routes could be better organised in folders
