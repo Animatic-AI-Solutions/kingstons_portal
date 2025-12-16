@@ -1,7 +1,3 @@
 is_dependent actually represents if the associated products owners are dependent on the special relationship
 
-in the edit special relyaionships modal it says the product owner fetching for a specila reltaioship is a TO-DO
-
 instea dof alwasy writing to the same logfile, each time the script is run to create a backup generate a logfile just for that session, I'll create a folder called backup_logs and store the log files organised by months (in month folders), tsi way I can actually keep track of errors that happen insteaf of all logs bing in one massive text file
-
-there aee todos in use speciaal relationship api

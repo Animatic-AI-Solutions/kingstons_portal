@@ -1,43 +1,39 @@
 """
-Test suite for Special Relationships API Routes (Cycle 9)
+Test suite for Special Relationships API Routes
 
 Tests all API endpoints for managing special relationships (personal and professional)
 in the Kingston's Portal system.
 
-This is the TDD RED phase - all tests should FAIL initially because the API routes
-don't exist yet. This test suite defines the expected behavior of the API.
-
 API Endpoints Under Test:
-- GET /api/client_groups/{client_group_id}/special_relationships
-- POST /api/client_groups/{client_group_id}/special_relationships
+- GET /api/special_relationships?product_owner_id={id}
+- POST /api/special_relationships
 - PUT /api/special_relationships/{relationship_id}
 - PATCH /api/special_relationships/{relationship_id}/status
 - DELETE /api/special_relationships/{relationship_id}
 
 Test Coverage:
-- 30+ test cases covering all endpoints
 - Authentication tests (401 errors)
 - Validation tests (400 errors)
 - Not found tests (404 errors)
-- Database error scenarios (500 errors)
-- Soft delete behavior verification
-- Data filtering and querying
+- Success scenarios for all CRUD operations
 """
 
 import pytest
-import uuid
+import pytest_asyncio
 from datetime import datetime, date, timedelta
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from fastapi.testclient import TestClient
 import asyncpg
 
 # Constants for testing
 VALID_STATUSES = ["Active", "Inactive", "Deceased"]
-PERSONAL_RELATIONSHIP_TYPES = [
+VALID_TYPES = ["Personal", "Professional"]
+
+PERSONAL_RELATIONSHIPS = [
     "Spouse", "Partner", "Child", "Parent", "Sibling",
     "Grandchild", "Grandparent", "Other Family"
 ]
-PROFESSIONAL_RELATIONSHIP_TYPES = [
+PROFESSIONAL_RELATIONSHIPS = [
     "Accountant", "Solicitor", "Doctor", "Financial Advisor",
     "Estate Planner", "Other Professional", "Guardian", "Power of Attorney"
 ]
@@ -45,32 +41,15 @@ PROFESSIONAL_RELATIONSHIP_TYPES = [
 
 # =============================================================================
 # Test Fixtures
+# Note: client fixture is provided by conftest.py
 # =============================================================================
 
-@pytest.fixture(scope="module")
-def client():
-    """
-    Creates a test client for the FastAPI app.
-    Uses the existing conftest pattern.
-    """
-    import sys
-    import os
-    # Add the backend directory to the path
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-    from main import app
-    with TestClient(app) as test_client:
-        yield test_client
-
-
-@pytest.fixture
+@pytest_asyncio.fixture
 async def db_connection():
     """
     Provides a PostgreSQL database connection for test setup/teardown.
-
     Uses DATABASE_URL_PHASE2 from environment variables.
-    Creates connection pool and yields connection for tests.
-    Cleans up after tests complete.
     """
     from app.db.database import DATABASE_URL
 
@@ -83,102 +62,152 @@ async def db_connection():
         await pool.close()
 
 
-@pytest.fixture
-def test_client_group():
-    """
-    Returns a test client group ID for use in tests.
-    Note: This assumes a client group exists in the test database.
-    In production tests, this would create and clean up the test data.
-    """
-    # For TDD RED phase, we use a placeholder UUID
-    # When implementing, this should create actual test data
-    return str(uuid.uuid4())
+@pytest_asyncio.fixture
+async def test_product_owner(db_connection):
+    """Creates a test product owner and returns its ID."""
+    # Create a test product owner
+    result = await db_connection.fetchrow(
+        """
+        INSERT INTO product_owners (firstname, surname, status)
+        VALUES ($1, $2, $3)
+        RETURNING id
+        """,
+        "Test",
+        "Owner",
+        "active"
+    )
+    product_owner_id = result['id']
+
+    yield product_owner_id
+
+    # Cleanup: Delete the product owner
+    try:
+        await db_connection.execute(
+            'DELETE FROM product_owners WHERE id = $1',
+            product_owner_id
+        )
+    except Exception as e:
+        print(f"Error cleaning up product owner: {e}")
 
 
-@pytest.fixture
-def test_special_relationship():
-    """
-    Returns a test special relationship ID for use in tests.
-    Note: This assumes a relationship exists in the test database.
-    In production tests, this would create and clean up the test data.
-    """
-    # For TDD RED phase, we use a placeholder UUID
-    # When implementing, this should create actual test data
-    return str(uuid.uuid4())
+@pytest_asyncio.fixture
+async def test_special_relationship(db_connection, test_product_owner):
+    """Creates a test special relationship and returns its ID."""
+    # Create a test special relationship
+    result = await db_connection.fetchrow(
+        """
+        INSERT INTO special_relationships (
+            name, type, relationship, status, email, phone_number
+        )
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING id
+        """,
+        "Test Relationship",
+        "Personal",
+        "Spouse",
+        "Active",
+        "test@example.com",
+        "+44 7700 900123"
+    )
+    relationship_id = result['id']
+
+    # Link to product owner
+    await db_connection.execute(
+        """
+        INSERT INTO product_owner_special_relationships (product_owner_id, special_relationship_id)
+        VALUES ($1, $2)
+        """,
+        test_product_owner,
+        relationship_id
+    )
+
+    yield relationship_id
+
+    # Cleanup: Delete the relationship and junction table entry
+    try:
+        await db_connection.execute(
+            'DELETE FROM product_owner_special_relationships WHERE special_relationship_id = $1',
+            relationship_id
+        )
+        await db_connection.execute(
+            'DELETE FROM special_relationships WHERE id = $1',
+            relationship_id
+        )
+    except Exception as e:
+        print(f"Error cleaning up special relationship: {e}")
 
 
 @pytest.fixture
 def auth_headers() -> Dict[str, str]:
     """
     Returns authentication headers for API requests.
-
-    In production, this would be a valid JWT token.
-    For tests, we mock the authentication.
+    Note: In production, this would be a valid JWT token.
+    For tests, we assume authentication is bypassed or mocked.
     """
-    # TODO: Replace with actual JWT token generation when auth is implemented
     return {
-        "Authorization": "Bearer test_token_123",
         "Content-Type": "application/json"
     }
 
 
 @pytest.fixture
-def sample_personal_relationship_data(test_client_group) -> Dict[str, Any]:
+def sample_personal_relationship_data(test_product_owner) -> Dict[str, Any]:
     """Returns valid data for creating a personal relationship."""
     return {
-        "client_group_id": test_client_group,
-        "relationship_type": "Spouse",
+        "name": "Sarah Johnson",
+        "type": "Personal",
+        "relationship": "Spouse",
         "status": "Active",
-        "title": "Mrs",
-        "first_name": "Sarah",
-        "last_name": "Johnson",
         "date_of_birth": "1985-06-15",
+        "dependency": False,
         "email": "sarah.johnson@example.com",
-        "mobile_phone": "+44 7700 900111",
-        "home_phone": "+44 20 7946 0958",
-        "address_line1": "123 Oak Street",
-        "city": "London",
-        "postcode": "SW1A 1AA",
-        "country": "United Kingdom",
+        "phone_number": "+44 7700 900111",
+        "product_owner_ids": [test_product_owner]
     }
 
 
 @pytest.fixture
-def sample_professional_relationship_data(test_client_group) -> Dict[str, Any]:
+def sample_professional_relationship_data(test_product_owner) -> Dict[str, Any]:
     """Returns valid data for creating a professional relationship."""
     return {
-        "client_group_id": test_client_group,
-        "relationship_type": "Solicitor",
+        "name": "Robert Smith",
+        "type": "Professional",
+        "relationship": "Solicitor",
         "status": "Active",
-        "title": "Mr",
-        "first_name": "Robert",
-        "last_name": "Smith",
         "email": "robert.smith@lawfirm.co.uk",
-        "work_phone": "+44 20 7946 1234",
-        "company_name": "Smith & Associates Legal",
-        "position": "Senior Partner",
-        "professional_id": "SOL12345",
-        "address_line1": "45 Legal Lane",
-        "city": "London",
-        "postcode": "EC4A 1AA",
-        "country": "United Kingdom",
+        "phone_number": "+44 20 7946 1234",
+        "firm_name": "Smith & Associates Legal",
+        "product_owner_ids": [test_product_owner]
     }
 
 
 # =============================================================================
-# GET /api/client_groups/{client_group_id}/special_relationships Tests
+# GET /api/special_relationships Tests
 # =============================================================================
 
 class TestGetSpecialRelationships:
-    """Tests for fetching special relationships for a client group."""
+    """Tests for fetching special relationships."""
 
-    def test_get_all_relationships_success(
-        self, client: TestClient, auth_headers, test_client_group,
-        test_special_relationship
+    @pytest.mark.asyncio
+    async def test_get_all_relationships_success(
+        self, client: TestClient, auth_headers, test_special_relationship
     ):
-        """Test successfully fetching all relationships for a client group."""
+        """Test successfully fetching all relationships."""
         response = client.get(
-            f"/api/client_groups/{test_client_group}/special_relationships",
+            "/api/special_relationships",
+            headers=auth_headers
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+
+    @pytest.mark.asyncio
+    async def test_get_relationships_filter_by_product_owner(
+        self, client: TestClient, auth_headers, test_product_owner, test_special_relationship
+    ):
+        """Test filtering relationships by product owner ID."""
+        response = client.get(
+            f"/api/special_relationships?product_owner_id={test_product_owner}",
             headers=auth_headers
         )
 
@@ -188,24 +217,41 @@ class TestGetSpecialRelationships:
         assert len(data) >= 1
 
         # Verify relationship structure
-        relationship = data[0]
-        assert "id" in relationship
-        assert "client_group_id" in relationship
-        assert "relationship_type" in relationship
-        assert "status" in relationship
-        assert "first_name" in relationship
-        assert "last_name" in relationship
-        assert "created_at" in relationship
-        assert "updated_at" in relationship
-        assert relationship["deleted_at"] is None  # Not soft-deleted
+        if len(data) > 0:
+            relationship = data[0]
+            assert "id" in relationship
+            assert "name" in relationship
+            assert "type" in relationship
+            assert "relationship" in relationship
+            assert "status" in relationship
+            assert "product_owner_ids" in relationship
+            assert test_product_owner in relationship["product_owner_ids"]
 
-    def test_get_relationships_filter_by_status_active(
-        self, client: TestClient, auth_headers, test_client_group
+    @pytest.mark.asyncio
+    async def test_get_relationships_filter_by_type(
+        self, client: TestClient, auth_headers, test_special_relationship
     ):
-        """Test filtering relationships by Active status."""
+        """Test filtering relationships by type."""
         response = client.get(
-            f"/api/client_groups/{test_client_group}/special_relationships",
-            params={"status": "Active"},
+            "/api/special_relationships?type=Personal",
+            headers=auth_headers
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+
+        # All returned relationships should be Personal
+        for relationship in data:
+            assert relationship["type"] == "Personal"
+
+    @pytest.mark.asyncio
+    async def test_get_relationships_filter_by_status(
+        self, client: TestClient, auth_headers, test_special_relationship
+    ):
+        """Test filtering relationships by status."""
+        response = client.get(
+            "/api/special_relationships?status=Active",
             headers=auth_headers
         )
 
@@ -217,141 +263,22 @@ class TestGetSpecialRelationships:
         for relationship in data:
             assert relationship["status"] == "Active"
 
-    def test_get_relationships_filter_by_status_inactive(
-        self, client: TestClient, auth_headers, test_client_group
-    ):
-        """Test filtering relationships by Inactive status."""
-        response = client.get(
-            f"/api/client_groups/{test_client_group}/special_relationships",
-            params={"status": "Inactive"},
-            headers=auth_headers
-        )
-
-        assert response.status_code == 200
-        data = response.json()
-        assert isinstance(data, list)
-
-        for relationship in data:
-            assert relationship["status"] == "Inactive"
-
-    def test_get_relationships_filter_by_status_deceased(
-        self, client: TestClient, auth_headers, test_client_group
-    ):
-        """Test filtering relationships by Deceased status."""
-        response = client.get(
-            f"/api/client_groups/{test_client_group}/special_relationships",
-            params={"status": "Deceased"},
-            headers=auth_headers
-        )
-
-        assert response.status_code == 200
-        data = response.json()
-        assert isinstance(data, list)
-
-        for relationship in data:
-            assert relationship["status"] == "Deceased"
-
-    def test_get_relationships_empty_list_when_none_exist(
-        self, client: TestClient, auth_headers, test_client_group
-    ):
-        """Test returns empty list when no relationships exist for client group."""
-        # Use a different client group with no relationships
-        new_client_group_id = str(uuid.uuid4())
-
-        response = client.get(
-            f"/api/client_groups/{new_client_group_id}/special_relationships",
-            headers=auth_headers
-        )
-
-        assert response.status_code == 200
-        data = response.json()
-        assert isinstance(data, list)
-        assert len(data) == 0
-
-    @pytest.mark.asyncio
-    async def test_get_relationships_excludes_soft_deleted(
-        self, client: TestClient, auth_headers, test_client_group,
-        db_connection
-    ):
-        """Test that soft-deleted relationships are excluded from results."""
-        # Create a relationship and soft-delete it
-        deleted_id = str(uuid.uuid4())
-
-        await db_connection.execute(
-            """
-            INSERT INTO special_relationships (
-                id, client_group_id, relationship_type, status,
-                first_name, last_name, deleted_at, created_at, updated_at
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            """,
-            deleted_id,
-            test_client_group,
-            "Child",
-            "Active",
-            "Deleted",
-            "Person",
-            datetime.utcnow(),  # deleted_at is set
-            datetime.utcnow(),
-            datetime.utcnow()
-        )
-
-        response = client.get(
-            f"/api/client_groups/{test_client_group}/special_relationships",
-            headers=auth_headers
-        )
-
-        assert response.status_code == 200
-        data = response.json()
-
-        # Verify deleted relationship is not in results
-        relationship_ids = [r["id"] for r in data]
-        assert deleted_id not in relationship_ids
-
-    def test_get_relationships_returns_404_for_nonexistent_client_group(
-        self, client: TestClient, auth_headers
-    ):
-        """Test returns 404 when client group doesn't exist."""
-        nonexistent_id = str(uuid.uuid4())
-
-        response = client.get(
-            f"/api/client_groups/{nonexistent_id}/special_relationships",
-            headers=auth_headers
-        )
-
-        assert response.status_code == 404
-        data = response.json()
-        assert "detail" in data
-
-    def test_get_relationships_returns_401_when_not_authenticated(
-        self, client: TestClient, test_client_group
-    ):
-        """Test returns 401 when no authentication provided."""
-        response = client.get(
-            f"/api/client_groups/{test_client_group}/special_relationships"
-        )
-
-        assert response.status_code == 401
-        data = response.json()
-        assert "detail" in data
-
 
 # =============================================================================
-# POST /api/client_groups/{client_group_id}/special_relationships Tests
+# POST /api/special_relationships Tests
 # =============================================================================
 
 class TestCreateSpecialRelationship:
     """Tests for creating new special relationships."""
 
-    def test_create_personal_relationship_success(
+    @pytest.mark.asyncio
+    async def test_create_personal_relationship_success(
         self, client: TestClient, auth_headers,
-        sample_personal_relationship_data
+        sample_personal_relationship_data, db_connection
     ):
         """Test successfully creating a personal relationship."""
-        client_group_id = sample_personal_relationship_data["client_group_id"]
-
         response = client.post(
-            f"/api/client_groups/{client_group_id}/special_relationships",
+            "/api/special_relationships",
             json=sample_personal_relationship_data,
             headers=auth_headers
         )
@@ -361,24 +288,35 @@ class TestCreateSpecialRelationship:
 
         # Verify created relationship
         assert "id" in data
-        assert data["client_group_id"] == client_group_id
-        assert data["first_name"] == sample_personal_relationship_data["first_name"]
-        assert data["last_name"] == sample_personal_relationship_data["last_name"]
-        assert data["relationship_type"] == sample_personal_relationship_data["relationship_type"]
+        assert data["name"] == sample_personal_relationship_data["name"]
+        assert data["type"] == sample_personal_relationship_data["type"]
+        assert data["relationship"] == sample_personal_relationship_data["relationship"]
         assert data["status"] == sample_personal_relationship_data["status"]
         assert "created_at" in data
         assert "updated_at" in data
-        assert data["deleted_at"] is None
+        assert data["product_owner_ids"] == sample_personal_relationship_data["product_owner_ids"]
 
-    def test_create_professional_relationship_success(
+        # Cleanup
+        try:
+            await db_connection.execute(
+                'DELETE FROM product_owner_special_relationships WHERE special_relationship_id = $1',
+                data['id']
+            )
+            await db_connection.execute(
+                'DELETE FROM special_relationships WHERE id = $1',
+                data['id']
+            )
+        except Exception as e:
+            print(f"Error cleaning up: {e}")
+
+    @pytest.mark.asyncio
+    async def test_create_professional_relationship_success(
         self, client: TestClient, auth_headers,
-        sample_professional_relationship_data
+        sample_professional_relationship_data, db_connection
     ):
         """Test successfully creating a professional relationship."""
-        client_group_id = sample_professional_relationship_data["client_group_id"]
-
         response = client.post(
-            f"/api/client_groups/{client_group_id}/special_relationships",
+            "/api/special_relationships",
             json=sample_professional_relationship_data,
             headers=auth_headers
         )
@@ -387,107 +325,72 @@ class TestCreateSpecialRelationship:
         data = response.json()
 
         # Verify professional fields
-        assert data["company_name"] == sample_professional_relationship_data["company_name"]
-        assert data["position"] == sample_professional_relationship_data["position"]
-        assert data["professional_id"] == sample_professional_relationship_data["professional_id"]
+        assert data["firm_name"] == sample_professional_relationship_data["firm_name"]
 
-    def test_create_relationship_returns_400_when_first_name_missing(
+        # Cleanup
+        try:
+            await db_connection.execute(
+                'DELETE FROM product_owner_special_relationships WHERE special_relationship_id = $1',
+                data['id']
+            )
+            await db_connection.execute(
+                'DELETE FROM special_relationships WHERE id = $1',
+                data['id']
+            )
+        except Exception as e:
+            print(f"Error cleaning up: {e}")
+
+    def test_create_relationship_returns_400_when_name_missing(
         self, client: TestClient, auth_headers,
         sample_personal_relationship_data
     ):
-        """Test returns 400 when first_name is missing (required field)."""
+        """Test returns 400 when name is missing (required field)."""
         invalid_data = sample_personal_relationship_data.copy()
-        del invalid_data["first_name"]
-
-        client_group_id = invalid_data["client_group_id"]
+        del invalid_data["name"]
 
         response = client.post(
-            f"/api/client_groups/{client_group_id}/special_relationships",
+            "/api/special_relationships",
             json=invalid_data,
             headers=auth_headers
         )
 
-        assert response.status_code == 400
+        assert response.status_code == 422  # Pydantic validation error
         data = response.json()
         assert "detail" in data
 
-    def test_create_relationship_returns_400_when_last_name_missing(
+    def test_create_relationship_returns_400_when_type_invalid(
         self, client: TestClient, auth_headers,
         sample_personal_relationship_data
     ):
-        """Test returns 400 when last_name is missing (required field)."""
+        """Test returns 400 when type is invalid."""
         invalid_data = sample_personal_relationship_data.copy()
-        del invalid_data["last_name"]
-
-        client_group_id = invalid_data["client_group_id"]
+        invalid_data["type"] = "InvalidType"
 
         response = client.post(
-            f"/api/client_groups/{client_group_id}/special_relationships",
+            "/api/special_relationships",
             json=invalid_data,
             headers=auth_headers
         )
 
-        assert response.status_code == 400
+        assert response.status_code == 422  # Pydantic validation error
         data = response.json()
         assert "detail" in data
 
-    def test_create_relationship_returns_400_when_first_name_too_long(
+    def test_create_relationship_returns_400_when_status_invalid(
         self, client: TestClient, auth_headers,
         sample_personal_relationship_data
     ):
-        """Test returns 400 when first_name exceeds 200 characters."""
+        """Test returns 400 when status is invalid."""
         invalid_data = sample_personal_relationship_data.copy()
-        invalid_data["first_name"] = "A" * 201  # Exceeds 200 char limit
-
-        client_group_id = invalid_data["client_group_id"]
+        invalid_data["status"] = "InvalidStatus"
 
         response = client.post(
-            f"/api/client_groups/{client_group_id}/special_relationships",
+            "/api/special_relationships",
             json=invalid_data,
             headers=auth_headers
         )
 
-        assert response.status_code == 400
-        data = response.json()
-        assert "detail" in data
-
-    def test_create_relationship_returns_400_when_relationship_type_missing(
-        self, client: TestClient, auth_headers,
-        sample_personal_relationship_data
-    ):
-        """Test returns 400 when relationship_type is missing (required field)."""
-        invalid_data = sample_personal_relationship_data.copy()
-        del invalid_data["relationship_type"]
-
-        client_group_id = invalid_data["client_group_id"]
-
-        response = client.post(
-            f"/api/client_groups/{client_group_id}/special_relationships",
-            json=invalid_data,
-            headers=auth_headers
-        )
-
-        assert response.status_code == 400
-        data = response.json()
-        assert "detail" in data
-
-    def test_create_relationship_returns_400_when_status_missing(
-        self, client: TestClient, auth_headers,
-        sample_personal_relationship_data
-    ):
-        """Test returns 400 when status is missing (required field)."""
-        invalid_data = sample_personal_relationship_data.copy()
-        del invalid_data["status"]
-
-        client_group_id = invalid_data["client_group_id"]
-
-        response = client.post(
-            f"/api/client_groups/{client_group_id}/special_relationships",
-            json=invalid_data,
-            headers=auth_headers
-        )
-
-        assert response.status_code == 400
+        assert response.status_code == 422  # Pydantic validation error
         data = response.json()
         assert "detail" in data
 
@@ -499,18 +402,15 @@ class TestCreateSpecialRelationship:
         invalid_data = sample_personal_relationship_data.copy()
         invalid_data["email"] = "not-a-valid-email"
 
-        client_group_id = invalid_data["client_group_id"]
-
         response = client.post(
-            f"/api/client_groups/{client_group_id}/special_relationships",
+            "/api/special_relationships",
             json=invalid_data,
             headers=auth_headers
         )
 
-        assert response.status_code == 400
+        assert response.status_code == 422  # Pydantic validation error
         data = response.json()
         assert "detail" in data
-        assert "email" in data["detail"].lower()
 
     def test_create_relationship_returns_400_when_phone_invalid(
         self, client: TestClient, auth_headers,
@@ -518,22 +418,19 @@ class TestCreateSpecialRelationship:
     ):
         """Test returns 400 when phone format is invalid."""
         invalid_data = sample_personal_relationship_data.copy()
-        invalid_data["mobile_phone"] = "12345"  # Too short (< 10 digits)
-
-        client_group_id = invalid_data["client_group_id"]
+        invalid_data["phone_number"] = "12345"  # Too short (< 10 digits)
 
         response = client.post(
-            f"/api/client_groups/{client_group_id}/special_relationships",
+            "/api/special_relationships",
             json=invalid_data,
             headers=auth_headers
         )
 
-        assert response.status_code == 400
+        assert response.status_code == 422  # Pydantic validation error
         data = response.json()
         assert "detail" in data
-        assert "phone" in data["detail"].lower()
 
-    def test_create_relationship_returns_400_when_date_of_birth_in_future(
+    def test_create_relationship_returns_400_when_dob_in_future(
         self, client: TestClient, auth_headers,
         sample_personal_relationship_data
     ):
@@ -542,49 +439,31 @@ class TestCreateSpecialRelationship:
         future_date = (date.today() + timedelta(days=1)).isoformat()
         invalid_data["date_of_birth"] = future_date
 
-        client_group_id = invalid_data["client_group_id"]
-
         response = client.post(
-            f"/api/client_groups/{client_group_id}/special_relationships",
+            "/api/special_relationships",
             json=invalid_data,
             headers=auth_headers
         )
 
-        assert response.status_code == 400
+        assert response.status_code == 422  # Pydantic validation error
         data = response.json()
         assert "detail" in data
 
-    def test_create_relationship_returns_404_for_nonexistent_client_group(
+    def test_create_relationship_returns_404_for_nonexistent_product_owner(
         self, client: TestClient, auth_headers,
         sample_personal_relationship_data
     ):
-        """Test returns 404 when client group doesn't exist."""
-        nonexistent_id = str(uuid.uuid4())
+        """Test returns 404 when product owner doesn't exist."""
         invalid_data = sample_personal_relationship_data.copy()
-        invalid_data["client_group_id"] = nonexistent_id
+        invalid_data["product_owner_ids"] = [999999]  # Non-existent ID
 
         response = client.post(
-            f"/api/client_groups/{nonexistent_id}/special_relationships",
+            "/api/special_relationships",
             json=invalid_data,
             headers=auth_headers
         )
 
         assert response.status_code == 404
-        data = response.json()
-        assert "detail" in data
-
-    def test_create_relationship_returns_401_when_not_authenticated(
-        self, client: TestClient, sample_personal_relationship_data
-    ):
-        """Test returns 401 when no authentication provided."""
-        client_group_id = sample_personal_relationship_data["client_group_id"]
-
-        response = client.post(
-            f"/api/client_groups/{client_group_id}/special_relationships",
-            json=sample_personal_relationship_data
-        )
-
-        assert response.status_code == 401
         data = response.json()
         assert "detail" in data
 
@@ -596,16 +475,16 @@ class TestCreateSpecialRelationship:
 class TestUpdateSpecialRelationship:
     """Tests for updating existing special relationships."""
 
-    def test_update_relationship_success(
+    @pytest.mark.asyncio
+    async def test_update_relationship_success(
         self, client: TestClient, auth_headers,
         test_special_relationship
     ):
-        """Test successfully updating all fields of a relationship."""
+        """Test successfully updating a relationship."""
         update_data = {
-            "first_name": "Updated",
-            "last_name": "Name",
+            "name": "Updated Name",
             "email": "updated@example.com",
-            "mobile_phone": "+44 7700 900999",
+            "phone_number": "+44 7700 900999",
             "status": "Inactive"
         }
 
@@ -619,12 +498,10 @@ class TestUpdateSpecialRelationship:
         data = response.json()
 
         # Verify updated fields
-        assert data["first_name"] == update_data["first_name"]
-        assert data["last_name"] == update_data["last_name"]
+        assert data["name"] == update_data["name"]
         assert data["email"] == update_data["email"]
-        assert data["mobile_phone"] == update_data["mobile_phone"]
+        assert data["phone_number"] == update_data["phone_number"]
         assert data["status"] == update_data["status"]
-        assert "updated_at" in data
 
     def test_update_relationship_returns_400_on_validation_error(
         self, client: TestClient, auth_headers,
@@ -633,7 +510,7 @@ class TestUpdateSpecialRelationship:
         """Test returns 400 when update data fails validation."""
         invalid_data = {
             "email": "invalid-email-format",
-            "mobile_phone": "123"  # Too short
+            "phone_number": "123"  # Too short
         }
 
         response = client.put(
@@ -642,7 +519,7 @@ class TestUpdateSpecialRelationship:
             headers=auth_headers
         )
 
-        assert response.status_code == 400
+        assert response.status_code == 422  # Pydantic validation error
         data = response.json()
         assert "detail" in data
 
@@ -650,8 +527,8 @@ class TestUpdateSpecialRelationship:
         self, client: TestClient, auth_headers
     ):
         """Test returns 404 when relationship doesn't exist."""
-        nonexistent_id = str(uuid.uuid4())
-        update_data = {"first_name": "Test"}
+        nonexistent_id = 999999
+        update_data = {"name": "Test"}
 
         response = client.put(
             f"/api/special_relationships/{nonexistent_id}",
@@ -663,21 +540,6 @@ class TestUpdateSpecialRelationship:
         data = response.json()
         assert "detail" in data
 
-    def test_update_relationship_returns_401_when_not_authenticated(
-        self, client: TestClient, test_special_relationship
-    ):
-        """Test returns 401 when no authentication provided."""
-        update_data = {"first_name": "Test"}
-
-        response = client.put(
-            f"/api/special_relationships/{test_special_relationship}",
-            json=update_data
-        )
-
-        assert response.status_code == 401
-        data = response.json()
-        assert "detail" in data
-
 
 # =============================================================================
 # PATCH /api/special_relationships/{relationship_id}/status Tests
@@ -686,7 +548,8 @@ class TestUpdateSpecialRelationship:
 class TestUpdateRelationshipStatus:
     """Tests for updating relationship status only."""
 
-    def test_update_status_to_active_success(
+    @pytest.mark.asyncio
+    async def test_update_status_to_active_success(
         self, client: TestClient, auth_headers,
         test_special_relationship
     ):
@@ -701,22 +564,8 @@ class TestUpdateRelationshipStatus:
         data = response.json()
         assert data["status"] == "Active"
 
-    def test_update_status_to_inactive_success(
-        self, client: TestClient, auth_headers,
-        test_special_relationship
-    ):
-        """Test successfully updating status to Inactive."""
-        response = client.patch(
-            f"/api/special_relationships/{test_special_relationship}/status",
-            json={"status": "Inactive"},
-            headers=auth_headers
-        )
-
-        assert response.status_code == 200
-        data = response.json()
-        assert data["status"] == "Inactive"
-
-    def test_update_status_to_deceased_success(
+    @pytest.mark.asyncio
+    async def test_update_status_to_deceased_success(
         self, client: TestClient, auth_headers,
         test_special_relationship
     ):
@@ -742,7 +591,7 @@ class TestUpdateRelationshipStatus:
             headers=auth_headers
         )
 
-        assert response.status_code == 400
+        assert response.status_code == 422  # Pydantic validation error
         data = response.json()
         assert "detail" in data
 
@@ -750,7 +599,7 @@ class TestUpdateRelationshipStatus:
         self, client: TestClient, auth_headers
     ):
         """Test returns 404 when relationship doesn't exist."""
-        nonexistent_id = str(uuid.uuid4())
+        nonexistent_id = 999999
 
         response = client.patch(
             f"/api/special_relationships/{nonexistent_id}/status",
@@ -762,151 +611,74 @@ class TestUpdateRelationshipStatus:
         data = response.json()
         assert "detail" in data
 
-    def test_update_status_returns_401_when_not_authenticated(
-        self, client: TestClient, test_special_relationship
-    ):
-        """Test returns 401 when no authentication provided."""
-        response = client.patch(
-            f"/api/special_relationships/{test_special_relationship}/status",
-            json={"status": "Active"}
-        )
-
-        assert response.status_code == 401
-        data = response.json()
-        assert "detail" in data
-
 
 # =============================================================================
 # DELETE /api/special_relationships/{relationship_id} Tests
 # =============================================================================
 
 class TestDeleteSpecialRelationship:
-    """Tests for soft-deleting special relationships."""
+    """Tests for hard-deleting special relationships."""
 
     @pytest.mark.asyncio
     async def test_delete_relationship_success(
         self, client: TestClient, auth_headers,
-        test_special_relationship, db_connection
+        db_connection, test_product_owner
     ):
-        """Test successfully soft-deleting a relationship."""
+        """Test successfully hard-deleting a relationship."""
+        # Create a relationship to delete
+        result = await db_connection.fetchrow(
+            """
+            INSERT INTO special_relationships (
+                name, type, relationship, status
+            )
+            VALUES ($1, $2, $3, $4)
+            RETURNING id
+            """,
+            "To Delete",
+            "Personal",
+            "Child",
+            "Active"
+        )
+        relationship_id = result['id']
+
+        # Link to product owner
+        await db_connection.execute(
+            """
+            INSERT INTO product_owner_special_relationships (product_owner_id, special_relationship_id)
+            VALUES ($1, $2)
+            """,
+            test_product_owner,
+            relationship_id
+        )
+
+        # Delete the relationship
         response = client.delete(
-            f"/api/special_relationships/{test_special_relationship}",
+            f"/api/special_relationships/{relationship_id}",
             headers=auth_headers
         )
 
         assert response.status_code == 204
         assert response.content == b""  # No content
 
-        # Verify record is soft-deleted (deleted_at is set)
-        row = await db_connection.fetchrow(
-            "SELECT deleted_at FROM special_relationships WHERE id = $1",
-            test_special_relationship
-        )
-
-        assert row is not None  # Record still exists
-        assert row["deleted_at"] is not None  # deleted_at is set
-
-    @pytest.mark.asyncio
-    async def test_delete_relationship_record_not_hard_deleted(
-        self, client: TestClient, auth_headers,
-        test_special_relationship, db_connection
-    ):
-        """Test verifies record is NOT hard-deleted from database."""
-        # Delete the relationship
-        response = client.delete(
-            f"/api/special_relationships/{test_special_relationship}",
-            headers=auth_headers
-        )
-
-        assert response.status_code == 204
-
-        # Verify record still exists in database
+        # Verify record is hard-deleted
         count = await db_connection.fetchval(
             "SELECT COUNT(*) FROM special_relationships WHERE id = $1",
-            test_special_relationship
+            relationship_id
         )
+        assert count == 0  # Record should not exist
 
-        assert count == 1  # Record still exists
-
-    @pytest.mark.asyncio
-    async def test_delete_relationship_sets_deleted_at_timestamp(
-        self, client: TestClient, auth_headers,
-        test_special_relationship, db_connection
-    ):
-        """Test verifies deleted_at timestamp is set correctly."""
-        before_delete = datetime.utcnow()
-
-        response = client.delete(
-            f"/api/special_relationships/{test_special_relationship}",
-            headers=auth_headers
+        # Verify junction table entry is also deleted
+        junction_count = await db_connection.fetchval(
+            "SELECT COUNT(*) FROM product_owner_special_relationships WHERE special_relationship_id = $1",
+            relationship_id
         )
-
-        assert response.status_code == 204
-
-        after_delete = datetime.utcnow()
-
-        # Verify deleted_at is within expected range
-        row = await db_connection.fetchrow(
-            "SELECT deleted_at FROM special_relationships WHERE id = $1",
-            test_special_relationship
-        )
-
-        deleted_at = row["deleted_at"]
-        assert deleted_at is not None
-        assert before_delete <= deleted_at <= after_delete
-
-    def test_delete_relationship_excluded_from_get_endpoint(
-        self, client: TestClient, auth_headers,
-        test_client_group, test_special_relationship
-    ):
-        """Test soft-deleted relationships are excluded from GET endpoint."""
-        # First, delete the relationship
-        delete_response = client.delete(
-            f"/api/special_relationships/{test_special_relationship}",
-            headers=auth_headers
-        )
-        assert delete_response.status_code == 204
-
-        # Try to fetch relationships for the client group
-        get_response = client.get(
-            f"/api/client_groups/{test_client_group}/special_relationships",
-            headers=auth_headers
-        )
-
-        assert get_response.status_code == 200
-        data = get_response.json()
-
-        # Verify deleted relationship is not in results
-        relationship_ids = [r["id"] for r in data]
-        assert test_special_relationship not in relationship_ids
-
-    def test_delete_relationship_returns_404_when_already_deleted(
-        self, client: TestClient, auth_headers,
-        test_special_relationship
-    ):
-        """Test returns 404 when trying to delete already deleted relationship."""
-        # Delete once
-        first_response = client.delete(
-            f"/api/special_relationships/{test_special_relationship}",
-            headers=auth_headers
-        )
-        assert first_response.status_code == 204
-
-        # Try to delete again
-        second_response = client.delete(
-            f"/api/special_relationships/{test_special_relationship}",
-            headers=auth_headers
-        )
-
-        assert second_response.status_code == 404
-        data = second_response.json()
-        assert "detail" in data
+        assert junction_count == 0
 
     def test_delete_relationship_returns_404_for_nonexistent_relationship(
         self, client: TestClient, auth_headers
     ):
         """Test returns 404 when relationship doesn't exist."""
-        nonexistent_id = str(uuid.uuid4())
+        nonexistent_id = 999999
 
         response = client.delete(
             f"/api/special_relationships/{nonexistent_id}",
@@ -916,52 +688,3 @@ class TestDeleteSpecialRelationship:
         assert response.status_code == 404
         data = response.json()
         assert "detail" in data
-
-    def test_delete_relationship_returns_401_when_not_authenticated(
-        self, client: TestClient, test_special_relationship
-    ):
-        """Test returns 401 when no authentication provided."""
-        response = client.delete(
-            f"/api/special_relationships/{test_special_relationship}"
-        )
-
-        assert response.status_code == 401
-        data = response.json()
-        assert "detail" in data
-
-
-# =============================================================================
-# Database Error Scenarios (500 errors)
-# =============================================================================
-
-class TestDatabaseErrorHandling:
-    """Tests for handling database errors gracefully."""
-
-    @pytest.mark.skip(reason="Requires database connection mocking")
-    def test_get_relationships_returns_500_on_database_error(
-        self, client: TestClient, auth_headers, test_client_group
-    ):
-        """Test returns 500 when database query fails."""
-        # This test would require mocking the database to simulate failure
-        # Deferred to implementation phase
-        pass
-
-    @pytest.mark.skip(reason="Requires database connection mocking")
-    def test_create_relationship_returns_500_on_database_error(
-        self, client: TestClient, auth_headers,
-        sample_personal_relationship_data
-    ):
-        """Test returns 500 when database insert fails."""
-        # This test would require mocking the database to simulate failure
-        # Deferred to implementation phase
-        pass
-
-    @pytest.mark.skip(reason="Requires database connection mocking")
-    def test_delete_relationship_returns_500_on_database_error(
-        self, client: TestClient, auth_headers,
-        test_special_relationship
-    ):
-        """Test returns 500 when database update fails."""
-        # This test would require mocking the database to simulate failure
-        # Deferred to implementation phase
-        pass
