@@ -23,7 +23,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { format } from 'date-fns';
-import { Edit2, Trash2 } from 'lucide-react';
+import { TrashIcon, PauseCircleIcon, XCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { SpecialRelationship, RelationshipStatus } from '@/types/specialRelationship';
 import TableSortHeader, { SortConfig } from '@/components/TableSortHeader';
 import EmptyStatePersonal from '@/components/EmptyStatePersonal';
@@ -75,9 +75,10 @@ interface PersonalRelationshipsTableProps {
   relationships: SpecialRelationship[];
   productOwners?: ProductOwner[];
   onRowClick?: (relationship: SpecialRelationship) => void;
-  onEdit: (relationship: SpecialRelationship) => void;
+  onLapse?: (relationship: SpecialRelationship) => void;
+  onMakeDeceased?: (relationship: SpecialRelationship) => void;
+  onReactivate?: (relationship: SpecialRelationship) => void;
   onDelete: (relationship: SpecialRelationship) => void;
-  onStatusChange: (id: string, status: RelationshipStatus) => void;
   onAdd?: () => void;
   isLoading?: boolean;
   isError?: boolean;
@@ -100,9 +101,10 @@ const PersonalRelationshipsTable: React.FC<PersonalRelationshipsTableProps> = ({
   relationships,
   productOwners = [],
   onRowClick,
-  onEdit,
+  onLapse,
+  onMakeDeceased,
+  onReactivate,
   onDelete,
-  onStatusChange,
   onAdd,
   isLoading = false,
   isError = false,
@@ -132,11 +134,19 @@ const PersonalRelationshipsTable: React.FC<PersonalRelationshipsTableProps> = ({
 
   /**
    * Memoized sorted relationships
-   * Applies effective sort config (defaults to first_name asc)
+   * Sort by status first (Active at top, Inactive/Deceased at bottom), then apply user sorting
    */
   const sortedRelationships = useMemo(() => {
     const effectiveSortConfig = getEffectiveSortConfig(sortConfig);
-    return sortRelationships(relationships, effectiveSortConfig);
+    const sorted = sortRelationships(relationships, effectiveSortConfig);
+
+    // Sort by status: Active first, then Inactive, then Deceased
+    return sorted.sort((a, b) => {
+      const statusOrder = { 'Active': 0, 'Inactive': 1, 'Deceased': 2 };
+      const statusA = statusOrder[a.status] ?? 0;
+      const statusB = statusOrder[b.status] ?? 0;
+      return statusA - statusB;
+    });
   }, [relationships, sortConfig]);
 
   // Loading state
@@ -207,6 +217,9 @@ const PersonalRelationshipsTable: React.FC<PersonalRelationshipsTableProps> = ({
               ? format(new Date(relationship.date_of_birth), 'dd/MM/yyyy')
               : EMPTY_VALUE_PLACEHOLDER;
 
+            // Check if relationship is inactive
+            const isInactive = relationship.status === 'Inactive' || relationship.status === 'Deceased';
+
             // Get product owners for pills
             const owners = (relationship.product_owner_ids || [])
               .map(id => productOwners.find(po => po.id === id))
@@ -222,7 +235,9 @@ const PersonalRelationshipsTable: React.FC<PersonalRelationshipsTableProps> = ({
               <tr
                 key={relationship.id}
                 onClick={() => onRowClick?.(relationship)}
-                className={ROW_CLASSES.base}
+                className={`${ROW_CLASSES.base} ${
+                  isInactive ? 'opacity-50 grayscale-[30%]' : ''
+                }`}
               >
                 {/* Name */}
                 <td className={CELL_CLASSES.base}>
@@ -278,20 +293,63 @@ const PersonalRelationshipsTable: React.FC<PersonalRelationshipsTableProps> = ({
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className={ACTION_CLASSES.container}>
-                    <button
-                      onClick={() => onEdit(relationship)}
-                      className={ACTION_CLASSES.editButton}
-                      aria-label={`Edit ${relationship.name}`}
-                    >
-                      <Edit2 size={16} />
-                    </button>
-                    <button
-                      onClick={() => onDelete(relationship)}
-                      className={ACTION_CLASSES.deleteButton}
-                      aria-label={`Delete ${relationship.name}`}
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    {isInactive ? (
+                      <>
+                        {onReactivate && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onReactivate(relationship);
+                            }}
+                            className={ACTION_CLASSES.reactivateButton}
+                            aria-label={`Reactivate ${relationship.name}`}
+                            title="Reactivate"
+                          >
+                            <ArrowPathIcon className="w-4 h-4" />
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(relationship);
+                          }}
+                          className={ACTION_CLASSES.deleteButton}
+                          aria-label={`Delete ${relationship.name}`}
+                          title="Delete"
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        {onLapse && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onLapse(relationship);
+                            }}
+                            className={ACTION_CLASSES.lapseButton}
+                            aria-label={`Lapse ${relationship.name}`}
+                            title="Lapse"
+                          >
+                            <PauseCircleIcon className="w-4 h-4" />
+                          </button>
+                        )}
+                        {onMakeDeceased && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onMakeDeceased(relationship);
+                            }}
+                            className={ACTION_CLASSES.deceasedButton}
+                            aria-label={`Mark ${relationship.name} as deceased`}
+                            title="Deceased"
+                          >
+                            <XCircleIcon className="w-4 h-4" />
+                          </button>
+                        )}
+                      </>
+                    )}
                   </div>
                 </td>
               </tr>

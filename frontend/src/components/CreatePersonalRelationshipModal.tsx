@@ -45,8 +45,8 @@ export interface CreatePersonalRelationshipModalProps {
   onSuccess?: (relationship: SpecialRelationship) => void;
   /** Optional addresses for address selection */
   addresses?: Address[];
-  /** Optional address creation callback */
-  onCreateAddress?: (address: Omit<Address, 'id'>) => void;
+  /** Optional address creation callback - returns created address with ID */
+  onCreateAddress?: (address: Omit<Address, 'id'>) => Promise<Address>;
 }
 
 // ==========================

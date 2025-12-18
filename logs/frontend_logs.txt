@@ -1,76 +1,51 @@
-ProductOverview.tsx:2674 🖥️ [PRODUCT OVERVIEW RENDER] Displaying Total Product IRR: {rawValue: 23, formattedValue: '23.0%', timestamp: '2025-11-27T14:05:28.952Z'}
-ProductOverview.tsx:2674 🖥️ [PRODUCT OVERVIEW RENDER] Displaying Total Product IRR: {rawValue: 23, formattedValue: '23.0%', timestamp: '2025-11-27T14:05:28.956Z'}
-ProductOverview.tsx:2674 🖥️ [PRODUCT OVERVIEW RENDER] Displaying Total Product IRR: {rawValue: 23, formattedValue: '23.0%', timestamp: '2025-11-27T14:05:28.995Z'}
-ProductOverview.tsx:2674 🖥️ [PRODUCT OVERVIEW RENDER] Displaying Total Product IRR: {rawValue: 23, formattedValue: '23.0%', timestamp: '2025-11-27T14:05:28.998Z'}
-ProductOverview.tsx:2674 🖥️ [PRODUCT OVERVIEW RENDER] Displaying Total Product IRR: {rawValue: 23, formattedValue: '23.0%', timestamp: '2025-11-27T14:05:29.089Z'}
-ProductOverview.tsx:2674 🖥️ [PRODUCT OVERVIEW RENDER] Displaying Total Product IRR: {rawValue: 23, formattedValue: '23.0%', timestamp: '2025-11-27T14:05:29.091Z'}
-ProductOverview.tsx:1838 📝 Fee field changed - fixed_fee_facilitated: {rawValue: '90', processedValue: '90', isEmpty: false}
-ProductOverview.tsx:2674 🖥️ [PRODUCT OVERVIEW RENDER] Displaying Total Product IRR: {rawValue: 23, formattedValue: '23.0%', timestamp: '2025-11-27T14:05:31.298Z'}
-ProductOverview.tsx:2674 🖥️ [PRODUCT OVERVIEW RENDER] Displaying Total Product IRR: {rawValue: 23, formattedValue: '23.0%', timestamp: '2025-11-27T14:05:31.305Z'}
-ProductOverview.tsx:1838 📝 Fee field changed - fixed_fee_facilitated: {rawValue: '9', processedValue: '9', isEmpty: false}
-ProductOverview.tsx:2674 🖥️ [PRODUCT OVERVIEW RENDER] Displaying Total Product IRR: {rawValue: 23, formattedValue: '23.0%', timestamp: '2025-11-27T14:05:31.565Z'}
-ProductOverview.tsx:2674 🖥️ [PRODUCT OVERVIEW RENDER] Displaying Total Product IRR: {rawValue: 23, formattedValue: '23.0%', timestamp: '2025-11-27T14:05:31.569Z'}
-ProductOverview.tsx:1838 📝 Fee field changed - fixed_fee_facilitated: {rawValue: '', processedValue: '', isEmpty: true}
-ProductOverview.tsx:2674 🖥️ [PRODUCT OVERVIEW RENDER] Displaying Total Product IRR: {rawValue: 23, formattedValue: '23.0%', timestamp: '2025-11-27T14:05:31.695Z'}
-ProductOverview.tsx:2674 🖥️ [PRODUCT OVERVIEW RENDER] Displaying Total Product IRR: {rawValue: 23, formattedValue: '23.0%', timestamp: '2025-11-27T14:05:31.699Z'}
-ProductOverview.tsx:1982 💰 Saving fee data: {formValues: {…}, apiPayload: {…}}
-ProductOverview.tsx:2674 🖥️ [PRODUCT OVERVIEW RENDER] Displaying Total Product IRR: {rawValue: 23, formattedValue: '23.0%', timestamp: '2025-11-27T14:05:33.614Z'}
-ProductOverview.tsx:2674 🖥️ [PRODUCT OVERVIEW RENDER] Displaying Total Product IRR: {rawValue: 23, formattedValue: '23.0%', timestamp: '2025-11-27T14:05:33.616Z'}
-ProductOverview.tsx:1996 ✅ Fee save response: {client_id: 28, client_name: null, product_name: 'Investment Bond', status: 'active', start_date: '2023-11-17', …}
-ProductOverview.tsx:478 ProductOverview: Complete product data received: {id: 435, client_id: 28, product_name: 'Investment Bond', product_type: 'Onshore Bond', status: 'active', …}
-ProductOverview.tsx:483 💰 Fee values after refresh: {fixed_fee_direct: '80.0', fixed_fee_facilitated: '90.0', percentage_fee_facilitated: '0.95'}
-ProductOverview.tsx:489 Product owners loaded: 1
-ProductOverview.tsx:713 Fetching portfolio summary for product: 435
-ProductOverview.tsx:717 FUM response: {product_id: 435, fum: 120}
-ProductOverview.tsx:723 📊 [PRODUCT OVERVIEW] ==================== FETCHING PORTFOLIO IRR ====================
-ProductOverview.tsx:724 📊 [PRODUCT OVERVIEW] Portfolio ID: 448
-ProductOverview.tsx:725 📊 [PRODUCT OVERVIEW] Product ID: 435
-ProductOverview.tsx:726 📊 [PRODUCT OVERVIEW] Timestamp: 2025-11-27T14:05:33.784Z
-ProductOverview.tsx:731 📊 [PRODUCT OVERVIEW] Full IRR response: {portfolio_id: 448, irr_result: 23, irr_date: '2024-03-01', source: 'stored'}
-ProductOverview.tsx:736 📊 [PRODUCT OVERVIEW] Setting portfolio IRR state to: 23
-ProductOverview.tsx:737 📊 [PRODUCT OVERVIEW] IRR Date: 2024-03-01
-ProductOverview.tsx:739 ✅ [PRODUCT OVERVIEW] Portfolio IRR loaded from database: 23.00%
-ProductOverview.tsx:744 📊 [PRODUCT OVERVIEW] ==================== PORTFOLIO IRR FETCH COMPLETE ====================
-ProductOverview.tsx:573 ProductOverview: Processed holdings: (4) [{…}, {…}, {…}, {…}]
-ProductOverview.tsx:601 After filtering: 3 active, 1 inactive
-ProductOverview.tsx:605 Creating Previous Funds entry with 1 inactive holdings
-ProductOverview.tsx:633 Previous Funds totals: {totalAmountInvested: '00.00', totalRiskFactor: 5, fundsWithRiskFactor: 1, averageRiskFactor: 5}
-ProductOverview.tsx:666 Adding Previous Funds entry to display holdings
-ProductOverview.tsx:1109 🧮 Weighting calc - Total portfolio value: 120
-ProductOverview.tsx:1115 🧮 Fund FGF Balanced S2: Market Value: 0, Weighting: 0.0%
-ProductOverview.tsx:1115 🧮 Fund Invesco Global Emerging Markets: Market Value: 120, Weighting: 100.0%
-ProductOverview.tsx:1115 🧮 Fund Cash: Market Value: 0, Weighting: 0.0%
-ProductOverview.tsx:1115 🧮 Fund Previous Funds: Market Value: 0, Weighting: 0.0%
-ProductOverview.tsx:1119 Calculated live weightings based on market values: {FGF Balanced S2: 0, Invesco Global Emerging Markets: 100, Cash: 0, Previous Funds: 0}
-ProductOverview.tsx:2674 🖥️ [PRODUCT OVERVIEW RENDER] Displaying Total Product IRR: {rawValue: 23, formattedValue: '23.0%', timestamp: '2025-11-27T14:05:33.809Z'}
-ProductOverview.tsx:1109 🧮 Weighting calc - Total portfolio value: 120
-ProductOverview.tsx:1115 🧮 Fund FGF Balanced S2: Market Value: 0, Weighting: 0.0%
-ProductOverview.tsx:1115 🧮 Fund Invesco Global Emerging Markets: Market Value: 120, Weighting: 100.0%
-ProductOverview.tsx:1115 🧮 Fund Cash: Market Value: 0, Weighting: 0.0%
-ProductOverview.tsx:1115 🧮 Fund Previous Funds: Market Value: 0, Weighting: 0.0%
-ProductOverview.tsx:1119 Calculated live weightings based on market values: {FGF Balanced S2: 0, Invesco Global Emerging Markets: 100, Cash: 0, Previous Funds: 0}
-ProductOverview.tsx:2674 🖥️ [PRODUCT OVERVIEW RENDER] Displaying Total Product IRR: {rawValue: 23, formattedValue: '23.0%', timestamp: '2025-11-27T14:05:33.813Z'}
-ProductOverview.tsx:164 PreviousFundsIRRDisplay: Starting IRR calculation for funds [2164]
-ProductOverview.tsx:854 DEBUG - calculateTargetRisk called with: {account: true, holdingsLength: 4, fundsDataSize: 4}
-ProductOverview.tsx:873 DEBUG - Starting target risk calculation with holdings: (4) [{…}, {…}, {…}, {…}]
-ProductOverview.tsx:882 DEBUG - Available funds data: (4) [{…}, {…}, {…}, {…}]
-ProductOverview.tsx:901 DEBUG - Processing holding: {fund_name: 'FGF Balanced S2', fund_id: 1, target_weighting: 0, target_weighting_type: 'number'}
-ProductOverview.tsx:927 DEBUG - Fund lookup result: {fundId: 1, fund: {…}}
-ProductOverview.tsx:937 DEBUG - Target risk calculation for fund: {fund_name: 'FGF Balanced S2', fund_id: 1, risk_factor: 3, target_weighting: 0, weight: 0, …}
-ProductOverview.tsx:901 DEBUG - Processing holding: {fund_name: 'Invesco Global Emerging Markets', fund_id: 16, target_weighting: null, target_weighting_type: 'object'}
-ProductOverview.tsx:909 DEBUG - Skipping holding due to missing fundId or target_weighting: {fund_name: 'Invesco Global Emerging Markets', fundId: 16, targetWeighting: null}
-ProductOverview.tsx:901 DEBUG - Processing holding: {fund_name: 'Cash', fund_id: 5, target_weighting: null, target_weighting_type: 'object'}
-ProductOverview.tsx:909 DEBUG - Skipping holding due to missing fundId or target_weighting: {fund_name: 'Cash', fundId: 5, targetWeighting: null}
-ProductOverview.tsx:894 DEBUG - Skipping virtual holding: Previous Funds
-ProductOverview.tsx:954 DEBUG - Final target risk calculation summary: {totalWeight: 0, weightedRiskSum: 0, validFundsCount: 1}
-ProductOverview.tsx:977 DEBUG - No valid funds with target weightings and risk factors found
-ProductOverview.tsx:1012 Common valuation date for risk calculation: 2024-03-01
-ProductOverview.tsx:1019 DEBUG - Starting live risk calculation with holdings: (4) [{…}, {…}, {…}, {…}]
-ProductOverview.tsx:1045 🧮 Live risk calc - Total portfolio value: 120
-ProductOverview.tsx:1067 DEBUG - Risk calculation for fund: {fund_name: 'Invesco Global Emerging Markets', fund_id: 16, risk_factor: 6, value: 120, weight: 1, …}
-ProductOverview.tsx:1085 DEBUG - Final risk calculation: {totalValue: 120, weightedRiskSum: 6, weightedAverage: 6, fundsWithValidValuations: 1, commonDate: '2024-03-01'}
-ProductOverview.tsx:164 PreviousFundsIRRDisplay: Starting IRR calculation for funds [2164]
-ProductOverview.tsx:2674 🖥️ [PRODUCT OVERVIEW RENDER] Displaying Total Product IRR: {rawValue: 23, formattedValue: '23.0%', timestamp: '2025-11-27T14:05:33.848Z'}
-ProductOverview.tsx:2674 🖥️ [PRODUCT OVERVIEW RENDER] Displaying Total Product IRR: {rawValue: 23, formattedValue: '23.0%', timestamp: '2025-11-27T14:05:33.852Z'}
-ProductOverview.tsx:176 PreviousFundsIRRDisplay: IRR calculation completed (NOT STORED): 114.5%
-ProductOverview.tsx:176 PreviousFundsIRRDisplay: IRR calculation completed (NOT STORED): 114.5%
+[Cache] useProductOwners result 
+{count: 1, activeCount: 1, isLoading: false, isStale: true, isFetching: false}
+ 
+ProfessionalRelation…pFormFields.tsx:158 Uncaught TypeError: Cannot read properties of undefined (reading 'name')
+    at ProfessionalRelationshipFormFields (ProfessionalRelation…rmFields.tsx:158:34)
+ProfessionalRelation…pFormFields.tsx:158 Uncaught TypeError: Cannot read properties of undefined (reading 'name')
+    at ProfessionalRelationshipFormFields (ProfessionalRelation…rmFields.tsx:158:34)
+chunk-F34GCA6J.js?v=7502d362:14080 The above error occurred in the <ProfessionalRelationshipFormFields> component:
+
+    at ProfessionalRelationshipFormFields (http://localhost:3000/src/components/ProfessionalRelationshipFormFields.tsx?t=1766057022553:29:3)
+    at form
+    at div
+    at div
+    at div
+    at FocusTrap2 (http://localhost:3000/node_modules/.vite/deps/focus-trap-react.js?v=7502d362:1195:9)
+    at ModalShell (http://localhost:3000/src/components/ModalShell.tsx?t=1766055570483:22:3)
+    at EditSpecialRelationshipModal (http://localhost:3000/src/components/EditSpecialRelationshipModal.tsx?t=1766064884602:28:3)
+    at div
+    at SpecialRelationshipsSubTab (http://localhost:3000/src/components/SpecialRelationshipsSubTab.tsx?t=1766064899369:36:3)
+    at div
+    at SpecialRelationshipsWrapper (http://localhost:3000/src/pages/ClientGroupSuite/tabs/components/SpecialRelationshipsWrapper.tsx?t=1766064284994:23:29)
+    at div
+    at div
+    at BasicDetailsTab (http://localhost:3000/src/pages/ClientGroupSuite/tabs/BasicDetailsTab.tsx?t=1766064284994:28:28)
+    at div
+    at div
+    at DynamicPageContainer (http://localhost:3000/src/components/DynamicPageContainer.tsx:18:3)
+    at ClientGroupSuite (http://localhost:3000/src/pages/ClientGroupSuite/index.tsx?t=1766064284994:40:29)
+    at div
+    at main
+    at div
+    at div
+    at div
+    at AppLayout (http://localhost:3000/src/components/layout/AppLayout.tsx:20:22)
+    at RenderedRoute (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=7502d362:4089:5)
+    at Outlet (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=7502d362:4495:26)
+    at ProtectedRoute (http://localhost:3000/src/components/ProtectedRoute.tsx:22:42)
+    at RenderedRoute (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=7502d362:4089:5)
+    at Routes (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=7502d362:4559:5)
+    at div
+    at AppContent
+    at AuthProvider (http://localhost:3000/src/context/AuthContext.tsx:40:32)
+    at Router (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=7502d362:4502:15)
+    at BrowserRouter (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=7502d362:5248:5)
+    at QueryClientProvider (http://localhost:3000/node_modules/.vite/deps/@tanstack_react-query.js?v=7502d362:2875:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+chunk-F34GCA6J.js?v=7502d362:9176 Uncaught TypeError: Cannot read properties of undefined (reading 'name')
+    at ProfessionalRelationshipFormFields (ProfessionalRelation…rmFields.tsx:158:34)

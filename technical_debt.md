@@ -74,3 +74,5 @@
 - db.fetch row has poorly formatted sql statement strings
 
 - frontend components and backedn routes could be better organised in folders
+
+- there is some global styling but it isnt used AND alot of th estyling is manually consistent across teh site but not globalised 

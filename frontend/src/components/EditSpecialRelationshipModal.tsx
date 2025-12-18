@@ -30,16 +30,33 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import ModalShell from './ModalShell';
-import RelationshipFormFields from './RelationshipFormFields';
-import { useRelationshipValidation, RelationshipFormData } from '@/hooks/useRelationshipValidation';
-import { focusFirstError, detectChangedField } from '@/hooks/useRelationshipFormHandlers';
+import PersonalRelationshipFormFields, {
+  PersonalRelationshipFormData,
+  ProductOwner,
+} from './PersonalRelationshipFormFields';
+import ProfessionalRelationshipFormFields, {
+  ProfessionalRelationshipFormData,
+} from './ProfessionalRelationshipFormFields';
 import { useUpdateSpecialRelationship } from '@/hooks/useSpecialRelationships';
 import {
   SpecialRelationship,
   RelationshipCategory,
   PROFESSIONAL_RELATIONSHIPS,
 } from '@/types/specialRelationship';
+
+/**
+ * Address interface
+ */
+export interface Address {
+  id: number;
+  line_1: string;
+  line_2?: string;
+  line_3?: string;
+  line_4?: string;
+  line_5?: string;
+}
 
 /**
  * Props for EditSpecialRelationshipModal component
@@ -51,6 +68,12 @@ export interface EditSpecialRelationshipModalProps {
   onClose: () => void;
   /** Relationship object to edit (pre-populates form) */
   relationship: SpecialRelationship;
+  /** All product owners for multi-select */
+  productOwners: ProductOwner[];
+  /** Available addresses for selection */
+  addresses?: Address[];
+  /** Callback for creating new address - returns created address with ID */
+  onCreateAddress?: (address: Omit<Address, 'id'>) => Promise<Address>;
   /** Optional callback invoked after successful update with updated relationship */
   onSuccess?: (relationship: SpecialRelationship) => void;
 }
@@ -59,6 +82,9 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
   isOpen,
   onClose,
   relationship,
+  productOwners,
+  addresses = [],
+  onCreateAddress,
   onSuccess,
 }) => {
   /**
@@ -97,12 +123,16 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
 
   const [type, relationshipValue] = getTypeAndRelationship(relationship);
 
+  // Determine if personal or professional
+  const isProfessional = type === 'Professional';
+
   // Form state - initialized from relationship
-  const [formData, setFormData] = useState<RelationshipFormData>({
+  const [formData, setFormData] = useState<any>({
     name: relationship.name,
     type: type,
     relationship: relationshipValue,
     status: relationship.status,
+    product_owner_ids: relationship.product_owner_ids || [],
     date_of_birth: relationship.date_of_birth || null,
     email: relationship.email || null,
     phone_number: getPhoneFromRelationship(relationship),
@@ -115,12 +145,16 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
   // API error state
   const [apiError, setApiError] = useState<string>('');
 
+  // Field-level errors for validation
+  const [errors, setErrors] = useState<any>({});
+
   // Track original form data to detect changes
-  const [originalData] = useState<RelationshipFormData>({
+  const [originalData, setOriginalData] = useState<any>({
     name: relationship.name,
     type: type,
     relationship: relationshipValue,
     status: relationship.status,
+    product_owner_ids: relationship.product_owner_ids || [],
     date_of_birth: relationship.date_of_birth || null,
     email: relationship.email || null,
     phone_number: getPhoneFromRelationship(relationship),
@@ -129,9 +163,6 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
     address_id: relationship.address_id || null,
     notes: relationship.notes || null,
   });
-
-  // Validation hook
-  const { errors, validateField, validateForm, clearAllErrors, clearError, handleBlur, handleChange } = useRelationshipValidation();
 
   // Mutation hook
   const { mutateAsync, isPending } = useUpdateSpecialRelationship();
@@ -145,6 +176,7 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
         type: newType,
         relationship: newRelationshipValue,
         status: relationship.status,
+        product_owner_ids: relationship.product_owner_ids || [],
         date_of_birth: relationship.date_of_birth || null,
         email: relationship.email || null,
         phone_number: getPhoneFromRelationship(relationship),
@@ -154,46 +186,27 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
         notes: relationship.notes || null,
       };
       setFormData(newFormData);
-      clearAllErrors();
+      setOriginalData(newFormData); // Update original data to match current relationship
       setApiError('');
     }
-  }, [isOpen, relationship, clearAllErrors]);
+  }, [isOpen, relationship]);
 
   /**
-   * Handle field value change
-   * Clears API error when user makes changes to allow retry
-   * @param newFormData - Updated form data object
+   * Handle form data change from child form components
    */
-  const handleFieldChange = useCallback(
-    (newFormData: RelationshipFormData) => {
-      const changedField = detectChangedField(formData, newFormData);
-      setFormData(newFormData);
-
-      // Use hook's handleChange for validation if we identified the changed field
-      if (changedField) {
-        handleChange(changedField, newFormData[changedField]);
-      }
-
-      // Clear API error when user makes changes
-      if (apiError) {
-        setApiError('');
-      }
-    },
-    [formData, handleChange, apiError]
-  );
+  const handleFormDataChange = useCallback((updates: any) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+    if (apiError) {
+      setApiError('');
+    }
+  }, [apiError]);
 
   /**
-   * Handle field blur event - triggers validation
-   * @param field - Field name that was blurred
-   * @param value - Current field value (uses formData if not provided)
+   * Handle field blur - no-op for now since we're not doing field-level validation
    */
-  const handleFieldBlur = useCallback(
-    (field: string, value?: any) => {
-      const valueToValidate = value !== undefined ? value : formData[field as keyof RelationshipFormData];
-      handleBlur(field as keyof RelationshipFormData, valueToValidate);
-    },
-    [formData, handleBlur]
-  );
+  const handleBlur = useCallback((field: string, value?: any) => {
+    // No-op - could add field-level validation here if needed
+  }, []);
 
   /**
    * Detect which fields have changed from original values.
@@ -242,12 +255,19 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
       changes.notes = formData.notes || null;
     }
 
+    // Compare product_owner_ids arrays
+    const currentIds = JSON.stringify((formData.product_owner_ids || []).sort());
+    const originalIds = JSON.stringify((originalData.product_owner_ids || []).sort());
+    if (currentIds !== originalIds) {
+      changes.product_owner_ids = formData.product_owner_ids;
+    }
+
     return changes;
   };
 
   /**
    * Handle form submission
-   * Validates form, detects changes, calls API, and handles success/error cases
+   * Detects changes, calls API, and handles success/error cases
    * If no changes detected, simply closes modal without API call
    * @param e - Form submit event
    */
@@ -255,26 +275,39 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
     e.preventDefault();
     setApiError('');
 
-    // Validate form and focus first invalid field if errors exist
-    const formErrors = validateForm(formData);
-    if (Object.keys(formErrors).length > 0) {
-      focusFirstError(formErrors);
+    console.log('Form submitted', { formData, originalData });
+
+    // Basic validation - ensure required fields
+    if (!formData.name || !formData.name.trim()) {
+      toast.error('Name is required');
+      return;
+    }
+    if (!formData.product_owner_ids || formData.product_owner_ids.length === 0) {
+      toast.error('At least one product owner is required');
       return;
     }
 
     try {
       // Get only changed fields - if no changes, just close
       const changes = getChangedFields();
+      console.log('Changed fields:', changes);
       if (Object.keys(changes).length === 0) {
+        toast.success('No changes to save');
         onClose();
         return;
       }
 
+      const toastId = toast.loading('Saving changes...');
+
       // Update relationship
       const updatedRelationship = await mutateAsync({
         id: relationship.id,
-        updates: changes,
-      } as any);
+        data: changes,
+      });
+
+      console.log('Updated relationship:', updatedRelationship);
+
+      toast.success('Changes saved successfully', { id: toastId });
 
       if (onSuccess && updatedRelationship) {
         onSuccess(updatedRelationship);
@@ -282,8 +315,10 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
 
       onClose();
     } catch (error: any) {
+      console.error('Submit error:', error);
       const errorMessage = error?.message || 'An unexpected error occurred';
       setApiError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -292,7 +327,7 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
    * Clears errors and closes modal
    */
   const handleCancel = () => {
-    clearAllErrors();
+    setApiError('');
     onClose();
   };
 
@@ -312,15 +347,29 @@ const EditSpecialRelationshipModal: React.FC<EditSpecialRelationshipModalProps> 
           </div>
         )}
 
-        <RelationshipFormFields
-          formData={formData}
-          onChange={handleFieldChange}
-          onBlur={handleFieldBlur}
-          errors={errors}
-          disabled={isPending}
-          addresses={[]}  // TODO: Fetch actual addresses
-          onCreateAddress={undefined}  // TODO: Implement address creation
-        />
+        {isProfessional ? (
+          <ProfessionalRelationshipFormFields
+            formData={formData as ProfessionalRelationshipFormData}
+            onChange={handleFormDataChange}
+            onBlur={handleBlur}
+            errors={errors}
+            disabled={isPending}
+            addresses={addresses}
+            productOwners={productOwners}
+            onCreateAddress={onCreateAddress}
+          />
+        ) : (
+          <PersonalRelationshipFormFields
+            formData={formData as PersonalRelationshipFormData}
+            onChange={handleFormDataChange}
+            onBlur={handleBlur}
+            errors={errors}
+            disabled={isPending}
+            addresses={addresses}
+            productOwners={productOwners}
+            onCreateAddress={onCreateAddress}
+          />
+        )}
 
         {/* Form Actions */}
         <div className="mt-6 flex justify-end space-x-3">

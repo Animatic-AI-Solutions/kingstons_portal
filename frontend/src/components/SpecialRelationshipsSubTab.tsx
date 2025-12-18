@@ -28,7 +28,9 @@ import EmptyStateProfessional from './EmptyStateProfessional';
 import CreatePersonalRelationshipModal from './CreatePersonalRelationshipModal';
 import CreateProfessionalRelationshipModal from './CreateProfessionalRelationshipModal';
 import EditSpecialRelationshipModal from './EditSpecialRelationshipModal';
-import { useSpecialRelationships, useDeleteSpecialRelationship } from '@/hooks/useSpecialRelationships';
+import AddButton from './ui/buttons/AddButton';
+import { useSpecialRelationships, useDeleteSpecialRelationship, useUpdateSpecialRelationshipStatus } from '@/hooks/useSpecialRelationships';
+import { useAddresses, useCreateAddress } from '@/hooks/useAddresses';
 import {
   SpecialRelationship,
   RelationshipStatus,
@@ -39,29 +41,11 @@ import {
 // ==========================
 
 /**
- * Button text constants
- * Using DRY principle to avoid string duplication
- */
-const BUTTON_TEXT = {
-  ADD_PERSONAL: 'Add Personal Relationship',
-  ADD_PROFESSIONAL: 'Add Professional Relationship',
-  TRY_AGAIN: 'Try Again',
-} as const;
-
-/**
  * Error message constants
  */
 const ERROR_MESSAGES = {
   LOAD_FAILED: 'Unable to load relationships',
   GENERIC_ERROR: 'An error occurred while loading data',
-} as const;
-
-/**
- * Button CSS classes
- * Shared button styling to maintain consistency
- */
-const BUTTON_CLASSES = {
-  PRIMARY: 'inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500',
 } as const;
 
 // ==========================
@@ -143,8 +127,20 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
     refetch,
   } = useSpecialRelationships(productOwnerId);
 
+  // Fetch addresses for dropdown
+  const {
+    data: addresses = [],
+    isLoading: isLoadingAddresses,
+  } = useAddresses();
+
   // Delete mutation
   const deleteMutation = useDeleteSpecialRelationship();
+
+  // Update status mutation
+  const updateStatusMutation = useUpdateSpecialRelationshipStatus();
+
+  // Create address mutation
+  const createAddressMutation = useCreateAddress();
 
   // ==========================
   // Filtered Data
@@ -186,13 +182,96 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
   }, []);
 
   /**
-   * Handle edit button click
+   * Handle lapse button click - sets relationship to Inactive
    * Wrapped in useCallback to provide stable reference to table components
    */
-  const handleEdit = useCallback((relationship: SpecialRelationship) => {
-    setEditingRelationship(relationship);
-    setShowEditModal(true);
-  }, []);
+  const handleLapse = useCallback((relationship: SpecialRelationship) => {
+    const relationshipName = relationship.name || 'this relationship';
+
+    // Show confirmation dialog
+    if (!window.confirm(`Are you sure you want to lapse ${relationshipName}?`)) {
+      return;
+    }
+
+    // Show loading toast
+    const toastId = toast.loading(`Lapsing ${relationshipName}...`);
+
+    // Call update status mutation
+    updateStatusMutation.mutate(
+      { id: relationship.id, status: 'Inactive' },
+      {
+        onSuccess: () => {
+          toast.success(`${relationshipName} has been lapsed successfully`, {
+            id: toastId,
+          });
+        },
+        onError: (error: any) => {
+          const errorMessage = error?.message || 'Failed to lapse relationship';
+          toast.error(`Failed to lapse ${relationshipName}: ${errorMessage}`, {
+            id: toastId,
+          });
+        },
+      }
+    );
+  }, [updateStatusMutation]);
+
+  /**
+   * Handle reactivate button click - sets relationship to Active
+   * Wrapped in useCallback to provide stable reference to table components
+   */
+  const handleReactivate = useCallback((relationship: SpecialRelationship) => {
+    const relationshipName = relationship.name || 'this relationship';
+
+    // Show loading toast
+    const toastId = toast.loading(`Reactivating ${relationshipName}...`);
+
+    // Call update status mutation
+    updateStatusMutation.mutate(
+      { id: relationship.id, status: 'Active' },
+      {
+        onSuccess: () => {
+          toast.success(`${relationshipName} has been reactivated successfully`, {
+            id: toastId,
+          });
+        },
+        onError: (error: any) => {
+          const errorMessage = error?.message || 'Failed to reactivate relationship';
+          toast.error(`Failed to reactivate ${relationshipName}: ${errorMessage}`, {
+            id: toastId,
+          });
+        },
+      }
+    );
+  }, [updateStatusMutation]);
+
+  /**
+   * Handle make deceased button click - sets relationship to Deceased
+   * Wrapped in useCallback to provide stable reference to table components
+   */
+  const handleMakeDeceased = useCallback((relationship: SpecialRelationship) => {
+    const relationshipName = relationship.name || 'this relationship';
+
+    // Show loading toast
+    const toastId = toast.loading(`Marking ${relationshipName} as deceased...`);
+
+    // Call update status mutation
+    updateStatusMutation.mutate(
+      { id: relationship.id, status: 'Deceased' },
+      {
+        onSuccess: () => {
+          toast.success(`${relationshipName} has been marked as deceased`, {
+            id: toastId,
+          });
+        },
+        onError: (error: any) => {
+          const errorMessage = error?.message || 'Failed to update status';
+          toast.error(`Failed to mark ${relationshipName} as deceased: ${errorMessage}`, {
+            id: toastId,
+          });
+        },
+      }
+    );
+  }, [updateStatusMutation]);
 
   /**
    * Handle delete button click with confirmation
@@ -226,20 +305,12 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
   }, [deleteMutation]);
 
   /**
-   * Handle status change (placeholder - would integrate with update mutation)
-   * Wrapped in useCallback to provide stable reference to table components
-   */
-  const handleStatusChange = useCallback((id: number, status: RelationshipStatus) => {
-    // TODO: Integrate with useUpdateSpecialRelationshipStatus hook
-    console.log('Update status:', id, status);
-  }, []);
-
-  /**
-   * Handle row click (placeholder - could navigate to detail view)
+   * Handle row click - open edit modal
    * Wrapped in useCallback to provide stable reference to table components
    */
   const handleRowClick = useCallback((relationship: SpecialRelationship) => {
-    console.log('Row clicked:', relationship.id);
+    setEditingRelationship(relationship);
+    setShowEditModal(true);
   }, []);
 
   /**
@@ -262,6 +333,17 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
   }, []);
 
   /**
+   * Handle successful update of relationship
+   * Wrapped in useCallback to prevent unnecessary re-renders
+   */
+  const handleEditSuccess = useCallback((relationship: SpecialRelationship) => {
+    const relationshipName = relationship.name || 'Relationship';
+    toast.success(`${relationshipName} has been updated successfully`);
+    setShowEditModal(false);
+    setEditingRelationship(null);
+  }, []);
+
+  /**
    * Close edit modal and clear editing state
    * Wrapped in useCallback to prevent unnecessary re-renders of modal
    */
@@ -270,19 +352,24 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
     setEditingRelationship(null);
   }, []);
 
+  /**
+   * Handle address creation from modals
+   * Wrapped in useCallback to provide stable reference
+   */
+  const handleCreateAddress = useCallback(async (addressData: any) => {
+    try {
+      const newAddress = await createAddressMutation.mutateAsync(addressData);
+      toast.success('Address created successfully');
+      return newAddress;
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to create address');
+      throw error;
+    }
+  }, [createAddressMutation]);
+
   // ==========================
   // Render Helpers
   // ==========================
-
-  /**
-   * Get create button text based on active tab
-   * Memoized to avoid recalculation on every render
-   */
-  const createButtonText = useMemo(() => {
-    return activeTab === 'personal'
-      ? BUTTON_TEXT.ADD_PERSONAL
-      : BUTTON_TEXT.ADD_PROFESSIONAL;
-  }, [activeTab]);
 
   // ==========================
   // Render States
@@ -313,9 +400,9 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
           <button
             type="button"
             onClick={() => refetch()}
-            className={BUTTON_CLASSES.PRIMARY}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
           >
-            {BUTTON_TEXT.TRY_AGAIN}
+            Try Again
           </button>
         </div>
       </div>
@@ -343,6 +430,8 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
             onSuccess={handleCreateSuccess}
             productOwners={allProductOwners}
             initialProductOwnerIds={[productOwnerId]}
+            addresses={addresses}
+            onCreateAddress={handleCreateAddress}
           />
         ) : (
           <CreateProfessionalRelationshipModal
@@ -351,6 +440,8 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
             onSuccess={handleCreateSuccess}
             productOwners={allProductOwners}
             initialProductOwnerIds={[productOwnerId]}
+            addresses={addresses}
+            onCreateAddress={handleCreateAddress}
           />
         )}
       </div>
@@ -363,14 +454,11 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
       <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />
 
       {/* Create Button */}
-      <div className="flex justify-end mb-4">
-        <button
-          type="button"
+      <div className="flex justify-end mb-3">
+        <AddButton
           onClick={handleAddClick}
-          className={BUTTON_CLASSES.PRIMARY}
-        >
-          {createButtonText}
-        </button>
+          context={activeTab === 'personal' ? 'Personal Relationship' : 'Professional Relationship'}
+        />
       </div>
 
       {/* Table */}
@@ -380,9 +468,10 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
             relationships={filteredRelationships}
             productOwners={allProductOwners}
             onRowClick={handleRowClick}
-            onEdit={handleEdit}
+            onLapse={handleLapse}
+            onMakeDeceased={handleMakeDeceased}
+            onReactivate={handleReactivate}
             onDelete={handleDelete}
-            onStatusChange={handleStatusChange}
           />
         </div>
       ) : (
@@ -391,9 +480,10 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
             relationships={filteredRelationships}
             productOwners={allProductOwners}
             onRowClick={handleRowClick}
-            onEdit={handleEdit}
+            onLapse={handleLapse}
+            onMakeDeceased={handleMakeDeceased}
+            onReactivate={handleReactivate}
             onDelete={handleDelete}
-            onStatusChange={handleStatusChange}
           />
         </div>
       )}
@@ -406,6 +496,8 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
           onSuccess={handleCreateSuccess}
           productOwners={allProductOwners}
           initialProductOwnerIds={[productOwnerId]}
+          addresses={addresses}
+          onCreateAddress={handleCreateAddress}
         />
       ) : (
         <CreateProfessionalRelationshipModal
@@ -414,6 +506,8 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
           onSuccess={handleCreateSuccess}
           productOwners={allProductOwners}
           initialProductOwnerIds={[productOwnerId]}
+          addresses={addresses}
+          onCreateAddress={handleCreateAddress}
         />
       )}
 
@@ -422,6 +516,10 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
           isOpen={showEditModal}
           onClose={handleEditModalClose}
           relationship={editingRelationship}
+          productOwners={allProductOwners}
+          addresses={addresses}
+          onCreateAddress={handleCreateAddress}
+          onSuccess={handleEditSuccess}
         />
       )}
     </div>

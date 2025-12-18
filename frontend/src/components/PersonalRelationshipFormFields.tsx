@@ -66,7 +66,7 @@ export interface PersonalRelationshipFormFieldsProps {
   disabled?: boolean;
   addresses?: Address[];
   productOwners: ProductOwner[];
-  onCreateAddress?: (address: Omit<Address, 'id'>) => void;
+  onCreateAddress?: (address: Omit<Address, 'id'>) => Promise<Address>;
 }
 
 // ==========================
@@ -118,6 +118,9 @@ const PersonalRelationshipFormFields: React.FC<PersonalRelationshipFormFieldsPro
     value: addr.id.toString(),
   }));
 
+  console.log('[PersonalRelationshipFormFields] addresses:', addresses);
+  console.log('[PersonalRelationshipFormFields] addressOptions:', addressOptions);
+
   // Product owner options
   const productOwnerOptions = productOwners.map((po) => ({
     label: `${po.firstname} ${po.surname}`,
@@ -127,17 +130,28 @@ const PersonalRelationshipFormFields: React.FC<PersonalRelationshipFormFieldsPro
   /**
    * Handle creating a new address
    */
-  const handleCreateAddress = () => {
+  const handleCreateAddress = async () => {
     if (onCreateAddress && newAddress.line_1.trim()) {
-      onCreateAddress(newAddress);
-      setNewAddress({
-        line_1: '',
-        line_2: '',
-        line_3: '',
-        line_4: '',
-        line_5: '',
-      });
-      setShowAddressForm(false);
+      try {
+        const createdAddress = await onCreateAddress(newAddress);
+
+        // Auto-populate the newly created address in the dropdown
+        if (createdAddress && createdAddress.id) {
+          onChange({ address_id: createdAddress.id });
+        }
+
+        setNewAddress({
+          line_1: '',
+          line_2: '',
+          line_3: '',
+          line_4: '',
+          line_5: '',
+        });
+        setShowAddressForm(false);
+      } catch (error) {
+        // Error is already handled by parent component with toast
+        console.error('Failed to create address:', error);
+      }
     }
   };
 
@@ -348,6 +362,106 @@ const PersonalRelationshipFormFields: React.FC<PersonalRelationshipFormFieldsPro
         {errors.phone_number && (
           <p id="phone_number-error" className="mt-1 text-xs text-red-600" role="alert">
             {errors.phone_number}
+          </p>
+        )}
+      </div>
+
+      {/* Address Field */}
+      <div className="form-field">
+        <label htmlFor="address_id" className="block text-sm font-medium text-gray-700 mb-1">
+          Address
+        </label>
+        {!showAddressForm ? (
+          <div className="space-y-2">
+            <select
+              id="address_id"
+              name="address_id"
+              value={formData.address_id || ''}
+              onChange={(e) => onChange({ address_id: e.target.value ? Number(e.target.value) : null })}
+              onBlur={(e) => onBlur('address_id', e.target.value ? Number(e.target.value) : null)}
+              disabled={disabled}
+              aria-invalid={!!errors.address_id}
+              aria-describedby={errors.address_id ? 'address_id-error' : undefined}
+              className="block w-full rounded-md shadow-sm sm:text-sm border border-gray-300 focus:border-primary-500 focus:ring-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-0 transition-colors px-3 py-2"
+            >
+              <option value="">Select an address...</option>
+              {addressOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            {onCreateAddress && (
+              <button
+                type="button"
+                onClick={() => setShowAddressForm(true)}
+                disabled={disabled}
+                className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+              >
+                + Create New Address
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3 p-4 bg-gray-50 rounded-md border border-gray-200">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium text-gray-900">Create New Address</span>
+              <button
+                type="button"
+                onClick={() => setShowAddressForm(false)}
+                className="text-sm text-gray-600 hover:text-gray-700"
+              >
+                Cancel
+              </button>
+            </div>
+            <input
+              type="text"
+              placeholder="Address Line 1 *"
+              value={newAddress.line_1}
+              onChange={(e) => setNewAddress({ ...newAddress, line_1: e.target.value })}
+              className="block w-full rounded-md shadow-sm sm:text-sm border border-gray-300 focus:border-primary-500 focus:ring-primary-500 px-3 py-2"
+            />
+            <input
+              type="text"
+              placeholder="Address Line 2"
+              value={newAddress.line_2}
+              onChange={(e) => setNewAddress({ ...newAddress, line_2: e.target.value })}
+              className="block w-full rounded-md shadow-sm sm:text-sm border border-gray-300 focus:border-primary-500 focus:ring-primary-500 px-3 py-2"
+            />
+            <input
+              type="text"
+              placeholder="Address Line 3"
+              value={newAddress.line_3}
+              onChange={(e) => setNewAddress({ ...newAddress, line_3: e.target.value })}
+              className="block w-full rounded-md shadow-sm sm:text-sm border border-gray-300 focus:border-primary-500 focus:ring-primary-500 px-3 py-2"
+            />
+            <input
+              type="text"
+              placeholder="City/Town"
+              value={newAddress.line_4}
+              onChange={(e) => setNewAddress({ ...newAddress, line_4: e.target.value })}
+              className="block w-full rounded-md shadow-sm sm:text-sm border border-gray-300 focus:border-primary-500 focus:ring-primary-500 px-3 py-2"
+            />
+            <input
+              type="text"
+              placeholder="Postcode"
+              value={newAddress.line_5}
+              onChange={(e) => setNewAddress({ ...newAddress, line_5: e.target.value })}
+              className="block w-full rounded-md shadow-sm sm:text-sm border border-gray-300 focus:border-primary-500 focus:ring-primary-500 px-3 py-2"
+            />
+            <button
+              type="button"
+              onClick={handleCreateAddress}
+              disabled={!newAddress.line_1.trim()}
+              className="w-full px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Save Address
+            </button>
+          </div>
+        )}
+        {errors.address_id && (
+          <p id="address_id-error" className="mt-1 text-xs text-red-600" role="alert">
+            {errors.address_id}
           </p>
         )}
       </div>

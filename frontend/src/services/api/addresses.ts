@@ -89,6 +89,27 @@ export const deleteAddress = async (id: number): Promise<void> => {
 };
 
 /**
+ * Fetches all addresses from the database
+ * Used for address selection in relationship modals
+ *
+ * @returns Promise resolving to array of addresses
+ * @throws Error if API request fails with backend error message
+ *
+ * @example
+ * const addresses = await getAllAddresses();
+ * console.log(addresses.length); // 42
+ */
+export const getAllAddresses = async (): Promise<Address[]> => {
+  try {
+    const response = await api.get('/addresses');
+    return response.data;
+  } catch (error: any) {
+    const message = error.response?.data?.detail || error.response?.data?.message || 'Failed to fetch addresses';
+    throw new Error(`getAllAddresses: ${message}`);
+  }
+};
+
+/**
  * Utility: Check if address data has any non-empty fields
  * Used to determine if address creation is needed
  *

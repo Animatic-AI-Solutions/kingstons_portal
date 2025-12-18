@@ -66,13 +66,13 @@ const KEYBOARD_KEYS = {
 
 /**
  * CSS class constants
- * Using DRY principle to avoid duplication
+ * Matches People tab styling with purple theme and rounded buttons
  */
 const CSS_CLASSES = {
-  TAB_BASE: 'px-4 py-2 text-sm font-medium border-b-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
-  TAB_ACTIVE: 'text-blue-600 border-blue-600',
-  TAB_INACTIVE: 'text-gray-600 border-transparent hover:text-gray-800 hover:border-gray-300',
-  TAB_LIST: 'border-b border-gray-200 -mb-px flex space-x-8',
+  TAB_BASE: 'flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all text-sm font-medium whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2',
+  TAB_ACTIVE: 'bg-primary-700 text-white shadow-md',
+  TAB_INACTIVE: 'text-primary-700 hover:bg-primary-100 hover:text-primary-800',
+  TAB_LIST: 'inline-flex items-center bg-primary-50 rounded-lg p-1 overflow-x-auto border border-primary-200 shadow-sm',
 } as const;
 
 // ==========================
@@ -190,34 +190,37 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabChange })
 
   return (
     <>
-      <div role="tablist" aria-label={ARIA_LABELS.TAB_LIST} className={CSS_CLASSES.TAB_LIST}>
-        {/* Personal Tab */}
-        <button
-          ref={personalTabRef}
-          role="tab"
-          aria-selected={activeTab === TAB_TYPES.PERSONAL}
-          aria-controls={PANEL_IDS.PERSONAL}
-          tabIndex={activeTab === TAB_TYPES.PERSONAL ? 0 : -1}
-          onClick={() => handleClick(TAB_TYPES.PERSONAL)}
-          onKeyDown={(e) => handleKeyDown(e, TAB_TYPES.PERSONAL)}
-          className={getTabClassName(TAB_TYPES.PERSONAL)}
-        >
-          {TAB_LABELS.PERSONAL}
-        </button>
+      {/* Centered tab container matching People tab styling */}
+      <div className="flex items-center justify-center">
+        <div role="tablist" aria-label={ARIA_LABELS.TAB_LIST} className={CSS_CLASSES.TAB_LIST}>
+          {/* Personal Tab */}
+          <button
+            ref={personalTabRef}
+            role="tab"
+            aria-selected={activeTab === TAB_TYPES.PERSONAL}
+            aria-controls={PANEL_IDS.PERSONAL}
+            tabIndex={activeTab === TAB_TYPES.PERSONAL ? 0 : -1}
+            onClick={() => handleClick(TAB_TYPES.PERSONAL)}
+            onKeyDown={(e) => handleKeyDown(e, TAB_TYPES.PERSONAL)}
+            className={getTabClassName(TAB_TYPES.PERSONAL)}
+          >
+            {TAB_LABELS.PERSONAL}
+          </button>
 
-        {/* Professional Tab */}
-        <button
-          ref={professionalTabRef}
-          role="tab"
-          aria-selected={activeTab === TAB_TYPES.PROFESSIONAL}
-          aria-controls={PANEL_IDS.PROFESSIONAL}
-          tabIndex={activeTab === TAB_TYPES.PROFESSIONAL ? 0 : -1}
-          onClick={() => handleClick(TAB_TYPES.PROFESSIONAL)}
-          onKeyDown={(e) => handleKeyDown(e, TAB_TYPES.PROFESSIONAL)}
-          className={getTabClassName(TAB_TYPES.PROFESSIONAL)}
-        >
-          {TAB_LABELS.PROFESSIONAL}
-        </button>
+          {/* Professional Tab */}
+          <button
+            ref={professionalTabRef}
+            role="tab"
+            aria-selected={activeTab === TAB_TYPES.PROFESSIONAL}
+            aria-controls={PANEL_IDS.PROFESSIONAL}
+            tabIndex={activeTab === TAB_TYPES.PROFESSIONAL ? 0 : -1}
+            onClick={() => handleClick(TAB_TYPES.PROFESSIONAL)}
+            onKeyDown={(e) => handleKeyDown(e, TAB_TYPES.PROFESSIONAL)}
+            className={getTabClassName(TAB_TYPES.PROFESSIONAL)}
+          >
+            {TAB_LABELS.PROFESSIONAL}
+          </button>
+        </div>
       </div>
 
       {/* Hidden panel placeholders for ARIA validation (only when testing in isolation) */}

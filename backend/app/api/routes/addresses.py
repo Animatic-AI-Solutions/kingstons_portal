@@ -8,6 +8,24 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
+@router.get('/addresses', response_model=List[Address])
+async def get_all_addresses(db=Depends(get_db)):
+    """
+    Retrieve all addresses from the database.
+    """
+    try:
+        logger.info('Retrieving all addresses')
+
+        results = await db.fetch('SELECT * FROM addresses ORDER BY id DESC')
+
+        logger.info(f'Retrieved {len(results)} addresses')
+        return [dict(row) for row in results]
+
+    except Exception as e:
+        logger.error(f'Error retrieving addresses: {str(e)}')
+        raise HTTPException(status_code=500, detail=f'Internal server error: {str(e)}')
+
+
 @router.post('/addresses', response_model=Address, status_code=status.HTTP_201_CREATED)
 async def create_address(address: AddressCreate, db=Depends(get_db)):
     """
