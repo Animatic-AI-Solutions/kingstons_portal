@@ -22,6 +22,7 @@ export const PERSONAL_RELATIONSHIPS = [
   'Sibling',
   'Grandchild',
   'Grandparent',
+  'Pet',
   'Other Family',
 ] as const;
 
@@ -159,4 +160,7 @@ export interface SpecialRelationshipFormData {
 
   /** Firm name (for professional relationships) */
   firm_name?: string | null;
+
+  /** Product owner IDs - special relationships must have at least one */
+  product_owner_ids?: number[];
 }

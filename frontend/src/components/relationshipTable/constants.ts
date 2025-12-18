@@ -63,6 +63,14 @@ export const STATUS_BADGE_CLASSES = {
   Deceased: 'bg-red-100 text-red-800',
 } as const;
 
+/**
+ * Product owner pill/badge classes
+ */
+export const PRODUCT_OWNER_BADGE_CLASSES = {
+  container: 'flex flex-wrap gap-1',
+  badge: 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800',
+} as const;
+
 // ==========================
 // Column Configuration
 // ==========================
@@ -83,14 +91,19 @@ export const SORTABLE_COLUMNS = {
  * Column labels for table headers
  */
 export const COLUMN_LABELS = {
+  name: 'Name',
   firstName: 'First Name',
   lastName: 'Last Name',
   relationship: 'Relationship',
   dateOfBirth: 'Date of Birth',
   age: 'Age',
+  dependency: 'Dependent',
   email: 'Email',
   phone: 'Phone',
+  contactDetails: 'Contact Details',
   status: 'Status',
+  productOwners: 'Product Owners',
+  firmName: 'Firm Name',
   actions: 'Actions',
   company: 'Company',
   position: 'Position',

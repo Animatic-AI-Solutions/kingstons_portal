@@ -52,6 +52,7 @@ export interface ValidationErrors {
   phone_number?: string;
   dependency?: string;
   firm_name?: string;
+  product_owner_ids?: string;
 }
 
 /**
@@ -121,6 +122,7 @@ export const ERROR_MESSAGES = {
   STATUS_REQUIRED: 'Status is required',
   STATUS_INVALID: 'Invalid status value',
   FIRM_NAME_TOO_LONG: 'Firm name must be 200 characters or less',
+  PRODUCT_OWNERS_REQUIRED: 'At least one product owner is required',
 } as const;
 
 /** Valid status values for relationship status field */
@@ -296,6 +298,19 @@ const validateStatus = (status: string): string | undefined => {
   return undefined;
 };
 
+/**
+ * Validate product_owner_ids field
+ * @param productOwnerIds - Array of product owner IDs to validate
+ * @returns Error message if invalid, undefined if valid
+ */
+const validateProductOwnerIds = (productOwnerIds: number[] | undefined): string | undefined => {
+  if (!productOwnerIds || productOwnerIds.length === 0) {
+    return ERROR_MESSAGES.PRODUCT_OWNERS_REQUIRED;
+  }
+
+  return undefined;
+};
+
 // ============================================================================
 // Hook Implementation
 // ============================================================================
@@ -338,6 +353,9 @@ export const useRelationshipValidation = (): UseRelationshipValidationReturn => 
           break;
         case 'phone_number':
           error = validatePhone(value);
+          break;
+        case 'product_owner_ids':
+          error = validateProductOwnerIds(value);
           break;
         default:
           break;
@@ -418,6 +436,14 @@ export const useRelationshipValidation = (): UseRelationshipValidationReturn => 
 
       if (data.firm_name && data.firm_name.length > VALIDATION_LIMITS.FIRM_NAME_MAX_LENGTH) {
         newErrors.firm_name = ERROR_MESSAGES.FIRM_NAME_TOO_LONG;
+      }
+
+      // Validate product_owner_ids (required)
+      if (data.product_owner_ids !== undefined) {
+        const error = validateProductOwnerIds(data.product_owner_ids);
+        if (error) newErrors.product_owner_ids = error;
+      } else {
+        newErrors.product_owner_ids = ERROR_MESSAGES.PRODUCT_OWNERS_REQUIRED;
       }
 
       setErrors(newErrors);

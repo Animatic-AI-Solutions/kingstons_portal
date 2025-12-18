@@ -112,7 +112,10 @@ const SpecialRelationshipsWrapper: React.FC = () => {
       )}
 
       {/* Render the actual Special Relationships component */}
-      <SpecialRelationshipsSubTab productOwnerId={primaryProductOwner.id} />
+      <SpecialRelationshipsSubTab
+        productOwnerId={primaryProductOwner.id}
+        allProductOwners={productOwners}
+      />
     </div>
   );
 };

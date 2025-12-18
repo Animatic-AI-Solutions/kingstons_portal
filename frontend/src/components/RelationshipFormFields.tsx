@@ -163,7 +163,7 @@ const RelationshipFormFields: React.FC<RelationshipFormFieldsProps> = ({
       type: value,
       relationship: '', // Reset relationship when type changes
     });
-    setTimeout(() => onBlur('type'), 0);
+    setTimeout(() => onBlur('type', value), 0);
   };
 
   /**
@@ -256,7 +256,7 @@ const RelationshipFormFields: React.FC<RelationshipFormFieldsProps> = ({
           value={formData.relationship}
           onChange={(value) => {
             onChange({ ...formData, relationship: value });
-            setTimeout(() => onBlur('relationship'), 0);
+            setTimeout(() => onBlur('relationship', value), 0);
           }}
           options={relationshipOptions}
           placeholder={formData.type ? 'Select or type relationship' : 'Please select a type first'}

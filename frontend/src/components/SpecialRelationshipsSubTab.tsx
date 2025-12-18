@@ -18,15 +18,17 @@
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import TabNavigation from './TabNavigation';
 import PersonalRelationshipsTable from './PersonalRelationshipsTable';
 import ProfessionalRelationshipsTable from './ProfessionalRelationshipsTable';
 import SkeletonTable from './SkeletonTable';
 import EmptyStatePersonal from './EmptyStatePersonal';
 import EmptyStateProfessional from './EmptyStateProfessional';
-import CreateSpecialRelationshipModal from './CreateSpecialRelationshipModal';
+import CreatePersonalRelationshipModal from './CreatePersonalRelationshipModal';
+import CreateProfessionalRelationshipModal from './CreateProfessionalRelationshipModal';
 import EditSpecialRelationshipModal from './EditSpecialRelationshipModal';
-import { useSpecialRelationships } from '@/hooks/useSpecialRelationships';
+import { useSpecialRelationships, useDeleteSpecialRelationship } from '@/hooks/useSpecialRelationships';
 import {
   SpecialRelationship,
   RelationshipStatus,
@@ -67,11 +69,22 @@ const BUTTON_CLASSES = {
 // ==========================
 
 /**
+ * Product Owner interface for multi-select
+ */
+export interface ProductOwner {
+  id: number;
+  firstname: string;
+  surname: string;
+}
+
+/**
  * Props for SpecialRelationshipsSubTab component
  */
 export interface SpecialRelationshipsSubTabProps {
   /** Product owner ID to fetch relationships for */
   productOwnerId: number;
+  /** All product owners for the client group (for multi-select in modals) */
+  allProductOwners: ProductOwner[];
 }
 
 // ==========================
@@ -107,6 +120,7 @@ export interface SpecialRelationshipsSubTabProps {
  */
 const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
   productOwnerId,
+  allProductOwners,
 }) => {
   // ==========================
   // State
@@ -128,6 +142,9 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
     error,
     refetch,
   } = useSpecialRelationships(productOwnerId);
+
+  // Delete mutation
+  const deleteMutation = useDeleteSpecialRelationship();
 
   // ==========================
   // Filtered Data
@@ -178,13 +195,35 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
   }, []);
 
   /**
-   * Handle delete button click (placeholder - would integrate with delete mutation)
+   * Handle delete button click with confirmation
    * Wrapped in useCallback to provide stable reference to table components
    */
   const handleDelete = useCallback((relationship: SpecialRelationship) => {
-    // TODO: Integrate with useDeleteSpecialRelationship hook
-    console.log('Delete relationship:', relationship.id);
-  }, []);
+    const relationshipName = relationship.name || 'this relationship';
+
+    // Show confirmation dialog
+    if (!window.confirm(`Are you sure you want to delete ${relationshipName}? This action cannot be undone.`)) {
+      return;
+    }
+
+    // Show loading toast
+    const toastId = toast.loading(`Deleting ${relationshipName}...`);
+
+    // Call delete mutation
+    deleteMutation.mutate(relationship.id, {
+      onSuccess: () => {
+        toast.success(`${relationshipName} has been deleted successfully`, {
+          id: toastId,
+        });
+      },
+      onError: (error: any) => {
+        const errorMessage = error?.message || 'Failed to delete relationship';
+        toast.error(`Failed to delete ${relationshipName}: ${errorMessage}`, {
+          id: toastId,
+        });
+      },
+    });
+  }, [deleteMutation]);
 
   /**
    * Handle status change (placeholder - would integrate with update mutation)
@@ -212,6 +251,17 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
   }, []);
 
   /**
+   * Handle successful creation of relationship
+   * Wrapped in useCallback to prevent unnecessary re-renders
+   */
+  const handleCreateSuccess = useCallback((relationship: SpecialRelationship) => {
+    const relationshipName = relationship.name || 'Relationship';
+    const relationshipType = relationship.type === 'Personal' ? 'personal' : 'professional';
+    toast.success(`${relationshipName} has been created successfully as a ${relationshipType} relationship`);
+    setShowCreateModal(false);
+  }, []);
+
+  /**
    * Close edit modal and clear editing state
    * Wrapped in useCallback to prevent unnecessary re-renders of modal
    */
@@ -232,14 +282,6 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
     return activeTab === 'personal'
       ? BUTTON_TEXT.ADD_PERSONAL
       : BUTTON_TEXT.ADD_PROFESSIONAL;
-  }, [activeTab]);
-
-  /**
-   * Determine initial type for create modal based on active tab
-   * Memoized for stable reference in modal props
-   */
-  const initialType = useMemo(() => {
-    return activeTab === 'professional' ? 'Professional' : 'Personal';
   }, [activeTab]);
 
   // ==========================
@@ -293,13 +335,24 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
           <EmptyStateProfessional onAddClick={handleAddClick} />
         )}
 
-        {/* Create Modal */}
-        <CreateSpecialRelationshipModal
-          isOpen={showCreateModal}
-          onClose={handleCreateModalClose}
-          productOwnerIds={[productOwnerId]}
-          initialType={initialType}
-        />
+        {/* Create Modal - Separate modals for Personal vs Professional */}
+        {activeTab === 'personal' ? (
+          <CreatePersonalRelationshipModal
+            isOpen={showCreateModal}
+            onClose={handleCreateModalClose}
+            onSuccess={handleCreateSuccess}
+            productOwners={allProductOwners}
+            initialProductOwnerIds={[productOwnerId]}
+          />
+        ) : (
+          <CreateProfessionalRelationshipModal
+            isOpen={showCreateModal}
+            onClose={handleCreateModalClose}
+            onSuccess={handleCreateSuccess}
+            productOwners={allProductOwners}
+            initialProductOwnerIds={[productOwnerId]}
+          />
+        )}
       </div>
     );
   }
@@ -325,6 +378,7 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
         <div id="personal-relationships-panel" role="tabpanel" aria-labelledby="personal-tab">
           <PersonalRelationshipsTable
             relationships={filteredRelationships}
+            productOwners={allProductOwners}
             onRowClick={handleRowClick}
             onEdit={handleEdit}
             onDelete={handleDelete}
@@ -335,6 +389,7 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
         <div id="professional-relationships-panel" role="tabpanel" aria-labelledby="professional-tab">
           <ProfessionalRelationshipsTable
             relationships={filteredRelationships}
+            productOwners={allProductOwners}
             onRowClick={handleRowClick}
             onEdit={handleEdit}
             onDelete={handleDelete}
@@ -343,13 +398,24 @@ const SpecialRelationshipsSubTab: React.FC<SpecialRelationshipsSubTabProps> = ({
         </div>
       )}
 
-      {/* Modals */}
-      <CreateSpecialRelationshipModal
-        isOpen={showCreateModal}
-        onClose={handleCreateModalClose}
-        productOwnerIds={[productOwnerId]}
-        initialType={initialType}
-      />
+      {/* Modals - Separate modals for Personal vs Professional */}
+      {activeTab === 'personal' ? (
+        <CreatePersonalRelationshipModal
+          isOpen={showCreateModal}
+          onClose={handleCreateModalClose}
+          onSuccess={handleCreateSuccess}
+          productOwners={allProductOwners}
+          initialProductOwnerIds={[productOwnerId]}
+        />
+      ) : (
+        <CreateProfessionalRelationshipModal
+          isOpen={showCreateModal}
+          onClose={handleCreateModalClose}
+          onSuccess={handleCreateSuccess}
+          productOwners={allProductOwners}
+          initialProductOwnerIds={[productOwnerId]}
+        />
+      )}
 
       {editingRelationship && (
         <EditSpecialRelationshipModal

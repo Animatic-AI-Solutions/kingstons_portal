@@ -170,7 +170,7 @@ const ModalShell: React.FC<ModalShellProps> = ({
     >
       <div
         onClick={handleBackdropClick}
-        className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-gray-900 bg-opacity-50"
+        className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-gray-900 bg-opacity-50 py-8"
         data-testid="modal-backdrop"
       >
         <div
@@ -179,7 +179,7 @@ const ModalShell: React.FC<ModalShellProps> = ({
           aria-modal="true"
           aria-labelledby="modal-title"
           aria-describedby={description ? 'modal-description' : undefined}
-          className={`relative w-full ${sizeClasses[size]} mx-4 bg-white rounded-lg shadow-xl ${className}`}
+          className={`relative w-full ${sizeClasses[size]} mx-4 my-auto bg-white rounded-lg shadow-xl ${className}`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}

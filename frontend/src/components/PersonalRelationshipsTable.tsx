@@ -37,6 +37,7 @@ import {
   ROW_CLASSES,
   ACTION_CLASSES,
   STATUS_BADGE_CLASSES,
+  PRODUCT_OWNER_BADGE_CLASSES,
   COLUMN_LABELS,
   DEFAULT_SORT_CONFIG,
   EMPTY_VALUE_PLACEHOLDER,
@@ -64,8 +65,15 @@ import {
  * @property {Error | null} [error] - Error object if applicable
  * @property {Function} [onRetry] - Optional callback for retry button in error state
  */
+interface ProductOwner {
+  id: number;
+  firstname: string;
+  surname: string;
+}
+
 interface PersonalRelationshipsTableProps {
   relationships: SpecialRelationship[];
+  productOwners?: ProductOwner[];
   onRowClick?: (relationship: SpecialRelationship) => void;
   onEdit: (relationship: SpecialRelationship) => void;
   onDelete: (relationship: SpecialRelationship) => void;
@@ -90,6 +98,7 @@ interface PersonalRelationshipsTableProps {
  */
 const PersonalRelationshipsTable: React.FC<PersonalRelationshipsTableProps> = ({
   relationships,
+  productOwners = [],
   onRowClick,
   onEdit,
   onDelete,
@@ -154,14 +163,8 @@ const PersonalRelationshipsTable: React.FC<PersonalRelationshipsTableProps> = ({
         <thead className={TABLE_CLASSES.thead}>
           <tr>
             <TableSortHeader
-              label={COLUMN_LABELS.firstName}
-              column="first_name"
-              sortConfig={sortConfig}
-              onSort={handleSort}
-            />
-            <TableSortHeader
-              label={COLUMN_LABELS.lastName}
-              column="last_name"
+              label={COLUMN_LABELS.name}
+              column="name"
               sortConfig={sortConfig}
               onSort={handleSort}
             />
@@ -173,22 +176,18 @@ const PersonalRelationshipsTable: React.FC<PersonalRelationshipsTableProps> = ({
               column="date_of_birth"
               sortConfig={sortConfig}
               onSort={handleSort}
-              className={HEADER_CLASSES.hiddenOnTablet}
             />
             <th scope="col" className={HEADER_CLASSES.base}>
               {COLUMN_LABELS.age}
             </th>
-            <th
-              scope="col"
-              className={`${HEADER_CLASSES.base} ${HEADER_CLASSES.hiddenOnTablet}`}
-            >
-              {COLUMN_LABELS.email}
+            <th scope="col" className={HEADER_CLASSES.base}>
+              {COLUMN_LABELS.dependency}
             </th>
-            <th
-              scope="col"
-              className={`${HEADER_CLASSES.base} ${HEADER_CLASSES.hiddenOnTablet}`}
-            >
-              {COLUMN_LABELS.phone}
+            <th scope="col" className={HEADER_CLASSES.base}>
+              {COLUMN_LABELS.productOwners}
+            </th>
+            <th scope="col" className={HEADER_CLASSES.base}>
+              {COLUMN_LABELS.contactDetails}
             </th>
             <TableSortHeader
               label={COLUMN_LABELS.status}
@@ -207,12 +206,17 @@ const PersonalRelationshipsTable: React.FC<PersonalRelationshipsTableProps> = ({
             const dob = relationship.date_of_birth
               ? format(new Date(relationship.date_of_birth), 'dd/MM/yyyy')
               : EMPTY_VALUE_PLACEHOLDER;
-            const phone = relationship.phone_number || EMPTY_VALUE_PLACEHOLDER;
 
-            // Split name into first and last name
-            const nameParts = (relationship.name || '').trim().split(/\s+/);
-            const firstName = nameParts[0] || EMPTY_VALUE_PLACEHOLDER;
-            const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : EMPTY_VALUE_PLACEHOLDER;
+            // Get product owners for pills
+            const owners = (relationship.product_owner_ids || [])
+              .map(id => productOwners.find(po => po.id === id))
+              .filter(Boolean);
+
+            // Combine contact details
+            const contactDetails = [
+              relationship.phone_number,
+              relationship.email
+            ].filter(Boolean).join(' • ') || EMPTY_VALUE_PLACEHOLDER;
 
             return (
               <tr
@@ -220,27 +224,45 @@ const PersonalRelationshipsTable: React.FC<PersonalRelationshipsTableProps> = ({
                 onClick={() => onRowClick?.(relationship)}
                 className={ROW_CLASSES.base}
               >
+                {/* Name */}
                 <td className={CELL_CLASSES.base}>
-                  {firstName}
+                  {relationship.name || EMPTY_VALUE_PLACEHOLDER}
                 </td>
-                <td className={CELL_CLASSES.base}>
-                  {lastName}
-                </td>
+                {/* Relationship */}
                 <td className={CELL_CLASSES.base}>
                   {relationship.relationship}
                 </td>
-                <td className={CELL_CLASSES.hiddenOnTablet}>
+                {/* Date of Birth */}
+                <td className={CELL_CLASSES.base}>
                   {dob}
                 </td>
+                {/* Age */}
                 <td className={CELL_CLASSES.base}>
-                  {age !== null ? age : ''}
+                  {age !== null ? age : EMPTY_VALUE_PLACEHOLDER}
                 </td>
-                <td className={CELL_CLASSES.hiddenOnTablet}>
-                  {relationship.email || EMPTY_VALUE_PLACEHOLDER}
+                {/* Dependency */}
+                <td className={CELL_CLASSES.base}>
+                  {relationship.dependency ? 'Yes' : 'No'}
                 </td>
-                <td className={CELL_CLASSES.hiddenOnTablet}>
-                  {phone}
+                {/* Product Owners (pills) */}
+                <td className={CELL_CLASSES.base}>
+                  <div className={PRODUCT_OWNER_BADGE_CLASSES.container}>
+                    {owners.length > 0 ? (
+                      owners.map((owner) => (
+                        <span key={owner.id} className={PRODUCT_OWNER_BADGE_CLASSES.badge}>
+                          {owner.firstname} {owner.surname}
+                        </span>
+                      ))
+                    ) : (
+                      <span>{EMPTY_VALUE_PLACEHOLDER}</span>
+                    )}
+                  </div>
                 </td>
+                {/* Contact Details */}
+                <td className={CELL_CLASSES.base}>
+                  {contactDetails}
+                </td>
+                {/* Status */}
                 <td className={CELL_CLASSES.base}>
                   <span
                     className={`${STATUS_BADGE_CLASSES.base} ${
@@ -250,6 +272,7 @@ const PersonalRelationshipsTable: React.FC<PersonalRelationshipsTableProps> = ({
                     {relationship.status}
                   </span>
                 </td>
+                {/* Actions */}
                 <td
                   className={CELL_CLASSES.base}
                   onClick={(e) => e.stopPropagation()}
