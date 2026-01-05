@@ -11,7 +11,7 @@ import {
   ShieldCheckIcon,
   BriefcaseIcon,
 } from '@heroicons/react/24/outline';
-import DynamicPageContainer from '../../components/DynamicPageContainer';
+import DynamicPageContainer from '../../components/phase2/client-groups/DynamicPageContainer';
 import api from '../../services/api';
 
 // Import tab components (placeholders for now)

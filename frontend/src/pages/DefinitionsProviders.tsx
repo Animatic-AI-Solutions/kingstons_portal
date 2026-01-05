@@ -6,17 +6,18 @@ import { TableSkeleton } from '../components/ui/feedback/TableSkeleton';
 import { EmptyState } from '../components/ui/feedback/EmptyState';
 import { ErrorDisplay } from '../components/ui/feedback/ErrorDisplay';
 import { AddButton, SearchInput } from '../components/ui';
-import AddProviderModal from '../components/AddProviderModal';
+import { AddProviderModal } from '../components/phase1';
 import { useEntityData } from '../hooks/useEntityData';
 import { 
   Provider, 
   ProviderSortField, 
   SortOrder, 
-  getProviderColor 
+  getProviderColor
 } from '../utils/definitionsShared';
 import api from '../services/api';
-import StandardTable, { ColumnConfig } from '../components/StandardTable';
-import DynamicPageContainer from '../components/DynamicPageContainer';
+import { StandardTable } from '../components/ui';
+import type { ColumnConfig } from '../components/ui/tables/StandardTable';
+import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
 
 const DefinitionsProviders: React.FC = () => {
   const { user } = useAuth();

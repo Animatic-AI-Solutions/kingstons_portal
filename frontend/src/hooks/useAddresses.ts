@@ -32,21 +32,12 @@ const ADDRESSES_QUERY_KEY = ['addresses'];
  * ```
  */
 export function useAddresses() {
-  const result = useQuery({
+  return useQuery({
     queryKey: ADDRESSES_QUERY_KEY,
     queryFn: getAllAddresses,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
-
-  console.log('[useAddresses] Query result:', {
-    data: result.data,
-    isLoading: result.isLoading,
-    isError: result.isError,
-    error: result.error,
-  });
-
-  return result;
 }
 
 /**

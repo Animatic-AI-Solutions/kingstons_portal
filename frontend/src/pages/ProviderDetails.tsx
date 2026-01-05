@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getAvailableColors } from '../services/api';
-import DynamicPageContainer from '../components/DynamicPageContainer';
-import { EditButton, DeleteButton, ActionButton } from '../components/ui';
-import StandardTable, { ColumnConfig } from '../components/StandardTable';
+import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
+import { EditButton, DeleteButton, ActionButton, StandardTable } from '../components/ui';
+import type { ColumnConfig } from '../components/ui/tables/StandardTable';
 
 interface Provider {
   id: number;

@@ -6,9 +6,9 @@ import { Modal } from 'antd';
 import { getProductOwnerDisplayName, ProductOwner } from '../utils/productOwnerUtils';
 import FilterSearch from '../components/ui/search/FilterSearch';
 import FilterDropdown from '../components/ui/dropdowns/FilterDropdown';
-import { BaseInput, MultiSelectDropdown, ActionButton } from '../components/ui';
-import StandardTable, { ColumnConfig } from '../components/StandardTable';
-import DynamicPageContainer from '../components/DynamicPageContainer';
+import { BaseInput, MultiSelectDropdown, ActionButton, StandardTable } from '../components/ui';
+import type { ColumnConfig } from '../components/ui/tables/StandardTable';
+import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
 
 interface Product {
   id: number;

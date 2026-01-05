@@ -10,7 +10,7 @@ import {
   DateInput
 } from '../components/ui';
 import { CreatableDropdown, BaseDropdown } from '../components/ui';
-import DynamicPageContainer from '../components/DynamicPageContainer';
+import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
 
 
 interface ClientFormData {

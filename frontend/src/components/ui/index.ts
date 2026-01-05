@@ -15,8 +15,6 @@ export type { DateInputProps } from './inputs/DateInput';
 export { default as SearchInput } from './search/SearchInput';
 export type { SearchInputProps } from './search/SearchInput';
 
-export { default as GlobalSearch } from './search/GlobalSearch';
-
 export { default as FilterSearch } from './search/FilterSearch';
 export type { FilterSearchProps } from './search/FilterSearch';
 
@@ -85,12 +83,42 @@ export { default as DataTable } from './data-displays/DataTable';
 export { Skeleton, StatBoxSkeleton, ChartSkeleton, TableSkeleton } from './feedback/Skeleton';
 export { default as ProfileAvatar } from './ProfileAvatar';
 export { default as SearchableDropdown, MultiSelectSearchableDropdown } from './dropdowns/SearchableDropdown';
-export { default as UpcomingMeetings } from './UpcomingMeetings';
-export { default as RiskDifferences } from './RiskDifferences';
 export { default as FilterDropdown } from './dropdowns/FilterDropdown';
 export { EmptyState } from './feedback/EmptyState';
 export { ErrorDisplay } from './feedback/ErrorDisplay';
+export { default as ErrorStateNetwork } from './feedback/ErrorStateNetwork';
+export { default as ErrorStateServer } from './feedback/ErrorStateServer';
 
-// Group 9: Year Navigation Components
-export { default as MiniYearSelector } from './MiniYearSelector';
-export { default as EnhancedMonthHeader } from './EnhancedMonthHeader';
+// Group 9: Date Components
+export { default as MiniYearSelector } from './date/MiniYearSelector';
+export { default as EnhancedMonthHeader } from './date/EnhancedMonthHeader';
+
+// Group 10: Modal Components
+export { default as ModalShell } from './modals/ModalShell';
+
+// Group 11: Navigation Components
+export { default as TabNavigation } from './navigation/TabNavigation';
+
+// Group 12: Badge Components
+export { default as StatusBadge } from './badges/StatusBadge';
+
+// Group 13: Table Components
+export { default as SortableColumnHeader } from './tables/SortableColumnHeader';
+export { default as TableSortHeader } from './tables/TableSortHeader';
+export { default as SkeletonTable } from './tables/SkeletonTable';
+export { default as StandardTable } from './tables/StandardTable';
+
+// Group 14: Search Components
+export { default as GlobalSearch } from './search/GlobalSearch';
+
+// Group 15: Additional Inputs
+export { default as PasswordInput } from './inputs/PasswordInput';
+
+// Group 16: Table Constants (Icons and Styles)
+export {
+  ACTION_ICONS,
+  SORT_ICONS,
+  ICON_SIZES,
+  ACTION_BUTTON_STYLES,
+  ICON_COLORS,
+} from './constants/tableIcons';

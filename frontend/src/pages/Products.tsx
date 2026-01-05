@@ -7,9 +7,9 @@ import { FilterSearch } from '../components/ui';
 import { ActionButton } from '../components/ui';
 import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
 import { generateProductDisplayName } from '../utils/productTitleUtils';
-import { StatCard, StatBox, Skeleton } from '../components/ui';
-import StandardTable, { ColumnConfig } from '../components/StandardTable';
-import DynamicPageContainer from '../components/DynamicPageContainer';
+import { StatCard, StatBox, Skeleton, StandardTable } from '../components/ui';
+import type { ColumnConfig } from '../components/ui/tables/StandardTable';
+import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
 
 interface Product {
   product_id: number; // Changed from id to product_id to match backend response

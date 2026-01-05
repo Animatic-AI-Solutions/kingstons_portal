@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePortfolioTemplateDetails } from '../hooks/usePortfolioTemplates';
-import DynamicPageContainer from '../components/DynamicPageContainer';
-import StandardTable, { ColumnConfig } from '../components/StandardTable';
-import { Button, DeleteButton, ActionButton, AddButton, EditButton } from '../components/ui';
+import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
+import { Button, DeleteButton, ActionButton, AddButton, EditButton, StandardTable } from '../components/ui';
+import type { ColumnConfig } from '../components/ui/tables/StandardTable';
 import { generateProductDisplayName } from '../utils/productTitleUtils';
 import toast from 'react-hot-toast';
 

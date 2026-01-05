@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import DynamicPageContainer from '../components/DynamicPageContainer';
+import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
 import { useReportStateManager } from '../hooks/report/useReportStateManager';
 import MultiSelectDropdown from '../components/ui/dropdowns/MultiSelectDropdown';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
@@ -9,7 +9,7 @@ import { calculateStandardizedMultipleFundsIRR, getLatestFundIRRs } from '../ser
 import { createIRRDataService } from '../services/irrDataService';
 import { createValuationDataService } from '../services/valuationDataService';
 import { createPortfolioFundsService } from '../services/portfolioFundsService';
-import { formatDateFallback, formatCurrencyFallback, formatPercentageFallback } from '../components/reports/shared/ReportFormatters';
+import { formatDateFallback, formatCurrencyFallback, formatPercentageFallback } from '../components/phase1/reports/shared/ReportFormatters';
 import { formatWeightedRisk } from '../utils/reportFormatters';
 import historicalIRRService from '../services/historicalIRRService';
 import { getProductOwnerDisplayName, getProductOwnerFormalDisplayName, getProductOwnerKnownAsDisplayName } from '../utils/productOwnerUtils';

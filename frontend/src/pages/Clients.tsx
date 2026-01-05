@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { SearchableDropdown, FilterSearch } from '../components/ui';
+import { SearchableDropdown, FilterSearch, StandardTable } from '../components/ui';
+import type { ColumnConfig } from '../components/ui/tables/StandardTable';
 import FilterDropdown from '../components/ui/dropdowns/FilterDropdown';
 import { useOptimizedClientData } from '../hooks/useOptimizedClientData';
-import StandardTable, { ColumnConfig } from '../components/StandardTable';
-import DynamicPageContainer from '../components/DynamicPageContainer';
+import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
 
 
 interface Client {

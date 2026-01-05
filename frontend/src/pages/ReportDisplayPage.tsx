@@ -10,7 +10,7 @@ import { createIRRDataService } from '../services/irrDataService';
 import historicalIRRService from '../services/historicalIRRService';
 import api from '../services/api';
 
-import { ReportContainer, SummaryTab, IRRHistoryTab, ReportErrorBoundary } from '../components/report';
+import { ReportContainer, SummaryTab, IRRHistoryTab, ReportErrorBoundary } from '../components/phase1/reports/irr';
 import { useReportStateManager } from '../hooks/report/useReportStateManager';
 import { useIRRCalculationService } from '../hooks/report/useIRRCalculationService';
 import { REPORT_TABS } from '../utils/reportConstants';

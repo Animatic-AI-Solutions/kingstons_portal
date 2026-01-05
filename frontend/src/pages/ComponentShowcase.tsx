@@ -26,7 +26,7 @@ import {
 } from '../components/ui';
 import TableFilter from '../components/ui/table-controls/TableFilter';
 import TableSort from '../components/ui/table-controls/TableSort';
-import StandardTable from '../components/StandardTable';
+import { StandardTable } from '../components/ui';
 import { 
   UserIcon, 
   EnvelopeIcon, 

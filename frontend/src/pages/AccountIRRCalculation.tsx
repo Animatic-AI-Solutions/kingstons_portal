@@ -2,10 +2,8 @@ import React, { useState, useEffect, Fragment, useCallback, useMemo } from 'reac
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
-import EditableMonthlyActivitiesTable from '../components/EditableMonthlyActivitiesTable';
-import IRRCalculationModal from '../components/IRRCalculationModal';
-import PresenceIndicator from '../components/PresenceIndicator';
-import PresenceNotifications from '../components/PresenceNotifications';
+import { EditableMonthlyActivitiesTable, IRRCalculationModal } from '../components/phase1';
+import { PresenceIndicator, PresenceNotifications } from '../components/phase2';
 import ConcurrentUserModal from '../components/ui/ConcurrentUserModal';
 import { useConcurrentUserDetection } from '../hooks/useConcurrentUserDetection';
 import { usePresenceWithNotifications } from '../hooks/usePresenceWithNotifications';

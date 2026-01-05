@@ -1,5 +1,5 @@
 import React from 'react';
-import DynamicPageContainer from '../components/DynamicPageContainer';
+import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
 
 const Terms: React.FC = () => {
   return (

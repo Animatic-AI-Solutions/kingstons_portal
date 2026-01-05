@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Modal } from 'antd';
 import { BaseInput, ActionButton, BaseDropdown, AddButton, SearchInput, Button } from '../components/ui';
 import { getProductOwnerDisplayName, ProductOwner } from '../utils/productOwnerUtils';
-import DynamicPageContainer from '../components/DynamicPageContainer';
+import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
 
 interface Product {
   product_id: number; // Changed from id to product_id to match backend response

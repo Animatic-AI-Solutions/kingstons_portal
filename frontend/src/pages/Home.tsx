@@ -1,7 +1,7 @@
 import React, { Suspense, useState } from 'react';
 import { StatBox, FundDistributionChart, DataTable, StatBoxSkeleton, ChartSkeleton, TableSkeleton, UpcomingMeetings, RiskDifferences } from '../components/ui';
 import useDashboardData from '../hooks/useDashboardData';
-import DynamicPageContainer from '../components/DynamicPageContainer';
+import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
 import HolidayBanner from '../components/HolidayBanner';
 
 // Icons for the stats boxes

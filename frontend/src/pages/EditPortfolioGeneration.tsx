@@ -2,10 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
-import DynamicPageContainer from '../components/DynamicPageContainer';
+import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
 import { findCashFund, isCashFund } from '../utils/fundUtils';
 import { DateInput, BaseInput } from '../components/ui';
-import FundSelectionManager from '../components/generation/FundSelectionManager';
+import FundSelectionManager from '../components/phase1/funds/generation/FundSelectionManager';
 
 interface Fund {
   id: number;

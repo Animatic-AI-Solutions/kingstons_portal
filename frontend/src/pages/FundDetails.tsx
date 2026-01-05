@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import DynamicPageContainer from '../components/DynamicPageContainer';
+import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
 import FilterDropdown from '../components/ui/dropdowns/FilterDropdown';
-import StandardTable, { ColumnConfig } from '../components/StandardTable';
+import { StandardTable } from '../components/ui';
+import type { ColumnConfig } from '../components/ui/tables/StandardTable';
 
 interface Portfolio {
   id: number;

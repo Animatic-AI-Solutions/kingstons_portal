@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Routes, Route, NavLink, Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import DynamicPageContainer from '../components/DynamicPageContainer';
+import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
 import AccountOverview from './ProductOverview';
 import AccountIRRCalculation from './AccountIRRCalculation';
 import AccountIRRHistory from './AccountIRRHistory';

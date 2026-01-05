@@ -1,7 +1,7 @@
 import React from 'react';
-import TopBar from '../TopBar';
-import Sidebar from '../Sidebar';
-import Footer from '../Footer';
+import TopBar from './TopBar';
+import Sidebar from './Sidebar';
+import Footer from './Footer';
 
 interface AppLayoutProps {
   children: React.ReactNode;

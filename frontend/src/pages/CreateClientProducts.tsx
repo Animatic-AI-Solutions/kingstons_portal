@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import AddFundModal from '../components/AddFundModal';
-import CreateProductOwnerModal from '../components/CreateProductOwnerModal';
+import { AddFundModal } from '../components/phase1';
+import { CreateProductOwnerModal } from '../components/phase2';
 
 import { useAuth } from '../context/AuthContext';
 import { Radio, Select, Input, Checkbox } from 'antd';
@@ -14,7 +14,7 @@ import { getProviderColor } from '../services/providerColors';
 import { findCashFund, isCashFund } from '../utils/fundUtils';
 import { useNavigationRefresh } from '../hooks/useNavigationRefresh';
 import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
-import DynamicPageContainer from '../components/DynamicPageContainer';
+import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
 
 interface Client {
   id: number;

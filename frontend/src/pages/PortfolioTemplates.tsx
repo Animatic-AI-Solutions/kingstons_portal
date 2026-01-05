@@ -9,10 +9,11 @@ import { usePortfolioTemplates } from '../hooks/usePortfolioTemplates';
 import { 
   Portfolio, 
   calculateAverageRisk,
-  getRiskRange 
+  getRiskRange
 } from '../utils/definitionsShared';
-import StandardTable, { ColumnConfig } from '../components/StandardTable';
-import DynamicPageContainer from '../components/DynamicPageContainer';
+import { StandardTable } from '../components/ui';
+import type { ColumnConfig } from '../components/ui/tables/StandardTable';
+import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
 
 interface PortfolioTemplatesProps {
   tabMode?: boolean;

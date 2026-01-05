@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserIcon, FlagIcon, DocumentTextIcon, CurrencyPoundIcon, BanknotesIcon, ShieldCheckIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { formatMoney } from '../../utils/formatMoney';
-import DynamicPageContainer from '../../components/DynamicPageContainer';
+import DynamicPageContainer from '../../components/phase2/client-groups/DynamicPageContainer';
 
 // Import tabs
 import SummaryTab from './tabs/SummaryTab';

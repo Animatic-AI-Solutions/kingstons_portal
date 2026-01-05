@@ -3,7 +3,7 @@
  * Extracted from ReportGenerator.tsx and ReportDisplay.tsx to eliminate code duplication
  */
 
-import { formatCurrencyFallback, formatPercentageFallback } from '../components/reports/shared/ReportFormatters';
+import { formatCurrencyFallback, formatPercentageFallback } from '../components/phase1/reports/shared/ReportFormatters';
 
 // Currency formatting options
 export interface CurrencyFormattingOptions {

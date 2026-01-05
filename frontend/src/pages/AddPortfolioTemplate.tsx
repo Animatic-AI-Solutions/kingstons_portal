@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import DynamicPageContainer from '../components/DynamicPageContainer';
+import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
 import { BaseInput, BaseDropdown, TextArea, ActionButton, DateInput } from '../components/ui';
 import { findCashFund, isCashFund } from '../utils/fundUtils';
 

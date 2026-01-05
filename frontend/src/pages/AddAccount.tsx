@@ -6,9 +6,9 @@ import type { SelectValue } from 'antd/es/select';
 import moment from 'moment';
 import type { Moment } from 'moment';
 import api from '../services/api';
-import AddFundModal from '../components/AddFundModal';
+import { AddFundModal } from '../components/phase1';
 import '../styles/PortfolioTemplate.css';
-import DynamicPageContainer from '../components/DynamicPageContainer';
+import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
 
 interface Client {
   id: number;

@@ -18,7 +18,7 @@ import UserGuide from './pages/UserGuide';
 import LoginForm from './components/auth/LoginForm';
 import ResetPasswordForm from './components/auth/ResetPasswordForm';
 import SetNewPasswordForm from './components/auth/SetNewPasswordForm';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
 // Client Management Pages - Handling wealth management client data
 import Clients from './pages/Clients';

@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import MiniYearSelector from '../MiniYearSelector';
+import MiniYearSelector from '../../MiniYearSelector';
 
 describe('MiniYearSelector', () => {
   const mockOnYearChange = jest.fn();

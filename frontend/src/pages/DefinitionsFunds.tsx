@@ -11,12 +11,13 @@ import {
   Fund, 
   FundSortField, 
   SortOrder, 
-  getFundRiskLevel 
+  getFundRiskLevel
 } from '../utils/definitionsShared';
 import api from '../services/api';
-import StandardTable, { ColumnConfig } from '../components/StandardTable';
-import AddFundModal from '../components/AddFundModal';
-import DynamicPageContainer from '../components/DynamicPageContainer';
+import { StandardTable } from '../components/ui';
+import type { ColumnConfig } from '../components/ui/tables/StandardTable';
+import { AddFundModal } from '../components/phase1';
+import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
 
 const DefinitionsFunds: React.FC = () => {
   const { user } = useAuth();

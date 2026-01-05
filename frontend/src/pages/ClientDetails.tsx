@@ -20,7 +20,7 @@ import { useClientMutations } from '../hooks/useClientMutations';
 import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
 import { isCashFund } from '../utils/fundUtils';
 import { generateProductDisplayName } from '../utils/productTitleUtils';
-import DynamicPageContainer from '../components/DynamicPageContainer';
+import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
 
 
 // Enhanced TypeScript interfaces

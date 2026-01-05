@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import PortfolioTemplates from './PortfolioTemplates';
 import PortfolioGenerations from './PortfolioGenerations';
-import DynamicPageContainer from '../components/DynamicPageContainer';
+import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
 
 type TabType = 'templates' | 'generations';
 

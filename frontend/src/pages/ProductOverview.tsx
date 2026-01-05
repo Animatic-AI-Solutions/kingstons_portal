@@ -18,7 +18,7 @@ import {
 import { isCashFund } from '../utils/fundUtils';
 import { getProductOwnerDisplayName } from '../utils/productOwnerUtils';
 import { useSmartNavigation } from '../hooks/useSmartNavigation';
-import CreateProductOwnerModal from '../components/CreateProductOwnerModal';
+import { CreateProductOwnerModal } from '../components/phase2';
 
 
 

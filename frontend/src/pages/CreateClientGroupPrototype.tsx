@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PlusIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
-import DynamicPageContainer from '../components/DynamicPageContainer';
+import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
 import { useClientGroupForm } from '../hooks/useClientGroupForm';
 import { useCreateClientGroupFlow } from '../hooks/useCreateClientGroupFlow';
 import { useAuth } from '../context/AuthContext';
