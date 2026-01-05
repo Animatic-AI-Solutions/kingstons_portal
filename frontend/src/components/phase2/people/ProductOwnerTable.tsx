@@ -19,10 +19,9 @@
  */
 
 import React, { useMemo, memo, useCallback, useState } from 'react';
-import StatusBadge from '../../ui';
+import { StatusBadge, SortableColumnHeader } from '../../ui';
 import ActionButton from '../../ui/buttons/ActionButton';
 import AddButton from '../../ui/buttons/AddButton';
-import SortableColumnHeader from './SortableColumnHeader';
 import ProductOwnerActions from './ProductOwnerActions';
 import EditProductOwnerModal from './EditProductOwnerModal';
 import CreateProductOwnerModal from './CreateProductOwnerModal';

@@ -19,7 +19,7 @@ import React, { useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import FormTextField from './form/FormTextField';
+import FormTextField from '../../phase1/forms/form/FormTextField';
 import { PRODUCT_OWNER_STATUS } from '@/utils/productOwnerConstants';
 import type { ProductOwner } from '@/types/productOwner';
 
