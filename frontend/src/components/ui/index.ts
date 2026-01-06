@@ -58,10 +58,10 @@ export { default as LapseIconButton } from './table-icons/LapseIconButton';
 export type { LapseIconButtonProps } from './table-icons/LapseIconButton';
 
 export { default as MakeDeceasedIconButton } from './table-icons/MakeDeceasedIconButton';
-export type { MakeDeceasedIconButtonProps } from './table-icons/MakeDeceasedIconButton';
+export type { MakeDeceasedButtonProps } from './table-icons/MakeDeceasedIconButton';
 
 export { default as ReactivateIconButton } from './table-icons/ReactivateIconButton';
-export type { ReactivateIconButtonProps } from './table-icons/ReactivateIconButton';
+export type { ReactivateButtonProps } from './table-icons/ReactivateIconButton';
 
 export { default as DeleteIconButton } from './table-icons/DeleteIconButton';
 export type { DeleteIconButtonProps } from './table-icons/DeleteIconButton';
