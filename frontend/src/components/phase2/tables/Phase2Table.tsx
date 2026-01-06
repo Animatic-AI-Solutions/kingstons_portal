@@ -202,7 +202,7 @@ const TableRow = memo(<T extends Phase2TableData>({
       {columns.map((col) => (
         <td
           key={col.key}
-          className={`px-3 py-1 whitespace-nowrap text-center text-base ${
+          className={`px-2 py-0.5 whitespace-nowrap text-center text-base ${
             col.className || 'text-gray-900'
           }`}
         >
@@ -211,14 +211,14 @@ const TableRow = memo(<T extends Phase2TableData>({
       ))}
 
       {/* Status Column - Always included */}
-      <td className="px-3 py-1 whitespace-nowrap text-center text-base">
+      <td className="px-2 py-0.5 whitespace-nowrap text-center text-base">
         <StatusBadge status={row.status} />
       </td>
 
       {/* Actions Column - Always included */}
-      <td className="px-3 py-1 whitespace-nowrap text-center text-base">
+      <td className="px-2 py-0.5 whitespace-nowrap text-center text-base">
         <div
-          className="flex items-center justify-center gap-1"
+          className="flex items-center justify-center gap-0.5"
           onClick={(e) => e.stopPropagation()}
         >
           {actionsRenderer ? actionsRenderer(row, onRefetch) : null}
@@ -266,9 +266,9 @@ const TableHeader = memo(<T extends Phase2TableData>({
               key={col.key}
               scope="col"
               aria-sort="none"
-              className="text-center text-sm font-bold text-gray-900 uppercase tracking-wider"
+              className="text-center text-sm font-bold text-gray-900 uppercase tracking-wider p-0"
             >
-              <div className="px-3 py-1">{col.label}</div>
+              <div className="px-2 py-1 leading-tight">{col.label}</div>
             </th>
           );
         })}
@@ -285,9 +285,9 @@ const TableHeader = memo(<T extends Phase2TableData>({
         <th
           scope="col"
           aria-sort="none"
-          className="text-center text-sm font-bold text-gray-900 uppercase tracking-wider"
+          className="text-center text-sm font-bold text-gray-900 uppercase tracking-wider p-0"
         >
-          <div className="px-3 py-1">Actions</div>
+          <div className="px-2 py-1 leading-tight">Actions</div>
         </th>
       </tr>
     </thead>
@@ -480,7 +480,7 @@ function Phase2Table<T extends Phase2TableData>({
   return (
     <>
       {addButton && (
-        <div className="mb-3 flex justify-end">
+        <div className="mb-2 flex justify-end">
           <AddButton
             onClick={addButton.onClick}
             context={addButton.label}
@@ -491,7 +491,7 @@ function Phase2Table<T extends Phase2TableData>({
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200" role="table" aria-label={ariaLabel}>
             <caption className="sr-only">
