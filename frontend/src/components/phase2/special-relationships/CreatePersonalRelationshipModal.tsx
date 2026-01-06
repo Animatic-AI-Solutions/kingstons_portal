@@ -19,7 +19,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import ModalShell from '../../ui';
+import { ModalShell } from '../../ui';
 import PersonalRelationshipFormFields, {
   PersonalRelationshipFormData,
   ProductOwner,

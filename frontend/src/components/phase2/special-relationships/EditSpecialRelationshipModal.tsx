@@ -31,7 +31,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import ModalShell from '../../ui';
+import { ModalShell } from '../../ui';
 import PersonalRelationshipFormFields, {
   PersonalRelationshipFormData,
   ProductOwner,

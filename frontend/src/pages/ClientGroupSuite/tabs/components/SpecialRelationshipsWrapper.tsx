@@ -15,7 +15,7 @@
 
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import SpecialRelationshipsSubTab from '@/components/SpecialRelationshipsSubTab';
+import { SpecialRelationshipsSubTab } from '@/components/phase2';
 import { useProductOwners } from '@/hooks/useProductOwners';
 
 /**

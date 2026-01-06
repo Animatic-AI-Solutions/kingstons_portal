@@ -19,10 +19,9 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import TabNavigation from '../../ui';
+import { TabNavigation, SkeletonTable } from '../../ui';
 import PersonalRelationshipsTable from './PersonalRelationshipsTable';
 import ProfessionalRelationshipsTable from './ProfessionalRelationshipsTable';
-import SkeletonTable from './SkeletonTable';
 import EmptyStatePersonal from './EmptyStatePersonal';
 import EmptyStateProfessional from './EmptyStateProfessional';
 import CreatePersonalRelationshipModal from './CreatePersonalRelationshipModal';

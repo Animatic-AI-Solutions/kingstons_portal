@@ -34,7 +34,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import ProductOwnerTable from '@/components/ProductOwnerTable';
+import { ProductOwnerTable } from '@/components/phase2';
 import { useProductOwners } from '@/hooks/useProductOwners';
 
 /**

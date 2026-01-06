@@ -25,10 +25,11 @@ import React, { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import { TrashIcon, PauseCircleIcon, XCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { SpecialRelationship, RelationshipStatus } from '@/types/specialRelationship';
-import TableSortHeader, { SortConfig } from '@/components/TableSortHeader';
-import EmptyStatePersonal from '@/components/EmptyStatePersonal';
-import SkeletonTable from '@/components/SkeletonTable';
-import ErrorStateNetwork from '@/components/ErrorStateNetwork';
+import { TableSortHeader } from '@/components/ui';
+import type { SortConfig } from '@/components/ui/tables/TableSortHeader';
+import EmptyStatePersonal from './EmptyStatePersonal';
+import { SkeletonTable } from '../../ui';
+import { ErrorStateNetwork } from '../../ui';
 import { calculateAge } from '@/utils/specialRelationshipUtils';
 import {
   TABLE_CLASSES,
@@ -41,11 +42,11 @@ import {
   COLUMN_LABELS,
   DEFAULT_SORT_CONFIG,
   EMPTY_VALUE_PLACEHOLDER,
-} from '@/components/relationshipTable';
+} from './relationshipTable';
 import {
   sortRelationships,
   getEffectiveSortConfig,
-} from '@/components/relationshipTable';
+} from './relationshipTable';
 
 // ==========================
 // Types

@@ -8,7 +8,7 @@
  */
 
 import { SpecialRelationship, STATUS_PRIORITY_ORDER } from '@/types/specialRelationship';
-import { SortConfig } from '@/components/TableSortHeader';
+import { SortConfig } from '@/components/ui/tables/TableSortHeader';
 import { EMPTY_VALUE_PLACEHOLDER } from './constants';
 
 // ==========================

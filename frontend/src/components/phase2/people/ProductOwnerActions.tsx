@@ -25,7 +25,7 @@ import { PauseCircleIcon, XCircleIcon, ArrowPathIcon, TrashIcon } from '@heroico
 import { updateProductOwnerStatus } from '@/services/api/updateProductOwner';
 import { deleteProductOwner } from '@/services/api/deleteProductOwner';
 import { formatApiError } from '@/utils/errorHandling';
-import DeleteConfirmationModal from '@/components/DeleteConfirmationModal';
+import DeleteConfirmationModal from './DeleteConfirmationModal';
 import type { ProductOwner } from '@/types/productOwner';
 
 // ==========================
