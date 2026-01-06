@@ -23,7 +23,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import PeopleSubTab from '@/pages/ClientGroupSuite/tabs/components/PeopleSubTab';
-import ProductOwnerTable from '@/components/ProductOwnerTable';
+import ProductOwnerTable from '@/components/phase2/people/ProductOwnerTable';
 import {
   createProductOwner,
   updateProductOwner,

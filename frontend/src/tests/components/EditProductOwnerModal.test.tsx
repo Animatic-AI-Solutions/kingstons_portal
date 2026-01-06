@@ -13,7 +13,7 @@ import React from 'react';
 import { render, screen, within, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import EditProductOwnerModal from '@/components/EditProductOwnerModal';
+import EditProductOwnerModal from '@/components/phase2/people/EditProductOwnerModal';
 import { createActiveProductOwner, createLapsedProductOwner, createDeceasedProductOwner } from '../factories/productOwnerFactory';
 import * as productOwnersApi from '@/services/api/productOwners';
 

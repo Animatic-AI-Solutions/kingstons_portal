@@ -85,14 +85,48 @@ API_PORT=8001
 - `App.tsx` - Main application with routing and React Query
 - `pages/` - 38+ page components including:
   - `ClientGroupPhase2.tsx` - Advanced client management prototype with 30+ person fields, comprehensive data structures
-- `components/` - 69+ reusable UI components:
-  - `ui/` - Base components (buttons, inputs, tables, search, feedback)
+- `components/` - 69+ components organized by phase and purpose:
+  - `ui/` - Reusable UI component library (buttons, inputs, modals, tables, badges, navigation, feedback)
+  - `phase2/` - Modern, consistent components (people, special-relationships, client-groups) ✅ REFERENCE STANDARD
+  - `phase1/` - Legacy components to be refactored (reports, funds, activities) ⚠️ BUG FIXES ONLY
   - `auth/` - Authentication forms and flows
-  - `layout/` - App layout components
-  - `report/` - Advanced reporting system with modular architecture
+  - `layout/` - App layout components (Sidebar, TopBar, Footer)
+  - `_archive/` - Deprecated components (DO NOT USE)
 - `hooks/` - Custom React hooks
 - `services/` - API clients and report services
 - `utils/` - Shared utilities and formatters
+
+See `frontend/src/components/README.md` for detailed component organization and placement guide.
+
+## Component Placement Guide
+
+### Where to Put New Components
+
+**UI Component Library** (`ui/`):
+- ✅ Truly reusable across 3+ features
+- ✅ No business logic or feature coupling
+- ✅ Examples: Buttons, inputs, modals, tables, badges
+- Import: `import { ComponentName } from '@/components/ui'`
+
+**Phase 2 - Modern Components** (`phase2/`):
+- ✅ New features and major refactors
+- ✅ Follow People tab reference patterns
+- ✅ Well-tested, accessible, documented
+- ✅ Examples: People tab, Special Relationships
+- Import: `import { ComponentName } from '@/components/phase2/[feature]'`
+
+**Phase 1 - Legacy** (`phase1/`):
+- ⚠️ **Bug fixes ONLY** - do not add new features
+- ⚠️ Scheduled for migration to Phase 2
+- ⚠️ Examples: IRR reports, funds management
+- Import: `import { ComponentName } from '@/components/phase1/[category]'`
+
+**Layout & Auth**:
+- Layout components: `layout/` (Sidebar, TopBar, Footer)
+- Auth components: `auth/` (LoginForm, ProtectedRoute)
+
+**Archive**:
+- ❌ DO NOT USE - deprecated components only
 
 ## Key Patterns
 
@@ -137,7 +171,11 @@ API_PORT=8001
 - **Report Generation**: ReportContainer → SummaryTab/IRRHistoryTab → PrintService
 
 ### Code Patterns
-- **Import style**: `import { ActionButton, DataTable } from '@/components/ui'`
+- **Import style**:
+  - UI components: `import { ActionButton, ModalShell, StatusBadge } from '@/components/ui'`
+  - Phase 2 components: `import { ProductOwnerTable } from '@/components/phase2/people'`
+  - Phase 1 components: `import { ReportContainer } from '@/components/phase1/reports'`
+  - Layout/Auth: `import Sidebar from '@/components/layout/Sidebar'`
 - **React Query**: 5-minute default caching, use custom hooks like useClientData
 - **Error handling**: Use ErrorDisplay component and ReportErrorBoundary
 - **State management**: React Query for server state, ReportStateManager for complex report state

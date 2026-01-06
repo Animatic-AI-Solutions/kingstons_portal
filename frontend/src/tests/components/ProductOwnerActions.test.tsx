@@ -25,7 +25,7 @@ import {
   createLapsedProductOwner,
   createDeceasedProductOwner,
 } from '../factories/productOwnerFactory';
-import ProductOwnerActions from '@/components/ProductOwnerActions';
+import ProductOwnerActions from '@/components/phase2/people/ProductOwnerActions';
 import { updateProductOwnerStatus } from '@/services/api/updateProductOwner';
 import { deleteProductOwner } from '@/services/api/deleteProductOwner';
 import toast from 'react-hot-toast';

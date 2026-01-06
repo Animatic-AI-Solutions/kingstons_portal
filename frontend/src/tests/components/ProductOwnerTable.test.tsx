@@ -12,7 +12,7 @@ import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createProductOwner, createActiveProductOwner, createLapsedProductOwner, createDeceasedProductOwner } from '../factories/productOwnerFactory';
-import ProductOwnerTable from '@/components/ProductOwnerTable';
+import ProductOwnerTable from '@/components/phase2/people/ProductOwnerTable';
 
 // Create a test query client
 const createTestQueryClient = () => {

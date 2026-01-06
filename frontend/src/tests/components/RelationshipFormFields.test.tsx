@@ -23,7 +23,7 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe, toHaveNoViolations } from 'jest-axe';
-import RelationshipFormFields from '@/components/RelationshipFormFields';
+import RelationshipFormFields from '@/components/_archive/RelationshipFormFields';
 import { SpecialRelationshipFormData } from '@/types/specialRelationship';
 
 expect.extend(toHaveNoViolations);

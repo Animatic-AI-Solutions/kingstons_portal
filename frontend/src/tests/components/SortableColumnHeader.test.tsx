@@ -13,7 +13,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import SortableColumnHeader from '@/components/SortableColumnHeader';
+import SortableColumnHeader from '@/components/ui/tables/SortableColumnHeader';
 
 /**
  * Sort Configuration Interface

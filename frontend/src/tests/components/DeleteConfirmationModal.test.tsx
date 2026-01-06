@@ -22,7 +22,7 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createLapsedProductOwner, createDeceasedProductOwner } from '../factories/productOwnerFactory';
-import DeleteConfirmationModal from '@/components/DeleteConfirmationModal';
+import DeleteConfirmationModal from '@/components/phase2/people/DeleteConfirmationModal';
 
 describe('DeleteConfirmationModal Component', () => {
   const mockOnConfirm = jest.fn();

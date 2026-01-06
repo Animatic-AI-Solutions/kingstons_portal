@@ -23,7 +23,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { axe, toHaveNoViolations } from 'jest-axe';
-import SpecialRelationshipActions from '@/components/SpecialRelationshipActions';
+import SpecialRelationshipActions from '@/components/_archive/SpecialRelationshipActions';
 import {
   SpecialRelationship,
   RelationshipStatus,

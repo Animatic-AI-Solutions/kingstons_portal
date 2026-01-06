@@ -31,7 +31,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { createTestQueryClient, cleanupQueryClient } from '../utils/testUtils';
-import SpecialRelationshipsSubTab from '@/components/SpecialRelationshipsSubTab';
+import SpecialRelationshipsSubTab from '@/components/phase2/special-relationships/SpecialRelationshipsSubTab';
 import { useSpecialRelationships } from '@/hooks/useSpecialRelationships';
 import {
   createMockPersonalRelationship,
