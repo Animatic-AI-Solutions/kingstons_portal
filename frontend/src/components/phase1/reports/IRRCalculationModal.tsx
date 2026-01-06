@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Dialog } from '@headlessui/react';
-import { SearchableDropdown } from '../../ui';
+import { BaseDropdown } from '../../ui';
 
 /**
  * Props interface for the IRR Calculation Modal component
@@ -92,7 +92,7 @@ const IRRCalculationModal: React.FC<IRRCalculationModalProps> = ({
               <label htmlFor="month" className="block text-sm font-medium text-gray-700">
                 Month
               </label>
-              <SearchableDropdown
+              <BaseDropdown
                 id="month"
                 value={month}
                 onChange={(value) => setMonth(typeof value === 'string' ? parseInt(value) : value as number)}

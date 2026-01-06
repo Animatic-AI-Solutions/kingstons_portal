@@ -45,8 +45,7 @@ ui/
 │   ├── CreatableDropdown.tsx
 │   ├── CreatableMultiSelect.tsx
 │   ├── FilterDropdown.tsx
-│   ├── MultiSelectDropdown.tsx
-│   └── SearchableDropdown.tsx
+│   └── MultiSelectDropdown.tsx
 │
 ├── modals/                      # Modal Components
 │   └── ModalShell.tsx           # Base modal wrapper
@@ -204,10 +203,10 @@ import { BaseInput, NumberInput, DateInput, PasswordInput } from '@/components/u
 **When to use**: Select from options
 
 ```typescript
-import { SearchableDropdown, MultiSelectDropdown, ComboDropdown } from '@/components/ui';
+import { BaseDropdown, MultiSelectDropdown, ComboDropdown } from '@/components/ui';
 
-// Single select with search
-<SearchableDropdown
+// Single select with keyboard search (type while focused)
+<BaseDropdown
   options={countries}
   value={country}
   onChange={setCountry}
@@ -223,17 +222,17 @@ import { SearchableDropdown, MultiSelectDropdown, ComboDropdown } from '@/compon
   label="Product Owners"
 />
 
-// Combo (can type or select)
+// Combo (allows custom values not in list)
 <ComboDropdown
   options={cities}
   value={city}
   onChange={setCity}
   label="City"
-  isCreatable
+  allowCustomValue
 />
 ```
 
-**Available**: SearchableDropdown, MultiSelectDropdown, ComboDropdown, BaseDropdown, CreatableDropdown, CreatableMultiSelect, FilterDropdown
+**Available**: BaseDropdown, MultiSelectDropdown, ComboDropdown, CreatableDropdown, CreatableMultiSelect, FilterDropdown
 
 ---
 

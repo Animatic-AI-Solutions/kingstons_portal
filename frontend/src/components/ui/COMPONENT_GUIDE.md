@@ -205,11 +205,6 @@
 - **Features**: Type-ahead, selection from dropdown
 - **Examples**: Smart forms, flexible input, enhanced user experience
 
-### **SearchableDropdown.tsx**
-- **Use When**: Large option lists need searching
-- **Features**: Fast search, highlighting, pagination support
-- **Examples**: Large client lists, extensive fund catalogs
-
 ### **FilterDropdown.tsx**
 - **Use When**: Filtering data with multiple criteria
 - **Features**: Advanced filtering, multiple conditions
@@ -470,10 +465,10 @@
 4. **Multi-line?** → inputs/TextArea
 
 ### **For Selection:**
-1. **Single choice?** → dropdowns/BaseDropdown
+1. **Single choice?** → dropdowns/BaseDropdown (has built-in keyboard search)
 2. **Multiple choices?** → dropdowns/MultiSelectDropdown
 3. **Can create new options?** → dropdowns/CreatableDropdown
-4. **Large list to search?** → dropdowns/SearchableDropdown
+4. **Allow custom values not in list?** → dropdowns/ComboDropdown
 
 ### **For Search:**
 1. **Simple search?** → search/SearchInput

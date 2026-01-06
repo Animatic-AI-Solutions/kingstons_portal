@@ -8,7 +8,6 @@ import { useAuth } from '../context/AuthContext';
 import { Radio, Select, Input, Checkbox } from 'antd';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
-import SearchableDropdown from '../components/ui/dropdowns/SearchableDropdown';
 import { BaseInput, NumberInput, DateInput, BaseDropdown, MultiSelectDropdown, AutocompleteSearch, AutocompleteOption, ActionButton, AddButton, DeleteButton } from '../components/ui';
 import { getProviderColor } from '../services/providerColors';
 import { findCashFund, isCashFund } from '../utils/fundUtils';

@@ -20,8 +20,6 @@ import {
   CreatableDropdown,
   CreatableMultiSelect,
   ComboDropdown,
-  SearchableDropdown,
-  MultiSelectSearchableDropdown,
   FilterDropdown,
   ActionButton,
   EditButton,
@@ -426,45 +424,6 @@ const ComponentShowcase: React.FC = () => {
               </ComponentCard>
             )}
 
-            {filterComponent('SearchableDropdown') && (
-              <ComponentCard
-                name="SearchableDropdown"
-                importPath="import { SearchableDropdown } from '@/components/ui'"
-                code={`<SearchableDropdown
-  options={options}
-  value={value}
-  onChange={setValue}
-  placeholder="Search..."
-/>`}
-              >
-                <SearchableDropdown
-                  options={mockOptions}
-                  value=""
-                  onChange={() => {}}
-                  placeholder="Search options..."
-                />
-              </ComponentCard>
-            )}
-
-            {filterComponent('MultiSelectSearchableDropdown') && (
-              <ComponentCard
-                name="MultiSelectSearchableDropdown"
-                importPath="import { MultiSelectSearchableDropdown } from '@/components/ui'"
-                code={`<MultiSelectSearchableDropdown
-  options={options}
-  values={values}
-  onChange={setValues}
-/>`}
-              >
-                <MultiSelectSearchableDropdown
-                  options={mockOptions}
-                  values={[]}
-                  onChange={() => {}}
-                  placeholder="Search and select multiple..."
-                />
-              </ComponentCard>
-            )}
-
             {filterComponent('FilterDropdown') && (
               <ComponentCard
                 name="FilterDropdown"
@@ -581,11 +540,13 @@ const ComponentShowcase: React.FC = () => {
                 name="LapseButton"
                 importPath="import { LapseButton } from '@/components/ui'"
                 code={`<LapseButton design="minimal" />
-<LapseButton design="balanced" />`}
+<LapseButton design="balanced" />
+<LapseButton design="descriptive" context="Policy" />`}
               >
                 <div className="flex flex-col gap-2 items-start">
                   <LapseButton design="minimal" />
                   <LapseButton design="balanced" />
+                  <LapseButton design="descriptive" context="Policy" />
                 </div>
               </ComponentCard>
             )}

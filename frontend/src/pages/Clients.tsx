@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { SearchableDropdown, FilterSearch, StandardTable } from '../components/ui';
+import { FilterSearch, StandardTable } from '../components/ui';
 import type { ColumnConfig } from '../components/ui/tables/StandardTable';
 import FilterDropdown from '../components/ui/dropdowns/FilterDropdown';
 import { useOptimizedClientData } from '../hooks/useOptimizedClientData';

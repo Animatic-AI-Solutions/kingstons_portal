@@ -82,7 +82,6 @@ export { default as FundDistributionChart } from './data-displays/FundDistributi
 export { default as DataTable } from './data-displays/DataTable';
 export { Skeleton, StatBoxSkeleton, ChartSkeleton, TableSkeleton } from './feedback/Skeleton';
 export { default as ProfileAvatar } from './ProfileAvatar';
-export { default as SearchableDropdown, MultiSelectSearchableDropdown } from './dropdowns/SearchableDropdown';
 export { default as FilterDropdown } from './dropdowns/FilterDropdown';
 export { EmptyState } from './feedback/EmptyState';
 export { ErrorDisplay } from './feedback/ErrorDisplay';

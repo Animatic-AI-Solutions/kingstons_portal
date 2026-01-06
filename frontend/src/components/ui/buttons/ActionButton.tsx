@@ -71,11 +71,12 @@ const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(({
       cancel: 'Cancel'
     };
 
-    if (context && (variant === 'add' || variant === 'edit' || variant === 'delete')) {
+    if (context && (variant === 'add' || variant === 'edit' || variant === 'delete' || variant === 'lapse')) {
       if (design === 'descriptive') {
-        return variant === 'add' ? `Add New ${context}` : 
+        return variant === 'add' ? `Add New ${context}` :
                variant === 'edit' ? `Edit ${context}` :
-               variant === 'delete' ? `Delete ${context}` : baseTexts[variant];
+               variant === 'delete' ? `Delete ${context}` :
+               variant === 'lapse' ? `Lapse ${context}` : baseTexts[variant];
       }
       if (design === 'balanced' && variant === 'add') {
         return `Add ${context}`;
