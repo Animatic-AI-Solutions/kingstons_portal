@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import PasswordInput from '../components/ui/inputs/PasswordInput';
+import { PasswordInput } from '../components/ui';
 import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
 
 const Login: React.FC = () => {

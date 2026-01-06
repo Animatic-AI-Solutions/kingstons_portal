@@ -1,21 +1,16 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import FilterDropdown from '../components/ui/dropdowns/FilterDropdown';
-import { TableSkeleton } from '../components/ui/feedback/TableSkeleton';
-import { EmptyState } from '../components/ui/feedback/EmptyState';
-import { ErrorDisplay } from '../components/ui/feedback/ErrorDisplay';
-import { AddButton, SearchInput } from '../components/ui';
+import { AddButton, SearchInput, TableSkeleton, EmptyState, ErrorDisplay, FilterDropdown, StandardTable } from '../components/ui';
 import { AddProviderModal } from '../components/phase1';
 import { useEntityData } from '../hooks/useEntityData';
-import { 
-  Provider, 
-  ProviderSortField, 
-  SortOrder, 
+import {
+  Provider,
+  ProviderSortField,
+  SortOrder,
   getProviderColor
 } from '../utils/definitionsShared';
 import api from '../services/api';
-import { StandardTable } from '../components/ui';
 import type { ColumnConfig } from '../components/ui/tables/StandardTable';
 import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';
 

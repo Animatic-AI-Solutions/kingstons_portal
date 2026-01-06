@@ -19,7 +19,7 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { TabNavigation, SkeletonTable } from '../../ui';
+import { TabNavigation, SkeletonTable, AddButton } from '../../ui';
 import PersonalRelationshipsTable from './PersonalRelationshipsTable';
 import ProfessionalRelationshipsTable from './ProfessionalRelationshipsTable';
 import EmptyStatePersonal from './EmptyStatePersonal';
@@ -27,7 +27,6 @@ import EmptyStateProfessional from './EmptyStateProfessional';
 import CreatePersonalRelationshipModal from './CreatePersonalRelationshipModal';
 import CreateProfessionalRelationshipModal from './CreateProfessionalRelationshipModal';
 import EditSpecialRelationshipModal from './EditSpecialRelationshipModal';
-import AddButton from '../../ui/buttons/AddButton';
 import { useSpecialRelationships, useDeleteSpecialRelationship, useUpdateSpecialRelationshipStatus } from '@/hooks/useSpecialRelationships';
 import { useAddresses, useCreateAddress } from '@/hooks/useAddresses';
 import {

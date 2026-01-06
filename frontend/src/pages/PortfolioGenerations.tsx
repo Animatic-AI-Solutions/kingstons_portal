@@ -1,10 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { TableSkeleton } from '../components/ui/feedback/TableSkeleton';
-import { EmptyState } from '../components/ui/feedback/EmptyState';
-import { ErrorDisplay } from '../components/ui/feedback/ErrorDisplay';
-import { AddButton, SearchInput, StandardTable } from '../components/ui';
+import { AddButton, SearchInput, StandardTable, TableSkeleton, EmptyState, ErrorDisplay } from '../components/ui';
 import type { ColumnConfig } from '../components/ui/tables/StandardTable';
 import { usePortfolioGenerations } from '../hooks/usePortfolioGenerations';
 import DynamicPageContainer from '../components/phase2/client-groups/DynamicPageContainer';

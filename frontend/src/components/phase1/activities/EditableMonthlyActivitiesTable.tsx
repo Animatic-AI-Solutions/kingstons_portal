@@ -4,7 +4,7 @@ import { formatCurrency } from '../../../utils/formatters';
 import api, { createFundValuation, calculatePortfolioIRR } from '../../../services/api';
 import BulkMonthActivitiesModal from './BulkMonthActivitiesModal';
 import { TransactionCoordinator } from '../../../services/transactionCoordinator';
-import EnhancedMonthHeader from '../../ui';
+import { EnhancedMonthHeader } from '../../ui';
 import { useFeatureFlags, shouldShowMiniYearSelectors, logFeatureFlagUsage } from '../../../utils/featureFlags';
 
 /**
