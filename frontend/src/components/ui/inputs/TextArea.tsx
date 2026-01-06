@@ -157,9 +157,19 @@ const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(({
         maxLength={maxLength}
         value={value}
         onChange={handleChange}
+        onKeyDown={(e) => {
+          // Blur on Escape key for better UX
+          if (e.key === 'Escape') {
+            e.currentTarget.blur();
+          }
+          // Call any existing onKeyDown handler
+          if (props.onKeyDown) {
+            props.onKeyDown(e);
+          }
+        }}
         aria-invalid={error ? 'true' : 'false'}
         aria-describedby={
-          error ? `${inputId}-error` : 
+          error ? `${inputId}-error` :
           helperText ? `${inputId}-helper` : undefined
         }
         style={{

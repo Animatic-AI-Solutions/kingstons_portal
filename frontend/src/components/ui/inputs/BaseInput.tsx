@@ -118,6 +118,10 @@ const BaseInput = forwardRef<HTMLInputElement, BaseInputProps>(({
               // Optionally blur the field to simulate moving to next field
               e.currentTarget.blur();
             }
+            // Blur on Escape key for better UX
+            if (e.key === 'Escape') {
+              e.currentTarget.blur();
+            }
             // Call any existing onKeyDown handler
             if (props.onKeyDown) {
               props.onKeyDown(e);

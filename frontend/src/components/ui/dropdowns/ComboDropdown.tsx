@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDownIcon, ChevronUpIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChevronUpIcon, MagnifyingGlassIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { DropdownOption } from './BaseDropdown';
 
 export interface ComboDropdownProps {
@@ -11,25 +11,23 @@ export interface ComboDropdownProps {
   variant?: 'default' | 'success' | 'error';
   fullWidth?: boolean;
   options: DropdownOption[];
-  value?: string;
-  onChange?: (value: string) => void;
-  onSelect?: (option: DropdownOption) => void;
+  value?: string | number;
+  onChange?: (value: string | number) => void;
   placeholder?: string;
   disabled?: boolean;
   loading?: boolean;
   id?: string;
   className?: string;
   allowCustomValue?: boolean;
-  minSearchLength?: number;
 }
 
 /**
  * ComboDropdown Component
- * 
- * A combobox component that allows typing to filter options or enter custom values.
- * Options are automatically sorted alphabetically for better user experience.
+ *
+ * Identical to BaseDropdown but allows custom values not in the options list.
+ * Type while dropdown is open to filter options or create a custom value.
  */
-const ComboDropdown = React.forwardRef<HTMLInputElement, ComboDropdownProps>(({
+const ComboDropdown = React.forwardRef<HTMLButtonElement, ComboDropdownProps>(({
   label,
   error,
   helperText,
@@ -38,69 +36,60 @@ const ComboDropdown = React.forwardRef<HTMLInputElement, ComboDropdownProps>(({
   variant = 'default',
   fullWidth = true,
   options = [],
-  value = '',
+  value,
   onChange,
-  onSelect,
-  placeholder = 'Type to search or select...',
+  placeholder = 'Select an option...',
   disabled = false,
   loading = false,
   id,
   className = '',
   allowCustomValue = true,
-  minSearchLength = 0,
   ...props
 }, ref) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [focusedIndex, setFocusedIndex] = useState(-1);
-  
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
-  
+
   // Generate unique ID if not provided
-  const comboId = id || `combo-dropdown-${Math.random().toString(36).substr(2, 9)}`;
-  
+  const dropdownId = id || `combo-dropdown-${Math.random().toString(36).substr(2, 9)}`;
+
   // Determine variant based on error state
   const currentVariant = error ? 'error' : variant;
-  
-  // Filter options based on input value and sort alphabetically
-  const filteredOptions = value.length >= minSearchLength
-    ? options
-        .filter(option => 
-          option.label.toLowerCase().includes(value.toLowerCase()) && !option.disabled
-        )
-        .sort((a, b) => a.label.localeCompare(b.label))
-    : options
-        .filter(option => !option.disabled)
-        .sort((a, b) => a.label.localeCompare(b.label));
-  
-  // Close dropdown when clicking outside - improved reliability
+
+  // Find selected option
+  const selectedOption = options.find(option => option.value === value);
+  const displayValue = selectedOption ? selectedOption.label : (value || placeholder);
+
+  // Filter options based on search term
+  const filteredOptions = searchTerm
+    ? options.filter(option =>
+        option.label.toLowerCase().includes(searchTerm.toLowerCase()) && !option.disabled
+      )
+    : options.filter(option => !option.disabled);
+
+  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: Event) => {
       const target = event.target as Node;
-      if (containerRef.current && !containerRef.current.contains(target)) {
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         setIsOpen(false);
+        setSearchTerm('');
         setFocusedIndex(-1);
       }
     };
 
     if (isOpen) {
-      // Use capture phase to ensure this fires before other handlers
       document.addEventListener('click', handleClickOutside, true);
-      document.addEventListener('mousedown', handleClickOutside, true);
     }
 
     return () => {
       document.removeEventListener('click', handleClickOutside, true);
-      document.removeEventListener('mousedown', handleClickOutside, true);
     };
   }, [isOpen]);
-  
-  // Reset focused index when filtered options change
-  useEffect(() => {
-    setFocusedIndex(-1);
-  }, [value]);
-  
+
   // Scroll focused option into view
   useEffect(() => {
     if (focusedIndex >= 0 && listRef.current) {
@@ -110,67 +99,53 @@ const ComboDropdown = React.forwardRef<HTMLInputElement, ComboDropdownProps>(({
       }
     }
   }, [focusedIndex]);
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    if (onChange) {
-      onChange(newValue);
-    }
-    
-    // Open dropdown when typing
-    if (!isOpen && newValue.length >= minSearchLength) {
-      setIsOpen(true);
-    }
-  };
-  
-  const handleInputFocus = () => {
-    if (value.length >= minSearchLength || filteredOptions.length > 0) {
-      setIsOpen(true);
-    }
-  };
-  
-  const handleSelect = (option: DropdownOption) => {
-    if (onChange) {
-      onChange(option.label);
-    }
-    if (onSelect) {
-      onSelect(option);
-    }
-    setIsOpen(false);
-    setFocusedIndex(-1);
-    
-    // Focus back to input
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  };
-  
-  const handleToggleDropdown = () => {
+
+  const handleToggle = () => {
     if (!disabled) {
       setIsOpen(!isOpen);
       if (!isOpen) {
+        setSearchTerm('');
         setFocusedIndex(-1);
-        // Focus input when opening
-        setTimeout(() => {
-          if (inputRef.current) {
-            inputRef.current.focus();
-          }
-        }, 0);
       }
     }
   };
-  
-  // Keyboard navigation
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+
+  const handleSelect = (selectedValue: string | number) => {
+    if (onChange) {
+      onChange(selectedValue);
+    }
+    setIsOpen(false);
+    setSearchTerm('');
+    setFocusedIndex(-1);
+  };
+
+  const handleCustomValueSubmit = () => {
+    if (allowCustomValue && searchTerm && onChange) {
+      onChange(searchTerm);
+      setIsOpen(false);
+      setSearchTerm('');
+      setFocusedIndex(-1);
+    }
+  };
+
+  // Keyboard navigation - matches BaseDropdown exactly
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    // Handle keys when dropdown is closed
     if (!isOpen) {
-      if (e.key === 'ArrowDown' && filteredOptions.length > 0) {
+      if (e.key === 'Backspace' && selectedOption && onChange) {
+        e.preventDefault();
+        onChange('');
+        setIsOpen(true);
+      }
+      // Open dropdown on navigation keys
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
         e.preventDefault();
         setIsOpen(true);
-        setFocusedIndex(0);
       }
       return;
     }
 
+    // Handle keys when dropdown is open
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
@@ -183,59 +158,78 @@ const ComboDropdown = React.forwardRef<HTMLInputElement, ComboDropdownProps>(({
       case 'Enter':
         e.preventDefault();
         if (focusedIndex >= 0 && filteredOptions[focusedIndex]) {
-          handleSelect(filteredOptions[focusedIndex]);
-        } else if (allowCustomValue) {
-          // Allow custom value entry
-          setIsOpen(false);
-          setFocusedIndex(-1);
+          handleSelect(filteredOptions[focusedIndex].value);
+        } else if (allowCustomValue && searchTerm) {
+          // Allow custom value when no option is focused
+          handleCustomValueSubmit();
         }
         break;
       case 'Escape':
         setIsOpen(false);
+        setSearchTerm('');
         setFocusedIndex(-1);
         break;
       case 'Tab':
         setIsOpen(false);
+        setSearchTerm('');
         setFocusedIndex(-1);
+        break;
+      case 'Backspace':
+        e.preventDefault();
+        if (searchTerm) {
+          // Remove characters from search term if we're searching
+          setSearchTerm(prev => prev.slice(0, -1));
+        } else if (selectedOption && onChange) {
+          // Clear the selected option if there's one selected and no search term
+          onChange('');
+          setIsOpen(true); // Keep dropdown open so user can start typing again
+        }
+        break;
+      default:
+        // Add characters to search term
+        if (e.key.length === 1 && /[a-zA-Z0-9\s]/.test(e.key)) {
+          e.preventDefault();
+          setSearchTerm(prev => prev + e.key);
+        }
         break;
     }
   };
-  
-  // Base classes - matching Group 1 design system
+
+  // Base classes - matching BaseDropdown exactly
   const baseClasses = 'block border rounded-md shadow-sm transition-all duration-150 ease-in-out focus:outline-none focus:ring-4 focus:ring-offset-2';
-  
+
   // Size classes - consistent with Group 1 heights (32px, 40px, 48px)
   const sizeClasses = {
-    sm: 'px-3 py-1.5 text-sm h-8', // 32px height
-    md: 'px-3 py-2 text-sm h-10',  // 40px height  
-    lg: 'px-4 py-3 text-base h-12' // 48px height
+    sm: 'px-3 py-1.5 text-sm h-8 font-normal', // 32px height
+    md: 'px-3 py-2 text-sm h-10 font-normal',  // 40px height
+    lg: 'px-4 py-3 text-base h-12 font-normal' // 48px height
   };
-  
+
   // Variant classes - matching Group 1 purple theme
   const variantClasses = {
     default: 'border-gray-300 focus:border-primary-700 focus:ring-primary-700/10 bg-white',
     success: 'border-green-500 focus:border-green-600 focus:ring-green-500/10 bg-white',
     error: 'border-red-500 focus:border-red-600 focus:ring-red-500/10 bg-red-50'
   };
-  
+
   // Disabled classes
-  const disabledClasses = disabled 
-    ? 'bg-gray-50 text-gray-500 cursor-not-allowed border-gray-200' 
-    : 'hover:border-gray-400';
-  
+  const disabledClasses = disabled
+    ? 'bg-gray-50 text-gray-500 cursor-not-allowed border-gray-200'
+    : 'cursor-pointer';
+
   // Width classes
   const widthClasses = fullWidth ? 'w-full' : '';
-  
-  const inputClasses = `
+
+  const buttonClasses = `
     ${baseClasses}
     ${sizeClasses[size]}
     ${variantClasses[currentVariant]}
     ${disabledClasses}
     ${widthClasses}
     ${className}
-    pr-10
+    flex items-center justify-between
   `.trim().replace(/\s+/g, ' ');
-  
+
   // Loading icon
   const loadingIcon = (
     <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -245,65 +239,66 @@ const ComboDropdown = React.forwardRef<HTMLInputElement, ComboDropdownProps>(({
   );
 
   return (
-    <div ref={containerRef} className={`${fullWidth ? 'w-full' : ''} relative`}>
+    <div ref={dropdownRef} className={`${fullWidth ? 'w-full' : ''} relative`}>
       {/* Label */}
       {label && (
-        <label 
-          htmlFor={comboId}
+        <label
+          htmlFor={dropdownId}
           className="block text-sm font-medium text-gray-700 mb-1"
         >
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
-      
-      {/* Input Container */}
-      <div className="relative">
-        {/* Input Field */}
-        <input
-          ref={ref || inputRef}
-          id={comboId}
-          type="text"
-          value={value}
-          onChange={handleInputChange}
-          onFocus={handleInputFocus}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          disabled={disabled}
-          role="combobox"
-          aria-expanded={isOpen}
-          aria-haspopup="listbox"
-          aria-autocomplete="list"
-          aria-required={required ? 'true' : undefined}
-          aria-invalid={error ? 'true' : 'false'}
-          aria-describedby={
-            error ? `${comboId}-error` :
-            helperText ? `${comboId}-helper` : undefined
-          }
-          className={inputClasses}
-          {...props}
-        />
-        
-        {/* Dropdown Toggle Button */}
-        <button
-          type="button"
-          onClick={handleToggleDropdown}
-          disabled={disabled}
-          className="absolute inset-y-0 right-0 flex items-center pr-3 focus:outline-none"
-          aria-label="Toggle dropdown"
-          tabIndex={-1}
-        >
-          <div className="h-4 w-4 text-gray-400">
-            {loading ? loadingIcon : (
-              isOpen ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />
-            )}
-          </div>
-        </button>
-      </div>
-      
+
+      {/* Dropdown Button */}
+      <button
+        ref={ref}
+        id={dropdownId}
+        type="button"
+        disabled={disabled}
+        onClick={handleToggle}
+        onKeyDown={handleKeyDown}
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+        aria-invalid={error ? 'true' : 'false'}
+        aria-describedby={
+          error ? `${dropdownId}-error` :
+          helperText ? `${dropdownId}-helper` : undefined
+        }
+        className={buttonClasses}
+        {...props}
+      >
+        <span className={`block truncate font-normal ${!selectedOption && !value ? 'text-gray-500' : 'text-gray-900'}`}>
+          {displayValue}
+        </span>
+
+        <div className="h-4 w-4 text-gray-400">
+          {loading ? loadingIcon : (
+            isOpen ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />
+          )}
+        </div>
+      </button>
+
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-[60] w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+          {/* Search Indicator - Only show if has search term */}
+          {searchTerm && (
+            <div className="px-3 py-2 border-b border-gray-100 bg-gray-50">
+              <div className="flex items-center text-xs text-gray-600">
+                <MagnifyingGlassIcon className="h-3 w-3 mr-2" />
+                <span>Searching for: "{searchTerm}"</span>
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="ml-auto text-gray-400 hover:text-primary-600 hover:bg-primary-100 rounded-full w-4 h-4 flex items-center justify-center text-xs transition-colors duration-200"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Options List */}
           <ul ref={listRef} role="listbox" className="py-1">
             {filteredOptions.length > 0 ? (
@@ -311,49 +306,55 @@ const ComboDropdown = React.forwardRef<HTMLInputElement, ComboDropdownProps>(({
                 <li
                   key={option.value}
                   role="option"
-                  aria-selected={false}
+                  aria-selected={option.value === value}
                 >
                   <button
                     type="button"
-                    onClick={() => handleSelect(option)}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 focus:bg-gray-50 focus:outline-none transition-colors duration-150 ${
-                      focusedIndex === index ? 'bg-gray-50' : ''
+                    onClick={() => handleSelect(option.value)}
+                    className={`w-full text-left px-4 py-2 text-sm font-normal hover:bg-primary-100 hover:text-primary-900 focus:bg-primary-100 focus:text-primary-900 focus:outline-none transition-colors duration-200 flex items-center justify-between ${
+                      focusedIndex === index ? 'bg-primary-100 text-primary-900' : ''
+                    } ${
+                      option.value === value ? 'bg-primary-50 text-primary-800' : ''
                     }`}
                   >
                     <span className="truncate">{option.label}</span>
+                    {option.value === value && (
+                      <CheckIcon className="h-4 w-4 text-primary-700 flex-shrink-0" />
+                    )}
                   </button>
                 </li>
               ))
             ) : (
-              <li className="px-4 py-2 text-sm text-gray-500 text-center">
-                {value.length < minSearchLength 
-                  ? `Type at least ${minSearchLength} character${minSearchLength > 1 ? 's' : ''} to search`
-                  : value 
-                    ? 'No options found'
-                    : 'No options available'
-                }
+              <li className="px-4 py-2 text-sm font-normal text-gray-500 text-center">
+                {searchTerm ? `No options found for "${searchTerm}"` : 'No options available'}
               </li>
             )}
-            
-            {/* Custom Value Indicator */}
-            {allowCustomValue && value && !filteredOptions.some(opt => opt.label.toLowerCase() === value.toLowerCase()) && (
+
+            {/* Custom Value Option - Only when allowCustomValue and typed something not in list */}
+            {allowCustomValue && searchTerm && !filteredOptions.some(opt => opt.label.toLowerCase() === searchTerm.toLowerCase()) && (
               <>
                 {filteredOptions.length > 0 && (
                   <li className="border-t border-gray-200 my-1"></li>
                 )}
-                <li className="px-4 py-2 text-sm text-gray-600 italic">
-                  Custom value: "{value}"
+                <li>
+                  <button
+                    type="button"
+                    onClick={handleCustomValueSubmit}
+                    className="w-full text-left px-4 py-2 text-sm font-normal text-primary-600 hover:bg-primary-100 focus:bg-primary-100 focus:outline-none transition-colors duration-200 italic"
+                  >
+                    Use custom value: "{searchTerm}"
+                  </button>
                 </li>
               </>
             )}
           </ul>
         </div>
       )}
-      
+
       {/* Error Message */}
       {error && (
-        <p 
-          id={`${comboId}-error`}
+        <p
+          id={`${dropdownId}-error`}
           className="mt-1 text-xs text-red-600 flex items-center"
         >
           <svg className="h-4 w-4 mr-1 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -362,11 +363,11 @@ const ComboDropdown = React.forwardRef<HTMLInputElement, ComboDropdownProps>(({
           {error}
         </p>
       )}
-      
+
       {/* Helper Text */}
       {helperText && !error && (
-        <p 
-          id={`${comboId}-helper`}
+        <p
+          id={`${dropdownId}-helper`}
           className="mt-1 text-xs text-gray-500"
         >
           {helperText}
@@ -378,4 +379,4 @@ const ComboDropdown = React.forwardRef<HTMLInputElement, ComboDropdownProps>(({
 
 ComboDropdown.displayName = 'ComboDropdown';
 
-export default ComboDropdown; 
+export default ComboDropdown;

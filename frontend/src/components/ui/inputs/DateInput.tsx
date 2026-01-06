@@ -130,18 +130,70 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(({
   };
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Blur on Escape key for better UX
+    if (e.key === 'Escape') {
+      e.currentTarget.blur();
+      return;
+    }
+
+    // Handle up/down arrow keys to increment/decrement date parts
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+
+      const input = e.target as HTMLInputElement;
+      const cursorPosition = input.selectionStart || 0;
+      const currentDate = parseDate(displayValue);
+
+      if (currentDate) {
+        const increment = e.key === 'ArrowUp' ? 1 : -1;
+        let newDate: Date;
+
+        // Determine which part of the date to modify based on cursor position
+        if (cursorPosition <= 2) {
+          // Day field (positions 0-2)
+          newDate = new Date(currentDate);
+          newDate.setDate(currentDate.getDate() + increment);
+        } else if (cursorPosition <= 5) {
+          // Month field (positions 3-5)
+          newDate = new Date(currentDate);
+          newDate.setMonth(currentDate.getMonth() + increment);
+        } else {
+          // Year field (positions 6+)
+          newDate = new Date(currentDate);
+          newDate.setFullYear(currentDate.getFullYear() + increment);
+        }
+
+        // Validate the new date against constraints
+        if (isDateValid(newDate)) {
+          const formatted = formatDate(newDate);
+          setDisplayValue(formatted);
+
+          if (onChange) {
+            const isoFormatted = formatDateISO(newDate);
+            onChange(newDate, isoFormatted);
+          }
+
+          // Restore cursor position after state update
+          setTimeout(() => {
+            input.setSelectionRange(cursorPosition, cursorPosition);
+          }, 0);
+        }
+      }
+      return;
+    }
+
     // Handle backspace and delete more intelligently
     if (e.key === 'Backspace' || e.key === 'Delete') {
       const input = e.target as HTMLInputElement;
       const cursorPosition = input.selectionStart || 0;
       const currentValue = displayValue;
-      
+
       // If cursor is right after a slash, delete the slash and the digit before it
       if (e.key === 'Backspace' && cursorPosition > 0 && currentValue[cursorPosition - 1] === '/') {
         e.preventDefault();
         const newValue = currentValue.slice(0, cursorPosition - 2) + currentValue.slice(cursorPosition);
         setDisplayValue(newValue);
-        
+
         // Set cursor position after the deletion
         setTimeout(() => {
           input.setSelectionRange(cursorPosition - 2, cursorPosition - 2);

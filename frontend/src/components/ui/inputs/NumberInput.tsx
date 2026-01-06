@@ -188,14 +188,19 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // Set user typing flag when user starts typing
     setIsUserTyping(true);
-    
+
     // Prevent form submission when Enter is pressed unless specifically overridden
     if (e.key === 'Enter') {
       e.preventDefault();
       // Optionally blur the field to simulate moving to next field
       e.currentTarget.blur();
     }
-    
+
+    // Blur on Escape key for better UX
+    if (e.key === 'Escape') {
+      e.currentTarget.blur();
+    }
+
     // Call custom onKeyDown handler if provided
     if (onKeyDown) {
       onKeyDown(e);

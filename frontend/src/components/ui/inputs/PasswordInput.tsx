@@ -32,6 +32,12 @@ const PasswordInput: React.FC<PasswordInputProps> = ({
         placeholder={placeholder}
         value={value}
         onChange={onChange}
+        onKeyDown={(e) => {
+          // Blur on Escape key for better UX
+          if (e.key === 'Escape') {
+            e.currentTarget.blur();
+          }
+        }}
       />
       <button
         type="button"
