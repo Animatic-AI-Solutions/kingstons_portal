@@ -53,6 +53,19 @@ export type { DeleteButtonProps } from './buttons/DeleteButton';
 export { default as LapseButton } from './buttons/LapseButton';
 export type { LapseButtonProps } from './buttons/LapseButton';
 
+// Icon-only action buttons for Phase 2 tables
+export { default as LapseIconButton } from './buttons/LapseIconButton';
+export type { LapseIconButtonProps } from './buttons/LapseIconButton';
+
+export { default as MakeDeceasedButton } from './buttons/MakeDeceasedButton';
+export type { MakeDeceasedButtonProps } from './buttons/MakeDeceasedButton';
+
+export { default as ReactivateButton } from './buttons/ReactivateButton';
+export type { ReactivateButtonProps } from './buttons/ReactivateButton';
+
+export { default as DeleteIconButton } from './buttons/DeleteIconButton';
+export type { DeleteIconButtonProps } from './buttons/DeleteIconButton';
+
 // Group 5: Filter and Sort Components
 export { default as TableFilter } from './table-controls/TableFilter';
 export type { TableFilterProps, FilterOption } from './table-controls/TableFilter';

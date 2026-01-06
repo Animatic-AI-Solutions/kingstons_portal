@@ -26,6 +26,10 @@ import {
   AddButton,
   DeleteButton,
   LapseButton,
+  LapseIconButton,
+  MakeDeceasedButton,
+  ReactivateButton,
+  DeleteIconButton,
   Button,
   Card,
   StatCard,
@@ -54,6 +58,7 @@ import {
 } from '../components/ui';
 import TableFilter from '../components/ui/table-controls/TableFilter';
 import TableSort from '../components/ui/table-controls/TableSort';
+import { Phase2Table } from '../components/phase2/tables';
 
 const ComponentShowcase: React.FC = () => {
   const [search, setSearch] = useState('');
@@ -74,6 +79,34 @@ const ComponentShowcase: React.FC = () => {
     { key: 'name', label: 'Name', dataType: 'text' as const, control: 'auto' as const },
     { key: 'role', label: 'Role', dataType: 'category' as const, control: 'auto' as const },
     { key: 'status', label: 'Status', dataType: 'category' as const, control: 'auto' as const }
+  ];
+
+  // Mock data for Phase2Table
+  const mockPhase2Data = [
+    { id: 1, firstName: 'John', lastName: 'Doe', role: 'Admin', status: 'active' },
+    { id: 2, firstName: 'Jane', lastName: 'Smith', role: 'User', status: 'active' },
+    { id: 3, firstName: 'Bob', lastName: 'Johnson', role: 'User', status: 'lapsed' }
+  ];
+
+  const mockPhase2Columns = [
+    {
+      key: 'firstName',
+      label: 'First Name',
+      sortable: true,
+      render: (row: typeof mockPhase2Data[0]) => row.firstName
+    },
+    {
+      key: 'lastName',
+      label: 'Last Name',
+      sortable: true,
+      render: (row: typeof mockPhase2Data[0]) => row.lastName
+    },
+    {
+      key: 'role',
+      label: 'Role',
+      sortable: true,
+      render: (row: typeof mockPhase2Data[0]) => row.role
+    }
   ];
 
   // Simple filter function
@@ -566,6 +599,37 @@ const ComponentShowcase: React.FC = () => {
                 </div>
               </ComponentCard>
             )}
+
+            {filterComponent('IconActionButtons') && (
+              <ComponentCard
+                name="Icon Action Buttons (Phase 2)"
+                importPath="import { LapseIconButton, MakeDeceasedButton, ReactivateButton, DeleteIconButton } from '@/components/ui'"
+                code={`// For Active records:
+<LapseIconButton onClick={handleLapse} />
+<MakeDeceasedButton onClick={handleMakeDeceased} />
+
+// For Inactive records:
+<ReactivateButton onClick={handleReactivate} />
+<DeleteIconButton onClick={handleDelete} />`}
+              >
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-2">Active Status Actions:</p>
+                    <div className="flex gap-2 items-center">
+                      <LapseIconButton onClick={() => {}} />
+                      <MakeDeceasedButton onClick={() => {}} />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 mb-2">Inactive Status Actions:</p>
+                    <div className="flex gap-2 items-center">
+                      <ReactivateButton onClick={() => {}} />
+                      <DeleteIconButton onClick={() => {}} />
+                    </div>
+                  </div>
+                </div>
+              </ComponentCard>
+            )}
           </div>
         </section>
 
@@ -819,6 +883,78 @@ const ComponentShowcase: React.FC = () => {
 />`}
               >
                 <StandardTable data={mockTableData} columns={mockTableColumns} />
+              </ComponentCard>
+            )}
+
+            {filterComponent('Phase2Table') && (
+              <ComponentCard
+                name="Phase2Table"
+                importPath="import { Phase2Table } from '@/components/phase2/tables'"
+                code={`// Define columns (Status and Actions columns auto-added)
+const columns = [
+  {
+    key: 'firstName',
+    label: 'First Name',
+    sortable: true,
+    render: (row) => row.firstName
+  },
+  {
+    key: 'lastName',
+    label: 'Last Name',
+    sortable: true,
+    render: (row) => row.lastName
+  }
+];
+
+<Phase2Table
+  data={data}
+  columns={columns}
+  isLoading={false}
+  error={null}
+  actionsRenderer={(row) => (
+    <>
+      {row.status === 'active' ? (
+        <>
+          <LapseIconButton onClick={() => handleLapse(row)} />
+          <MakeDeceasedButton onClick={() => handleMakeDeceased(row)} />
+        </>
+      ) : (
+        <>
+          <ReactivateButton onClick={() => handleReactivate(row)} />
+          <DeleteIconButton onClick={() => handleDelete(row)} />
+        </>
+      )}
+    </>
+  )}
+  addButton={{
+    label: 'Person',
+    onClick: handleAdd
+  }}
+/>`}
+              >
+                <Phase2Table
+                  data={mockPhase2Data}
+                  columns={mockPhase2Columns}
+                  isLoading={false}
+                  error={null}
+                  actionsRenderer={(row) => (
+                    <>
+                      {row.status === 'active' ? (
+                        <>
+                          <LapseIconButton onClick={() => console.log('Lapse', row)} />
+                          <MakeDeceasedButton onClick={() => console.log('Make Deceased', row)} />
+                        </>
+                      ) : (
+                        <>
+                          <ReactivateButton onClick={() => console.log('Reactivate', row)} />
+                          <DeleteIconButton onClick={() => console.log('Delete', row)} />
+                        </>
+                      )}
+                    </>
+                  )}
+                  ariaLabel="Example Phase 2 Table"
+                  emptyMessage="No items found"
+                />
               </ComponentCard>
             )}
 
