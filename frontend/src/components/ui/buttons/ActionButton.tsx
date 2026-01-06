@@ -115,7 +115,7 @@ const ActionButton = forwardRef<HTMLButtonElement, ActionButtonProps>(({
   const showText = !isIconOnlyMode && buttonText;
 
   // Base classes with sleek modern styling
-  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-md focus:outline-none focus:ring-3 focus:ring-offset-1 transition-all duration-150 ease-out active:scale-[0.98] relative';
+  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-md focus:outline-none focus:ring-3 focus:ring-offset-1 transition-all duration-150 ease-out active:scale-[0.98] relative leading-tight';
 
   // Size classes - WCAG 2.1 AA compliant (44px minimum touch target)
   const sizeClasses = {

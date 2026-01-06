@@ -21,8 +21,8 @@ import { Phase2Table } from '../tables';
 import type { ColumnDef } from '../tables/Phase2Table';
 import {
   LapseIconButton,
-  MakeDeceasedButton,
-  ReactivateButton,
+  MakeDeceasedIconButton,
+  ReactivateIconButton,
   DeleteIconButton,
 } from '@/components/ui';
 import { EMPTY_VALUE_PLACEHOLDER, PRODUCT_OWNER_BADGE_CLASSES } from './relationshipTable';
@@ -186,7 +186,7 @@ const ProfessionalRelationshipsTable: React.FC<ProfessionalRelationshipsTablePro
       return (
         <>
           {onReactivate && (
-            <ReactivateButton
+            <ReactivateIconButton
               onClick={(e) => {
                 e.stopPropagation();
                 onReactivate(row);
@@ -218,7 +218,7 @@ const ProfessionalRelationshipsTable: React.FC<ProfessionalRelationshipsTablePro
           />
         )}
         {onMakeDeceased && (
-          <MakeDeceasedButton
+          <MakeDeceasedIconButton
             onClick={(e) => {
               e.stopPropagation();
               onMakeDeceased(row);

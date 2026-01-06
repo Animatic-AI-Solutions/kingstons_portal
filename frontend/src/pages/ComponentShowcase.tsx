@@ -27,8 +27,8 @@ import {
   DeleteButton,
   LapseButton,
   LapseIconButton,
-  MakeDeceasedButton,
-  ReactivateButton,
+  MakeDeceasedIconButton,
+  ReactivateIconButton,
   DeleteIconButton,
   Button,
   Card,
@@ -59,6 +59,10 @@ import {
 import TableFilter from '../components/ui/table-controls/TableFilter';
 import TableSort from '../components/ui/table-controls/TableSort';
 import { Phase2Table } from '../components/phase2/tables';
+import LapseIconButtonTable from '../components/ui/table-icons/LapseIconButton';
+import MakeDeceasedIconButtonTable from '../components/ui/table-icons/MakeDeceasedIconButton';
+import ReactivateIconButtonTable from '../components/ui/table-icons/ReactivateIconButton';
+import DeleteIconButtonTable from '../components/ui/table-icons/DeleteIconButton';
 
 const ComponentShowcase: React.FC = () => {
   const [search, setSearch] = useState('');
@@ -157,6 +161,8 @@ const ComponentShowcase: React.FC = () => {
             <a href="#feedback" className="text-blue-600 hover:text-blue-800 font-medium">Feedback</a>
             <span className="text-gray-300">|</span>
             <a href="#tables" className="text-blue-600 hover:text-blue-800 font-medium">Tables</a>
+            <span className="text-gray-300">|</span>
+            <a href="#table-icons" className="text-blue-600 hover:text-blue-800 font-medium">Table Icons</a>
             <span className="text-gray-300">|</span>
             <a href="#modals" className="text-blue-600 hover:text-blue-800 font-medium">Modals</a>
             <span className="text-gray-300">|</span>
@@ -603,13 +609,13 @@ const ComponentShowcase: React.FC = () => {
             {filterComponent('IconActionButtons') && (
               <ComponentCard
                 name="Icon Action Buttons (Phase 2)"
-                importPath="import { LapseIconButton, MakeDeceasedButton, ReactivateButton, DeleteIconButton } from '@/components/ui'"
+                importPath="import { LapseIconButton, MakeDeceasedIconButton, ReactivateIconButton, DeleteIconButton } from '@/components/ui'"
                 code={`// For Active records:
 <LapseIconButton onClick={handleLapse} />
-<MakeDeceasedButton onClick={handleMakeDeceased} />
+<MakeDeceasedIconButton onClick={handleMakeDeceased} />
 
 // For Inactive records:
-<ReactivateButton onClick={handleReactivate} />
+<ReactivateIconButton onClick={handleReactivate} />
 <DeleteIconButton onClick={handleDelete} />`}
               >
                 <div className="space-y-4">
@@ -617,13 +623,13 @@ const ComponentShowcase: React.FC = () => {
                     <p className="text-sm text-gray-600 mb-2">Active Status Actions:</p>
                     <div className="flex gap-2 items-center">
                       <LapseIconButton onClick={() => {}} />
-                      <MakeDeceasedButton onClick={() => {}} />
+                      <MakeDeceasedIconButton onClick={() => {}} />
                     </div>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 mb-2">Inactive Status Actions:</p>
                     <div className="flex gap-2 items-center">
-                      <ReactivateButton onClick={() => {}} />
+                      <ReactivateIconButton onClick={() => {}} />
                       <DeleteIconButton onClick={() => {}} />
                     </div>
                   </div>
@@ -916,11 +922,11 @@ const columns = [
       {row.status === 'active' ? (
         <>
           <LapseIconButton onClick={() => handleLapse(row)} />
-          <MakeDeceasedButton onClick={() => handleMakeDeceased(row)} />
+          <MakeDeceasedIconButton onClick={() => handleMakeDeceased(row)} />
         </>
       ) : (
         <>
-          <ReactivateButton onClick={() => handleReactivate(row)} />
+          <ReactivateIconButton onClick={() => handleReactivate(row)} />
           <DeleteIconButton onClick={() => handleDelete(row)} />
         </>
       )}
@@ -942,11 +948,11 @@ const columns = [
                       {row.status === 'active' ? (
                         <>
                           <LapseIconButton onClick={() => console.log('Lapse', row)} />
-                          <MakeDeceasedButton onClick={() => console.log('Make Deceased', row)} />
+                          <MakeDeceasedIconButton onClick={() => console.log('Make Deceased', row)} />
                         </>
                       ) : (
                         <>
-                          <ReactivateButton onClick={() => console.log('Reactivate', row)} />
+                          <ReactivateIconButton onClick={() => console.log('Reactivate', row)} />
                           <DeleteIconButton onClick={() => console.log('Delete', row)} />
                         </>
                       )}
@@ -1012,13 +1018,19 @@ const columns = [
   onSort={handleSort}
 />`}
               >
-                <div className="bg-white p-4 rounded border">
-                  <SortableColumnHeader
-                    label="Name"
-                    sortKey="name"
-                    currentSort={{ column: 'name', direction: 'asc' }}
-                    onSort={() => {}}
-                  />
+                <div className="bg-white p-4 rounded border overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead>
+                      <tr>
+                        <SortableColumnHeader
+                          label="Name"
+                          sortKey="name"
+                          currentSort={{ column: 'name', direction: 'asc' }}
+                          onSort={() => {}}
+                        />
+                      </tr>
+                    </thead>
+                  </table>
                 </div>
               </ComponentCard>
             )}
@@ -1034,13 +1046,19 @@ const columns = [
   onSort={handleSort}
 />`}
               >
-                <div className="bg-white p-4 rounded border">
-                  <TableSortHeader
-                    label="Amount"
-                    column="amount"
-                    sortConfig={{ column: 'amount', direction: 'asc' }}
-                    onSort={() => {}}
-                  />
+                <div className="bg-white p-4 rounded border overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead>
+                      <tr>
+                        <TableSortHeader
+                          label="Amount"
+                          column="amount"
+                          sortConfig={{ column: 'amount', direction: 'asc' }}
+                          onSort={() => {}}
+                        />
+                      </tr>
+                    </thead>
+                  </table>
                 </div>
               </ComponentCard>
             )}
@@ -1052,6 +1070,155 @@ const columns = [
                 code={`<SkeletonTable rows={5} columns={4} />`}
               >
                 <SkeletonTable rows={3} columns={4} />
+              </ComponentCard>
+            )}
+          </div>
+        </section>
+
+        {/* Table Action Icon Buttons Section */}
+        <section id="table-icons" className="mb-12">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+            Table Action Icon Buttons
+          </h2>
+          <p className="text-gray-600 mb-6">Official icon-only action buttons for Phase2Table action columns</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {filterComponent('TableActionIcons') && (
+              <ComponentCard
+                name="Table Action Icons (Phase 2 Table)"
+                importPath="import LapseIconButton from '@/components/ui/table-icons/LapseIconButton'
+import MakeDeceasedIconButton from '@/components/ui/table-icons/MakeDeceasedIconButton'
+import ReactivateIconButton from '@/components/ui/table-icons/ReactivateIconButton'
+import DeleteIconButton from '@/components/ui/table-icons/DeleteIconButton'"
+                code={`// Usage in Phase2Table actionsRenderer:
+const actionsRenderer = (row) => {
+  const isInactive = row.status === 'Inactive' || row.status === 'Deceased';
+
+  if (isInactive) {
+    return (
+      <>
+        <ReactivateIconButton
+          onClick={(e) => {
+            e.stopPropagation();
+            handleReactivate(row);
+          }}
+        />
+        <DeleteIconButton
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDelete(row);
+          }}
+        />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <LapseIconButton
+        onClick={(e) => {
+          e.stopPropagation();
+          handleLapse(row);
+        }}
+      />
+      <MakeDeceasedIconButton
+        onClick={(e) => {
+          e.stopPropagation();
+          handleMakeDeceased(row);
+        }}
+      />
+    </>
+  );
+};
+
+<Phase2Table
+  data={data}
+  columns={columns}
+  actionsRenderer={actionsRenderer}
+/>`}
+              >
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 mb-2">Active Status Actions:</p>
+                    <p className="text-xs text-gray-500 mb-3">
+                      For active records - allows lapsing or marking as deceased
+                    </p>
+                    <div className="flex gap-2 items-center p-3 bg-gray-50 rounded">
+                      <LapseIconButtonTable onClick={() => console.log('Lapse clicked')} />
+                      <MakeDeceasedIconButtonTable onClick={() => console.log('Make Deceased clicked')} />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 mb-2">Inactive/Deceased Status Actions:</p>
+                    <p className="text-xs text-gray-500 mb-3">
+                      For inactive or deceased records - allows reactivation or permanent deletion
+                    </p>
+                    <div className="flex gap-2 items-center p-3 bg-gray-50 rounded">
+                      <ReactivateIconButtonTable onClick={() => console.log('Reactivate clicked')} />
+                      <DeleteIconButtonTable onClick={() => console.log('Delete clicked')} />
+                    </div>
+                  </div>
+                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-xs text-blue-900">
+                    <p className="font-semibold mb-1">Note:</p>
+                    <p>These are the official buttons for Phase2Table action columns. They feature:</p>
+                    <ul className="list-disc ml-4 mt-1 space-y-0.5">
+                      <li>44px WCAG 2.1 AA compliant touch targets</li>
+                      <li>Loading states</li>
+                      <li>Proper ARIA labels and accessibility</li>
+                      <li>Color-coded actions (orange=lapse, gray=deceased, blue=reactivate, red=delete)</li>
+                    </ul>
+                  </div>
+                </div>
+              </ComponentCard>
+            )}
+
+            {filterComponent('TableActionIconsIndividual') && (
+              <ComponentCard
+                name="Individual Table Icon Buttons"
+                importPath="See individual component imports"
+                code={`// Import individually as needed:
+import LapseIconButton from '@/components/ui/table-icons/LapseIconButton';
+import MakeDeceasedIconButton from '@/components/ui/table-icons/MakeDeceasedIconButton';
+import ReactivateIconButton from '@/components/ui/table-icons/ReactivateIconButton';
+import DeleteIconButton from '@/components/ui/table-icons/DeleteIconButton';`}
+              >
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-700 mb-1">LapseIconButton (Orange)</p>
+                    <div className="p-2 bg-gray-50 rounded inline-flex">
+                      <LapseIconButtonTable
+                        onClick={() => console.log('Lapse')}
+                        ariaLabel="Lapse record"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-700 mb-1">MakeDeceasedIconButton (Gray)</p>
+                    <div className="p-2 bg-gray-50 rounded inline-flex">
+                      <MakeDeceasedIconButtonTable
+                        onClick={() => console.log('Make Deceased')}
+                        ariaLabel="Mark as deceased"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-700 mb-1">ReactivateIconButton (Blue)</p>
+                    <div className="p-2 bg-gray-50 rounded inline-flex">
+                      <ReactivateIconButtonTable
+                        onClick={() => console.log('Reactivate')}
+                        ariaLabel="Reactivate record"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-700 mb-1">DeleteIconButton (Red)</p>
+                    <div className="p-2 bg-gray-50 rounded inline-flex">
+                      <DeleteIconButtonTable
+                        onClick={() => console.log('Delete')}
+                        ariaLabel="Delete record"
+                      />
+                    </div>
+                  </div>
+                </div>
               </ComponentCard>
             )}
           </div>

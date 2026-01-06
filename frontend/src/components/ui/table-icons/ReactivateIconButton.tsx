@@ -1,42 +1,40 @@
 /**
- * DeleteIconButton Component
+ * ReactivateButton Component
  *
- * Icon-only button for permanently deleting entities (product owners, beneficiaries, etc.)
- * Used in Phase 2 table action columns for inactive records (lapsed/deceased).
+ * Icon-only button for reactivating lapsed/deceased entities (product owners, beneficiaries, etc.)
+ * Used in Phase 2 table action columns for inactive records.
  *
  * Features:
- * - Red color scheme indicating destructive action
- * - TrashIcon from Heroicons
+ * - Blue color scheme indicating restoration/reactivation
+ * - ArrowPathIcon from Heroicons (refresh/restore symbol)
  * - Hover state with background
  * - Disabled state support
  * - WCAG 2.1 AA compliant (44px touch target)
  * - Accessible with aria-label and title
- * - Should be used with confirmation modal
  *
- * @module components/ui/buttons/DeleteIconButton
+ * @module components/ui/buttons/ReactivateButton
  */
 
 import React, { ButtonHTMLAttributes, forwardRef } from 'react';
-import { TrashIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 
-export interface DeleteIconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
-  /** Optional custom aria-label (defaults to "Delete") */
+export interface ReactivateButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
+  /** Optional custom aria-label (defaults to "Reactivate") */
   ariaLabel?: string;
-  /** Optional custom tooltip text (defaults to "Delete") */
+  /** Optional custom tooltip text (defaults to "Reactivate") */
   title?: string;
   /** Optional loading state */
   loading?: boolean;
 }
 
 /**
- * DeleteIconButton Component
+ * ReactivateButton Component
  *
- * Icon-only button for delete actions in Phase 2 tables
- * Should be paired with a confirmation modal before deletion
+ * Icon-only button for reactivating inactive records in Phase 2 tables
  */
-const DeleteIconButton = forwardRef<HTMLButtonElement, DeleteIconButtonProps>(({
-  ariaLabel = 'Delete',
-  title: tooltipTitle = 'Delete',
+const ReactivateButton = forwardRef<HTMLButtonElement, ReactivateButtonProps>(({
+  ariaLabel = 'Reactivate',
+  title: tooltipTitle = 'Reactivate',
   disabled = false,
   loading = false,
   className = '',
@@ -49,16 +47,17 @@ const DeleteIconButton = forwardRef<HTMLButtonElement, DeleteIconButtonProps>(({
     inline-flex
     items-center
     justify-center
-    text-red-600
-    hover:text-red-700
-    hover:bg-red-50
+    text-blue-600
+    hover:text-blue-700
+    hover:bg-blue-50
     rounded
     transition-colors
     disabled:opacity-50
     disabled:cursor-not-allowed
     focus:outline-none
     focus:ring-2
-    focus:ring-red-500/30
+    focus:ring-blue-500/30
+    leading-tight
     ${className}
   `.trim().replace(/\s+/g, ' ');
 
@@ -78,12 +77,12 @@ const DeleteIconButton = forwardRef<HTMLButtonElement, DeleteIconButtonProps>(({
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
       ) : (
-        <TrashIcon className="w-4 h-4" />
+        <ArrowPathIcon className="w-4 h-4" />
       )}
     </button>
   );
 });
 
-DeleteIconButton.displayName = 'DeleteIconButton';
+ReactivateButton.displayName = 'ReactivateButton';
 
-export default DeleteIconButton;
+export default ReactivateButton;
