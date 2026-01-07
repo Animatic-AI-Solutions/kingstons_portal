@@ -1,5 +1,5 @@
 # Kingston's Portal - Minimal Production Deployment Script
-# This script follows the user's original requirements exactly
+# This script is located in a subfolder but runs against the PROJECT ROOT
 
 # Check if running as administrator
 $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -7,12 +7,16 @@ $principal = New-Object Security.Principal.WindowsPrincipal($currentUser)
 $isAdmin = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
 if (-not $isAdmin) {
-    Write-Host "ERROR: This script must be run as Administrator for IIS reset" -ForegroundColor Red
+    Write-Host "ERROR: This script must be run as Administrator" -ForegroundColor Red
     Write-Host "Right-click PowerShell and select 'Run as Administrator'" -ForegroundColor Yellow
     Read-Host "Press Enter to exit"
     exit 1
 }
 
+# IMPORTANT: Set location to one level UP from where this script is saved
+Set-Location "$PSScriptRoot\.."
+
+Write-Host "Current Root: $(Get-Location)" -ForegroundColor Gray
 Write-Host "Starting Kingston's Portal Production Deployment..." -ForegroundColor Green
 Write-Host "=================================================" -ForegroundColor Green
 

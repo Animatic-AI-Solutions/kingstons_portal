@@ -45,31 +45,7 @@ This module is responsible for breaking down complex tasks into manageable compo
 
 ## Output Format
 
-Your planning output should include:
-
-```yaml
-plan:
-  objective: "Clear description of the goal"
-  phases:
-    - name: "Phase Name"
-      tasks:
-        - id: "task-1"
-          description: "What needs to be done"
-          capability: "Which internal capability should handle this"
-          dependencies: ["task-ids"]
-          estimated_time: "15m"
-          priority: "high|medium|low"
-  
-  critical_path: ["task-1", "task-3", "task-7"]
-  
-  risks:
-    - description: "Potential issue"
-      mitigation: "How to handle it"
-  
-  success_criteria:
-    - "Measurable outcome 1"
-    - "Measurable outcome 2"
-```
+You should produce a markdown file containing your comprehenisve plan. This will be reviewed and then eventually implemented. Seperate your plan into many files inside a folder if your plan is complex or exceedes 750 lines.
 
 ## Internal Collaboration
 
