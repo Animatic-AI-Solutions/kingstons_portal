@@ -66,6 +66,9 @@ export type { ReactivateButtonProps } from './table-icons/ReactivateIconButton';
 export { default as DeleteIconButton } from './table-icons/DeleteIconButton';
 export type { DeleteIconButtonProps } from './table-icons/DeleteIconButton';
 
+export { default as EditIconButton } from './table-icons/EditIconButton';
+export type { EditIconButtonProps } from './table-icons/EditIconButton';
+
 // Group 5: Filter and Sort Components
 export { default as TableFilter } from './table-controls/TableFilter';
 export type { TableFilterProps, FilterOption } from './table-controls/TableFilter';
