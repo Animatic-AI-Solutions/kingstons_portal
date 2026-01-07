@@ -13,9 +13,13 @@
 **File**: `frontend/src/tests/components/phase2/health-vulnerabilities/HealthVulnerabilityTab.test.tsx`
 
 ```typescript
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { axe, toHaveNoViolations } from 'jest-axe';
 import HealthVulnerabilityTab from '@/components/phase2/health-vulnerabilities/HealthVulnerabilityTab';
+
+expect.extend(toHaveNoViolations);
 
 // Mock the sub-tab components
 jest.mock('@/components/phase2/health-vulnerabilities/HealthSubTab', () => {
@@ -156,6 +160,221 @@ describe('HealthVulnerabilityTab', () => {
 
       const vulnTab = screen.getByRole('tab', { name: /vulnerabilities/i });
       expect(vulnTab).not.toHaveClass('bg-primary-700');
+    });
+  });
+
+  describe('enhanced accessibility', () => {
+    it('should have no accessibility violations', async () => {
+      const { container } = render(
+        <HealthVulnerabilityTab clientGroupId={1} productOwnerId={100} />,
+        { wrapper: createWrapper() }
+      );
+
+      const results = await axe(container);
+      expect(results).toHaveNoViolations();
+    });
+
+    it('should have no accessibility violations after tab switch', async () => {
+      const { container } = render(
+        <HealthVulnerabilityTab clientGroupId={1} productOwnerId={100} />,
+        { wrapper: createWrapper() }
+      );
+
+      fireEvent.click(screen.getByRole('tab', { name: /vulnerabilities/i }));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('vulnerabilities-subtab')).toBeInTheDocument();
+      });
+
+      const results = await axe(container);
+      expect(results).toHaveNoViolations();
+    });
+
+    it('should have proper focus ring on tabs', () => {
+      render(
+        <HealthVulnerabilityTab clientGroupId={1} productOwnerId={100} />,
+        { wrapper: createWrapper() }
+      );
+
+      const healthTab = screen.getByRole('tab', { name: /health/i });
+      expect(healthTab).toHaveClass('focus:ring-2');
+    });
+
+    it('should support ArrowLeft navigation', () => {
+      render(
+        <HealthVulnerabilityTab clientGroupId={1} productOwnerId={100} />,
+        { wrapper: createWrapper() }
+      );
+
+      const healthTab = screen.getByRole('tab', { name: /health/i });
+      healthTab.focus();
+
+      fireEvent.keyDown(healthTab, { key: 'ArrowLeft' });
+
+      expect(screen.getByRole('tab', { name: /vulnerabilities/i })).toHaveFocus();
+    });
+
+    it('should wrap around on ArrowRight from last tab', () => {
+      render(
+        <HealthVulnerabilityTab clientGroupId={1} productOwnerId={100} />,
+        { wrapper: createWrapper() }
+      );
+
+      const vulnTab = screen.getByRole('tab', { name: /vulnerabilities/i });
+      vulnTab.focus();
+
+      fireEvent.keyDown(vulnTab, { key: 'ArrowRight' });
+
+      expect(screen.getByRole('tab', { name: /health/i })).toHaveFocus();
+    });
+
+    it('should support Space key to select tab', () => {
+      render(
+        <HealthVulnerabilityTab clientGroupId={1} productOwnerId={100} />,
+        { wrapper: createWrapper() }
+      );
+
+      const vulnTab = screen.getByRole('tab', { name: /vulnerabilities/i });
+      vulnTab.focus();
+      fireEvent.keyDown(vulnTab, { key: ' ' });
+
+      expect(vulnTab).toHaveAttribute('aria-selected', 'true');
+    });
+
+    it('should have proper tabindex on tabs', () => {
+      render(
+        <HealthVulnerabilityTab clientGroupId={1} productOwnerId={100} />,
+        { wrapper: createWrapper() }
+      );
+
+      // Active tab should have tabindex 0, inactive should have -1
+      const healthTab = screen.getByRole('tab', { name: /health/i });
+      const vulnTab = screen.getByRole('tab', { name: /vulnerabilities/i });
+
+      expect(healthTab).toHaveAttribute('tabindex', '0');
+      expect(vulnTab).toHaveAttribute('tabindex', '-1');
+    });
+
+    it('should update tabindex when switching tabs', () => {
+      render(
+        <HealthVulnerabilityTab clientGroupId={1} productOwnerId={100} />,
+        { wrapper: createWrapper() }
+      );
+
+      const healthTab = screen.getByRole('tab', { name: /health/i });
+      const vulnTab = screen.getByRole('tab', { name: /vulnerabilities/i });
+
+      fireEvent.click(vulnTab);
+
+      expect(healthTab).toHaveAttribute('tabindex', '-1');
+      expect(vulnTab).toHaveAttribute('tabindex', '0');
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should handle rapid tab switching', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <HealthVulnerabilityTab clientGroupId={1} productOwnerId={100} />,
+        { wrapper: createWrapper() }
+      );
+
+      const healthTab = screen.getByRole('tab', { name: /health/i });
+      const vulnTab = screen.getByRole('tab', { name: /vulnerabilities/i });
+
+      // Rapidly switch tabs
+      for (let i = 0; i < 10; i++) {
+        await user.click(vulnTab);
+        await user.click(healthTab);
+      }
+
+      // Should still be functional
+      expect(healthTab).toHaveAttribute('aria-selected', 'true');
+      expect(screen.getByTestId('health-subtab')).toBeInTheDocument();
+    });
+
+    it('should handle multiple Enter key presses', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <HealthVulnerabilityTab clientGroupId={1} productOwnerId={100} />,
+        { wrapper: createWrapper() }
+      );
+
+      const vulnTab = screen.getByRole('tab', { name: /vulnerabilities/i });
+      vulnTab.focus();
+
+      // Multiple Enter presses
+      await user.keyboard('{Enter}{Enter}{Enter}');
+
+      expect(vulnTab).toHaveAttribute('aria-selected', 'true');
+    });
+
+    it('should preserve state when switching between tabs', () => {
+      render(
+        <HealthVulnerabilityTab clientGroupId={1} productOwnerId={100} />,
+        { wrapper: createWrapper() }
+      );
+
+      // Start at Health tab
+      expect(screen.getByTestId('health-subtab')).toBeInTheDocument();
+
+      // Switch to Vulnerabilities
+      fireEvent.click(screen.getByRole('tab', { name: /vulnerabilities/i }));
+      expect(screen.getByTestId('vulnerabilities-subtab')).toBeInTheDocument();
+
+      // Switch back to Health
+      fireEvent.click(screen.getByRole('tab', { name: /health/i }));
+      expect(screen.getByTestId('health-subtab')).toBeInTheDocument();
+    });
+
+    it('should handle different clientGroupId props', () => {
+      const { rerender } = render(
+        <HealthVulnerabilityTab clientGroupId={1} productOwnerId={100} />,
+        { wrapper: createWrapper() }
+      );
+
+      expect(screen.getByRole('tablist')).toBeInTheDocument();
+
+      rerender(
+        <QueryClientProvider client={new QueryClient()}>
+          <HealthVulnerabilityTab clientGroupId={999} productOwnerId={200} />
+        </QueryClientProvider>
+      );
+
+      expect(screen.getByRole('tablist')).toBeInTheDocument();
+    });
+
+    it('should handle zero as clientGroupId', () => {
+      render(
+        <HealthVulnerabilityTab clientGroupId={0} productOwnerId={0} />,
+        { wrapper: createWrapper() }
+      );
+
+      // Should still render tabs
+      expect(screen.getByRole('tablist')).toBeInTheDocument();
+      expect(screen.getAllByRole('tab')).toHaveLength(2);
+    });
+  });
+
+  describe('screen reader support', () => {
+    it('should have descriptive tablist aria-label', () => {
+      render(
+        <HealthVulnerabilityTab clientGroupId={1} productOwnerId={100} />,
+        { wrapper: createWrapper() }
+      );
+
+      expect(screen.getByRole('tablist')).toHaveAttribute('aria-label');
+    });
+
+    it('should have aria-labelledby on tabpanel', () => {
+      render(
+        <HealthVulnerabilityTab clientGroupId={1} productOwnerId={100} />,
+        { wrapper: createWrapper() }
+      );
+
+      expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby');
     });
   });
 });
@@ -320,10 +539,14 @@ export default HealthVulnerabilityTab;
 
 ## Acceptance Criteria
 
-- [ ] All 10 tests pass
+- [ ] All 28+ tests pass (10 base + 18 enhanced)
 - [ ] Health and Vulnerabilities tabs render
 - [ ] Health tab selected by default
 - [ ] Tab switching works on click
-- [ ] Keyboard navigation works (Arrow keys, Enter)
+- [ ] Keyboard navigation works (Arrow keys, Enter, Space)
 - [ ] Proper ARIA roles and attributes
 - [ ] Active/inactive tab styling correct
+- [ ] **Accessibility**: No jest-axe violations, focus rings, proper tabindex management
+- [ ] **Keyboard navigation**: ArrowLeft/Right wraps around, Space/Enter select tab
+- [ ] **Edge cases**: Rapid tab switching, prop changes, zero IDs
+- [ ] **Screen reader**: Descriptive aria-label, aria-labelledby on tabpanel

@@ -13,9 +13,14 @@
 **File**: `frontend/src/tests/components/phase2/health-vulnerabilities/PersonTable.test.tsx`
 
 ```typescript
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { axe, toHaveNoViolations } from 'jest-axe';
 import PersonTable from '@/components/phase2/health-vulnerabilities/PersonTable';
 import { PersonWithCounts } from '@/types/healthVulnerability';
+
+// Extend Jest matchers with jest-axe
+expect.extend(toHaveNoViolations);
 
 describe('PersonTable', () => {
   const mockProductOwners: PersonWithCounts[] = [
@@ -327,6 +332,408 @@ describe('PersonTable', () => {
       const johnRow = screen.getByText('John Smith').closest('tr');
       expect(johnRow).toHaveAttribute('aria-controls', 'nested-table-product_owner-1');
     });
+
+    // jest-axe automated accessibility tests
+    it('should have no accessibility violations', async () => {
+      const { container } = render(
+        <PersonTable
+          productOwners={mockProductOwners}
+          specialRelationships={mockSpecialRelationships}
+          onAdd={mockOnAdd}
+          onRowClick={mockOnRowClick}
+        />
+      );
+
+      const results = await axe(container);
+      expect(results).toHaveNoViolations();
+    });
+
+    it('should have no accessibility violations in empty state', async () => {
+      const { container } = render(
+        <PersonTable
+          productOwners={[]}
+          specialRelationships={[]}
+          onAdd={mockOnAdd}
+          onRowClick={mockOnRowClick}
+        />
+      );
+
+      const results = await axe(container);
+      expect(results).toHaveNoViolations();
+    });
+
+    it('should have no accessibility violations with expanded row', async () => {
+      const { container } = render(
+        <PersonTable
+          productOwners={mockProductOwners}
+          specialRelationships={mockSpecialRelationships}
+          onAdd={mockOnAdd}
+          onRowClick={mockOnRowClick}
+          expandedPersonId={1}
+        />
+      );
+
+      const results = await axe(container);
+      expect(results).toHaveNoViolations();
+    });
+  });
+
+  // ===========================================================================
+  // Keyboard Navigation Tests
+  // ===========================================================================
+
+  describe('keyboard navigation', () => {
+    it('should allow tab navigation to add buttons', async () => {
+      const user = userEvent.setup();
+      render(
+        <PersonTable
+          productOwners={mockProductOwners}
+          specialRelationships={[]}
+          onAdd={mockOnAdd}
+          onRowClick={mockOnRowClick}
+        />
+      );
+
+      const addButtons = screen.getAllByRole('button', { name: /add/i });
+
+      // Tab to first add button
+      await user.tab();
+      expect(addButtons[0]).toHaveFocus();
+
+      // Tab to second add button
+      await user.tab();
+      expect(addButtons[1]).toHaveFocus();
+    });
+
+    it('should allow Enter key to activate add button', async () => {
+      const user = userEvent.setup();
+      render(
+        <PersonTable
+          productOwners={mockProductOwners}
+          specialRelationships={[]}
+          onAdd={mockOnAdd}
+          onRowClick={mockOnRowClick}
+        />
+      );
+
+      const addButtons = screen.getAllByRole('button', { name: /add/i });
+      addButtons[0].focus();
+      await user.keyboard('{Enter}');
+
+      expect(mockOnAdd).toHaveBeenCalledWith(mockProductOwners[0]);
+    });
+
+    it('should allow Space key to activate add button', async () => {
+      const user = userEvent.setup();
+      render(
+        <PersonTable
+          productOwners={mockProductOwners}
+          specialRelationships={[]}
+          onAdd={mockOnAdd}
+          onRowClick={mockOnRowClick}
+        />
+      );
+
+      const addButtons = screen.getAllByRole('button', { name: /add/i });
+      addButtons[0].focus();
+      await user.keyboard(' ');
+
+      expect(mockOnAdd).toHaveBeenCalledWith(mockProductOwners[0]);
+    });
+
+    it('should have visible focus indicator on add button', async () => {
+      const user = userEvent.setup();
+      render(
+        <PersonTable
+          productOwners={mockProductOwners}
+          specialRelationships={[]}
+          onAdd={mockOnAdd}
+          onRowClick={mockOnRowClick}
+        />
+      );
+
+      const addButtons = screen.getAllByRole('button', { name: /add/i });
+      await user.tab();
+
+      // Check that focus ring classes are applied
+      expect(addButtons[0]).toHaveClass('focus:ring-2');
+    });
+  });
+
+  // ===========================================================================
+  // Edge Cases
+  // ===========================================================================
+
+  describe('edge cases', () => {
+    it('should handle product owners only (no special relationships)', () => {
+      render(
+        <PersonTable
+          productOwners={mockProductOwners}
+          specialRelationships={[]}
+          onAdd={mockOnAdd}
+          onRowClick={mockOnRowClick}
+        />
+      );
+
+      expect(screen.getByText('John Smith')).toBeInTheDocument();
+      expect(screen.queryByText('SR')).not.toBeInTheDocument();
+    });
+
+    it('should handle special relationships only (no product owners)', () => {
+      render(
+        <PersonTable
+          productOwners={[]}
+          specialRelationships={mockSpecialRelationships}
+          onAdd={mockOnAdd}
+          onRowClick={mockOnRowClick}
+        />
+      );
+
+      expect(screen.getByText('Tom Smith')).toBeInTheDocument();
+      expect(screen.getByText('SR')).toBeInTheDocument();
+    });
+
+    it('should handle very long names gracefully', () => {
+      const longNamePerson: PersonWithCounts = {
+        id: 99,
+        name: 'A'.repeat(100) + ' ' + 'B'.repeat(100),
+        relationship: 'Primary Owner',
+        personType: 'product_owner',
+        status: 'Active',
+        activeCount: 0,
+        inactiveCount: 0,
+      };
+
+      render(
+        <PersonTable
+          productOwners={[longNamePerson]}
+          specialRelationships={[]}
+          onAdd={mockOnAdd}
+          onRowClick={mockOnRowClick}
+        />
+      );
+
+      expect(screen.getByText(longNamePerson.name)).toBeInTheDocument();
+    });
+
+    it('should handle special characters in names', () => {
+      const specialCharPerson: PersonWithCounts = {
+        id: 99,
+        name: "O'Brien-Smith & Partners <Test>",
+        relationship: 'Primary Owner',
+        personType: 'product_owner',
+        status: 'Active',
+        activeCount: 0,
+        inactiveCount: 0,
+      };
+
+      render(
+        <PersonTable
+          productOwners={[specialCharPerson]}
+          specialRelationships={[]}
+          onAdd={mockOnAdd}
+          onRowClick={mockOnRowClick}
+        />
+      );
+
+      expect(screen.getByText("O'Brien-Smith & Partners <Test>")).toBeInTheDocument();
+    });
+
+    it('should handle unicode characters in names', () => {
+      const unicodePerson: PersonWithCounts = {
+        id: 99,
+        name: '田中太郎 émoji 🏠',
+        relationship: 'Primary Owner',
+        personType: 'product_owner',
+        status: 'Active',
+        activeCount: 0,
+        inactiveCount: 0,
+      };
+
+      render(
+        <PersonTable
+          productOwners={[unicodePerson]}
+          specialRelationships={[]}
+          onAdd={mockOnAdd}
+          onRowClick={mockOnRowClick}
+        />
+      );
+
+      expect(screen.getByText('田中太郎 émoji 🏠')).toBeInTheDocument();
+    });
+
+    it('should handle zero counts correctly', () => {
+      const zeroPerson: PersonWithCounts = {
+        id: 99,
+        name: 'Zero Count Person',
+        relationship: 'Primary Owner',
+        personType: 'product_owner',
+        status: 'Active',
+        activeCount: 0,
+        inactiveCount: 0,
+      };
+
+      render(
+        <PersonTable
+          productOwners={[zeroPerson]}
+          specialRelationships={[]}
+          onAdd={mockOnAdd}
+          onRowClick={mockOnRowClick}
+        />
+      );
+
+      const row = screen.getByText('Zero Count Person').closest('tr');
+      expect(within(row!).getAllByText('0')).toHaveLength(2);
+    });
+
+    it('should handle large counts correctly', () => {
+      const largePerson: PersonWithCounts = {
+        id: 99,
+        name: 'Large Count Person',
+        relationship: 'Primary Owner',
+        personType: 'product_owner',
+        status: 'Active',
+        activeCount: 999,
+        inactiveCount: 1000,
+      };
+
+      render(
+        <PersonTable
+          productOwners={[largePerson]}
+          specialRelationships={[]}
+          onAdd={mockOnAdd}
+          onRowClick={mockOnRowClick}
+        />
+      );
+
+      expect(screen.getByText('999')).toBeInTheDocument();
+      expect(screen.getByText('1000')).toBeInTheDocument();
+    });
+
+    it('should handle many rows without performance issues', () => {
+      const manyPeople: PersonWithCounts[] = Array.from({ length: 100 }, (_, i) => ({
+        id: i + 1,
+        name: `Person ${i + 1}`,
+        relationship: i % 2 === 0 ? 'Primary Owner' : 'Joint Owner',
+        personType: 'product_owner' as const,
+        status: 'Active',
+        activeCount: i,
+        inactiveCount: i % 10,
+      }));
+
+      const startTime = performance.now();
+      render(
+        <PersonTable
+          productOwners={manyPeople}
+          specialRelationships={[]}
+          onAdd={mockOnAdd}
+          onRowClick={mockOnRowClick}
+        />
+      );
+      const endTime = performance.now();
+
+      // Should render within 500ms even with 100 rows
+      expect(endTime - startTime).toBeLessThan(500);
+      expect(screen.getAllByRole('row')).toHaveLength(101); // header + 100 data rows
+    });
+
+    it('should handle duplicate IDs from different person types', () => {
+      const poWithId1: PersonWithCounts = {
+        id: 1,
+        name: 'Product Owner 1',
+        relationship: 'Primary Owner',
+        personType: 'product_owner',
+        status: 'Active',
+        activeCount: 1,
+        inactiveCount: 0,
+      };
+
+      const srWithId1: PersonWithCounts = {
+        id: 1, // Same ID but different personType
+        name: 'Special Relationship 1',
+        relationship: 'Child',
+        personType: 'special_relationship',
+        status: 'Active',
+        activeCount: 2,
+        inactiveCount: 0,
+      };
+
+      render(
+        <PersonTable
+          productOwners={[poWithId1]}
+          specialRelationships={[srWithId1]}
+          onAdd={mockOnAdd}
+          onRowClick={mockOnRowClick}
+        />
+      );
+
+      // Both should render (keyed by personType-id)
+      expect(screen.getByText('Product Owner 1')).toBeInTheDocument();
+      expect(screen.getByText('Special Relationship 1')).toBeInTheDocument();
+    });
+  });
+
+  // ===========================================================================
+  // Screen Reader Support Tests
+  // ===========================================================================
+
+  describe('screen reader support', () => {
+    it('should have descriptive aria-labels on add buttons', () => {
+      render(
+        <PersonTable
+          productOwners={mockProductOwners}
+          specialRelationships={[]}
+          onAdd={mockOnAdd}
+          onRowClick={mockOnRowClick}
+        />
+      );
+
+      expect(screen.getByRole('button', { name: /add health or vulnerability for john smith/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /add health or vulnerability for jane smith/i })).toBeInTheDocument();
+    });
+
+    it('should use proper table semantics with scope attributes', () => {
+      render(
+        <PersonTable
+          productOwners={mockProductOwners}
+          specialRelationships={[]}
+          onAdd={mockOnAdd}
+          onRowClick={mockOnRowClick}
+        />
+      );
+
+      const headers = screen.getAllByRole('columnheader');
+      headers.forEach(header => {
+        expect(header).toHaveAttribute('scope', 'col');
+      });
+    });
+
+    it('should announce expanded state changes', () => {
+      const { rerender } = render(
+        <PersonTable
+          productOwners={mockProductOwners}
+          specialRelationships={[]}
+          onAdd={mockOnAdd}
+          onRowClick={mockOnRowClick}
+          expandedPersonId={null}
+        />
+      );
+
+      const johnRow = screen.getByText('John Smith').closest('tr');
+      expect(johnRow).toHaveAttribute('aria-expanded', 'false');
+
+      rerender(
+        <PersonTable
+          productOwners={mockProductOwners}
+          specialRelationships={[]}
+          onAdd={mockOnAdd}
+          onRowClick={mockOnRowClick}
+          expandedPersonId={1}
+        />
+      );
+
+      expect(johnRow).toHaveAttribute('aria-expanded', 'true');
+    });
   });
 });
 ```
@@ -499,13 +906,17 @@ export default PersonTable;
 
 ## Acceptance Criteria
 
-- [ ] All 17 tests pass (including 3 new accessibility tests)
+- [ ] All 40+ tests pass (unit, a11y, keyboard, edge cases, screen reader)
 - [ ] Name column shows SR tag for special relationships
 - [ ] Relationship column displays correctly
-- [ ] Active/Inactive counts display correctly
+- [ ] Active/Inactive counts display correctly with proper styling
 - [ ] Add button in Actions column works
 - [ ] Special relationships appear at bottom with purple styling
 - [ ] Row click triggers onRowClick callback
-- [ ] Add button click does NOT trigger row click
+- [ ] Add button click does NOT trigger row click (event propagation stopped)
 - [ ] Rows have aria-expanded attribute (true/false based on expansion state)
 - [ ] Rows have aria-controls linking to nested table ID
+- [ ] **Accessibility (jest-axe)**: No WCAG violations in any state
+- [ ] **Keyboard**: Tab navigation, Enter/Space activation, visible focus indicators
+- [ ] **Screen reader**: Descriptive aria-labels, proper table semantics with scope
+- [ ] **Edge cases**: Long names, special chars, unicode, zero/large counts, many rows, duplicate IDs

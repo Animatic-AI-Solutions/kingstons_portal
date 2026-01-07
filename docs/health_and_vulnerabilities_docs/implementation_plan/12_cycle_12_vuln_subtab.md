@@ -14,11 +14,15 @@
 
 ```typescript
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { axe, toHaveNoViolations } from 'jest-axe';
 import VulnerabilitiesSubTab from '@/components/phase2/health-vulnerabilities/VulnerabilitiesSubTab';
 import * as hooks from '@/hooks/useHealthVulnerabilities';
 import * as productOwnerHooks from '@/hooks/useProductOwners';
 import * as srHooks from '@/hooks/useSpecialRelationships';
+
+expect.extend(toHaveNoViolations);
 
 jest.mock('@/hooks/useHealthVulnerabilities');
 jest.mock('@/hooks/useProductOwners');
@@ -141,6 +145,342 @@ describe('VulnerabilitiesSubTab', () => {
       render(<VulnerabilitiesSubTab clientGroupId={1} />, { wrapper: createWrapper() });
       expect(screen.getByText(/error/i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
+    });
+  });
+
+  describe('empty state', () => {
+    it('should show empty state when no people', () => {
+      (productOwnerHooks.useProductOwners as jest.Mock).mockReturnValue({
+        data: [], isLoading: false, error: null,
+      });
+      (srHooks.useSpecialRelationships as jest.Mock).mockReturnValue({
+        data: [], isLoading: false, error: null,
+      });
+
+      render(<VulnerabilitiesSubTab clientGroupId={1} />, { wrapper: createWrapper() });
+      expect(screen.getByText(/no people found/i)).toBeInTheDocument();
+    });
+  });
+
+  describe('accessibility', () => {
+    it('should have no accessibility violations', async () => {
+      const { container } = render(<VulnerabilitiesSubTab clientGroupId={1} />, { wrapper: createWrapper() });
+
+      await waitFor(() => {
+        expect(screen.getByText('John Smith')).toBeInTheDocument();
+      });
+
+      const results = await axe(container);
+      expect(results).toHaveNoViolations();
+    });
+
+    it('should have no accessibility violations with expanded row', async () => {
+      const { container } = render(<VulnerabilitiesSubTab clientGroupId={1} />, { wrapper: createWrapper() });
+
+      await waitFor(() => {
+        expect(screen.getByText('John Smith')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('John Smith'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Hearing impairment')).toBeInTheDocument();
+      });
+
+      const results = await axe(container);
+      expect(results).toHaveNoViolations();
+    });
+
+    it('should have proper table role structure', () => {
+      render(<VulnerabilitiesSubTab clientGroupId={1} />, { wrapper: createWrapper() });
+
+      expect(screen.getByRole('table')).toBeInTheDocument();
+      expect(screen.getAllByRole('row').length).toBeGreaterThan(0);
+    });
+
+    it('should indicate expandable rows with aria-expanded', async () => {
+      render(<VulnerabilitiesSubTab clientGroupId={1} />, { wrapper: createWrapper() });
+
+      await waitFor(() => {
+        expect(screen.getByText('John Smith')).toBeInTheDocument();
+      });
+
+      const row = screen.getByText('John Smith').closest('tr');
+      expect(row).toHaveAttribute('aria-expanded', 'false');
+
+      fireEvent.click(screen.getByText('John Smith'));
+
+      await waitFor(() => {
+        expect(row).toHaveAttribute('aria-expanded', 'true');
+      });
+    });
+  });
+
+  describe('keyboard navigation', () => {
+    it('should expand row on Enter key', async () => {
+      const user = userEvent.setup();
+
+      render(<VulnerabilitiesSubTab clientGroupId={1} />, { wrapper: createWrapper() });
+
+      await waitFor(() => {
+        expect(screen.getByText('John Smith')).toBeInTheDocument();
+      });
+
+      const row = screen.getByText('John Smith').closest('tr');
+      row?.focus();
+      await user.keyboard('{Enter}');
+
+      await waitFor(() => {
+        expect(screen.getByText('Hearing impairment')).toBeInTheDocument();
+      });
+    });
+
+    it('should expand row on Space key', async () => {
+      const user = userEvent.setup();
+
+      render(<VulnerabilitiesSubTab clientGroupId={1} />, { wrapper: createWrapper() });
+
+      await waitFor(() => {
+        expect(screen.getByText('John Smith')).toBeInTheDocument();
+      });
+
+      const row = screen.getByText('John Smith').closest('tr');
+      row?.focus();
+      await user.keyboard(' ');
+
+      await waitFor(() => {
+        expect(screen.getByText('Hearing impairment')).toBeInTheDocument();
+      });
+    });
+
+    it('should allow tab navigation to add buttons', async () => {
+      const user = userEvent.setup();
+
+      render(<VulnerabilitiesSubTab clientGroupId={1} />, { wrapper: createWrapper() });
+
+      await waitFor(() => {
+        expect(screen.getByText('John Smith')).toBeInTheDocument();
+      });
+
+      await user.tab();
+      await user.tab();
+
+      const addButtons = screen.getAllByRole('button', { name: /add/i });
+      expect(addButtons[0]).toHaveFocus();
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should handle many product owners (100+)', async () => {
+      const manyOwners = Array.from({ length: 100 }, (_, i) => ({
+        id: i + 1,
+        firstname: `Person${i}`,
+        surname: `Surname${i}`,
+        relationship: i === 0 ? 'Primary Owner' : 'Joint Owner',
+        status: 'active',
+      }));
+
+      (productOwnerHooks.useProductOwners as jest.Mock).mockReturnValue({
+        data: manyOwners, isLoading: false, error: null,
+      });
+
+      render(<VulnerabilitiesSubTab clientGroupId={1} />, { wrapper: createWrapper() });
+
+      await waitFor(() => {
+        expect(screen.getByText('Person0 Surname0')).toBeInTheDocument();
+        expect(screen.getByText('Person99 Surname99')).toBeInTheDocument();
+      });
+    });
+
+    it('should handle product owner with no vulnerabilities', async () => {
+      (hooks.useVulnerabilitiesProductOwners as jest.Mock).mockReturnValue({
+        data: [], isLoading: false, error: null,
+      });
+
+      render(<VulnerabilitiesSubTab clientGroupId={1} />, { wrapper: createWrapper() });
+
+      await waitFor(() => {
+        expect(screen.getByText('John Smith')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('John Smith'));
+
+      await waitFor(() => {
+        expect(screen.getByText(/no vulnerabilities/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should handle person with very long name', () => {
+      const longNameOwner = [{
+        id: 1,
+        firstname: 'A'.repeat(50),
+        surname: 'B'.repeat(50),
+        relationship: 'Primary Owner',
+        status: 'active',
+      }];
+
+      (productOwnerHooks.useProductOwners as jest.Mock).mockReturnValue({
+        data: longNameOwner, isLoading: false, error: null,
+      });
+
+      render(<VulnerabilitiesSubTab clientGroupId={1} />, { wrapper: createWrapper() });
+
+      expect(screen.getByText(`${'A'.repeat(50)} ${'B'.repeat(50)}`)).toBeInTheDocument();
+    });
+
+    it('should handle special characters in names', () => {
+      const specialOwner = [{
+        id: 1,
+        firstname: "O'Brien",
+        surname: 'Smith-Jones',
+        relationship: 'Primary Owner',
+        status: 'active',
+      }];
+
+      (productOwnerHooks.useProductOwners as jest.Mock).mockReturnValue({
+        data: specialOwner, isLoading: false, error: null,
+      });
+
+      render(<VulnerabilitiesSubTab clientGroupId={1} />, { wrapper: createWrapper() });
+
+      expect(screen.getByText("O'Brien Smith-Jones")).toBeInTheDocument();
+    });
+
+    it('should handle unicode names', () => {
+      const unicodeOwner = [{
+        id: 1,
+        firstname: '田中',
+        surname: '太郎',
+        relationship: 'Primary Owner',
+        status: 'active',
+      }];
+
+      (productOwnerHooks.useProductOwners as jest.Mock).mockReturnValue({
+        data: unicodeOwner, isLoading: false, error: null,
+      });
+
+      render(<VulnerabilitiesSubTab clientGroupId={1} />, { wrapper: createWrapper() });
+
+      expect(screen.getByText('田中 太郎')).toBeInTheDocument();
+    });
+
+    it('should handle rapid expand/collapse clicks', async () => {
+      const user = userEvent.setup();
+
+      render(<VulnerabilitiesSubTab clientGroupId={1} />, { wrapper: createWrapper() });
+
+      await waitFor(() => {
+        expect(screen.getByText('John Smith')).toBeInTheDocument();
+      });
+
+      for (let i = 0; i < 10; i++) {
+        await user.click(screen.getByText('John Smith'));
+      }
+
+      expect(screen.getByText('John Smith')).toBeInTheDocument();
+    });
+
+    it('should handle vulnerability with very long description', async () => {
+      const longVuln = [{
+        id: 1,
+        product_owner_id: 1,
+        description: 'A'.repeat(200),
+        diagnosed: true,
+        status: 'Active',
+      }];
+
+      (hooks.useVulnerabilitiesProductOwners as jest.Mock).mockReturnValue({
+        data: longVuln, isLoading: false, error: null,
+      });
+
+      render(<VulnerabilitiesSubTab clientGroupId={1} />, { wrapper: createWrapper() });
+
+      await waitFor(() => {
+        expect(screen.getByText('John Smith')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('John Smith'));
+
+      await waitFor(() => {
+        expect(screen.getByText('A'.repeat(200))).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('edit modal', () => {
+    it('should open edit modal when vulnerability row clicked', async () => {
+      render(<VulnerabilitiesSubTab clientGroupId={1} />, { wrapper: createWrapper() });
+
+      await waitFor(() => {
+        expect(screen.getByText('John Smith')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('John Smith'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Hearing impairment')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('Hearing impairment'));
+
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(screen.getByText(/edit vulnerability/i)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('delete functionality', () => {
+    it('should show delete confirmation when delete clicked', async () => {
+      render(<VulnerabilitiesSubTab clientGroupId={1} />, { wrapper: createWrapper() });
+
+      await waitFor(() => {
+        expect(screen.getByText('John Smith')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('John Smith'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Hearing impairment')).toBeInTheDocument();
+      });
+
+      const deleteButtons = screen.getAllByRole('button', { name: /delete/i });
+      fireEvent.click(deleteButtons[0]);
+
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(screen.getByText(/confirm delete/i)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('diagnosed indicator', () => {
+    it('should show Yes for diagnosed vulnerabilities', async () => {
+      render(<VulnerabilitiesSubTab clientGroupId={1} />, { wrapper: createWrapper() });
+
+      await waitFor(() => {
+        expect(screen.getByText('John Smith')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('John Smith'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Yes')).toBeInTheDocument();
+      });
+    });
+
+    it('should show No for undiagnosed vulnerabilities', async () => {
+      render(<VulnerabilitiesSubTab clientGroupId={1} />, { wrapper: createWrapper() });
+
+      await waitFor(() => {
+        expect(screen.getByText('John Smith')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('John Smith'));
+
+      await waitFor(() => {
+        expect(screen.getByText('No')).toBeInTheDocument();
+      });
     });
   });
 });
@@ -409,9 +749,15 @@ export default VulnerabilitiesSubTab;
 
 ## Acceptance Criteria
 
-- [ ] All 9 tests pass
+- [ ] All 30+ tests pass (9 base + 21 enhanced)
 - [ ] PersonTable displays all people with correct vulnerability counts
 - [ ] Rows expand/collapse on click
 - [ ] Expanded rows show VulnerabilitiesTable
 - [ ] Add modal opens with vulnerability form
 - [ ] Loading, error, and empty states work correctly
+- [ ] **Accessibility**: No jest-axe violations, proper ARIA attributes, aria-expanded on rows
+- [ ] **Keyboard navigation**: Enter/Space expand rows, tab navigation to buttons
+- [ ] **Edge cases**: Many owners (100+), empty records, long names/descriptions, special chars, unicode, rapid clicks
+- [ ] **Edit modal**: Opens when clicking vulnerability row
+- [ ] **Delete modal**: Shows confirmation when delete clicked
+- [ ] **Diagnosed indicator**: Shows Yes/No for diagnosed status

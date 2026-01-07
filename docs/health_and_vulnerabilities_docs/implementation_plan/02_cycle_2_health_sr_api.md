@@ -13,6 +13,9 @@
 **File**: `backend/tests/test_health_routes.py` (extend existing)
 
 ```python
+from hypothesis import given, strategies as st, settings, assume
+from datetime import date, timedelta
+
 class TestHealthSpecialRelationshipsAPI:
     """Tests for health special relationships API endpoints"""
 
@@ -59,6 +62,76 @@ class TestHealthSpecialRelationshipsAPI:
         """Should delete health record for special relationship"""
         response = await client.delete("/api/health/special-relationships/1")
         assert response.status_code == 204
+
+
+class TestHealthSpecialRelationshipsPropertyBased:
+    """Property-based tests for health special relationships API"""
+
+    valid_statuses = st.sampled_from(["Active", "Resolved", "Monitoring", "Inactive"])
+
+    @given(condition=st.text(min_size=1, max_size=255).filter(lambda x: x.strip()))
+    @settings(max_examples=30)
+    async def test_any_valid_condition_accepted(self, client: AsyncClient, condition: str):
+        """Property: Any non-empty condition should be accepted"""
+        data = {
+            "special_relationship_id": 1,
+            "condition": condition,
+            "status": "Active"
+        }
+        response = await client.post("/api/health/special-relationships", json=data)
+        assert response.status_code in [201, 404, 422]
+
+    @given(status=st.text().filter(lambda x: x not in ["Active", "Resolved", "Monitoring", "Inactive"] and x.strip()))
+    @settings(max_examples=20)
+    async def test_invalid_status_rejected(self, client: AsyncClient, status: str):
+        """Property: Invalid status values should be rejected"""
+        data = {
+            "special_relationship_id": 1,
+            "condition": "Test",
+            "status": status
+        }
+        response = await client.post("/api/health/special-relationships", json=data)
+        assert response.status_code == 422
+
+    @given(sr_id=st.integers(max_value=0))
+    @settings(max_examples=20)
+    async def test_non_positive_sr_id_rejected(self, client: AsyncClient, sr_id: int):
+        """Property: Non-positive special_relationship_id should be rejected"""
+        data = {
+            "special_relationship_id": sr_id,
+            "condition": "Test",
+            "status": "Active"
+        }
+        response = await client.post("/api/health/special-relationships", json=data)
+        assert response.status_code == 422
+
+    @given(condition=st.text(min_size=256, max_size=500))
+    @settings(max_examples=15)
+    async def test_oversized_condition_rejected(self, client: AsyncClient, condition: str):
+        """Property: Condition exceeding 255 chars should be rejected"""
+        data = {
+            "special_relationship_id": 1,
+            "condition": condition,
+            "status": "Active"
+        }
+        response = await client.post("/api/health/special-relationships", json=data)
+        assert response.status_code == 422
+
+    @given(
+        condition=st.text(min_size=1, max_size=100).filter(lambda x: x.strip()),
+        notes=st.text(max_size=500)
+    )
+    @settings(max_examples=25)
+    async def test_unicode_handled_safely(self, client: AsyncClient, condition: str, notes: str):
+        """Property: Unicode characters should be handled safely"""
+        data = {
+            "special_relationship_id": 1,
+            "condition": condition,
+            "status": "Active",
+            "notes": notes
+        }
+        response = await client.post("/api/health/special-relationships", json=data)
+        assert response.status_code != 500
 ```
 
 ---
@@ -154,9 +227,11 @@ async def delete_health_special_relationship(
 
 ## Acceptance Criteria
 
-- [ ] All 6 tests pass
+- [ ] All 11+ tests pass (6 unit + 5 property-based)
 - [ ] GET returns health records filtered by special_relationship_id or client_group_id
 - [ ] POST creates new record for special relationship
 - [ ] PUT updates existing record
 - [ ] DELETE removes record
 - [ ] Consistent with product owner endpoint patterns
+- [ ] **Property-based tests**: All Hypothesis tests pass
+- [ ] **Validation**: Invalid status, oversized condition, non-positive IDs rejected

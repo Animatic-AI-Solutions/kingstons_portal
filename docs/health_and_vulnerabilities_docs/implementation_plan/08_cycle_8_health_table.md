@@ -13,9 +13,14 @@
 **File**: `frontend/src/tests/components/phase2/health-vulnerabilities/HealthConditionsTable.test.tsx`
 
 ```typescript
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { axe, toHaveNoViolations } from 'jest-axe';
 import HealthConditionsTable from '@/components/phase2/health-vulnerabilities/HealthConditionsTable';
 import { HealthCondition } from '@/types/healthVulnerability';
+
+// Extend Jest matchers with jest-axe
+expect.extend(toHaveNoViolations);
 
 describe('HealthConditionsTable', () => {
   const mockConditions: HealthCondition[] = [
@@ -318,6 +323,357 @@ describe('HealthConditionsTable', () => {
       expect(screen.getByText(/no health conditions/i)).toBeInTheDocument();
     });
   });
+
+  // ===========================================================================
+  // Accessibility Tests (jest-axe)
+  // ===========================================================================
+
+  describe('accessibility', () => {
+    it('should have no accessibility violations', async () => {
+      const { container } = render(
+        <HealthConditionsTable
+          conditions={mockConditions}
+          personId={100}
+          personType="product_owner"
+          onRowClick={mockOnEdit}
+          onDelete={mockOnDelete}
+        />
+      );
+
+      const results = await axe(container);
+      expect(results).toHaveNoViolations();
+    });
+
+    it('should have no accessibility violations in empty state', async () => {
+      const { container } = render(
+        <HealthConditionsTable
+          conditions={[]}
+          personId={100}
+          personType="product_owner"
+          onRowClick={mockOnEdit}
+          onDelete={mockOnDelete}
+        />
+      );
+
+      const results = await axe(container);
+      expect(results).toHaveNoViolations();
+    });
+
+    it('should have proper table semantics', () => {
+      render(
+        <HealthConditionsTable
+          conditions={mockConditions}
+          personId={100}
+          personType="product_owner"
+          onRowClick={mockOnEdit}
+          onDelete={mockOnDelete}
+        />
+      );
+
+      expect(screen.getByRole('table')).toBeInTheDocument();
+      expect(screen.getAllByRole('columnheader')).toHaveLength(6);
+      expect(screen.getAllByRole('row')).toHaveLength(4); // header + 3 data rows
+    });
+
+    it('should have sr-only text for status badges', () => {
+      render(
+        <HealthConditionsTable
+          conditions={mockConditions}
+          personId={100}
+          personType="product_owner"
+          onRowClick={mockOnEdit}
+          onDelete={mockOnDelete}
+        />
+      );
+
+      // Check for sr-only "Status:" text
+      const srOnlyElements = document.querySelectorAll('.sr-only');
+      expect(srOnlyElements.length).toBeGreaterThan(0);
+    });
+
+    it('should have descriptive aria-labels on delete buttons', () => {
+      render(
+        <HealthConditionsTable
+          conditions={mockConditions}
+          personId={100}
+          personType="product_owner"
+          onRowClick={mockOnEdit}
+          onDelete={mockOnDelete}
+        />
+      );
+
+      expect(screen.getByRole('button', { name: /delete coronary artery disease/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /delete current smoker/i })).toBeInTheDocument();
+    });
+  });
+
+  // ===========================================================================
+  // Keyboard Navigation Tests
+  // ===========================================================================
+
+  describe('keyboard navigation', () => {
+    it('should allow tab navigation to delete buttons', async () => {
+      const user = userEvent.setup();
+      render(
+        <HealthConditionsTable
+          conditions={mockConditions}
+          personId={100}
+          personType="product_owner"
+          onRowClick={mockOnEdit}
+          onDelete={mockOnDelete}
+        />
+      );
+
+      const deleteButtons = screen.getAllByRole('button', { name: /delete/i });
+
+      await user.tab();
+      expect(deleteButtons[0]).toHaveFocus();
+    });
+
+    it('should allow Enter key to activate delete button', async () => {
+      const user = userEvent.setup();
+      render(
+        <HealthConditionsTable
+          conditions={mockConditions}
+          personId={100}
+          personType="product_owner"
+          onRowClick={mockOnEdit}
+          onDelete={mockOnDelete}
+        />
+      );
+
+      const deleteButtons = screen.getAllByRole('button', { name: /delete/i });
+      deleteButtons[0].focus();
+      await user.keyboard('{Enter}');
+
+      // Should open delete confirmation modal
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+    });
+  });
+
+  // ===========================================================================
+  // Edge Cases
+  // ===========================================================================
+
+  describe('edge cases', () => {
+    it('should handle condition with missing optional fields', () => {
+      const minimalCondition: HealthCondition = {
+        id: 99,
+        product_owner_id: 100,
+        condition: 'Other',
+        name: null,
+        date_of_diagnosis: null,
+        status: 'Active',
+        medication: null,
+        date_recorded: null,
+        notes: null,
+        created_at: '2024-01-01T00:00:00Z',
+      };
+
+      render(
+        <HealthConditionsTable
+          conditions={[minimalCondition]}
+          personId={100}
+          personType="product_owner"
+          onRowClick={mockOnEdit}
+          onDelete={mockOnDelete}
+        />
+      );
+
+      expect(screen.getByText('Other')).toBeInTheDocument();
+      expect(screen.getAllByText('-').length).toBeGreaterThan(0);
+    });
+
+    it('should handle special characters in condition names', () => {
+      const specialCharCondition: HealthCondition = {
+        ...mockConditions[0],
+        id: 99,
+        name: "O'Brien's <Test> & \"Condition\"",
+      };
+
+      render(
+        <HealthConditionsTable
+          conditions={[specialCharCondition]}
+          personId={100}
+          personType="product_owner"
+          onRowClick={mockOnEdit}
+          onDelete={mockOnDelete}
+        />
+      );
+
+      expect(screen.getByText("O'Brien's <Test> & \"Condition\"")).toBeInTheDocument();
+    });
+
+    it('should handle unicode characters', () => {
+      const unicodeCondition: HealthCondition = {
+        ...mockConditions[0],
+        id: 99,
+        name: '糖尿病 émoji 🏥',
+        medication: 'Médicament 日本語',
+      };
+
+      render(
+        <HealthConditionsTable
+          conditions={[unicodeCondition]}
+          personId={100}
+          personType="product_owner"
+          onRowClick={mockOnEdit}
+          onDelete={mockOnDelete}
+        />
+      );
+
+      expect(screen.getByText('糖尿病 émoji 🏥')).toBeInTheDocument();
+      expect(screen.getByText('Médicament 日本語')).toBeInTheDocument();
+    });
+
+    it('should handle invalid date gracefully', () => {
+      const invalidDateCondition: HealthCondition = {
+        ...mockConditions[0],
+        id: 99,
+        date_of_diagnosis: 'invalid-date',
+      };
+
+      render(
+        <HealthConditionsTable
+          conditions={[invalidDateCondition]}
+          personId={100}
+          personType="product_owner"
+          onRowClick={mockOnEdit}
+          onDelete={mockOnDelete}
+        />
+      );
+
+      // Should show dash for invalid date
+      expect(screen.getByText('-')).toBeInTheDocument();
+    });
+
+    it('should handle many rows efficiently', () => {
+      const manyConditions: HealthCondition[] = Array.from({ length: 50 }, (_, i) => ({
+        id: i + 1,
+        product_owner_id: 100,
+        condition: i % 5 === 0 ? 'Smoking' : `Condition ${i}`,
+        name: `Name ${i}`,
+        date_of_diagnosis: '2024-01-01',
+        status: 'Active' as const,
+        medication: `Med ${i}`,
+        date_recorded: '2024-01-01T00:00:00Z',
+        notes: null,
+        created_at: '2024-01-01T00:00:00Z',
+      }));
+
+      const startTime = performance.now();
+      render(
+        <HealthConditionsTable
+          conditions={manyConditions}
+          personId={100}
+          personType="product_owner"
+          onRowClick={mockOnEdit}
+          onDelete={mockOnDelete}
+        />
+      );
+      const endTime = performance.now();
+
+      expect(endTime - startTime).toBeLessThan(500);
+      expect(screen.getAllByRole('row')).toHaveLength(51); // header + 50 data rows
+    });
+
+    it('should handle all status types', () => {
+      const allStatusConditions: HealthCondition[] = [
+        { ...mockConditions[0], id: 1, status: 'Active' },
+        { ...mockConditions[0], id: 2, status: 'Resolved' },
+        { ...mockConditions[0], id: 3, status: 'Monitoring' },
+        { ...mockConditions[0], id: 4, status: 'Inactive' },
+      ];
+
+      render(
+        <HealthConditionsTable
+          conditions={allStatusConditions}
+          personId={100}
+          personType="product_owner"
+          onRowClick={mockOnEdit}
+          onDelete={mockOnDelete}
+        />
+      );
+
+      expect(screen.getByText('Active')).toBeInTheDocument();
+      expect(screen.getByText('Resolved')).toBeInTheDocument();
+      expect(screen.getByText('Monitoring')).toBeInTheDocument();
+      expect(screen.getByText('Inactive')).toBeInTheDocument();
+    });
+
+    it('should handle special_relationship personType', () => {
+      const srCondition: HealthCondition = {
+        ...mockConditions[0],
+        product_owner_id: undefined,
+        special_relationship_id: 200,
+      };
+
+      render(
+        <HealthConditionsTable
+          conditions={[srCondition]}
+          personId={200}
+          personType="special_relationship"
+          onRowClick={mockOnEdit}
+          onDelete={mockOnDelete}
+        />
+      );
+
+      expect(screen.getByText('Heart Disease')).toBeInTheDocument();
+    });
+  });
+
+  // ===========================================================================
+  // Delete Confirmation Modal Tests
+  // ===========================================================================
+
+  describe('delete confirmation modal', () => {
+    it('should show confirmation modal when delete clicked', async () => {
+      render(
+        <HealthConditionsTable
+          conditions={mockConditions}
+          personId={100}
+          personType="product_owner"
+          onRowClick={mockOnEdit}
+          onDelete={mockOnDelete}
+        />
+      );
+
+      const deleteButtons = screen.getAllByRole('button', { name: /delete/i });
+      fireEvent.click(deleteButtons[0]);
+
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(screen.getByText(/are you sure/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should close modal when cancel clicked', async () => {
+      render(
+        <HealthConditionsTable
+          conditions={mockConditions}
+          personId={100}
+          personType="product_owner"
+          onRowClick={mockOnEdit}
+          onDelete={mockOnDelete}
+        />
+      );
+
+      const deleteButtons = screen.getAllByRole('button', { name: /delete/i });
+      fireEvent.click(deleteButtons[0]);
+
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
+
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      });
+    });
+  });
 });
 ```
 
@@ -540,12 +896,16 @@ export default HealthConditionsTable;
 
 ## Acceptance Criteria
 
-- [ ] All 16 tests pass
+- [ ] All 35+ tests pass (unit, a11y, keyboard, edge cases, modal)
 - [ ] Columns: Condition, Name, Diagnosed, Medication/Dosage, Status, Actions
 - [ ] Diagnosed date formatted as dd/MM/yyyy
-- [ ] Smoking conditions appear at top
+- [ ] Smoking conditions appear at top (sorted)
 - [ ] Row click opens edit modal (via onRowClick callback)
 - [ ] Delete button shows confirmation dialog before deleting
-- [ ] Delete button click does NOT trigger row click
+- [ ] Delete button click does NOT trigger row click (event propagation stopped)
 - [ ] Empty state displays when no conditions
-- [ ] Status badges color-coded with sr-only text for accessibility
+- [ ] **Accessibility (jest-axe)**: No WCAG violations in any state
+- [ ] **Accessibility**: Status badges color-coded with sr-only text
+- [ ] **Accessibility**: Descriptive aria-labels on delete buttons
+- [ ] **Keyboard**: Tab navigation, Enter activation for delete
+- [ ] **Edge cases**: Missing fields, special chars, unicode, invalid dates, many rows, all statuses

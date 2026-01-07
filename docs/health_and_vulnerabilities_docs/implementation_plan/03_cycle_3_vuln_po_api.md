@@ -15,6 +15,7 @@
 ```python
 import pytest
 from httpx import AsyncClient
+from hypothesis import given, strategies as st, settings, assume
 
 class TestVulnerabilitiesProductOwnersAPI:
     """Tests for vulnerabilities product owners API endpoints"""
@@ -86,6 +87,110 @@ class TestVulnerabilitiesProductOwnersAPI:
         """Should return 404 when vulnerability doesn't exist"""
         response = await client.delete("/api/vulnerabilities/product-owners/9999")
         assert response.status_code == 404
+
+
+class TestVulnerabilitiesProductOwnersPropertyBased:
+    """Property-based tests for vulnerabilities product owners API"""
+
+    valid_statuses = st.sampled_from(["Active", "Resolved", "Monitoring", "Inactive"])
+
+    @given(description=st.text(min_size=1, max_size=500).filter(lambda x: x.strip()))
+    @settings(max_examples=30)
+    async def test_any_valid_description_accepted(self, client: AsyncClient, description: str):
+        """Property: Any non-empty description should be accepted"""
+        data = {
+            "product_owner_id": 1,
+            "description": description,
+            "diagnosed": False,
+            "status": "Active"
+        }
+        response = await client.post("/api/vulnerabilities/product-owners", json=data)
+        assert response.status_code in [201, 404, 422]
+
+    @given(diagnosed=st.booleans())
+    @settings(max_examples=10)
+    async def test_any_boolean_diagnosed_accepted(self, client: AsyncClient, diagnosed: bool):
+        """Property: Any boolean value for diagnosed should be accepted"""
+        data = {
+            "product_owner_id": 1,
+            "description": "Test vulnerability",
+            "diagnosed": diagnosed,
+            "status": "Active"
+        }
+        response = await client.post("/api/vulnerabilities/product-owners", json=data)
+        assert response.status_code in [201, 404]
+
+    @given(status=st.text().filter(lambda x: x not in ["Active", "Resolved", "Monitoring", "Inactive"] and x.strip()))
+    @settings(max_examples=20)
+    async def test_invalid_status_rejected(self, client: AsyncClient, status: str):
+        """Property: Invalid status values should be rejected"""
+        data = {
+            "product_owner_id": 1,
+            "description": "Test",
+            "diagnosed": False,
+            "status": status
+        }
+        response = await client.post("/api/vulnerabilities/product-owners", json=data)
+        assert response.status_code == 422
+
+    @given(po_id=st.integers(max_value=0))
+    @settings(max_examples=20)
+    async def test_non_positive_po_id_rejected(self, client: AsyncClient, po_id: int):
+        """Property: Non-positive product_owner_id should be rejected"""
+        data = {
+            "product_owner_id": po_id,
+            "description": "Test",
+            "diagnosed": False,
+            "status": "Active"
+        }
+        response = await client.post("/api/vulnerabilities/product-owners", json=data)
+        assert response.status_code == 422
+
+    @given(description=st.text(min_size=501, max_size=1000))
+    @settings(max_examples=15)
+    async def test_oversized_description_rejected(self, client: AsyncClient, description: str):
+        """Property: Description exceeding 500 chars should be rejected"""
+        data = {
+            "product_owner_id": 1,
+            "description": description,
+            "diagnosed": False,
+            "status": "Active"
+        }
+        response = await client.post("/api/vulnerabilities/product-owners", json=data)
+        assert response.status_code == 422
+
+    @given(
+        description=st.text(min_size=1, max_size=100).filter(lambda x: x.strip()),
+        adjustments=st.text(max_size=500)
+    )
+    @settings(max_examples=25)
+    async def test_unicode_handled_safely(self, client: AsyncClient, description: str, adjustments: str):
+        """Property: Unicode characters should be handled safely"""
+        data = {
+            "product_owner_id": 1,
+            "description": description,
+            "adjustments": adjustments,
+            "diagnosed": True,
+            "status": "Active"
+        }
+        response = await client.post("/api/vulnerabilities/product-owners", json=data)
+        assert response.status_code != 500
+
+    @given(
+        data=st.fixed_dictionaries({
+            "product_owner_id": st.integers(min_value=1, max_value=10000),
+            "description": st.text(min_size=1, max_size=500).filter(lambda x: x.strip()),
+            "diagnosed": st.booleans(),
+            "status": valid_statuses,
+            "adjustments": st.one_of(st.none(), st.text(max_size=500)),
+            "notes": st.one_of(st.none(), st.text(max_size=1000)),
+        })
+    )
+    @settings(max_examples=50)
+    async def test_valid_data_never_causes_500(self, client: AsyncClient, data: dict):
+        """Property: Valid data should never cause a 500 server error"""
+        response = await client.post("/api/vulnerabilities/product-owners", json=data)
+        assert response.status_code != 500
 ```
 
 ---
@@ -201,9 +306,12 @@ app.include_router(vulnerabilities.router, prefix="/api")
 
 ## Acceptance Criteria
 
-- [ ] All 10 tests pass
+- [ ] All 17+ tests pass (10 unit + 7 property-based)
 - [ ] GET returns vulnerabilities filtered by product_owner_id or client_group_id
 - [ ] POST creates new vulnerability with boolean diagnosed field
 - [ ] PUT updates existing record
 - [ ] DELETE removes record
 - [ ] Proper validation for diagnosed boolean
+- [ ] **Property-based tests**: All Hypothesis tests pass
+- [ ] **Validation**: Invalid status, oversized description, non-positive IDs rejected
+- [ ] **Boolean property**: Any boolean diagnosed value accepted
