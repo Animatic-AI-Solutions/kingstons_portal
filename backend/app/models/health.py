@@ -72,14 +72,15 @@ def validate_condition_field(v: str, required: bool = True) -> str:
             raise ValueError('Condition is required')
         return None
     if isinstance(v, str):
+        # Check length BEFORE sanitization to prevent bypass via null bytes
+        if len(v) > 255:
+            raise ValueError('Condition must be 255 characters or less')
         v = sanitize_string(v)
         stripped = v.strip()
         if not stripped:
             if required:
                 raise ValueError('Condition cannot be empty or whitespace')
             return None
-        if len(stripped) > 255:
-            raise ValueError('Condition must be 255 characters or less')
         return stripped
     return v
 

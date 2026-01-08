@@ -127,7 +127,7 @@ async def get_health_product_owners(
         raise
     except Exception as e:
         logger.error(f'Error fetching health records: {str(e)}')
-        raise HTTPException(status_code=500, detail=f'Database error: {str(e)}')
+        raise HTTPException(status_code=500, detail='An error occurred while fetching health records')
 
 
 @router.post('/product-owners', response_model=HealthProductOwner, status_code=status.HTTP_201_CREATED)
@@ -213,7 +213,7 @@ async def create_health_product_owner(
         raise
     except Exception as e:
         logger.error(f'Error creating health record: {str(e)}')
-        raise HTTPException(status_code=500, detail=f'Internal server error: {str(e)}')
+        raise HTTPException(status_code=500, detail='An error occurred while creating health record')
 
 
 @router.put('/product-owners/{record_id}', response_model=HealthProductOwner)
@@ -312,7 +312,7 @@ async def update_health_product_owner(
         raise
     except Exception as e:
         logger.error(f'Error updating health record {record_id}: {str(e)}')
-        raise HTTPException(status_code=500, detail=f'Internal server error: {str(e)}')
+        raise HTTPException(status_code=500, detail='An error occurred while updating health record')
 
 
 @router.delete('/product-owners/{record_id}', status_code=status.HTTP_204_NO_CONTENT)
@@ -373,7 +373,7 @@ async def delete_health_product_owner(
         raise
     except Exception as e:
         logger.error(f'Error deleting health record {record_id}: {str(e)}')
-        raise HTTPException(status_code=500, detail=f'Internal server error: {str(e)}')
+        raise HTTPException(status_code=500, detail='An error occurred while deleting health record')
 
 
 # =============================================================================
@@ -472,7 +472,7 @@ async def get_health_special_relationships(
         raise
     except Exception as e:
         logger.error(f'Error fetching health records for special relationships: {str(e)}')
-        raise HTTPException(status_code=500, detail=f'Database error: {str(e)}')
+        raise HTTPException(status_code=500, detail='An error occurred while fetching health records')
 
 
 @router.post('/special-relationships', response_model=HealthSpecialRelationship, status_code=status.HTTP_201_CREATED)
@@ -558,7 +558,7 @@ async def create_health_special_relationship(
         raise
     except Exception as e:
         logger.error(f'Error creating health record for special relationship: {str(e)}')
-        raise HTTPException(status_code=500, detail=f'Internal server error: {str(e)}')
+        raise HTTPException(status_code=500, detail='An error occurred while creating health record')
 
 
 @router.put('/special-relationships/{record_id}', response_model=HealthSpecialRelationship)
@@ -657,7 +657,7 @@ async def update_health_special_relationship(
         raise
     except Exception as e:
         logger.error(f'Error updating health record {record_id} for special relationship: {str(e)}')
-        raise HTTPException(status_code=500, detail=f'Internal server error: {str(e)}')
+        raise HTTPException(status_code=500, detail='An error occurred while updating health record')
 
 
 @router.delete('/special-relationships/{record_id}', status_code=status.HTTP_204_NO_CONTENT)
@@ -718,4 +718,4 @@ async def delete_health_special_relationship(
         raise
     except Exception as e:
         logger.error(f'Error deleting health record {record_id} for special relationship: {str(e)}')
-        raise HTTPException(status_code=500, detail=f'Internal server error: {str(e)}')
+        raise HTTPException(status_code=500, detail='An error occurred while deleting health record')
