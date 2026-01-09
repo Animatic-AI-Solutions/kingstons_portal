@@ -619,6 +619,84 @@ class TestVulnerabilitiesProductOwnersAPI:
         assert response.status_code == 422
 
     @pytest.mark.asyncio
+    async def test_create_vulnerability_with_over_max_length_adjustments_returns_422(
+        self, client: AsyncClient, test_product_owner
+    ):
+        """Should return 422 for adjustments exceeding 1000 chars."""
+        data = {
+            "product_owner_id": test_product_owner,
+            "description": "Test vulnerability",
+            "adjustments": "A" * 1001,
+            "diagnosed": False,
+            "status": "Active"
+        }
+        response = await client.post("/api/vulnerabilities/product-owners", json=data)
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_create_vulnerability_with_max_length_adjustments_succeeds(
+        self, client: AsyncClient, test_product_owner, db_connection
+    ):
+        """Should accept adjustments at exactly 1000 chars."""
+        data = {
+            "product_owner_id": test_product_owner,
+            "description": "Test vulnerability",
+            "adjustments": "A" * 1000,
+            "diagnosed": False,
+            "status": "Active"
+        }
+        response = await client.post("/api/vulnerabilities/product-owners", json=data)
+        assert response.status_code == 201
+        # Cleanup
+        if response.status_code == 201:
+            try:
+                await db_connection.execute(
+                    'DELETE FROM vulnerabilities_product_owners WHERE id = $1',
+                    response.json()["id"]
+                )
+            except Exception:
+                pass
+
+    @pytest.mark.asyncio
+    async def test_create_vulnerability_with_over_max_length_notes_returns_422(
+        self, client: AsyncClient, test_product_owner
+    ):
+        """Should return 422 for notes exceeding 2000 chars."""
+        data = {
+            "product_owner_id": test_product_owner,
+            "description": "Test vulnerability",
+            "notes": "A" * 2001,
+            "diagnosed": False,
+            "status": "Active"
+        }
+        response = await client.post("/api/vulnerabilities/product-owners", json=data)
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_create_vulnerability_with_max_length_notes_succeeds(
+        self, client: AsyncClient, test_product_owner, db_connection
+    ):
+        """Should accept notes at exactly 2000 chars."""
+        data = {
+            "product_owner_id": test_product_owner,
+            "description": "Test vulnerability",
+            "notes": "A" * 2000,
+            "diagnosed": False,
+            "status": "Active"
+        }
+        response = await client.post("/api/vulnerabilities/product-owners", json=data)
+        assert response.status_code == 201
+        # Cleanup
+        if response.status_code == 201:
+            try:
+                await db_connection.execute(
+                    'DELETE FROM vulnerabilities_product_owners WHERE id = $1',
+                    response.json()["id"]
+                )
+            except Exception:
+                pass
+
+    @pytest.mark.asyncio
     async def test_create_vulnerability_with_null_optional_fields(
         self, client: AsyncClient, test_product_owner, db_connection
     ):
@@ -1742,6 +1820,88 @@ class TestVulnerabilitiesSpecialRelationshipsAPI:
         }
         response = await client.post("/api/vulnerabilities/special-relationships", json=data)
         assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_create_vulnerability_with_over_max_length_adjustments_returns_422(
+        self, client: AsyncClient, test_special_relationship
+    ):
+        """Should return 422 for adjustments exceeding 1000 chars."""
+        sr_id = test_special_relationship["special_relationship_id"]
+        data = {
+            "special_relationship_id": sr_id,
+            "description": "Test vulnerability",
+            "adjustments": "A" * 1001,
+            "diagnosed": False,
+            "status": "Active"
+        }
+        response = await client.post("/api/vulnerabilities/special-relationships", json=data)
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_create_vulnerability_with_max_length_adjustments_succeeds(
+        self, client: AsyncClient, test_special_relationship, db_connection
+    ):
+        """Should accept adjustments at exactly 1000 chars."""
+        sr_id = test_special_relationship["special_relationship_id"]
+        data = {
+            "special_relationship_id": sr_id,
+            "description": "Test vulnerability",
+            "adjustments": "A" * 1000,
+            "diagnosed": False,
+            "status": "Active"
+        }
+        response = await client.post("/api/vulnerabilities/special-relationships", json=data)
+        assert response.status_code == 201
+        # Cleanup
+        if response.status_code == 201:
+            try:
+                await db_connection.execute(
+                    'DELETE FROM vulnerabilities_special_relationships WHERE id = $1',
+                    response.json()["id"]
+                )
+            except Exception:
+                pass
+
+    @pytest.mark.asyncio
+    async def test_create_vulnerability_with_over_max_length_notes_returns_422(
+        self, client: AsyncClient, test_special_relationship
+    ):
+        """Should return 422 for notes exceeding 2000 chars."""
+        sr_id = test_special_relationship["special_relationship_id"]
+        data = {
+            "special_relationship_id": sr_id,
+            "description": "Test vulnerability",
+            "notes": "A" * 2001,
+            "diagnosed": False,
+            "status": "Active"
+        }
+        response = await client.post("/api/vulnerabilities/special-relationships", json=data)
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_create_vulnerability_with_max_length_notes_succeeds(
+        self, client: AsyncClient, test_special_relationship, db_connection
+    ):
+        """Should accept notes at exactly 2000 chars."""
+        sr_id = test_special_relationship["special_relationship_id"]
+        data = {
+            "special_relationship_id": sr_id,
+            "description": "Test vulnerability",
+            "notes": "A" * 2000,
+            "diagnosed": False,
+            "status": "Active"
+        }
+        response = await client.post("/api/vulnerabilities/special-relationships", json=data)
+        assert response.status_code == 201
+        # Cleanup
+        if response.status_code == 201:
+            try:
+                await db_connection.execute(
+                    'DELETE FROM vulnerabilities_special_relationships WHERE id = $1',
+                    response.json()["id"]
+                )
+            except Exception:
+                pass
 
     @pytest.mark.asyncio
     async def test_create_vulnerability_with_null_optional_fields(

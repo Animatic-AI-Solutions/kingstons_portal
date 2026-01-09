@@ -44,6 +44,7 @@ logger = logging.getLogger(__name__)
 
 @router.get('/product-owners', response_model=List[VulnerabilityProductOwner])
 async def get_vulnerability_product_owners(
+    response: Response,
     product_owner_id: Optional[int] = Query(
         None,
         gt=0,
@@ -103,6 +104,12 @@ async def get_vulnerability_product_owners(
         # Build query based on filter type
         if product_owner_id is not None:
             # Direct filter by product owner
+            count_query = """
+                SELECT COUNT(*) FROM vulnerabilities_product_owners
+                WHERE product_owner_id = $1
+            """
+            total = await db.fetchval(count_query, product_owner_id)
+
             query = """
                 SELECT id, product_owner_id, description, adjustments, diagnosed,
                        status, notes, created_at, date_recorded
@@ -115,6 +122,15 @@ async def get_vulnerability_product_owners(
 
         else:
             # Filter by client group - get all product owners in the group
+            count_query = """
+                SELECT COUNT(*)
+                FROM vulnerabilities_product_owners vpo
+                INNER JOIN client_group_product_owners cgpo
+                    ON vpo.product_owner_id = cgpo.product_owner_id
+                WHERE cgpo.client_group_id = $1
+            """
+            total = await db.fetchval(count_query, client_group_id)
+
             query = """
                 SELECT vpo.id, vpo.product_owner_id, vpo.description, vpo.adjustments,
                        vpo.diagnosed, vpo.status, vpo.notes,
@@ -128,7 +144,10 @@ async def get_vulnerability_product_owners(
             """
             result = await db.fetch(query, client_group_id, skip, limit)
 
-        logger.info(f'Query returned {len(result)} vulnerability records')
+        logger.info(f'Query returned {len(result)} of {total} total vulnerability records')
+
+        # Set total count header for pagination
+        response.headers["X-Total-Count"] = str(total or 0)
 
         # Convert database records to response format
         return [dict(row) for row in result]
@@ -401,6 +420,7 @@ async def delete_vulnerability_product_owner(
 
 @router.get('/special-relationships', response_model=List[VulnerabilitySpecialRelationship])
 async def get_vulnerability_special_relationships(
+    response: Response,
     special_relationship_id: Optional[int] = Query(
         None,
         gt=0,
@@ -460,6 +480,12 @@ async def get_vulnerability_special_relationships(
         # Build query based on filter type
         if special_relationship_id is not None:
             # Direct filter by special relationship
+            count_query = """
+                SELECT COUNT(*) FROM vulnerabilities_special_relationships
+                WHERE special_relationship_id = $1
+            """
+            total = await db.fetchval(count_query, special_relationship_id)
+
             query = """
                 SELECT id, special_relationship_id, description, adjustments, diagnosed,
                        status, notes, created_at, date_recorded
@@ -475,6 +501,19 @@ async def get_vulnerability_special_relationships(
             # The path is: client_groups -> client_group_product_owners -> product_owners
             #              -> product_owner_special_relationships -> special_relationships
             #              -> vulnerabilities_special_relationships
+            count_query = """
+                SELECT COUNT(DISTINCT vsr.id)
+                FROM vulnerabilities_special_relationships vsr
+                INNER JOIN special_relationships sr
+                    ON vsr.special_relationship_id = sr.id
+                INNER JOIN product_owner_special_relationships posr
+                    ON sr.id = posr.special_relationship_id
+                INNER JOIN client_group_product_owners cgpo
+                    ON posr.product_owner_id = cgpo.product_owner_id
+                WHERE cgpo.client_group_id = $1
+            """
+            total = await db.fetchval(count_query, client_group_id)
+
             query = """
                 SELECT DISTINCT vsr.id, vsr.special_relationship_id, vsr.description, vsr.adjustments,
                        vsr.diagnosed, vsr.status, vsr.notes,
@@ -492,7 +531,10 @@ async def get_vulnerability_special_relationships(
             """
             result = await db.fetch(query, client_group_id, skip, limit)
 
-        logger.info(f'Query returned {len(result)} vulnerability records for special relationships')
+        logger.info(f'Query returned {len(result)} of {total} total vulnerability records for special relationships')
+
+        # Set total count header for pagination
+        response.headers["X-Total-Count"] = str(total or 0)
 
         # Convert database records to response format
         return [dict(row) for row in result]

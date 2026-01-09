@@ -44,6 +44,7 @@ logger = logging.getLogger(__name__)
 
 @router.get('/product-owners', response_model=List[HealthProductOwner])
 async def get_health_product_owners(
+    response: Response,
     product_owner_id: Optional[int] = Query(
         None,
         gt=0,
@@ -93,6 +94,12 @@ async def get_health_product_owners(
         # Build query based on filter type
         if product_owner_id is not None:
             # Direct filter by product owner
+            count_query = """
+                SELECT COUNT(*) FROM health_product_owners
+                WHERE product_owner_id = $1
+            """
+            total = await db.fetchval(count_query, product_owner_id)
+
             query = """
                 SELECT id, product_owner_id, condition, name, date_of_diagnosis,
                        status, medication, notes, created_at, date_recorded
@@ -105,6 +112,15 @@ async def get_health_product_owners(
 
         else:
             # Filter by client group - get all product owners in the group
+            count_query = """
+                SELECT COUNT(*)
+                FROM health_product_owners hpo
+                INNER JOIN client_group_product_owners cgpo
+                    ON hpo.product_owner_id = cgpo.product_owner_id
+                WHERE cgpo.client_group_id = $1
+            """
+            total = await db.fetchval(count_query, client_group_id)
+
             query = """
                 SELECT hpo.id, hpo.product_owner_id, hpo.condition, hpo.name,
                        hpo.date_of_diagnosis, hpo.status, hpo.medication, hpo.notes,
@@ -118,7 +134,10 @@ async def get_health_product_owners(
             """
             result = await db.fetch(query, client_group_id, skip, limit)
 
-        logger.info(f'Query returned {len(result)} health records')
+        logger.info(f'Query returned {len(result)} of {total} total health records')
+
+        # Set total count header for pagination
+        response.headers["X-Total-Count"] = str(total or 0)
 
         # Convert database records to response format
         return [dict(row) for row in result]
@@ -383,6 +402,7 @@ async def delete_health_product_owner(
 
 @router.get('/special-relationships', response_model=List[HealthSpecialRelationship])
 async def get_health_special_relationships(
+    response: Response,
     special_relationship_id: Optional[int] = Query(
         None,
         gt=0,
@@ -432,6 +452,12 @@ async def get_health_special_relationships(
         # Build query based on filter type
         if special_relationship_id is not None:
             # Direct filter by special relationship
+            count_query = """
+                SELECT COUNT(*) FROM health_special_relationships
+                WHERE special_relationship_id = $1
+            """
+            total = await db.fetchval(count_query, special_relationship_id)
+
             query = """
                 SELECT id, special_relationship_id, condition, name, date_of_diagnosis,
                        status, medication, notes, created_at, date_recorded
@@ -446,6 +472,19 @@ async def get_health_special_relationships(
             # Filter by client group - get all special relationships in the group
             # The path is: client_groups -> client_group_product_owners -> product_owners
             #              -> product_owner_special_relationships -> special_relationships
+            count_query = """
+                SELECT COUNT(DISTINCT hsr.id)
+                FROM health_special_relationships hsr
+                INNER JOIN special_relationships sr
+                    ON hsr.special_relationship_id = sr.id
+                INNER JOIN product_owner_special_relationships posr
+                    ON sr.id = posr.special_relationship_id
+                INNER JOIN client_group_product_owners cgpo
+                    ON posr.product_owner_id = cgpo.product_owner_id
+                WHERE cgpo.client_group_id = $1
+            """
+            total = await db.fetchval(count_query, client_group_id)
+
             query = """
                 SELECT DISTINCT hsr.id, hsr.special_relationship_id, hsr.condition, hsr.name,
                        hsr.date_of_diagnosis, hsr.status, hsr.medication, hsr.notes,
@@ -463,7 +502,10 @@ async def get_health_special_relationships(
             """
             result = await db.fetch(query, client_group_id, skip, limit)
 
-        logger.info(f'Query returned {len(result)} health records for special relationships')
+        logger.info(f'Query returned {len(result)} of {total} total health records for special relationships')
+
+        # Set total count header for pagination
+        response.headers["X-Total-Count"] = str(total or 0)
 
         # Convert database records to response format
         return [dict(row) for row in result]
