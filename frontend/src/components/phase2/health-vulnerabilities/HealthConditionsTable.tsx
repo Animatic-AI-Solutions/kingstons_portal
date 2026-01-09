@@ -263,11 +263,12 @@ const HealthConditionsTable: React.FC<HealthConditionsTableProps> = ({
 
   /**
    * Actions renderer for delete button
+   * Aria-label includes action context for better screen reader experience
    */
   const actionsRenderer = useCallback(
     (row: HealthConditionRow) => (
       <DeleteIconButton
-        ariaLabel={`Delete ${row.name || row.condition} condition`}
+        ariaLabel={`Delete health condition: ${row.name || row.condition}`}
         onClick={() => handleDeleteClick(row)}
       />
     ),

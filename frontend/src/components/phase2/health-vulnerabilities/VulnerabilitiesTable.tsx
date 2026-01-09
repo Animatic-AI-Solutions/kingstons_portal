@@ -279,11 +279,12 @@ const VulnerabilitiesTable: React.FC<VulnerabilitiesTableProps> = ({
 
   /**
    * Actions renderer for delete button
+   * Aria-label includes action context for better screen reader experience
    */
   const actionsRenderer = useCallback(
     (row: VulnerabilityRow) => (
       <DeleteIconButton
-        ariaLabel={`Delete ${row.description} vulnerability`}
+        ariaLabel={`Delete vulnerability: ${row.description}`}
         onClick={() => handleDeleteClick(row)}
       />
     ),

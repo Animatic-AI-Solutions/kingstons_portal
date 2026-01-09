@@ -102,11 +102,11 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
                   as="h3"
                   className="text-lg font-medium leading-6 text-gray-900"
                 >
-                  Remove {entityType}
+                  Confirm Delete
                 </Dialog.Title>
 
                 <Dialog.Description className="mt-2 text-sm text-gray-500">
-                  Are you sure you want to remove{' '}
+                  Are you sure you want to delete{' '}
                   <span className="font-semibold">{entityName}</span>?
                   This action cannot be undone.
                 </Dialog.Description>
@@ -125,9 +125,9 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
                     type="button"
                     className="inline-flex justify-center items-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                     onClick={onConfirm}
-                    aria-label="Confirm removal"
+                    aria-label="Delete"
                   >
-                    Remove
+                    Delete
                   </button>
                 </div>
               </Dialog.Panel>

@@ -50,7 +50,7 @@ import {
   ChevronDownIcon,
 } from '@heroicons/react/24/outline';
 import { EmptyState, Skeleton } from '@/components/ui';
-import type { PersonWithCounts } from '@/types/healthVulnerability';
+import type { PersonWithCounts, PersonType } from '@/types/healthVulnerability';
 
 // =============================================================================
 // Props Interfaces
@@ -91,11 +91,26 @@ export interface PersonTableProps {
   expandedPersonId?: number | null;
 
   /**
+   * Type of the currently expanded person (null if none)
+   * Used together with expandedPersonId to uniquely identify expansion state
+   * @default null
+   */
+  expandedPersonType?: PersonType | null;
+
+  /**
    * Whether the table is in a loading state
    * When true, displays skeleton rows instead of data
    * @default false
    */
   isLoading?: boolean;
+
+  /**
+   * Render function for expanded row content
+   * Called when a row is expanded to render nested content (e.g., HealthConditionsTable)
+   * @param person - The person whose row is expanded
+   * @returns JSX element to render in the expanded row
+   */
+  renderExpandedContent?: (person: PersonWithCounts) => React.ReactNode;
 }
 
 /**
@@ -115,6 +130,8 @@ interface PersonRowProps {
   onAddClick: (event: React.MouseEvent<HTMLButtonElement>, person: PersonWithCounts) => void;
   /** Handler for row click */
   onRowClick: (person: PersonWithCounts) => void;
+  /** Render function for expanded content */
+  renderExpandedContent?: (person: PersonWithCounts) => React.ReactNode;
 }
 
 // =============================================================================
@@ -168,6 +185,7 @@ const PersonTableRow = React.memo<PersonRowProps>(({
   nestedTableId,
   onAddClick,
   onRowClick,
+  renderExpandedContent,
 }) => {
   /**
    * Handles row click event
@@ -175,6 +193,19 @@ const PersonTableRow = React.memo<PersonRowProps>(({
   const handleRowClick = useCallback(() => {
     onRowClick(person);
   }, [onRowClick, person]);
+
+  /**
+   * Handles keyboard events for accessibility (Enter/Space to expand)
+   */
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLTableRowElement>) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        onRowClick(person);
+      }
+    },
+    [onRowClick, person]
+  );
 
   /**
    * Handles add button click with person context
@@ -195,6 +226,9 @@ const PersonTableRow = React.memo<PersonRowProps>(({
             : 'hover:bg-gray-50'
         }`}
         onClick={handleRowClick}
+        onKeyDown={handleKeyDown}
+        tabIndex={0}
+        role="row"
         aria-expanded={isExpanded}
         aria-controls={nestedTableId}
       >
@@ -267,14 +301,14 @@ const PersonTableRow = React.memo<PersonRowProps>(({
         </td>
       </tr>
 
-      {/* Hidden placeholder for nested table - required for aria-controls */}
+      {/* Nested table row - shown when expanded, used for aria-controls */}
       <tr
         id={nestedTableId}
         className={isExpanded ? '' : 'hidden'}
         aria-hidden={!isExpanded}
       >
         <td colSpan={5}>
-          {/* Nested table content will be rendered here when expanded */}
+          {isExpanded && renderExpandedContent && renderExpandedContent(person)}
         </td>
       </tr>
     </React.Fragment>
@@ -390,7 +424,9 @@ const PersonTable: React.FC<PersonTableProps> = React.memo(({
   onAdd,
   onRowClick,
   expandedPersonId = null,
+  expandedPersonType = null,
   isLoading = false,
+  renderExpandedContent,
 }) => {
   // Combine product owners and special relationships
   const allPeople = useMemo(
@@ -400,12 +436,14 @@ const PersonTable: React.FC<PersonTableProps> = React.memo(({
 
   /**
    * Checks if a person row is currently expanded
+   * Compares both ID and personType to prevent false matches when
+   * a ProductOwner and SpecialRelationship share the same ID
    */
   const isExpanded = useCallback(
     (person: PersonWithCounts): boolean => {
-      return expandedPersonId === person.id;
+      return expandedPersonId === person.id && expandedPersonType === person.personType;
     },
-    [expandedPersonId]
+    [expandedPersonId, expandedPersonType]
   );
 
   /**
@@ -539,6 +577,7 @@ const PersonTable: React.FC<PersonTableProps> = React.memo(({
               nestedTableId={getNestedTableId(person)}
               onAddClick={handleAddClick}
               onRowClick={handleRowClick}
+              renderExpandedContent={renderExpandedContent}
             />
           ))}
         </tbody>

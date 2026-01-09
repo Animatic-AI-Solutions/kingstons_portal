@@ -317,7 +317,8 @@ describe('PersonTable Component', () => {
     });
 
     it('should set aria-expanded to true for expanded row', () => {
-      render(<PersonTable {...defaultProps} expandedPersonId={1} />);
+      // Must pass both expandedPersonId and expandedPersonType for row to be expanded
+      render(<PersonTable {...defaultProps} expandedPersonId={1} expandedPersonType="product_owner" />);
 
       const rows = screen.getAllByRole('row');
       const johnRow = rows.find(row => within(row).queryByText('John Smith'));
@@ -328,7 +329,8 @@ describe('PersonTable Component', () => {
     });
 
     it('should have aria-controls linking to nested table ID', () => {
-      render(<PersonTable {...defaultProps} expandedPersonId={1} />);
+      // Must pass both expandedPersonId and expandedPersonType for row to be expanded
+      render(<PersonTable {...defaultProps} expandedPersonId={1} expandedPersonType="product_owner" />);
 
       const rows = screen.getAllByRole('row');
       const johnRow = rows.find(row => within(row).queryByText('John Smith'));
@@ -364,7 +366,7 @@ describe('PersonTable Component', () => {
 
     it('should have no a11y violations with expanded row', async () => {
       const { container } = render(
-        <PersonTable {...defaultProps} expandedPersonId={1} />
+        <PersonTable {...defaultProps} expandedPersonId={1} expandedPersonType="product_owner" />
       );
 
       const results = await axe(container);
@@ -482,8 +484,8 @@ describe('PersonTable Component', () => {
       const johnRow = rows.find(row => within(row).queryByText('John Smith'));
       expect(johnRow).toHaveAttribute('aria-expanded', 'false');
 
-      // Rerender with expanded row
-      rerender(<PersonTable {...defaultProps} expandedPersonId={1} />);
+      // Rerender with expanded row (must pass both id and type)
+      rerender(<PersonTable {...defaultProps} expandedPersonId={1} expandedPersonType="product_owner" />);
 
       const updatedRows = screen.getAllByRole('row');
       const updatedJohnRow = updatedRows.find(row => within(row).queryByText('John Smith'));
