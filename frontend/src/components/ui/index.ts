@@ -110,6 +110,8 @@ export { default as EnhancedMonthHeader } from './date/EnhancedMonthHeader';
 
 // Group 10: Modal Components
 export { default as ModalShell } from './modals/ModalShell';
+export { default as DeleteConfirmationModal } from './modals/DeleteConfirmationModal';
+export type { DeleteConfirmationModalProps } from './modals/DeleteConfirmationModal';
 
 // Group 11: Navigation Components
 export { default as TabNavigation } from './navigation/TabNavigation';

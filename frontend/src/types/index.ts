@@ -65,6 +65,9 @@ export {
   // Date Utilities
   parseHealthDate,
   formatHealthDate,
+
+  // Smoking Condition Utility
+  isSmokingCondition,
 } from './healthVulnerability';
 
 // =============================================================================
