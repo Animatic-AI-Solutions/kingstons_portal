@@ -35,3 +35,21 @@ export { useConcurrentUserDetection } from './useConcurrentUserDetection';
 
 // Entity Data
 export { useEntityData } from './useEntityData';
+
+// Health and Vulnerability Hooks (Cycle 6)
+export {
+  // Query key factory
+  healthVulnerabilityKeys,
+  // Query hooks
+  useHealthProductOwners,
+  useHealthSpecialRelationships,
+  useVulnerabilitiesProductOwners,
+  useVulnerabilitiesSpecialRelationships,
+  // Mutation hooks
+  useCreateHealthRecord,
+  useUpdateHealthRecord,
+  useDeleteHealthRecord,
+  useCreateVulnerability,
+  useUpdateVulnerability,
+  useDeleteVulnerability,
+} from './useHealthVulnerabilities';

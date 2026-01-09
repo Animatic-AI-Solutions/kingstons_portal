@@ -21,6 +21,7 @@ export {
   type HealthVulnerabilityStatus,
   type PersonType,
   type PersonReference,
+  type PersonWithCounts,
 
   // Health types
   type HealthProductOwner,
@@ -54,6 +55,16 @@ export {
   HEALTH_FIELD_LIMITS,
   VULNERABILITY_FIELD_LIMITS,
   STATUS_OPTIONS,
+
+  // Type Guards
+  isHealthProductOwner,
+  isHealthSpecialRelationship,
+  isVulnerabilityProductOwner,
+  isVulnerabilitySpecialRelationship,
+
+  // Date Utilities
+  parseHealthDate,
+  formatHealthDate,
 } from './healthVulnerability';
 
 // =============================================================================
