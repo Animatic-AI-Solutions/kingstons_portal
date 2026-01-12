@@ -655,8 +655,9 @@ describe('HealthConditionsTable Component', () => {
         expect(screen.getByRole('dialog')).toBeInTheDocument();
       });
 
-      // Modal should contain confirmation text
-      expect(screen.getByText(/are you sure|confirm|delete/i)).toBeInTheDocument();
+      // Modal should contain confirmation text (multiple elements may match, just verify at least one exists)
+      const confirmationTexts = screen.getAllByText(/are you sure|confirm|delete/i);
+      expect(confirmationTexts.length).toBeGreaterThan(0);
     });
 
     it('should close modal when cancel clicked', async () => {

@@ -445,8 +445,9 @@ describe('VulnerabilitiesTable Component', () => {
         expect(screen.getByRole('dialog')).toBeInTheDocument();
       });
 
-      // The modal should reference the vulnerability being deleted
-      expect(screen.getByText(/are you sure|confirm|delete/i)).toBeInTheDocument();
+      // The modal should reference the vulnerability being deleted (multiple elements may match, just verify at least one exists)
+      const confirmationTexts = screen.getAllByText(/are you sure|confirm|delete/i);
+      expect(confirmationTexts.length).toBeGreaterThan(0);
     });
 
     it('should have Cancel and Remove buttons', async () => {

@@ -18,3 +18,12 @@ export type { EditHealthVulnerabilityModalProps } from './EditHealthVulnerabilit
 
 export { default as HealthSubTab } from './HealthSubTab';
 export type { HealthSubTabProps } from './HealthSubTab';
+
+export { default as VulnerabilitiesTable } from './VulnerabilitiesTable';
+export type { VulnerabilitiesTableProps } from './VulnerabilitiesTable';
+
+export { default as VulnerabilitiesSubTab } from './VulnerabilitiesSubTab';
+export type { VulnerabilitiesSubTabProps } from './VulnerabilitiesSubTab';
+
+export { default as HealthVulnerabilityTab } from './HealthVulnerabilityTab';
+export type { HealthVulnerabilityTabProps } from './HealthVulnerabilityTab';

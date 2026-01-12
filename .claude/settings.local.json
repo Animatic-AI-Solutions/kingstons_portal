@@ -19,7 +19,9 @@
       "Bash(npx jest --clearCache)",
       "Bash(dir:*)",
       "Bash(find:*)",
-      "Bash(npm run test:coverage:*)"
+      "Bash(npm run test:coverage:*)",
+      "Bash(npm ls:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": [],
     "ask": []
