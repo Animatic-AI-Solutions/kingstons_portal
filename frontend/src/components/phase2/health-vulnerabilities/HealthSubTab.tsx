@@ -30,6 +30,7 @@ import {
   useHealthProductOwners,
   useHealthSpecialRelationships,
   useDeleteHealthRecord,
+  useUpdateHealthRecord,
 } from '@/hooks/useHealthVulnerabilities';
 import PersonTable from './PersonTable';
 import HealthConditionsTable from './HealthConditionsTable';
@@ -194,6 +195,9 @@ const HealthSubTab: React.FC<HealthSubTabProps> = ({ clientGroupId }) => {
   // Delete mutation
   const deleteMutation = useDeleteHealthRecord();
 
+  // Update mutation (for lapse/reactivate)
+  const updateMutation = useUpdateHealthRecord();
+
   // ===========================================================================
   // Computed Values
   // ===========================================================================
@@ -324,6 +328,22 @@ const HealthSubTab: React.FC<HealthSubTabProps> = ({ clientGroupId }) => {
         });
       };
 
+      const handleConditionLapse = (condition: HealthCondition) => {
+        updateMutation.mutateAsync({
+          id: condition.id,
+          personType: person.personType,
+          data: { status: 'Lapsed' },
+        });
+      };
+
+      const handleConditionReactivate = (condition: HealthCondition) => {
+        updateMutation.mutateAsync({
+          id: condition.id,
+          personType: person.personType,
+          data: { status: 'Active' },
+        });
+      };
+
       return (
         <div className="py-4 pl-8 border-l-2 border-gray-200">
           <HealthConditionsTable
@@ -332,11 +352,13 @@ const HealthSubTab: React.FC<HealthSubTabProps> = ({ clientGroupId }) => {
             personType={person.personType}
             onRowClick={handleConditionClick}
             onDelete={handleConditionDelete}
+            onLapse={handleConditionLapse}
+            onReactivate={handleConditionReactivate}
           />
         </div>
       );
     },
-    [healthProductOwners, healthSpecialRelationships, deleteMutation]
+    [healthProductOwners, healthSpecialRelationships, deleteMutation, updateMutation]
   );
 
   // ===========================================================================

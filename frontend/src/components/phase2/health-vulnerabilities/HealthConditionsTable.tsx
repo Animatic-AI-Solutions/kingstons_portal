@@ -24,7 +24,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { format, isValid, parseISO } from 'date-fns';
 import type { HealthCondition, PersonType } from '@/types/healthVulnerability';
 import { isSmokingCondition } from '@/types/healthVulnerability';
-import { DeleteIconButton, DeleteConfirmationModal } from '@/components/ui';
+import { DeleteIconButton, DeleteConfirmationModal, LapseIconButton, ReactivateIconButton } from '@/components/ui';
 import Phase2Table, { ColumnDef, Phase2TableData, SortConfig } from '@/components/phase2/tables/Phase2Table';
 
 // =============================================================================
@@ -42,6 +42,10 @@ export interface HealthConditionsTableProps {
   onRowClick?: (condition: HealthCondition) => void;
   /** Callback when delete is confirmed */
   onDelete: (condition: HealthCondition) => void;
+  /** Callback when lapse action is triggered (for active conditions) */
+  onLapse?: (condition: HealthCondition) => void;
+  /** Callback when reactivate action is triggered (for lapsed conditions) */
+  onReactivate?: (condition: HealthCondition) => void;
   /** Loading state - show skeleton when true */
   isLoading?: boolean;
   /** Error object if data fetch failed */
@@ -155,6 +159,8 @@ const HealthConditionsTable: React.FC<HealthConditionsTableProps> = ({
   personType,
   onRowClick,
   onDelete,
+  onLapse,
+  onReactivate,
   isLoading = false,
   error = null,
   onRetry,
@@ -262,17 +268,62 @@ const HealthConditionsTable: React.FC<HealthConditionsTableProps> = ({
   );
 
   /**
-   * Actions renderer for delete button
-   * Aria-label includes action context for better screen reader experience
+   * Handle lapse button click
+   */
+  const handleLapseClick = useCallback(
+    (row: HealthConditionRow) => {
+      if (onLapse) {
+        onLapse(row._original);
+      }
+    },
+    [onLapse]
+  );
+
+  /**
+   * Handle reactivate button click
+   */
+  const handleReactivateClick = useCallback(
+    (row: HealthConditionRow) => {
+      if (onReactivate) {
+        onReactivate(row._original);
+      }
+    },
+    [onReactivate]
+  );
+
+  /**
+   * Actions renderer showing appropriate buttons based on status
+   * - Active items: Lapse and Delete buttons
+   * - Lapsed items: Reactivate and Delete buttons
+   * Aria-labels include action context for better screen reader experience
    */
   const actionsRenderer = useCallback(
-    (row: HealthConditionRow) => (
-      <DeleteIconButton
-        ariaLabel={`Delete health condition: ${row.name || row.condition}`}
-        onClick={() => handleDeleteClick(row)}
-      />
-    ),
-    [handleDeleteClick]
+    (row: HealthConditionRow) => {
+      const isActive = row._original.status === 'Active';
+      const conditionName = row.name || row.condition;
+
+      return (
+        <div className="flex items-center gap-1">
+          {isActive && onLapse && (
+            <LapseIconButton
+              ariaLabel={`Lapse health condition: ${conditionName}`}
+              onClick={() => handleLapseClick(row)}
+            />
+          )}
+          {!isActive && onReactivate && (
+            <ReactivateIconButton
+              ariaLabel={`Reactivate health condition: ${conditionName}`}
+              onClick={() => handleReactivateClick(row)}
+            />
+          )}
+          <DeleteIconButton
+            ariaLabel={`Delete health condition: ${conditionName}`}
+            onClick={() => handleDeleteClick(row)}
+          />
+        </div>
+      );
+    },
+    [handleDeleteClick, handleLapseClick, handleReactivateClick, onLapse, onReactivate]
   );
 
   return (

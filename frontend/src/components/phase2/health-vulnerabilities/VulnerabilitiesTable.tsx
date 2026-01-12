@@ -23,7 +23,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { format, isValid, parseISO } from 'date-fns';
 import type { Vulnerability, PersonType } from '@/types/healthVulnerability';
-import { DeleteIconButton, DeleteConfirmationModal } from '@/components/ui';
+import { DeleteIconButton, DeleteConfirmationModal, LapseIconButton, ReactivateIconButton } from '@/components/ui';
 import Phase2Table, { ColumnDef, Phase2TableData, SortConfig } from '@/components/phase2/tables/Phase2Table';
 
 // =============================================================================
@@ -41,6 +41,10 @@ export interface VulnerabilitiesTableProps {
   onRowClick?: (vulnerability: Vulnerability) => void;
   /** Callback when delete is confirmed */
   onDelete: (vulnerability: Vulnerability) => void;
+  /** Callback when lapse action is triggered (for active vulnerabilities) */
+  onLapse?: (vulnerability: Vulnerability) => void;
+  /** Callback when reactivate action is triggered (for lapsed vulnerabilities) */
+  onReactivate?: (vulnerability: Vulnerability) => void;
   /** Loading state - show skeleton when true */
   isLoading?: boolean;
   /** Error object if data fetch failed */
@@ -197,6 +201,8 @@ const VulnerabilitiesTable: React.FC<VulnerabilitiesTableProps> = ({
   personType,
   onRowClick,
   onDelete,
+  onLapse,
+  onReactivate,
   isLoading = false,
   error = null,
   onRetry,
@@ -278,17 +284,61 @@ const VulnerabilitiesTable: React.FC<VulnerabilitiesTableProps> = ({
   );
 
   /**
-   * Actions renderer for delete button
-   * Aria-label includes action context for better screen reader experience
+   * Handle lapse button click
+   */
+  const handleLapseClick = useCallback(
+    (row: VulnerabilityRow) => {
+      if (onLapse) {
+        onLapse(row._original);
+      }
+    },
+    [onLapse]
+  );
+
+  /**
+   * Handle reactivate button click
+   */
+  const handleReactivateClick = useCallback(
+    (row: VulnerabilityRow) => {
+      if (onReactivate) {
+        onReactivate(row._original);
+      }
+    },
+    [onReactivate]
+  );
+
+  /**
+   * Actions renderer showing appropriate buttons based on status
+   * - Active items: Lapse and Delete buttons
+   * - Lapsed items: Reactivate and Delete buttons
+   * Aria-labels include action context for better screen reader experience
    */
   const actionsRenderer = useCallback(
-    (row: VulnerabilityRow) => (
-      <DeleteIconButton
-        ariaLabel={`Delete vulnerability: ${row.description}`}
-        onClick={() => handleDeleteClick(row)}
-      />
-    ),
-    [handleDeleteClick]
+    (row: VulnerabilityRow) => {
+      const isActive = row._original.status === 'Active';
+
+      return (
+        <div className="flex items-center gap-1">
+          {isActive && onLapse && (
+            <LapseIconButton
+              ariaLabel={`Lapse vulnerability: ${row.description}`}
+              onClick={() => handleLapseClick(row)}
+            />
+          )}
+          {!isActive && onReactivate && (
+            <ReactivateIconButton
+              ariaLabel={`Reactivate vulnerability: ${row.description}`}
+              onClick={() => handleReactivateClick(row)}
+            />
+          )}
+          <DeleteIconButton
+            ariaLabel={`Delete vulnerability: ${row.description}`}
+            onClick={() => handleDeleteClick(row)}
+          />
+        </div>
+      );
+    },
+    [handleDeleteClick, handleLapseClick, handleReactivateClick, onLapse, onReactivate]
   );
 
   return (

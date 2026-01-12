@@ -29,6 +29,7 @@ import {
   useVulnerabilitiesProductOwners,
   useVulnerabilitiesSpecialRelationships,
   useDeleteVulnerability,
+  useUpdateVulnerability,
 } from '@/hooks/useHealthVulnerabilities';
 import PersonTable from './PersonTable';
 import VulnerabilitiesTable from './VulnerabilitiesTable';
@@ -194,6 +195,9 @@ const VulnerabilitiesSubTab: React.FC<VulnerabilitiesSubTabProps> = ({ clientGro
   // Delete mutation
   const deleteMutation = useDeleteVulnerability();
 
+  // Update mutation (for lapse/reactivate)
+  const updateMutation = useUpdateVulnerability();
+
   // ===========================================================================
   // Computed Values
   // ===========================================================================
@@ -338,6 +342,22 @@ const VulnerabilitiesSubTab: React.FC<VulnerabilitiesSubTabProps> = ({ clientGro
         });
       };
 
+      const handleVulnerabilityLapse = (vulnerability: Vulnerability) => {
+        updateMutation.mutateAsync({
+          id: vulnerability.id,
+          personType: person.personType,
+          data: { status: 'Lapsed' },
+        });
+      };
+
+      const handleVulnerabilityReactivate = (vulnerability: Vulnerability) => {
+        updateMutation.mutateAsync({
+          id: vulnerability.id,
+          personType: person.personType,
+          data: { status: 'Active' },
+        });
+      };
+
       return (
         <div className="py-4 pl-8 border-l-2 border-gray-200">
           <VulnerabilitiesTable
@@ -346,11 +366,13 @@ const VulnerabilitiesSubTab: React.FC<VulnerabilitiesSubTabProps> = ({ clientGro
             personType={person.personType}
             onRowClick={handleRowVulnerabilityClick}
             onDelete={handleVulnerabilityDelete}
+            onLapse={handleVulnerabilityLapse}
+            onReactivate={handleVulnerabilityReactivate}
           />
         </div>
       );
     },
-    [vulnProductOwners, vulnSpecialRelationships, deleteMutation]
+    [vulnProductOwners, vulnSpecialRelationships, deleteMutation, updateMutation]
   );
 
   // ===========================================================================
