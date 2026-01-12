@@ -29,7 +29,7 @@
  * - Residential: moved_in_date, address_id, address expansion fields (7 fields)
  * - Client Profiling: three_words, share_data_with (2 fields)
  * - Employment: employment_status, occupation (2 fields)
- * - Identity & Compliance: passport_expiry_date, ni_number, aml_result, aml_date (4 fields)
+ * - Identity & Compliance: passport_expiry_date, ni_number, aml_complete, aml_date (4 fields)
  *
  * Total: 32 fields (2 system + 30 business fields)
  */
@@ -245,11 +245,10 @@ export interface ProductOwner {
   ni_number: string | null;
 
   /**
-   * Anti-Money Laundering (AML) check result
-   * Optional, records result of AML compliance check
-   * Example: "Pass" or "Refer" or "Fail"
+   * Whether Anti-Money Laundering (AML) check is complete
+   * Boolean flag for AML compliance status
    */
-  aml_result: string | null;
+  aml_complete: boolean | null;
 
   /**
    * Date of last AML check (ISO date string YYYY-MM-DD)

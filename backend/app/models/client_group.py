@@ -20,6 +20,16 @@ class ClientGroupBase(BaseModel):
     # Legacy advisor field (keep for backward compatibility)
     advisor: Optional[str] = Field(default=None, description="Legacy advisor text field")
 
+    # Compliance and declaration dates
+    ongoing_start: Optional[date] = Field(default=None, description="Ongoing service start date")
+    client_declaration: Optional[date] = Field(default=None, description="Client declaration date")
+    privacy_declaration: Optional[date] = Field(default=None, description="Privacy declaration date")
+    full_fee_agreement: Optional[date] = Field(default=None, description="Full fee agreement date")
+    last_satisfactory_discussion: Optional[date] = Field(default=None, description="Last satisfactory discussion date")
+
+    # Notes
+    notes: Optional[str] = Field(default=None, description="General notes about the client group")
+
     model_config = ConfigDict(
         from_attributes=True
     )
@@ -42,6 +52,16 @@ class ClientGroupUpdate(BaseModel):
     created_at: Optional[datetime] = None  # Allow updating client start date
     advisor_id: Optional[int] = None  # Can update advisor assignment
     advisor: Optional[str] = None  # Legacy field
+
+    # Compliance and declaration dates
+    ongoing_start: Optional[date] = None
+    client_declaration: Optional[date] = None
+    privacy_declaration: Optional[date] = None
+    full_fee_agreement: Optional[date] = None
+    last_satisfactory_discussion: Optional[date] = None
+
+    # Notes
+    notes: Optional[str] = None
 
     model_config = ConfigDict(
         from_attributes=True

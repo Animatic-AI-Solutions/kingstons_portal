@@ -90,7 +90,7 @@ async def create_product_owner(product_owner: ProductOwnerCreate, db=Depends(get
                 moved_in_date, address_id,
                 three_words, share_data_with,
                 employment_status, occupation,
-                passport_expiry_date, ni_number, aml_result, aml_date
+                passport_expiry_date, ni_number, aml_complete, aml_date
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
             RETURNING *
@@ -102,7 +102,7 @@ async def create_product_owner(product_owner: ProductOwnerCreate, db=Depends(get
             product_owner.moved_in_date, product_owner.address_id,
             product_owner.three_words, product_owner.share_data_with,
             product_owner.employment_status, product_owner.occupation,
-            product_owner.passport_expiry_date, product_owner.ni_number, product_owner.aml_result, product_owner.aml_date
+            product_owner.passport_expiry_date, product_owner.ni_number, product_owner.aml_complete, product_owner.aml_date
         )
 
         if not result:

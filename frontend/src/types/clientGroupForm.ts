@@ -47,8 +47,11 @@ export interface ProductOwnerFormData {
   // Compliance (4 fields)
   passport_expiry_date: string;  // ISO date format YYYY-MM-DD
   ni_number: string;
-  aml_result: string;
+  aml_complete: boolean;  // Whether AML check is complete
   aml_date: string;  // ISO date format YYYY-MM-DD
+
+  // Notes (1 field)
+  notes: string;
 }
 
 /**
@@ -161,8 +164,11 @@ export interface ValidationErrors {
       // Compliance
       passport_expiry_date?: string;
       ni_number?: string;
-      aml_result?: string;
+      aml_complete?: string;
       aml_date?: string;
+
+      // Notes
+      notes?: string;
 
       // Address errors
       address?: {

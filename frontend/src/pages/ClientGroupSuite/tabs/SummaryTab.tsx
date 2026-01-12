@@ -32,7 +32,7 @@ interface ProductOwner {
   occupation: string;
   passport_expiry_date: string;
   ni_number: string;
-  aml_result: string;
+  aml_complete: boolean | null;
   aml_date: string;
   created_at: string;
   // Address fields (joined from address table)
@@ -322,8 +322,8 @@ const SummaryTab: React.FC<SummaryTabProps> = ({ clientGroupId }) => {
                           <span className="font-medium text-gray-900">{person.passport_expiry_date ? formatDateShort(person.passport_expiry_date) : 'N/A'}</span>
                         </div>
                         <div>
-                          <span className="font-bold text-blue-600">AML Result: </span>
-                          <span className="font-medium text-green-700">{person.aml_result || 'N/A'}</span>
+                          <span className="font-bold text-blue-600">AML Complete: </span>
+                          <span className={`font-medium ${person.aml_complete ? 'text-green-700' : 'text-gray-500'}`}>{person.aml_complete ? 'Yes' : 'No'}</span>
                         </div>
                         <div>
                           <span className="font-bold text-blue-600">AML Date: </span>

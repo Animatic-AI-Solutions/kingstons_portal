@@ -133,12 +133,7 @@ export function validateProductOwner(
     }
   }
 
-  // Optional field: aml_result (if provided, must be in AML_RESULT_OPTIONS)
-  if (data.aml_result && data.aml_result.trim() !== '') {
-    if (!AML_RESULT_OPTIONS.includes(data.aml_result as any)) {
-      errors.aml_result = 'Please select a valid AML result';
-    }
-  }
+  // Optional field: aml_complete (boolean, no validation needed)
 
   // Optional field: aml_date (if provided, must be valid date)
   if (data.aml_date && data.aml_date.trim() !== '') {
@@ -147,12 +142,7 @@ export function validateProductOwner(
     }
   }
 
-  // Optional field: employment_status (if provided, must be in EMPLOYMENT_STATUS_OPTIONS)
-  if (data.employment_status && data.employment_status.trim() !== '') {
-    if (!EMPLOYMENT_STATUS_OPTIONS.includes(data.employment_status as any)) {
-      errors.employment_status = 'Please select a valid employment status';
-    }
-  }
+  // Optional field: employment_status (free text allowed via ComboDropdown)
 
   // Optional field: moved_in_date (if provided, must be valid date and not in future)
   if (data.moved_in_date && data.moved_in_date.trim() !== '') {

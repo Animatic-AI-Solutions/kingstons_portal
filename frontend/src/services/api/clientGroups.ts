@@ -39,11 +39,48 @@ export interface ClientGroup extends ClientGroupFormData {
  */
 export const createClientGroup = async (data: ClientGroupFormData): Promise<ClientGroup> => {
   try {
-    const response = await api.post('/client-groups', data);
+    // Convert empty strings to null for date and optional fields
+    // Backend expects null for empty optional fields, not empty strings
+    const transformedData = Object.fromEntries(
+      Object.entries(data).map(([key, value]) => [
+        key,
+        value === '' ? null : value,
+      ])
+    );
+
+    const response = await api.post('/client-groups', transformedData);
     return response.data;
   } catch (error: any) {
-    const message = error.response?.data?.detail || error.response?.data?.message || 'Failed to create client group';
-    throw new Error(`createClientGroup: ${message}`);
+    // Extract error message - handle various error formats from FastAPI/Pydantic
+    let message = 'Failed to create client group';
+
+    if (error.response?.data) {
+      const errorData = error.response.data;
+
+      // Handle Pydantic validation errors (array of errors)
+      if (Array.isArray(errorData.detail)) {
+        message = errorData.detail
+          .map((err: any) => {
+            const field = err.loc?.slice(1).join('.') || 'unknown field';
+            return `${field}: ${err.msg}`;
+          })
+          .join('; ');
+      }
+      // Handle string detail message
+      else if (typeof errorData.detail === 'string') {
+        message = errorData.detail;
+      }
+      // Handle object detail (convert to string)
+      else if (typeof errorData.detail === 'object') {
+        message = JSON.stringify(errorData.detail);
+      }
+      // Handle message field
+      else if (errorData.message) {
+        message = errorData.message;
+      }
+    }
+
+    throw new Error(message);
   }
 };
 

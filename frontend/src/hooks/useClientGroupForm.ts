@@ -80,8 +80,11 @@ const createInitialProductOwner = (): ProductOwnerFormData => ({
   // Compliance (4 fields)
   passport_expiry_date: '',
   ni_number: '',
-  aml_result: '',
+  aml_complete: false,
   aml_date: '',
+
+  // Notes (1 field)
+  notes: '',
 });
 
 /**

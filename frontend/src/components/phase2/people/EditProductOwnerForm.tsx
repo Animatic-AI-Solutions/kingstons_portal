@@ -224,7 +224,7 @@ const validationSchema = yup.object({
     .nullable()
     .matches(/^\d{4}-\d{2}-\d{2}$|^$/, ERROR_MESSAGES.DATE_INVALID)
     .test('is-valid-date', ERROR_MESSAGES.DATE_INVALID, isValidDate),
-  aml_result: yup.string().nullable().max(50, ERROR_MESSAGES.MAX_100),
+  aml_complete: yup.boolean().nullable(),
   aml_date: yup
     .string()
     .nullable()
@@ -575,41 +575,19 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
             type="date"
           />
           <Controller
-            name="aml_result"
+            name="aml_complete"
             control={control}
-            render={({ field, fieldState }) => (
-              <div className="form-field">
-                <label
-                  htmlFor="aml_result"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  AML Result
+            render={({ field }) => (
+              <div className="form-field flex items-center h-full pt-6">
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={field.value || false}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                    className="h-5 w-5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  />
+                  <span className="ml-2 text-sm font-medium text-gray-700">AML Complete</span>
                 </label>
-                <select
-                  {...field}
-                  id="aml_result"
-                  value={field.value ?? ''}
-                  className={`block w-full rounded-md shadow-sm sm:text-sm border ${
-                    fieldState.invalid
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
-                  } focus:outline-none focus:ring-2 focus:ring-offset-0 transition-colors px-3 py-2`}
-                  aria-invalid={fieldState.invalid}
-                  aria-describedby={fieldState.error ? 'aml_result-error' : undefined}
-                >
-                  <option value="">Select result</option>
-                  <option value="Pass">Pass</option>
-                  <option value="Fail">Fail</option>
-                </select>
-                {fieldState.error && (
-                  <p
-                    id="aml_result-error"
-                    className="mt-1 text-sm text-red-600"
-                    role="alert"
-                  >
-                    {fieldState.error.message}
-                  </p>
-                )}
               </div>
             )}
           />

@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   BaseInput,
   BaseDropdown,
+  ComboDropdown,
   TextArea,
   ActionButton,
   AddButton,
@@ -23,7 +24,6 @@ import {
   EMPLOYMENT_STATUS_OPTIONS,
   CLIENT_GROUP_TYPES,
   STATUS_OPTIONS,
-  AML_RESULT_OPTIONS,
 } from '../constants/clientGroup';
 
 /**
@@ -532,11 +532,13 @@ const CreateClientGroupPrototype: React.FC = () => {
             <div className="mb-6 pt-6 border-t">
               <h4 className="text-sm font-semibold text-gray-700 uppercase mb-4">Employment Information</h4>
               <div className="grid grid-cols-2 gap-4">
-                <BaseDropdown
+                <ComboDropdown
                   label="Employment Status"
                   value={editingOwner.productOwner.employment_status}
-                  onChange={(val) => updateProductOwner(editingOwnerTempId!, 'employment_status', val)}
+                  onChange={(val) => updateProductOwner(editingOwnerTempId!, 'employment_status', String(val))}
                   options={EMPLOYMENT_STATUS_OPTIONS.map((opt) => ({ value: opt, label: opt }))}
+                  placeholder="Select or enter employment status..."
+                  allowCustomValue={true}
                   error={ownerErrors?.employment_status}
                 />
 
@@ -580,13 +582,17 @@ const CreateClientGroupPrototype: React.FC = () => {
                   )}
                 </div>
 
-                <BaseDropdown
-                  label="AML Result"
-                  value={editingOwner.productOwner.aml_result}
-                  onChange={(val) => updateProductOwner(editingOwnerTempId!, 'aml_result', val)}
-                  options={AML_RESULT_OPTIONS.map((opt) => ({ value: opt, label: opt }))}
-                  error={ownerErrors?.aml_result}
-                />
+                <div className="flex items-center h-full pt-6">
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editingOwner.productOwner.aml_complete || false}
+                      onChange={(e) => updateProductOwner(editingOwnerTempId!, 'aml_complete', e.target.checked)}
+                      className="h-5 w-5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <span className="ml-2 text-sm font-medium text-gray-700">AML Complete</span>
+                  </label>
+                </div>
 
                 <div>
                   <label htmlFor="aml_date" className="block text-sm font-medium text-gray-700 mb-1">
@@ -608,6 +614,19 @@ const CreateClientGroupPrototype: React.FC = () => {
                   )}
                 </div>
               </div>
+            </div>
+
+            {/* Notes Section */}
+            <div className="mb-6 pt-6 border-t">
+              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-4">Notes</h4>
+              <TextArea
+                label="Notes"
+                value={editingOwner.productOwner.notes}
+                onChange={(e) => updateProductOwner(editingOwnerTempId!, 'notes', e.target.value)}
+                placeholder="Enter any additional notes about this product owner..."
+                rows={4}
+                error={ownerErrors?.notes}
+              />
             </div>
 
             {/* Form Actions */}

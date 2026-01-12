@@ -82,8 +82,8 @@ export const STATUS_OPTIONS = [
 ] as const;
 
 /**
- * AML (Anti-Money Laundering) result options for product owners
- * Used in the aml_result dropdown field
+ * @deprecated AML is now a boolean field (aml_complete)
+ * Kept for backwards compatibility during migration
  */
 export const AML_RESULT_OPTIONS = [
   'Pass',

@@ -154,11 +154,20 @@ export async function fetchProductOwnersForClientGroup(
 export async function createProductOwner(data: ProductOwnerCreate): Promise<ProductOwner> {
   const endpoint = '/product-owners';
 
+  // Convert empty strings to null for date and optional fields
+  // Backend expects null for empty optional fields, not empty strings
+  const transformedData = Object.fromEntries(
+    Object.entries(data).map(([key, value]) => [
+      key,
+      value === '' ? null : value,
+    ])
+  );
+
   // Log API call in development
-  devLog.apiCall('POST', endpoint, data);
+  devLog.apiCall('POST', endpoint, transformedData);
 
   try {
-    const response = await api.post(endpoint, data);
+    const response = await api.post(endpoint, transformedData);
 
     // Log successful creation in development
     devLog.info(`Created product owner with ID ${response.data.id}`, response.data);
@@ -175,8 +184,24 @@ export async function createProductOwner(data: ProductOwnerCreate): Promise<Prod
     if (statusCode === 422) {
       const detail = error.response.data?.detail;
       if (detail) {
-        // Return server's validation message which includes specific field errors
-        throw new Error(detail);
+        // Handle Pydantic validation errors (array of errors)
+        if (Array.isArray(detail)) {
+          const message = detail
+            .map((err: any) => {
+              const field = err.loc?.slice(1).join('.') || 'unknown field';
+              return `${field}: ${err.msg}`;
+            })
+            .join('; ');
+          throw new Error(message);
+        }
+        // Handle string detail message
+        if (typeof detail === 'string') {
+          throw new Error(detail);
+        }
+        // Handle object detail (convert to string)
+        if (typeof detail === 'object') {
+          throw new Error(JSON.stringify(detail));
+        }
       }
       throw new Error('Validation error occurred.');
     }
@@ -194,6 +219,15 @@ export async function createProductOwner(data: ProductOwnerCreate): Promise<Prod
 
     // Handle server errors (500) - database or backend issue
     if (statusCode === 500) {
+      const detail = error.response?.data?.detail;
+      if (detail) {
+        if (typeof detail === 'string') {
+          throw new Error(detail);
+        }
+        if (typeof detail === 'object') {
+          throw new Error(JSON.stringify(detail));
+        }
+      }
       throw new Error('Failed to create product owner. Please try again.');
     }
 

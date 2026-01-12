@@ -41,8 +41,11 @@ class ProductOwnerBase(BaseModel):
     # Identity & Compliance (4 fields)
     passport_expiry_date: Optional[Union[date, str]] = Field(default=None, description="Passport expiration date (YYYY-MM-DD)")
     ni_number: Optional[str] = Field(default=None, description="UK National Insurance number")
-    aml_result: Optional[str] = Field(default=None, description="Anti-Money Laundering check result")
+    aml_complete: Optional[bool] = Field(default=False, description="Whether AML check is complete")
     aml_date: Optional[Union[date, str]] = Field(default=None, description="Date of AML check (YYYY-MM-DD)")
+
+    # Notes (1 field)
+    notes: Optional[str] = Field(default=None, description="General notes about the product owner")
 
     model_config = ConfigDict(
         from_attributes=True
@@ -105,8 +108,11 @@ class ProductOwnerUpdate(BaseModel):
     # Identity & Compliance (4 fields)
     passport_expiry_date: Optional[Union[date, str]] = None
     ni_number: Optional[str] = None
-    aml_result: Optional[str] = None
+    aml_complete: Optional[bool] = None
     aml_date: Optional[Union[date, str]] = None
+
+    # Notes (1 field)
+    notes: Optional[str] = None
 
     model_config = ConfigDict(
         from_attributes=True
@@ -166,8 +172,11 @@ class ProductOwnerInDBBase(BaseModel):
     # Identity & Compliance (4 fields)
     passport_expiry_date: Optional[date] = None
     ni_number: Optional[str] = None
-    aml_result: Optional[str] = None
+    aml_complete: Optional[bool] = False
     aml_date: Optional[date] = None
+
+    # Notes (1 field)
+    notes: Optional[str] = None
 
     created_at: datetime
 
