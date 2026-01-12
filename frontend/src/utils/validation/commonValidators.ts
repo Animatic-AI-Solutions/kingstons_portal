@@ -35,6 +35,11 @@ export function isValidNINumber(ni: string): boolean {
   // Remove spaces and convert to uppercase for validation
   const cleanNI = ni.replace(/\s/g, '').toUpperCase();
 
+  // Check length
+  if (cleanNI.length !== 9) {
+    return false;
+  }
+
   // UK NI number format: 2 letters, 6 digits, 1 letter
   const niRegex = /^[A-Z]{2}\d{6}[A-Z]$/;
 
@@ -45,8 +50,11 @@ export function isValidNINumber(ni: string): boolean {
   // Check for excluded prefixes
   const prefix = cleanNI.substring(0, 2);
   const excludedPrefixes = ['BG', 'GB', 'NK', 'KN', 'TN', 'NT', 'ZZ'];
+  if (excludedPrefixes.includes(prefix)) {
+    return false;
+  }
 
-  return !excludedPrefixes.includes(prefix);
+  return true;
 }
 
 /**

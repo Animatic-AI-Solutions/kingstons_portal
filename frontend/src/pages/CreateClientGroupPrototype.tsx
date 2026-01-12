@@ -16,6 +16,7 @@ import {
   DeleteButton,
   ErrorDisplay,
   Button,
+  NINumberInput,
 } from '../components/ui';
 import {
   TITLE_OPTIONS,
@@ -508,9 +509,9 @@ const CreateClientGroupPrototype: React.FC = () => {
               </div>
             </div>
 
-            {/* Client Profiling Section */}
+            {/* Client Security Section */}
             <div className="mb-6 pt-6 border-t">
-              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-4">Client Profiling</h4>
+              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-4">Client Security</h4>
               <div className="grid grid-cols-2 gap-4">
                 <BaseInput
                   label="Three Words"
@@ -551,14 +552,14 @@ const CreateClientGroupPrototype: React.FC = () => {
               </div>
             </div>
 
-            {/* Identity & Compliance Section */}
+            {/* Work and ID Section */}
             <div className="mb-6 pt-6 border-t">
-              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-4">Identity & Compliance</h4>
+              <h4 className="text-sm font-semibold text-gray-700 uppercase mb-4">Work and ID</h4>
               <div className="grid grid-cols-2 gap-4">
-                <BaseInput
+                <NINumberInput
                   label="National Insurance Number"
                   value={editingOwner.productOwner.ni_number}
-                  onChange={(e) => updateProductOwner(editingOwnerTempId!, 'ni_number', e.target.value)}
+                  onChange={(value) => updateProductOwner(editingOwnerTempId!, 'ni_number', value)}
                   error={ownerErrors?.ni_number}
                 />
 

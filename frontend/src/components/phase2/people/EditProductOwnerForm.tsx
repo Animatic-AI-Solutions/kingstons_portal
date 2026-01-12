@@ -20,6 +20,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import FormTextField from '../../phase1/forms/form/FormTextField';
+import { NINumberInput, validateNINumber } from '@/components/ui';
 import { PRODUCT_OWNER_STATUS } from '@/utils/productOwnerConstants';
 import type { ProductOwner } from '@/types/productOwner';
 
@@ -217,7 +218,10 @@ const validationSchema = yup.object({
   ni_number: yup
     .string()
     .nullable()
-    .matches(/^[A-Z]{2}[0-9]{6}[A-Z]$/, ERROR_MESSAGES.NI_NUMBER_INVALID),
+    .test('valid-ni', 'Invalid NI number', (value) => {
+      if (!value || value.trim() === '') return true;
+      return validateNINumber(value) === null;
+    }),
   employment_status: yup.string().nullable().max(100, ERROR_MESSAGES.MAX_100),
   passport_expiry_date: yup
     .string()
@@ -555,12 +559,18 @@ const EditProductOwnerForm: React.FC<EditProductOwnerFormProps> = ({
             control={control}
             placeholder="Job title or profession"
           />
-          <FormTextField
+          <Controller
             name="ni_number"
-            label="NI Number"
             control={control}
-            placeholder="AB123456C"
-            pattern="[A-Z]{2}[0-9]{6}[A-Z]"
+            render={({ field, fieldState }) => (
+              <NINumberInput
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                label="NI Number"
+                error={fieldState.error?.message}
+              />
+            )}
           />
           <FormTextField
             name="employment_status"

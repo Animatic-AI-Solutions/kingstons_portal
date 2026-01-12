@@ -131,6 +131,13 @@ export { default as GlobalSearch } from './search/GlobalSearch';
 // Group 15: Additional Inputs
 export { default as PasswordInput } from './inputs/PasswordInput';
 
+export { default as NINumberInput } from './inputs/NINumberInput';
+export { validateNINumber } from './inputs/NINumberInput';
+export type { NINumberInputProps } from './inputs/NINumberInput';
+
+export { default as CurrencyInput } from './inputs/CurrencyInput';
+export type { CurrencyInputProps } from './inputs/CurrencyInput';
+
 // Group 16: Table Constants (Icons and Styles)
 export {
   ACTION_ICONS,

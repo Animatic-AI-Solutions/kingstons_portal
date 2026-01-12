@@ -6,6 +6,8 @@ import {
   TextArea,
   DateInput,
   PasswordInput,
+  NINumberInput,
+  CurrencyInput,
   InputLabel,
   InputError,
   FieldError,
@@ -30,6 +32,7 @@ import {
   MakeDeceasedIconButton,
   ReactivateIconButton,
   DeleteIconButton,
+  EditIconButton,
   Button,
   Card,
   StatCard,
@@ -50,6 +53,7 @@ import {
   TableSortHeader,
   SkeletonTable,
   ModalShell,
+  DeleteConfirmationModal,
   TabNavigation,
   StatusBadge,
   MiniYearSelector,
@@ -66,6 +70,10 @@ import DeleteIconButtonTable from '../components/ui/table-icons/DeleteIconButton
 
 const ComponentShowcase: React.FC = () => {
   const [search, setSearch] = useState('');
+
+  // State for interactive input demos
+  const [niNumber, setNiNumber] = useState('');
+  const [currencyValue, setCurrencyValue] = useState<number | null>(50000);
 
   // Mock data for dropdown examples
   const mockOptions = [
@@ -255,6 +263,45 @@ const ComponentShowcase: React.FC = () => {
 />`}
               >
                 <PasswordInput placeholder="Enter password" />
+              </ComponentCard>
+            )}
+
+            {filterComponent('NINumberInput') && (
+              <ComponentCard
+                name="NINumberInput"
+                importPath="import { NINumberInput } from '@/components/ui'"
+                code={`<NINumberInput
+  label="NI Number"
+  value={niNumber}
+  onChange={(value) => setNiNumber(value)}
+  error={errors?.ni_number}
+/>`}
+              >
+                <NINumberInput
+                  label="National Insurance Number"
+                  value={niNumber}
+                  onChange={setNiNumber}
+                  helperText="Format: AB 12 34 56 C"
+                />
+              </ComponentCard>
+            )}
+
+            {filterComponent('CurrencyInput') && (
+              <ComponentCard
+                name="CurrencyInput"
+                importPath="import { CurrencyInput } from '@/components/ui'"
+                code={`<CurrencyInput
+  label="Amount"
+  value={amount}
+  onChange={(value) => setAmount(value)}
+  error={errors?.amount}
+/>`}
+              >
+                <CurrencyInput
+                  label="Salary (try typing and pressing Enter)"
+                  value={currencyValue}
+                  onChange={setCurrencyValue}
+                />
               </ComponentCard>
             )}
 
@@ -1179,7 +1226,8 @@ const actionsRenderer = (row) => {
 import LapseIconButton from '@/components/ui/table-icons/LapseIconButton';
 import MakeDeceasedIconButton from '@/components/ui/table-icons/MakeDeceasedIconButton';
 import ReactivateIconButton from '@/components/ui/table-icons/ReactivateIconButton';
-import DeleteIconButton from '@/components/ui/table-icons/DeleteIconButton';`}
+import DeleteIconButton from '@/components/ui/table-icons/DeleteIconButton';
+import EditIconButton from '@/components/ui/table-icons/EditIconButton';`}
               >
                 <div className="space-y-3">
                   <div>
@@ -1218,6 +1266,15 @@ import DeleteIconButton from '@/components/ui/table-icons/DeleteIconButton';`}
                       />
                     </div>
                   </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-700 mb-1">EditIconButton (Blue)</p>
+                    <div className="p-2 bg-gray-50 rounded inline-flex">
+                      <EditIconButton
+                        onClick={() => console.log('Edit')}
+                        ariaLabel="Edit record"
+                      />
+                    </div>
+                  </div>
                 </div>
               </ComponentCard>
             )}
@@ -1245,6 +1302,25 @@ import DeleteIconButton from '@/components/ui/table-icons/DeleteIconButton';`}
               >
                 <div className="bg-gray-50 p-4 rounded text-sm text-gray-600 text-center">
                   ModalShell - Customizable modal dialog container
+                </div>
+              </ComponentCard>
+            )}
+
+            {filterComponent('DeleteConfirmationModal') && (
+              <ComponentCard
+                name="DeleteConfirmationModal"
+                importPath="import { DeleteConfirmationModal } from '@/components/ui'"
+                code={`<DeleteConfirmationModal
+  isOpen={isOpen}
+  onClose={handleClose}
+  onConfirm={handleDelete}
+  title="Delete Record"
+  message="Are you sure you want to delete this record?"
+  isDeleting={isDeleting}
+/>`}
+              >
+                <div className="bg-gray-50 p-4 rounded text-sm text-gray-600 text-center">
+                  DeleteConfirmationModal - Confirmation dialog for delete actions
                 </div>
               </ComponentCard>
             )}
