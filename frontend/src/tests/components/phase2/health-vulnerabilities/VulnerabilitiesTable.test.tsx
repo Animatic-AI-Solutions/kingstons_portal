@@ -52,7 +52,7 @@ const mockVulnerabilities: VulnerabilityProductOwner[] = [
     description: 'Recent bereavement',
     adjustments: null,
     diagnosed: false,
-    status: 'Lapsed',
+    status: 'Inactive',
     notes: null,
     created_at: '2024-02-20T14:00:00Z',
     date_recorded: null,
@@ -530,14 +530,14 @@ describe('VulnerabilitiesTable Component', () => {
       expect(button).toBeNull();
     });
 
-    it('should apply default sort (lapsed at bottom)', () => {
+    it('should apply default sort (inactive at bottom)', () => {
       render(<VulnerabilitiesTable {...defaultProps} />);
 
       const rows = screen.getAllByRole('row');
       const dataRows = rows.slice(1);
 
-      // Lapsed items should be at the bottom
-      // Recent bereavement (Lapsed) should be last
+      // Inactive items should be at the bottom
+      // Recent bereavement (Inactive) should be last
       const lastRow = dataRows[dataRows.length - 1];
       expect(within(lastRow).getByText('Recent bereavement')).toBeInTheDocument();
     });
@@ -555,20 +555,20 @@ describe('VulnerabilitiesTable Component', () => {
       expect(activeStatuses.length).toBeGreaterThanOrEqual(1);
     });
 
-    it('should show "Lapsed" status correctly', () => {
+    it('should show "Inactive" status correctly', () => {
       render(<VulnerabilitiesTable {...defaultProps} />);
 
-      expect(screen.getByText('Lapsed')).toBeInTheDocument();
+      expect(screen.getByText('Inactive')).toBeInTheDocument();
     });
 
-    it('should apply inactive styling to lapsed rows', () => {
+    it('should apply inactive styling to inactive rows', () => {
       render(<VulnerabilitiesTable {...defaultProps} />);
 
       const rows = screen.getAllByRole('row');
       const bereavementRow = rows.find(row => within(row).queryByText('Recent bereavement'));
 
       if (bereavementRow) {
-        // Lapsed rows should have opacity or grayscale styling
+        // Inactive rows should have opacity or grayscale styling
         expect(bereavementRow).toHaveClass('opacity-50');
       }
     });
@@ -825,7 +825,7 @@ describe('VulnerabilitiesTable Component', () => {
       expect(rows).toHaveLength(51);
     });
 
-    it('should handle all status types (Active, Lapsed)', () => {
+    it('should handle all status types (Active, Inactive)', () => {
       const allStatusVulnerabilities: VulnerabilityProductOwner[] = [
         {
           id: 20,
@@ -841,10 +841,10 @@ describe('VulnerabilitiesTable Component', () => {
         {
           id: 21,
           product_owner_id: 100,
-          description: 'Lapsed vulnerability',
+          description: 'Inactive vulnerability',
           adjustments: null,
           diagnosed: false,
-          status: 'Lapsed',
+          status: 'Inactive',
           notes: null,
           created_at: '2024-01-01T00:00:00Z',
           date_recorded: null,
@@ -856,7 +856,7 @@ describe('VulnerabilitiesTable Component', () => {
       );
 
       expect(screen.getByText('Active')).toBeInTheDocument();
-      expect(screen.getByText('Lapsed')).toBeInTheDocument();
+      expect(screen.getByText('Inactive')).toBeInTheDocument();
     });
 
     it('should handle special_relationship personType', () => {

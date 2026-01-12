@@ -20,7 +20,7 @@
  * - Uses tabType="vulnerabilities" for modals (Add/Edit)
  * - Shows "diagnosed" status (Yes/No) instead of condition types
  * - Vulnerability records have description field instead of condition and name
- * - Status values are 'Active' and 'Lapsed' (same as health)
+ * - Status values are 'Active' and 'Inactive' (same as health)
  *
  * Following TDD RED-GREEN-BLUE methodology.
  * Expected Result: All tests FAIL (RED phase) until implementation complete.

@@ -10,7 +10,7 @@
  * - Actions (auto-added by Phase2Table)
  *
  * Features:
- * - Lapsed vulnerabilities sorted to bottom of list
+ * - Inactive vulnerabilities sorted to bottom of list
  * - Row click to edit
  * - Delete with confirmation modal
  * - Empty state display
@@ -43,7 +43,7 @@ export interface VulnerabilitiesTableProps {
   onDelete: (vulnerability: Vulnerability) => void;
   /** Callback when lapse action is triggered (for active vulnerabilities) */
   onLapse?: (vulnerability: Vulnerability) => void;
-  /** Callback when reactivate action is triggered (for lapsed vulnerabilities) */
+  /** Callback when reactivate action is triggered (for inactive vulnerabilities) */
   onReactivate?: (vulnerability: Vulnerability) => void;
   /** Loading state - show skeleton when true */
   isLoading?: boolean;
@@ -249,18 +249,18 @@ const VulnerabilitiesTable: React.FC<VulnerabilitiesTableProps> = ({
   }, []);
 
   /**
-   * Custom sort function to put Lapsed vulnerabilities at bottom
+   * Custom sort function to put Inactive vulnerabilities at bottom
    * Uses extracted compareRows helper for DRY code
    */
   const customSort = useCallback(
     (data: VulnerabilityRow[], sortConfig: SortConfig | null): VulnerabilityRow[] => {
-      // Separate active from lapsed
+      // Separate active from inactive
       const activeRows: VulnerabilityRow[] = [];
-      const lapsedRows: VulnerabilityRow[] = [];
+      const inactiveRows: VulnerabilityRow[] = [];
 
       data.forEach(row => {
-        if (row.status.toLowerCase() === 'lapsed') {
-          lapsedRows.push(row);
+        if (row.status.toLowerCase() === 'inactive') {
+          inactiveRows.push(row);
         } else {
           activeRows.push(row);
         }
@@ -274,11 +274,11 @@ const VulnerabilitiesTable: React.FC<VulnerabilitiesTableProps> = ({
           compareRows(a, b, column, multiplier);
 
         activeRows.sort(sorter);
-        lapsedRows.sort(sorter);
+        inactiveRows.sort(sorter);
       }
 
-      // Active rows first, followed by lapsed rows
-      return [...activeRows, ...lapsedRows];
+      // Active rows first, followed by inactive rows
+      return [...activeRows, ...inactiveRows];
     },
     []
   );
@@ -310,7 +310,7 @@ const VulnerabilitiesTable: React.FC<VulnerabilitiesTableProps> = ({
   /**
    * Actions renderer showing appropriate buttons based on status
    * - Active items: Lapse and Delete buttons
-   * - Lapsed items: Reactivate and Delete buttons
+   * - Inactive items: Reactivate and Delete buttons
    * Aria-labels include action context for better screen reader experience
    */
   const actionsRenderer = useCallback(

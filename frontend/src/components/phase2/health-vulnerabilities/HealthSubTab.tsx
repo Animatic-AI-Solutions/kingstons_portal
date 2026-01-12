@@ -75,7 +75,7 @@ function transformProductOwnerToPerson(
     (record) => record.product_owner_id === owner.id
   );
   const activeCount = ownerRecords.filter((r) => r.status === 'Active').length;
-  const inactiveCount = ownerRecords.filter((r) => r.status === 'Lapsed').length;
+  const inactiveCount = ownerRecords.filter((r) => r.status === 'Inactive').length;
 
   return {
     id: owner.id,
@@ -102,7 +102,7 @@ function transformSpecialRelationshipToPerson(
     (record) => record.special_relationship_id === sr.id
   );
   const activeCount = srRecords.filter((r) => r.status === 'Active').length;
-  const inactiveCount = srRecords.filter((r) => r.status === 'Lapsed').length;
+  const inactiveCount = srRecords.filter((r) => r.status === 'Inactive').length;
 
   return {
     id: sr.id,
@@ -332,7 +332,7 @@ const HealthSubTab: React.FC<HealthSubTabProps> = ({ clientGroupId }) => {
         updateMutation.mutateAsync({
           id: condition.id,
           personType: person.personType,
-          data: { status: 'Lapsed' },
+          data: { status: 'Inactive' },
         });
       };
 

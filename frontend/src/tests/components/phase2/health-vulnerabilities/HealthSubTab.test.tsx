@@ -173,7 +173,7 @@ describe('HealthSubTab Component', () => {
     it('should display correct active and inactive health condition counts per person', () => {
       render(<HealthSubTab clientGroupId={1} />, { wrapper: createWrapper() });
 
-      // John Smith: 2 Active (Smoking Status, Diabetes), 1 Lapsed
+      // John Smith: 2 Active (Smoking Status, Other), 1 Lapsed
       const rows = screen.getAllByRole('row');
       const johnRow = rows.find((row) => within(row).queryByText('John Smith'));
 
@@ -325,7 +325,7 @@ describe('HealthSubTab Component', () => {
       const user = userEvent.setup();
       render(<HealthSubTab clientGroupId={1} />, { wrapper: createWrapper() });
 
-      // Expand and click on Diabetes condition
+      // Expand and click on a health condition
       await user.click(screen.getByText('John Smith'));
 
       await waitFor(() => {
@@ -947,7 +947,7 @@ describe('HealthSubTab Component', () => {
     it('should calculate active counts as Active status only', () => {
       render(<HealthSubTab clientGroupId={1} />, { wrapper: createWrapper() });
 
-      // John Smith: 2 Active (Smoking Status, Diabetes), 1 Lapsed
+      // John Smith: 2 Active (Smoking Status, Other), 1 Lapsed
       // Jane Smith: 1 Active (Heart Condition)
       // Tom Smith: 1 Active (Asthma)
 

@@ -44,7 +44,7 @@ export interface HealthConditionsTableProps {
   onDelete: (condition: HealthCondition) => void;
   /** Callback when lapse action is triggered (for active conditions) */
   onLapse?: (condition: HealthCondition) => void;
-  /** Callback when reactivate action is triggered (for lapsed conditions) */
+  /** Callback when reactivate action is triggered (for inactive conditions) */
   onReactivate?: (condition: HealthCondition) => void;
   /** Loading state - show skeleton when true */
   isLoading?: boolean;
@@ -294,7 +294,7 @@ const HealthConditionsTable: React.FC<HealthConditionsTableProps> = ({
   /**
    * Actions renderer showing appropriate buttons based on status
    * - Active items: Lapse and Delete buttons
-   * - Lapsed items: Reactivate and Delete buttons
+   * - Inactive items: Reactivate and Delete buttons
    * Aria-labels include action context for better screen reader experience
    */
   const actionsRenderer = useCallback(

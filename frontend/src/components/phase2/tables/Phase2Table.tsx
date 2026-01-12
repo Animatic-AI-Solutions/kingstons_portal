@@ -102,11 +102,11 @@ export interface Phase2TableProps<T extends Phase2TableData> {
 }
 
 /**
- * Check if a row is inactive (lapsed or deceased status)
+ * Check if a row is inactive (inactive or deceased status)
  */
 const isInactive = (status: string): boolean => {
   const normalizedStatus = status.toLowerCase();
-  return normalizedStatus === 'lapsed' || normalizedStatus === 'deceased';
+  return normalizedStatus === 'inactive' || normalizedStatus === 'deceased';
 };
 
 /**

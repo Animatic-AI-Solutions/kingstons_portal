@@ -64,10 +64,10 @@ const mockConditions: HealthCondition[] = [
   {
     id: 3,
     product_owner_id: 100,
-    condition: 'Diabetes',
-    name: 'Type 2 Diabetes',
+    condition: 'Other',
+    name: 'Heart Condition',
     date_of_diagnosis: '2019-03-20',
-    status: 'Lapsed',
+    status: 'Inactive',
     medication: 'Metformin 500mg twice daily',
     notes: null,
     created_at: '2024-01-01T00:00:00Z',
@@ -121,14 +121,14 @@ describe('HealthConditionsTable Component', () => {
 
       expect(screen.getByText('Heart Disease')).toBeInTheDocument();
       expect(screen.getByText('Smoking Status')).toBeInTheDocument();
-      expect(screen.getByText('Diabetes')).toBeInTheDocument();
+      expect(screen.getByText('Other')).toBeInTheDocument();
     });
 
     it('should display condition type', () => {
       render(<HealthConditionsTable {...defaultProps} />);
 
       expect(screen.getByText('Heart Disease')).toBeInTheDocument();
-      expect(screen.getByText('Diabetes')).toBeInTheDocument();
+      expect(screen.getByText('Other')).toBeInTheDocument();
     });
 
     it('should format diagnosis date as dd/MM/yyyy', () => {
@@ -170,7 +170,7 @@ describe('HealthConditionsTable Component', () => {
       expect(activeStatuses.length).toBeGreaterThanOrEqual(1);
 
       // Lapsed status should be present
-      expect(screen.getByText('Lapsed')).toBeInTheDocument();
+      expect(screen.getByText('Inactive')).toBeInTheDocument();
     });
   });
 
@@ -198,12 +198,12 @@ describe('HealthConditionsTable Component', () => {
       const dataRows = rows.slice(1);
 
       // After smoking (first), the remaining conditions should be in their original order
-      // Heart Disease was first, Diabetes was third
+      // Heart Disease was first, Other was third
       const secondRowText = dataRows[1].textContent;
       const thirdRowText = dataRows[2].textContent;
 
       expect(secondRowText).toContain('Heart Disease');
-      expect(thirdRowText).toContain('Diabetes');
+      expect(thirdRowText).toContain('Other');
     });
   });
 
@@ -567,7 +567,7 @@ describe('HealthConditionsTable Component', () => {
       expect(rows).toHaveLength(51);
     });
 
-    it('should handle all status types (Active, Lapsed)', () => {
+    it('should handle all status types (Active, Inactive)', () => {
       const allStatusConditions: HealthCondition[] = [
         {
           id: 20,
@@ -584,10 +584,10 @@ describe('HealthConditionsTable Component', () => {
         {
           id: 21,
           product_owner_id: 100,
-          condition: 'Lapsed Condition',
+          condition: 'Inactive Condition',
           name: null,
           date_of_diagnosis: null,
-          status: 'Lapsed',
+          status: 'Inactive',
           medication: null,
           notes: null,
           created_at: '2024-01-01T00:00:00Z',
@@ -603,7 +603,7 @@ describe('HealthConditionsTable Component', () => {
       );
 
       expect(screen.getByText('Active')).toBeInTheDocument();
-      expect(screen.getByText('Lapsed')).toBeInTheDocument();
+      expect(screen.getByText('Inactive')).toBeInTheDocument();
     });
 
     it('should handle special_relationship personType', () => {
