@@ -8,6 +8,7 @@ import {
 } from '@heroicons/react/24/outline';
 import PeopleSubTab from './components/PeopleSubTab';
 import SpecialRelationshipsWrapper from './components/SpecialRelationshipsWrapper';
+import { HealthVulnerabilityTab } from '@/components/phase2/health-vulnerabilities';
 
 interface BasicDetailsTabProps {
   clientGroupId: string;
@@ -49,12 +50,7 @@ const BasicDetailsTab: React.FC<BasicDetailsTabProps> = ({ clientGroupId }) => {
       case 'health':
         return (
           <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">Health & Vulnerability content coming soon</p>
-              <p className="text-gray-400 text-sm mt-2">
-                Health conditions and vulnerability tracking
-              </p>
-            </div>
+            <HealthVulnerabilityTab clientGroupId={parseInt(clientGroupId, 10)} />
           </div>
         );
       case 'documents':

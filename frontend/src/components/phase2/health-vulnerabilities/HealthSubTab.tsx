@@ -296,33 +296,10 @@ const HealthSubTab: React.FC<HealthSubTabProps> = ({ clientGroupId }) => {
     }
   }, [refetchPO, refetchSR, primaryProductOwnerId]);
 
-  // ===========================================================================
-  // Render
-  // ===========================================================================
-
-  // Loading state
-  if (isLoading) {
-    return <SkeletonTable rowCount={5} />;
-  }
-
-  // Error state
-  if (isError) {
-    return (
-      <ErrorDisplay
-        message={`Error: ${error?.message || 'An error occurred loading health data'}`}
-        onRetry={handleRetry}
-      />
-    );
-  }
-
-  // Empty state
-  if (!isLoading && !isError && noPeople) {
-    return <EmptyState message="No people found" />;
-  }
-
   /**
    * Render function for expanded row content
    * Returns HealthConditionsTable for the given person
+   * NOTE: Must be defined before early returns to satisfy Rules of Hooks
    */
   const renderExpandedContent = useCallback(
     (person: PersonWithCounts) => {
@@ -361,6 +338,30 @@ const HealthSubTab: React.FC<HealthSubTabProps> = ({ clientGroupId }) => {
     },
     [healthProductOwners, healthSpecialRelationships, deleteMutation]
   );
+
+  // ===========================================================================
+  // Render
+  // ===========================================================================
+
+  // Loading state
+  if (isLoading) {
+    return <SkeletonTable rowCount={5} />;
+  }
+
+  // Error state
+  if (isError) {
+    return (
+      <ErrorDisplay
+        message={`Error: ${error?.message || 'An error occurred loading health data'}`}
+        onRetry={handleRetry}
+      />
+    );
+  }
+
+  // Empty state
+  if (!isLoading && !isError && noPeople) {
+    return <EmptyState message="No people found" />;
+  }
 
   // Data loaded state
   return (
