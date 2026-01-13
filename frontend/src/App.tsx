@@ -64,6 +64,7 @@ import ComponentShowcase from './pages/ComponentShowcase';
 // Prototype Pages
 import Prototypes from './pages/Prototypes';
 import MeetingsPagePrototype from './pages/MeetingsPagePrototype';
+import ActionsPagePrototype from './pages/ActionsPagePrototype';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -208,6 +209,7 @@ const AppContent: React.FC = () => {
           {/* Prototype Pages */}
           <Route path="/prototypes" element={<AppLayout><Prototypes /></AppLayout>} />
           <Route path="/meetings-prototype" element={<AppLayout><MeetingsPagePrototype /></AppLayout>} />
+          <Route path="/actions-prototype" element={<AppLayout><ActionsPagePrototype /></AppLayout>} />
         </Route>
         
         {/* Default route - redirect to login */}

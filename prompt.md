@@ -1,17 +1,14 @@
-:3000/api/product-owners:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
-productOwnerConstants.ts:190 [Error] createProductOwner: AxiosError
-error @ productOwnerConstants.ts:190Understand this error
-useCreateClientGroupFlow.ts:166 Client group creation failed, attempting rollback: Error: Failed to create product owner. Please try again.
-    at createProductOwner (productOwners.ts:222:13)
-    at async Promise.all (index 0)
-    at async Object.mutationFn (useCreateClientGroupFlow.ts:142:24)
-mutationFn @ useCreateClientGroupFlow.ts:166Understand this error
-useCreateClientGroupFlow.ts:183 Client group creation failed: Error: Failed to create product owner. Please try again.
-    at createProductOwner (productOwners.ts:222:13)
-    at async Promise.all (index 0)
-    at async Object.mutationFn (useCreateClientGroupFlow.ts:142:24)
-onError @ useCreateClientGroupFlow.ts:183Understand this error
-CreateClientGroupPrototype.tsx:167 ❌ Failed to create client group: Error: Failed to create product owner. Please try again.
-    at createProductOwner (productOwners.ts:222:13)
-    at async Promise.all (index 0)
-    at async Object.mutationFn (useCreateClientGroupFlow.ts:142:24)
+use the planner-agent to create an implementation plan for thsi page using TDD. Include red, green, and blue phases where the tester agent is used for the red phase, the coding agent is used for green phase, and the coder agent is used for the blue phase. Have explicit calls to these agents for each phase. Split the plan into multiple files.
+
+a table of legal documents using the phase 2 table
+
+the table has columns: type, people (product owners), date, status, actions (using the lapse/reactive/delete icons where the delete an dreactivate icons only appear iof it is lapsed)
+
+when you clik on a row it opens the documenet details modal allowing the iuser to edit its fields (type, status, people, date, notes) where people uses the mmultiselect dropdown component for product owners and date uses the date input component
+
+lapsed docuemnets go to the bottom of the table and are greyed out
+
+have a create button like in special relationships which uses the combo component for type (will, LPOA P&F, LOPA H&W, EPA, General Power of Attorney, Advanc Directive)
+
+Use reusable componenst from the UI folder where appropriate
+

@@ -4,6 +4,7 @@ import {
   CalendarDaysIcon,
   UserGroupIcon,
   BeakerIcon,
+  ClipboardDocumentListIcon,
 } from '@heroicons/react/24/outline';
 
 interface PrototypeCard {
@@ -20,6 +21,13 @@ const prototypes: PrototypeCard[] = [
     description: 'Meeting schedule table with colour-coded statuses, year navigation, and meeting management modal.',
     path: '/meetings-prototype',
     icon: <CalendarDaysIcon className="h-8 w-8" />,
+    status: 'active',
+  },
+  {
+    title: 'Actions Overview',
+    description: 'Client actions dashboard with horizontal scrolling cards, filters by advisor/type/due date, and quick status updates.',
+    path: '/actions-prototype',
+    icon: <ClipboardDocumentListIcon className="h-8 w-8" />,
     status: 'active',
   },
   {
