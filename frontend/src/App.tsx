@@ -61,6 +61,10 @@ import Revenue from './pages/Revenue';
 // Component Testing Page - UI/UX design finalization
 import ComponentShowcase from './pages/ComponentShowcase';
 
+// Prototype Pages
+import Prototypes from './pages/Prototypes';
+import MeetingsPagePrototype from './pages/MeetingsPagePrototype';
+
 // Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -200,6 +204,10 @@ const AppContent: React.FC = () => {
           
           {/* Component Testing - UI/UX design finalization */}
           <Route path="/components" element={<AppLayout><ComponentShowcase /></AppLayout>} />
+
+          {/* Prototype Pages */}
+          <Route path="/prototypes" element={<AppLayout><Prototypes /></AppLayout>} />
+          <Route path="/meetings-prototype" element={<AppLayout><MeetingsPagePrototype /></AppLayout>} />
         </Route>
         
         {/* Default route - redirect to login */}
