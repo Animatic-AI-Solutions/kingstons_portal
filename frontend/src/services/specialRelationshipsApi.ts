@@ -20,12 +20,16 @@
  */
 
 import api from '@/services/api';
+import { ApiError, handleApiError } from '@/utils/apiError';
 import {
   SpecialRelationship,
   SpecialRelationshipFormData,
   RelationshipStatus,
   RelationshipCategory,
 } from '@/types/specialRelationship';
+
+// Re-export ApiError for consumers who import from this module
+export { ApiError };
 
 // =============================================================================
 // Type Definitions
@@ -58,39 +62,6 @@ export interface UpdateSpecialRelationshipData extends Partial<SpecialRelationsh
   /** Update product owner associations (optional) */
   product_owner_ids?: number[];
 }
-
-// =============================================================================
-// Error Handling Utility
-// =============================================================================
-
-/**
- * Custom error class for API-specific errors with enhanced context
- */
-class ApiError extends Error {
-  constructor(
-    message: string,
-    public statusCode?: number,
-    public responseBody?: any
-  ) {
-    super(message);
-    this.name = 'ApiError';
-  }
-}
-
-/**
- * Centralized error handler for API responses
- * Extracts error message from response body and includes response context
- *
- * @param error - Error object from axios
- * @throws {ApiError} Enhanced error with status code and response body
- */
-const handleApiError = (error: any): never => {
-  const statusCode = error.response?.status;
-  const responseBody = error.response?.data;
-  const message = responseBody?.message || error.message || 'An unexpected error occurred';
-
-  throw new ApiError(message, statusCode, responseBody);
-};
 
 // =============================================================================
 // API Service Functions
@@ -134,7 +105,7 @@ export const fetchSpecialRelationships = async (
 
     const response = await api.get('/special_relationships', { params });
     return response.data;
-  } catch (error: any) {
+  } catch (error) {
     return handleApiError(error);
   }
 };
@@ -176,7 +147,7 @@ export const createSpecialRelationship = async (
   try {
     const response = await api.post('/special_relationships', data);
     return response.data;
-  } catch (error: any) {
+  } catch (error) {
     return handleApiError(error);
   }
 };
@@ -209,7 +180,7 @@ export const updateSpecialRelationship = async (
   try {
     const response = await api.put(`/special_relationships/${id}`, data);
     return response.data;
-  } catch (error: any) {
+  } catch (error) {
     return handleApiError(error);
   }
 };
@@ -235,7 +206,7 @@ export const updateSpecialRelationshipStatus = async (
       status,
     });
     return response.data;
-  } catch (error: any) {
+  } catch (error) {
     return handleApiError(error);
   }
 };
@@ -254,7 +225,7 @@ export const updateSpecialRelationshipStatus = async (
 export const deleteSpecialRelationship = async (id: number): Promise<void> => {
   try {
     await api.delete(`/special_relationships/${id}`);
-  } catch (error: any) {
+  } catch (error) {
     return handleApiError(error);
   }
 };

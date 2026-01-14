@@ -6,10 +6,10 @@ import pytest_asyncio
 import asyncio
 from typing import AsyncGenerator
 from unittest.mock import Mock, MagicMock
-from fastapi.testclient import TestClient
 from datetime import date, datetime
 import sys
 import os
+import httpx
 
 # Add the backend directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -27,6 +27,7 @@ def event_loop():
 @pytest.fixture
 def client():
     """Create a test client for the FastAPI app."""
+    from starlette.testclient import TestClient
     with TestClient(app) as test_client:
         yield test_client
 

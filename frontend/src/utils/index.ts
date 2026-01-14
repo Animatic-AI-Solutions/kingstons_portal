@@ -1,3 +1,4 @@
 // Export all utility functions
 export * from './formatMoney';
-export * from './formatters'; 
+export * from './formatters';
+export * from './apiError'; 

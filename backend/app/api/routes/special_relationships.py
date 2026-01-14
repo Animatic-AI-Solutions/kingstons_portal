@@ -13,6 +13,24 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
+# =============================================================================
+# Error Message Sanitization
+# =============================================================================
+
+def sanitize_error_message(error: Exception) -> str:
+    """
+    Sanitize error messages to prevent leaking internal details.
+
+    In production, this returns generic messages.
+    Internal details are logged but not exposed to clients.
+    """
+    # Log the actual error for debugging
+    logger.error(f"Internal error details: {str(error)}")
+
+    # Return generic message - never expose raw database/system errors
+    return "An unexpected error occurred. Please try again or contact support."
+
+
 @router.get('/special_relationships', response_model=List[SpecialRelationship])
 async def get_special_relationships(
     product_owner_id: Optional[int] = Query(None, description="Filter by product owner ID"),
@@ -89,7 +107,7 @@ async def get_special_relationships(
 
     except Exception as e:
         logger.error(f'Error fetching special relationships: {str(e)}')
-        raise HTTPException(status_code=500, detail=f'Database error: {str(e)}')
+        raise HTTPException(status_code=500, detail=sanitize_error_message(e))
 
 
 @router.post('/special_relationships', response_model=SpecialRelationship, status_code=status.HTTP_201_CREATED)
@@ -173,7 +191,7 @@ async def create_special_relationship(
         raise
     except Exception as e:
         logger.error(f'Error creating special relationship: {str(e)}')
-        raise HTTPException(status_code=500, detail=f'Internal server error: {str(e)}')
+        raise HTTPException(status_code=500, detail=sanitize_error_message(e))
 
 
 @router.put('/special_relationships/{relationship_id}', response_model=SpecialRelationship)
@@ -253,7 +271,7 @@ async def update_special_relationship(
         raise
     except Exception as e:
         logger.error(f'Error updating special relationship {relationship_id}: {str(e)}')
-        raise HTTPException(status_code=500, detail=f'Internal server error: {str(e)}')
+        raise HTTPException(status_code=500, detail=sanitize_error_message(e))
 
 
 @router.patch('/special_relationships/{relationship_id}/status', response_model=SpecialRelationship)
@@ -318,7 +336,7 @@ async def update_relationship_status(
         raise
     except Exception as e:
         logger.error(f'Error updating relationship status {relationship_id}: {str(e)}')
-        raise HTTPException(status_code=500, detail=f'Internal server error: {str(e)}')
+        raise HTTPException(status_code=500, detail=sanitize_error_message(e))
 
 
 @router.delete('/special_relationships/{relationship_id}', status_code=status.HTTP_204_NO_CONTENT)
@@ -373,4 +391,4 @@ async def delete_special_relationship(
         raise
     except Exception as e:
         logger.error(f'Error deleting special relationship {relationship_id}: {str(e)}')
-        raise HTTPException(status_code=500, detail=f'Internal server error: {str(e)}')
+        raise HTTPException(status_code=500, detail=sanitize_error_message(e))

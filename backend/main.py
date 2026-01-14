@@ -56,7 +56,7 @@ from app.api.routes import (
     product_owners, client_group_product_owners,
     provider_switch_log, search, portfolio_valuations,
     historical_irr, presence, addresses, special_relationships,
-    health, vulnerabilities
+    health, vulnerabilities, legal_documents
 )
 
 # Import database functions for connection management
@@ -230,6 +230,7 @@ app.include_router(addresses.router, prefix="/api", tags=["Client Groups"])
 app.include_router(special_relationships.router, prefix="/api", tags=["Client Groups"])
 app.include_router(health.router, prefix="/api", tags=["Health"])
 app.include_router(vulnerabilities.router, prefix="/api", tags=["Vulnerabilities"])
+app.include_router(legal_documents.router, prefix="/api", tags=["Legal Documents"])
 app.include_router(provider_switch_log.router, prefix="/api", tags=["Providers"])
 app.include_router(search.router, prefix="/api", tags=["Search"])
 app.include_router(portfolio_valuations.router, prefix="/api", tags=["Holdings"])
