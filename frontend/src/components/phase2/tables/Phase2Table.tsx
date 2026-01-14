@@ -99,6 +99,8 @@ export interface Phase2TableProps<T extends Phase2TableData> {
   onAnnounce?: (message: string) => void;
   /** Optional custom sort function */
   onSort?: (data: T[], sortConfig: SortConfig | null) => T[];
+  /** Optional custom function to determine if a row is inactive (greyed out) */
+  isRowInactive?: (row: T) => boolean;
 }
 
 /**
@@ -179,6 +181,7 @@ interface TableRowProps<T extends Phase2TableData> {
   onRowClick?: (row: T) => void;
   actionsRenderer?: ActionsRenderer<T>;
   onRefetch?: () => void;
+  isRowInactive?: (row: T) => boolean;
 }
 
 const TableRow = memo(<T extends Phase2TableData>({
@@ -187,13 +190,24 @@ const TableRow = memo(<T extends Phase2TableData>({
   onRowClick,
   actionsRenderer,
   onRefetch,
+  isRowInactive: customIsRowInactive,
 }: TableRowProps<T>) => {
-  const inactive = isInactive(row.status);
+  // Use custom inactive check if provided, otherwise use default status-based check
+  const inactive = customIsRowInactive ? customIsRowInactive(row) : isInactive(row.status);
+
+  // Handle keyboard navigation - Enter key activates row click
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && onRowClick) {
+      onRowClick(row);
+    }
+  };
 
   return (
     <tr
       onClick={() => onRowClick?.(row)}
-      className={`hover:bg-gray-50 ${onRowClick ? 'cursor-pointer' : ''} transition-colors ${
+      onKeyDown={onRowClick ? handleKeyDown : undefined}
+      tabIndex={onRowClick ? 0 : undefined}
+      className={`hover:bg-gray-50 ${onRowClick ? 'cursor-pointer' : ''} transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 focus-visible:outline-offset-[-2px] ${
         inactive ? 'opacity-50 grayscale-[30%]' : ''
       }`}
       data-testid={`table-row-${row.id}`}
@@ -314,6 +328,7 @@ function Phase2Table<T extends Phase2TableData>({
   emptySubMessage = 'Add your first item to get started',
   onAnnounce,
   onSort: customSort,
+  isRowInactive,
 }: Phase2TableProps<T>) {
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
 
@@ -507,6 +522,7 @@ function Phase2Table<T extends Phase2TableData>({
                   onRowClick={onRowClick}
                   actionsRenderer={actionsRenderer}
                   onRefetch={onRefetch}
+                  isRowInactive={isRowInactive}
                 />
               ))}
             </tbody>

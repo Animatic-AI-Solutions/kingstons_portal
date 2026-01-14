@@ -84,3 +84,5 @@
 - use MSW for test instea dof mocking at the hook level, this allows us to test calls without them knowing they are being mocked so thhat we test if they actually work in practice
 
 - we need more property tests in our test suits
+
+- need to refactor phase 2 table to use lapsed not inactive
