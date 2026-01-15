@@ -24,6 +24,8 @@ import {
   ModalShell,
   BaseDropdown,
   TextArea,
+  ComboDropdown,
+  MultiSelectDropdown,
 } from '@/components/ui';
 import { useUpdateLegalDocument } from '@/hooks/useLegalDocuments';
 import type {
@@ -35,11 +37,8 @@ import { LEGAL_DOCUMENT_TYPES, LEGAL_DOCUMENT_STATUSES } from '@/types/legalDocu
 import {
   NOTES_MAX_LENGTH,
   NOTES_WARNING_THRESHOLD,
-  TYPE_MAX_LENGTH,
   sanitizeErrorMessage,
-  PeopleMultiSelect,
 } from './shared';
-import type { PeopleMultiSelectOption } from './shared';
 
 // =============================================================================
 // Types
@@ -260,10 +259,12 @@ const LegalDocumentModal: React.FC<LegalDocumentModalProps> = ({
     setForm((prev) => ({ ...prev, status: value as LegalDocumentStatus }));
   }, []);
 
-  const handlePeopleChange = useCallback((values: number[]) => {
-    setForm((prev) => ({ ...prev, product_owner_ids: values }));
+  const handlePeopleChange = useCallback((values: (string | number)[]) => {
+    // Filter to only numbers (product owner IDs)
+    const numericValues = values.filter((v): v is number => typeof v === 'number');
+    setForm((prev) => ({ ...prev, product_owner_ids: numericValues }));
     // Clear error when user selects someone
-    if (values.length > 0) {
+    if (numericValues.length > 0) {
       setErrors((prev) => {
         const { product_owner_ids, ...rest } = prev;
         return rest;
@@ -342,20 +343,13 @@ const LegalDocumentModal: React.FC<LegalDocumentModalProps> = ({
     []
   );
 
-  const peopleOptions: PeopleMultiSelectOption[] = useMemo(
+  const peopleOptions = useMemo(
     () =>
       productOwners.map((po) => ({
         value: po.id,
         label: `${po.firstname} ${po.surname}`,
       })),
     [productOwners]
-  );
-
-  // Get selected people for display
-  const selectedPeople = useMemo(
-    () =>
-      productOwners.filter((po) => form.product_owner_ids.includes(po.id)),
-    [productOwners, form.product_owner_ids]
   );
 
   // Character count styling
@@ -396,30 +390,17 @@ const LegalDocumentModal: React.FC<LegalDocumentModalProps> = ({
           </div>
         )}
 
-        {/* Type Field - use text input for test compatibility */}
-        <div>
-          <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
-            Type
-          </label>
-          <input
-            type="text"
-            id="type"
-            value={form.type}
-            onChange={(e) => handleTypeChange(e.target.value)}
-            disabled={isPending}
-            list="type-options"
-            autoFocus
-            tabIndex={0}
-            maxLength={TYPE_MAX_LENGTH}
-            className="block w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-offset-2 focus:border-primary-700 focus:ring-primary-700/10 disabled:bg-gray-50 disabled:cursor-not-allowed"
-            placeholder="Select or enter a type..."
-          />
-          <datalist id="type-options">
-            {LEGAL_DOCUMENT_TYPES.map((type) => (
-              <option key={type} value={type} />
-            ))}
-          </datalist>
-        </div>
+        {/* Type Field - ComboDropdown allows custom values */}
+        <ComboDropdown
+          id="type"
+          label="Type"
+          options={typeOptions}
+          value={form.type}
+          onChange={handleTypeChange}
+          disabled={isPending}
+          placeholder="Select or type a document type..."
+          allowCustomValue
+        />
 
         {/* Status Field */}
         <BaseDropdown
@@ -432,7 +413,7 @@ const LegalDocumentModal: React.FC<LegalDocumentModalProps> = ({
           searchable={false}
         />
 
-        {/* Date Field - native date input for test compatibility */}
+        {/* Date Field */}
         <div>
           <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
             Date
@@ -443,57 +424,23 @@ const LegalDocumentModal: React.FC<LegalDocumentModalProps> = ({
             value={form.document_date}
             onChange={(e) => setForm((prev) => ({ ...prev, document_date: e.target.value }))}
             disabled={isPending}
-            tabIndex={0}
             className="block w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-offset-2 focus:border-primary-700 focus:ring-primary-700/10 disabled:bg-gray-50 disabled:cursor-not-allowed"
           />
         </div>
 
-        {/* People Field - custom rendering for test compatibility */}
-        <div>
-          <label htmlFor="people" className="block text-sm font-medium text-gray-700 mb-1">
-            People
-          </label>
-          {/* Selected People Chips with data-testid for tests */}
-          {selectedPeople.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-2">
-              {selectedPeople.map((person) => {
-                const fullName = `${person.firstname} ${person.surname}`;
-                return (
-                  <div
-                    key={person.id}
-                    data-testid="person-chip"
-                    className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800 border border-primary-300"
-                  >
-                    <span>{fullName}</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newIds = form.product_owner_ids.filter((id) => id !== person.id);
-                        handlePeopleChange(newIds);
-                      }}
-                      disabled={isPending}
-                      className="ml-1.5 text-primary-600 hover:text-red-600 focus:outline-none focus:text-red-600 disabled:opacity-50"
-                      aria-label={`Remove ${fullName}`}
-                    >
-                      <span aria-hidden="true">&times;</span>
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          {/* People selection dropdown */}
-          <PeopleMultiSelect
-            id="people"
-            options={peopleOptions}
-            values={form.product_owner_ids}
-            onChange={handlePeopleChange}
-            disabled={isPending}
-            error={errors.product_owner_ids}
-            errorId="people-error"
-            required
-          />
-        </div>
+        {/* People Field - MultiSelectDropdown with search */}
+        <MultiSelectDropdown
+          id="people"
+          label="People"
+          options={peopleOptions}
+          values={form.product_owner_ids}
+          onChange={handlePeopleChange}
+          disabled={isPending}
+          error={errors.product_owner_ids}
+          placeholder="Search and select people..."
+          required
+          searchable
+        />
 
         {/* Notes Field */}
         <div>

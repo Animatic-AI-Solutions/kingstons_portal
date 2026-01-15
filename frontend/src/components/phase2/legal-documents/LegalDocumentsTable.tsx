@@ -135,19 +135,88 @@ const getOwnerNameFromMap = (ownerId: number, ownerMap: Map<number, ProductOwner
 // =============================================================================
 
 /**
- * Product Owner Pill Badge
+ * Product Owner Pill Badge (Green styling)
  */
 interface OwnerPillProps {
   name: string;
 }
 
 const OwnerPill = memo(({ name }: OwnerPillProps) => (
-  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-1 mb-0.5">
+  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mr-1 mb-0.5">
     {name}
   </span>
 ));
 
 OwnerPill.displayName = 'OwnerPill';
+
+/**
+ * Legal Document Status Badge
+ * - Signed: Green (active/valid)
+ * - Registered: Blue (pending/in-progress)
+ * - Lapsed: Gray (inactive/expired)
+ */
+interface LegalDocumentStatusBadgeProps {
+  status: string;
+}
+
+const LegalDocumentStatusBadge = memo(({ status }: LegalDocumentStatusBadgeProps) => {
+  const normalizedStatus = status.toLowerCase();
+
+  let bgColor = 'bg-gray-100';
+  let textColor = 'text-gray-800';
+  let iconColor = 'text-gray-600';
+  let IconComponent: React.FC<{ className?: string }> | null = null;
+
+  switch (normalizedStatus) {
+    case 'signed':
+      bgColor = 'bg-green-100';
+      textColor = 'text-green-800';
+      iconColor = 'text-green-600';
+      // Checkmark icon
+      IconComponent = ({ className }) => (
+        <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd" />
+        </svg>
+      );
+      break;
+    case 'registered':
+      bgColor = 'bg-blue-100';
+      textColor = 'text-blue-800';
+      iconColor = 'text-blue-600';
+      // Document icon
+      IconComponent = ({ className }) => (
+        <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path fillRule="evenodd" d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0 0 16.5 9h-1.875a1.875 1.875 0 0 1-1.875-1.875V5.25A3.75 3.75 0 0 0 9 1.5H5.625ZM7.5 15a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5A.75.75 0 0 1 7.5 15Zm.75 2.25a.75.75 0 0 0 0 1.5H12a.75.75 0 0 0 0-1.5H8.25Z" clipRule="evenodd" />
+          <path d="M12.971 1.816A5.23 5.23 0 0 1 14.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 0 1 3.434 1.279 9.768 9.768 0 0 0-6.963-6.963Z" />
+        </svg>
+      );
+      break;
+    case 'lapsed':
+    default:
+      bgColor = 'bg-gray-100';
+      textColor = 'text-gray-800';
+      iconColor = 'text-gray-600';
+      // X icon
+      IconComponent = ({ className }) => (
+        <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-1.72 6.97a.75.75 0 1 0-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 1 0 1.06 1.06L12 13.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L13.06 12l1.72-1.72a.75.75 0 1 0-1.06-1.06L12 10.94l-1.72-1.72Z" clipRule="evenodd" />
+        </svg>
+      );
+      break;
+  }
+
+  // Capitalize first letter
+  const displayText = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 ${bgColor} ${textColor}`}>
+      {IconComponent && <IconComponent className={`w-4 h-4 ${iconColor}`} />}
+      <span className="text-sm font-medium">{displayText}</span>
+    </span>
+  );
+});
+
+LegalDocumentStatusBadge.displayName = 'LegalDocumentStatusBadge';
 
 /**
  * Product Owners Cell
@@ -177,6 +246,122 @@ const OwnersCell = memo(({ productOwnerIds, ownerMap }: OwnersCellProps) => {
 });
 
 OwnersCell.displayName = 'OwnersCell';
+
+/**
+ * Action Buttons Cell - Memoized to prevent flicker
+ * Only re-renders when its specific props change
+ */
+interface ActionButtonsCellProps {
+  document: LegalDocument;
+  onLapse?: (document: LegalDocument) => void;
+  onReactivate?: (document: LegalDocument) => void;
+  onDelete: (document: LegalDocument) => void;
+  isPending: boolean;
+}
+
+const ActionButtonsCell = memo(({
+  document,
+  onLapse,
+  onReactivate,
+  onDelete,
+  isPending,
+}: ActionButtonsCellProps) => {
+  const docIsLapsed = isDocumentLapsed(document);
+
+  const handleLapse = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onLapse?.(document);
+  }, [document, onLapse]);
+
+  const handleReactivate = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onReactivate?.(document);
+  }, [document, onReactivate]);
+
+  const handleDelete = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete(document);
+  }, [document, onDelete]);
+
+  // Show loading spinner when status change is in progress for this row
+  if (isPending) {
+    return (
+      <div
+        className="flex items-center justify-center"
+        role="status"
+        aria-label="Status change in progress"
+      >
+        <svg
+          className="animate-spin h-5 w-5 text-primary-600"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          />
+        </svg>
+      </div>
+    );
+  }
+
+  if (docIsLapsed) {
+    // Lapsed: Show Reactivate + Delete buttons, NO Lapse button
+    return (
+      <>
+        {onReactivate && (
+          <ReactivateIconButton
+            onClick={handleReactivate}
+            ariaLabel={`Reactivate ${document.type} document`}
+            title={`Reactivate ${document.type} document`}
+          />
+        )}
+        <DeleteIconButton
+          onClick={handleDelete}
+          ariaLabel={`Delete ${document.type} document`}
+          title={`Delete ${document.type} document`}
+        />
+      </>
+    );
+  }
+
+  // Signed/Registered: Show Lapse button only
+  return (
+    <>
+      {onLapse && (
+        <LapseIconButton
+          onClick={handleLapse}
+          ariaLabel={`Lapse ${document.type} document`}
+          title={`Lapse ${document.type} document`}
+        />
+      )}
+    </>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison - only re-render if relevant props change
+  return (
+    prevProps.document.id === nextProps.document.id &&
+    prevProps.document.status === nextProps.document.status &&
+    prevProps.document.type === nextProps.document.type &&
+    prevProps.isPending === nextProps.isPending &&
+    prevProps.onLapse === nextProps.onLapse &&
+    prevProps.onReactivate === nextProps.onReactivate &&
+    prevProps.onDelete === nextProps.onDelete
+  );
+});
+
+ActionButtonsCell.displayName = 'ActionButtonsCell';
 
 // =============================================================================
 // Main Component
@@ -209,6 +394,7 @@ const LegalDocumentsTable: React.FC<LegalDocumentsTableProps> = ({
     () => createOwnerMap(productOwners),
     [productOwners]
   );
+
 
   // Define column configurations for Phase2Table
   const columns: ColumnDef<LegalDocumentTableData>[] = useMemo(() => [
@@ -249,93 +435,26 @@ const LegalDocumentsTable: React.FC<LegalDocumentsTableProps> = ({
     onRowClick?.(row as LegalDocument);
   }, [onRowClick]);
 
-  // Actions renderer for Phase2Table
+  // Actions renderer for Phase2Table - uses memoized ActionButtonsCell to prevent flicker
   const actionsRenderer = useCallback((row: LegalDocumentTableData) => {
     const document = row as LegalDocument;
-    const docIsLapsed = isDocumentLapsed(document);
     const isRowPending = pendingStatusDocumentId === document.id;
 
-    const handleLapse = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      onLapse?.(document);
-    };
-
-    const handleReactivate = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      onReactivate?.(document);
-    };
-
-    const handleDelete = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      onDelete(document);
-    };
-
-    // Show loading spinner when status change is in progress for this row
-    if (isRowPending) {
-      return (
-        <div
-          className="flex items-center justify-center"
-          role="status"
-          aria-label="Status change in progress"
-        >
-          <svg
-            className="animate-spin h-5 w-5 text-primary-600"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            />
-          </svg>
-        </div>
-      );
-    }
-
-    if (docIsLapsed) {
-      // Lapsed: Show Reactivate + Delete buttons, NO Lapse button
-      return (
-        <>
-          {onReactivate && (
-            <ReactivateIconButton
-              onClick={handleReactivate}
-              ariaLabel={`Reactivate ${document.type} document`}
-              title={`Reactivate ${document.type} document`}
-            />
-          )}
-          <DeleteIconButton
-            onClick={handleDelete}
-            ariaLabel={`Delete ${document.type} document`}
-            title={`Delete ${document.type} document`}
-          />
-        </>
-      );
-    }
-
-    // Signed/Registered: Show Lapse button only
     return (
-      <>
-        {onLapse && (
-          <LapseIconButton
-            onClick={handleLapse}
-            ariaLabel={`Lapse ${document.type} document`}
-            title={`Lapse ${document.type} document`}
-          />
-        )}
-      </>
+      <ActionButtonsCell
+        document={document}
+        onLapse={onLapse}
+        onReactivate={onReactivate}
+        onDelete={onDelete}
+        isPending={isRowPending}
+      />
     );
   }, [onLapse, onReactivate, onDelete, pendingStatusDocumentId]);
+
+  // Custom status renderer for legal document statuses (Signed=green, Registered=blue, Lapsed=gray)
+  const statusRenderer = useCallback((row: LegalDocumentTableData) => {
+    return <LegalDocumentStatusBadge status={row.status} />;
+  }, []);
 
   return (
     <>
@@ -349,8 +468,9 @@ const LegalDocumentsTable: React.FC<LegalDocumentsTableProps> = ({
         <div className="mb-2 flex justify-end">
           <AddButton
             onClick={onAdd}
-            design="minimal"
+            design="descriptive"
             size="sm"
+            context="Legal Document"
             aria-label="Add Legal Document"
           />
         </div>
@@ -369,6 +489,7 @@ const LegalDocumentsTable: React.FC<LegalDocumentsTableProps> = ({
         emptySubMessage="No documents have been added yet. Add a document to get started."
         onSort={handleSort}
         isRowInactive={checkIsRowInactive}
+        statusRenderer={statusRenderer}
       />
     </>
   );

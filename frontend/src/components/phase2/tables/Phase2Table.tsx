@@ -101,6 +101,8 @@ export interface Phase2TableProps<T extends Phase2TableData> {
   onSort?: (data: T[], sortConfig: SortConfig | null) => T[];
   /** Optional custom function to determine if a row is inactive (greyed out) */
   isRowInactive?: (row: T) => boolean;
+  /** Optional custom status renderer (overrides default StatusBadge) */
+  statusRenderer?: (row: T) => ReactNode;
 }
 
 /**
@@ -182,6 +184,7 @@ interface TableRowProps<T extends Phase2TableData> {
   actionsRenderer?: ActionsRenderer<T>;
   onRefetch?: () => void;
   isRowInactive?: (row: T) => boolean;
+  statusRenderer?: (row: T) => ReactNode;
 }
 
 const TableRow = memo(<T extends Phase2TableData>({
@@ -191,6 +194,7 @@ const TableRow = memo(<T extends Phase2TableData>({
   actionsRenderer,
   onRefetch,
   isRowInactive: customIsRowInactive,
+  statusRenderer,
 }: TableRowProps<T>) => {
   // Use custom inactive check if provided, otherwise use default status-based check
   const inactive = customIsRowInactive ? customIsRowInactive(row) : isInactive(row.status);
@@ -224,9 +228,9 @@ const TableRow = memo(<T extends Phase2TableData>({
         </td>
       ))}
 
-      {/* Status Column - Always included */}
+      {/* Status Column - Always included (custom renderer or default StatusBadge) */}
       <td className="px-2 py-0.5 whitespace-nowrap text-center text-base">
-        <StatusBadge status={row.status} />
+        {statusRenderer ? statusRenderer(row) : <StatusBadge status={row.status} />}
       </td>
 
       {/* Actions Column - Always included */}
@@ -329,6 +333,7 @@ function Phase2Table<T extends Phase2TableData>({
   onAnnounce,
   onSort: customSort,
   isRowInactive,
+  statusRenderer,
 }: Phase2TableProps<T>) {
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
 
@@ -523,6 +528,7 @@ function Phase2Table<T extends Phase2TableData>({
                   actionsRenderer={actionsRenderer}
                   onRefetch={onRefetch}
                   isRowInactive={isRowInactive}
+                  statusRenderer={statusRenderer}
                 />
               ))}
             </tbody>

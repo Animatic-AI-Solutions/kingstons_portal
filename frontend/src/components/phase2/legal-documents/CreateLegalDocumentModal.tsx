@@ -22,6 +22,8 @@ import toast from 'react-hot-toast';
 import {
   ModalShell,
   TextArea,
+  ComboDropdown,
+  MultiSelectDropdown,
 } from '@/components/ui';
 import { useCreateLegalDocument } from '@/hooks/useLegalDocuments';
 import type {
@@ -32,11 +34,8 @@ import { LEGAL_DOCUMENT_TYPES } from '@/types/legalDocument';
 import {
   NOTES_MAX_LENGTH,
   NOTES_WARNING_THRESHOLD,
-  TYPE_MAX_LENGTH,
   sanitizeErrorMessage,
-  PeopleMultiSelect,
 } from './shared';
-import type { PeopleMultiSelectOption } from './shared';
 
 // =============================================================================
 // Types
@@ -109,195 +108,6 @@ function isFormDirty(form: FormState): boolean {
     form.notes !== ''
   );
 }
-
-// =============================================================================
-// Type Dropdown Component (inline for test compatibility)
-// =============================================================================
-
-interface TypeDropdownProps {
-  id: string;
-  value: string;
-  onChange: (value: string) => void;
-  disabled?: boolean;
-  error?: string;
-  errorId?: string;
-}
-
-/**
- * Dropdown for selecting document type with custom entry support
- * Uses combobox role and option roles for accessibility tests
- */
-const TypeDropdown: React.FC<TypeDropdownProps> = ({
-  id,
-  value,
-  onChange,
-  disabled = false,
-  error,
-  errorId,
-}) => {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const [focusedIndex, setFocusedIndex] = React.useState(-1);
-  const dropdownRef = React.useRef<HTMLDivElement>(null);
-  const inputRef = React.useRef<HTMLInputElement>(null);
-  const listRef = React.useRef<HTMLUListElement>(null);
-
-  // Close on outside click - use mousedown to allow click on options to complete
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-        setFocusedIndex(-1);
-      }
-    };
-
-    if (isOpen) {
-      // Use mousedown instead of click to avoid race conditions
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
-
-  // Scroll focused option into view
-  React.useEffect(() => {
-    if (isOpen && focusedIndex >= 0 && listRef.current) {
-      const focusedElement = listRef.current.children[focusedIndex] as HTMLElement;
-      if (focusedElement && typeof focusedElement.scrollIntoView === 'function') {
-        focusedElement.scrollIntoView({ block: 'nearest' });
-      }
-    }
-  }, [focusedIndex, isOpen]);
-
-  const handleSelect = (optionValue: string) => {
-    onChange(optionValue);
-    setIsOpen(false);
-    setFocusedIndex(-1);
-    inputRef.current?.focus();
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
-    // Keep dropdown open while typing for filtering (if desired in future)
-  };
-
-  const handleInputClick = () => {
-    if (!disabled) {
-      setIsOpen(true);
-      setFocusedIndex(0);
-    }
-  };
-
-  const handleInputFocus = () => {
-    if (!disabled) {
-      setIsOpen(true);
-      setFocusedIndex(0);
-    }
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (disabled) return;
-
-    switch (event.key) {
-      case 'ArrowDown':
-        event.preventDefault();
-        if (!isOpen) {
-          setIsOpen(true);
-          setFocusedIndex(0);
-        } else {
-          setFocusedIndex((prev) =>
-            prev < LEGAL_DOCUMENT_TYPES.length - 1 ? prev + 1 : prev
-          );
-        }
-        break;
-
-      case 'ArrowUp':
-        event.preventDefault();
-        if (isOpen) {
-          setFocusedIndex((prev) => (prev > 0 ? prev - 1 : 0));
-        }
-        break;
-
-      case 'Enter':
-        event.preventDefault();
-        if (isOpen && focusedIndex >= 0 && focusedIndex < LEGAL_DOCUMENT_TYPES.length) {
-          handleSelect(LEGAL_DOCUMENT_TYPES[focusedIndex]);
-        }
-        break;
-
-      case 'Escape':
-        event.preventDefault();
-        setIsOpen(false);
-        setFocusedIndex(-1);
-        break;
-
-      default:
-        break;
-    }
-  };
-
-  return (
-    <div ref={dropdownRef} className="relative">
-      <input
-        type="text"
-        id={id}
-        ref={inputRef}
-        value={value}
-        onChange={handleInputChange}
-        onClick={handleInputClick}
-        onFocus={handleInputFocus}
-        onKeyDown={handleKeyDown}
-        disabled={disabled}
-        autoFocus
-        tabIndex={0}
-        maxLength={TYPE_MAX_LENGTH}
-        role="combobox"
-        aria-expanded={isOpen}
-        aria-haspopup="listbox"
-        aria-controls={`${id}-listbox`}
-        aria-required="true"
-        aria-describedby={error && errorId ? errorId : undefined}
-        aria-invalid={error ? 'true' : undefined}
-        className={`block w-full border rounded-md shadow-sm px-3 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-offset-2 ${
-          error
-            ? 'border-red-500 focus:border-red-600 focus:ring-red-500/10'
-            : 'border-gray-300 focus:border-primary-700 focus:ring-primary-700/10'
-        } ${disabled ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'}`}
-        placeholder="Select or enter a type..."
-      />
-      {isOpen && (
-        <ul
-          ref={listRef}
-          id={`${id}-listbox`}
-          role="listbox"
-          className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
-        >
-          {LEGAL_DOCUMENT_TYPES.map((type, index) => (
-            <li
-              key={type}
-              role="option"
-              aria-selected={index === focusedIndex}
-              onClick={() => handleSelect(type)}
-              onMouseEnter={() => setFocusedIndex(index)}
-              className={`w-full text-left px-4 py-2 text-sm cursor-pointer ${
-                index === focusedIndex
-                  ? 'bg-primary-100 text-primary-900'
-                  : 'hover:bg-primary-50'
-              }`}
-            >
-              {type}
-            </li>
-          ))}
-        </ul>
-      )}
-      {error && errorId && (
-        <p id={errorId} className="mt-1 text-xs text-red-600">
-          {error}
-        </p>
-      )}
-    </div>
-  );
-};
 
 // =============================================================================
 // Component
@@ -383,10 +193,11 @@ const CreateLegalDocumentModal: React.FC<CreateLegalDocumentModalProps> = ({
   // ============================================================
   // Form Change Handlers
   // ============================================================
-  const handleTypeChange = useCallback((value: string) => {
-    setForm((prev) => ({ ...prev, type: value }));
+  const handleTypeChange = useCallback((value: string | number) => {
+    const strValue = String(value);
+    setForm((prev) => ({ ...prev, type: strValue }));
     // Clear error when user enters a value
-    if (value && value.trim() !== '') {
+    if (strValue && strValue.trim() !== '') {
       setErrors((prev) => {
         const { type, ...rest } = prev;
         return rest;
@@ -394,10 +205,12 @@ const CreateLegalDocumentModal: React.FC<CreateLegalDocumentModalProps> = ({
     }
   }, []);
 
-  const handlePeopleChange = useCallback((values: number[]) => {
-    setForm((prev) => ({ ...prev, product_owner_ids: values }));
+  const handlePeopleChange = useCallback((values: (string | number)[]) => {
+    // Filter to only numbers (product owner IDs)
+    const numericValues = values.filter((v): v is number => typeof v === 'number');
+    setForm((prev) => ({ ...prev, product_owner_ids: numericValues }));
     // Clear error when user selects someone
-    if (values.length > 0) {
+    if (numericValues.length > 0) {
       setErrors((prev) => {
         const { product_owner_ids, ...rest } = prev;
         return rest;
@@ -451,20 +264,22 @@ const CreateLegalDocumentModal: React.FC<CreateLegalDocumentModalProps> = ({
   // ============================================================
   // Computed Values
   // ============================================================
-  const peopleOptions: PeopleMultiSelectOption[] = useMemo(
+  const typeOptions = useMemo(
+    () =>
+      LEGAL_DOCUMENT_TYPES.map((type) => ({
+        value: type,
+        label: type,
+      })),
+    []
+  );
+
+  const peopleOptions = useMemo(
     () =>
       productOwners.map((po) => ({
         value: po.id,
         label: `${po.firstname} ${po.surname}`,
       })),
     [productOwners]
-  );
-
-  // Get selected people for display
-  const selectedPeople = useMemo(
-    () =>
-      productOwners.filter((po) => form.product_owner_ids.includes(po.id)),
-    [productOwners, form.product_owner_ids]
   );
 
   // Character count styling
@@ -505,22 +320,21 @@ const CreateLegalDocumentModal: React.FC<CreateLegalDocumentModalProps> = ({
           </div>
         )}
 
-        {/* Type Field - custom dropdown with text input for custom types */}
-        <div>
-          <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
-            Type
-          </label>
-          <TypeDropdown
-            id="type"
-            value={form.type}
-            onChange={handleTypeChange}
-            disabled={isPending}
-            error={errors.type}
-            errorId="type-error"
-          />
-        </div>
+        {/* Type Field - ComboDropdown allows custom values */}
+        <ComboDropdown
+          id="type"
+          label="Type"
+          options={typeOptions}
+          value={form.type}
+          onChange={handleTypeChange}
+          disabled={isPending}
+          error={errors.type}
+          placeholder="Select or type a document type..."
+          required
+          allowCustomValue
+        />
 
-        {/* Document Date Field - native date input for test compatibility */}
+        {/* Document Date Field */}
         <div>
           <label htmlFor="document-date" className="block text-sm font-medium text-gray-700 mb-1">
             Document Date
@@ -531,58 +345,23 @@ const CreateLegalDocumentModal: React.FC<CreateLegalDocumentModalProps> = ({
             value={form.document_date}
             onChange={(e) => setForm((prev) => ({ ...prev, document_date: e.target.value }))}
             disabled={isPending}
-            tabIndex={0}
             className="block w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-offset-2 focus:border-primary-700 focus:ring-primary-700/10 disabled:bg-gray-50 disabled:cursor-not-allowed"
           />
         </div>
 
-
-        {/* People Field - custom rendering for test compatibility */}
-        <div>
-          <label htmlFor="people" className="block text-sm font-medium text-gray-700 mb-1">
-            People
-          </label>
-          {/* Selected People Chips with data-testid for tests */}
-          {selectedPeople.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-2">
-              {selectedPeople.map((person) => {
-                const fullName = `${person.firstname} ${person.surname}`;
-                return (
-                  <div
-                    key={person.id}
-                    data-testid="person-chip"
-                    className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800 border border-primary-300"
-                  >
-                    <span>{fullName}</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newIds = form.product_owner_ids.filter((id) => id !== person.id);
-                        handlePeopleChange(newIds);
-                      }}
-                      disabled={isPending}
-                      className="ml-1.5 text-primary-600 hover:text-red-600 focus:outline-none focus:text-red-600 disabled:opacity-50"
-                      aria-label={`Remove ${fullName}`}
-                    >
-                      <span aria-hidden="true">&times;</span>
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          {/* People selection dropdown */}
-          <PeopleMultiSelect
-            id="people"
-            options={peopleOptions}
-            values={form.product_owner_ids}
-            onChange={handlePeopleChange}
-            disabled={isPending}
-            error={errors.product_owner_ids}
-            errorId="people-error"
-            required
-          />
-        </div>
+        {/* People Field - MultiSelectDropdown with search */}
+        <MultiSelectDropdown
+          id="people"
+          label="People"
+          options={peopleOptions}
+          values={form.product_owner_ids}
+          onChange={handlePeopleChange}
+          disabled={isPending}
+          error={errors.product_owner_ids}
+          placeholder="Search and select people..."
+          required
+          searchable
+        />
 
         {/* Notes Field */}
         <div>
