@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   UserGroupIcon,
   UsersIcon,
@@ -9,6 +9,8 @@ import {
 import PeopleSubTab from './components/PeopleSubTab';
 import SpecialRelationshipsWrapper from './components/SpecialRelationshipsWrapper';
 import { HealthVulnerabilityTab } from '@/components/phase2/health-vulnerabilities';
+import { LegalDocumentsContainer } from '@/components/phase2/legal-documents';
+import { useProductOwners } from '@/hooks/useProductOwners';
 
 interface BasicDetailsTabProps {
   clientGroupId: string;
@@ -26,6 +28,16 @@ interface BasicDetailsTabProps {
  */
 const BasicDetailsTab: React.FC<BasicDetailsTabProps> = ({ clientGroupId }) => {
   const [activeSubTab, setActiveSubTab] = useState('people');
+
+  // Parse clientGroupId to number for API calls
+  const clientGroupIdNumber = useMemo<number | null>(() => {
+    if (!clientGroupId) return null;
+    const parsed = parseInt(clientGroupId, 10);
+    return isNaN(parsed) ? null : parsed;
+  }, [clientGroupId]);
+
+  // Fetch product owners for Legal Documents tab
+  const { data: productOwners } = useProductOwners(clientGroupIdNumber);
 
   // Sub-tabs configuration
   const subTabs = [
@@ -56,12 +68,16 @@ const BasicDetailsTab: React.FC<BasicDetailsTabProps> = ({ clientGroupId }) => {
       case 'documents':
         return (
           <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">Legal Documents content coming soon</p>
-              <p className="text-gray-400 text-sm mt-2">
-                Wills, LPOAs, and other legal documents
-              </p>
-            </div>
+            {clientGroupIdNumber ? (
+              <LegalDocumentsContainer
+                clientGroupId={clientGroupIdNumber}
+                productOwners={productOwners || []}
+              />
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-500 text-lg">Invalid client group</p>
+              </div>
+            )}
           </div>
         );
       case 'risk':

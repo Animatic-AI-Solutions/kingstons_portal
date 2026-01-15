@@ -1,3 +1,1 @@
-we need to change how registered/signed/lapsed works
-
-LPOAs
+ok there ar a few issues, are you using the searchable multi seelct for the people input, when i open the add modal it automatically opens the documeent tpe dropdown, when i cloick escape it closes the modal not the dropdown menu, the sttis puill for signed shouidl be green and the pills for people shoudl be green aswell, the tabel flickers when I press one of the icons int he actions column, i dont think you used the resuable components in ui for the ipnuts in the create/edit modals, you shoudl use the combo dropwdown, also docuement tpe are not strict as the user can enter in their own type so we are not limited to the preselected types, resgistered shoudl have a blue status pill
