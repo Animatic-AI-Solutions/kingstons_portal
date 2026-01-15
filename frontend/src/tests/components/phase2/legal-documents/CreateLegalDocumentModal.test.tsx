@@ -314,7 +314,7 @@ describe('CreateLegalDocumentModal Component', () => {
 
       // Should show validation error
       await waitFor(() => {
-        expect(screen.getByText(/at least one person must be selected/i)).toBeInTheDocument();
+        expect(screen.getByText(/at least one product owner is required/i)).toBeInTheDocument();
       });
     });
 

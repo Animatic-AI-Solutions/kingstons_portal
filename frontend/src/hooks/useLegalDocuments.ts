@@ -275,9 +275,16 @@ export function useLegalDocuments(
   clientGroupId: number | null | undefined,
   options?: UseLegalDocumentsOptions
 ) {
+  const filters = options?.filters;
   return useQuery({
-    queryKey: legalDocumentsKeys.byClientGroup(clientGroupId || 0, options?.filters),
-    queryFn: () => fetchLegalDocumentsByClientGroup(clientGroupId!, options?.filters),
+    queryKey: legalDocumentsKeys.byClientGroup(clientGroupId || 0, filters),
+    queryFn: () => {
+      // Only pass filters if defined to match test expectations
+      if (filters) {
+        return fetchLegalDocumentsByClientGroup(clientGroupId!, filters);
+      }
+      return fetchLegalDocumentsByClientGroup(clientGroupId!);
+    },
     enabled: !!clientGroupId,
     staleTime: STALE_TIME,
     gcTime: GC_TIME,

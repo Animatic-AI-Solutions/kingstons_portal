@@ -373,7 +373,7 @@ const CreateLegalDocumentModal: React.FC<CreateLegalDocumentModalProps> = ({
     }
 
     if (form.product_owner_ids.length === 0) {
-      newErrors.product_owner_ids = 'At least one person must be selected';
+      newErrors.product_owner_ids = 'At least one product owner is required';
     }
 
     setErrors(newErrors);
@@ -520,14 +520,14 @@ const CreateLegalDocumentModal: React.FC<CreateLegalDocumentModalProps> = ({
           />
         </div>
 
-        {/* Date Field - native date input for test compatibility */}
+        {/* Document Date Field - native date input for test compatibility */}
         <div>
-          <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
-            Date
+          <label htmlFor="document-date" className="block text-sm font-medium text-gray-700 mb-1">
+            Document Date
           </label>
           <input
             type="date"
-            id="date"
+            id="document-date"
             value={form.document_date}
             onChange={(e) => setForm((prev) => ({ ...prev, document_date: e.target.value }))}
             disabled={isPending}
@@ -535,6 +535,7 @@ const CreateLegalDocumentModal: React.FC<CreateLegalDocumentModalProps> = ({
             className="block w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-offset-2 focus:border-primary-700 focus:ring-primary-700/10 disabled:bg-gray-50 disabled:cursor-not-allowed"
           />
         </div>
+
 
         {/* People Field - custom rendering for test compatibility */}
         <div>

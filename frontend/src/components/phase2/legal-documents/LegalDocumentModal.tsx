@@ -62,8 +62,8 @@ export interface LegalDocumentModalProps {
   isOpen: boolean;
   /** Callback when modal should close */
   onClose: () => void;
-  /** Document to edit */
-  document: LegalDocument;
+  /** Document to edit (null when modal is closed for unified mounting) */
+  document: LegalDocument | null;
   /** Available product owners for selection */
   productOwners: ProductOwner[];
   /** Callback invoked after successful save */
@@ -94,9 +94,21 @@ interface FormErrors {
 // =============================================================================
 
 /**
+ * Default empty form state for when document is null
+ */
+const EMPTY_FORM_STATE: FormState = {
+  type: '',
+  status: 'Signed',
+  document_date: '',
+  product_owner_ids: [],
+  notes: '',
+};
+
+/**
  * Initialize form state from document
  */
-function initFormState(doc: LegalDocument): FormState {
+function initFormState(doc: LegalDocument | null): FormState {
+  if (!doc) return EMPTY_FORM_STATE;
   return {
     type: doc.type,
     status: doc.status,
@@ -121,8 +133,10 @@ function arraysEqual(a: number[], b: number[]): boolean {
  */
 function getChangedFields(
   form: FormState,
-  original: LegalDocument
+  original: LegalDocument | null
 ): UpdateLegalDocumentData | null {
+  if (!original) return null;
+
   const changes: UpdateLegalDocumentData = {};
 
   if (form.type !== original.type) {
@@ -153,7 +167,8 @@ function getChangedFields(
 /**
  * Check if form has been modified from original state
  */
-function isFormDirty(form: FormState, original: LegalDocument): boolean {
+function isFormDirty(form: FormState, original: LegalDocument | null): boolean {
+  if (!original) return false;
   return getChangedFields(form, original) !== null;
 }
 
@@ -227,7 +242,7 @@ const LegalDocumentModal: React.FC<LegalDocumentModalProps> = ({
     }
 
     if (form.product_owner_ids.length === 0) {
-      newErrors.product_owner_ids = 'At least one person must be selected';
+      newErrors.product_owner_ids = 'At least one product owner is required';
     }
 
     setErrors(newErrors);
@@ -272,6 +287,9 @@ const LegalDocumentModal: React.FC<LegalDocumentModalProps> = ({
   // Submit Handler
   // ============================================================
   const handleSubmit = useCallback(async () => {
+    // Guard against null document (shouldn't happen when modal is open)
+    if (!document) return;
+
     setApiError(null);
 
     // Validate form

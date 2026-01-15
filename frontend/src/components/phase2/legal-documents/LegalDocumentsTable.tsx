@@ -28,6 +28,7 @@ import {
   LapseIconButton,
   ReactivateIconButton,
   DeleteIconButton,
+  AddButton,
 } from '@/components/ui';
 import type { LegalDocument } from '@/types/legalDocument';
 import { isDocumentLapsed } from '@/types/legalDocument';
@@ -69,6 +70,8 @@ export interface LegalDocumentsTableProps {
   onRetry?: () => void;
   /** Status announcement for ARIA live region */
   statusAnnouncement?: string;
+  /** Document ID currently having a status change operation (shows loading indicator) */
+  pendingStatusDocumentId?: number | null;
 }
 
 // =============================================================================
@@ -76,7 +79,7 @@ export interface LegalDocumentsTableProps {
 // =============================================================================
 
 /**
- * Format a document date to dd/MM/yyyy
+ * Format a document date to dd/MM/yyyy format (e.g., "15/01/2024")
  * Returns '-' for null or invalid dates
  */
 const formatDocumentDate = (dateString: string | null): string => {
@@ -199,6 +202,7 @@ const LegalDocumentsTable: React.FC<LegalDocumentsTableProps> = ({
   error = null,
   onRetry,
   statusAnnouncement,
+  pendingStatusDocumentId = null,
 }) => {
   // Create owner map for O(1) lookup instead of O(n) .find() calls
   const ownerMap = useMemo(
@@ -249,6 +253,7 @@ const LegalDocumentsTable: React.FC<LegalDocumentsTableProps> = ({
   const actionsRenderer = useCallback((row: LegalDocumentTableData) => {
     const document = row as LegalDocument;
     const docIsLapsed = isDocumentLapsed(document);
+    const isRowPending = pendingStatusDocumentId === document.id;
 
     const handleLapse = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -264,6 +269,39 @@ const LegalDocumentsTable: React.FC<LegalDocumentsTableProps> = ({
       e.stopPropagation();
       onDelete(document);
     };
+
+    // Show loading spinner when status change is in progress for this row
+    if (isRowPending) {
+      return (
+        <div
+          className="flex items-center justify-center"
+          role="status"
+          aria-label="Status change in progress"
+        >
+          <svg
+            className="animate-spin h-5 w-5 text-primary-600"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
+        </div>
+      );
+    }
 
     if (docIsLapsed) {
       // Lapsed: Show Reactivate + Delete buttons, NO Lapse button
@@ -297,13 +335,7 @@ const LegalDocumentsTable: React.FC<LegalDocumentsTableProps> = ({
         )}
       </>
     );
-  }, [onLapse, onReactivate, onDelete]);
-
-  // Add button config
-  const addButtonConfig = onAdd ? {
-    label: 'Legal Document',
-    onClick: onAdd,
-  } : undefined;
+  }, [onLapse, onReactivate, onDelete, pendingStatusDocumentId]);
 
   return (
     <>
@@ -311,6 +343,18 @@ const LegalDocumentsTable: React.FC<LegalDocumentsTableProps> = ({
       <div role="status" aria-live="polite" className="sr-only">
         {statusAnnouncement}
       </div>
+
+      {/* Custom Add button with specific aria-label to match integration tests */}
+      {onAdd && (
+        <div className="mb-2 flex justify-end">
+          <AddButton
+            onClick={onAdd}
+            design="minimal"
+            size="sm"
+            aria-label="Add Legal Document"
+          />
+        </div>
+      )}
 
       <Phase2Table<LegalDocumentTableData>
         data={documents as LegalDocumentTableData[]}
@@ -320,7 +364,6 @@ const LegalDocumentsTable: React.FC<LegalDocumentsTableProps> = ({
         onRetry={onRetry}
         onRowClick={onRowClick ? handleRowClick : undefined}
         actionsRenderer={actionsRenderer}
-        addButton={addButtonConfig}
         ariaLabel="Legal documents table"
         emptyMessage="No Legal Documents"
         emptySubMessage="No documents have been added yet. Add a document to get started."

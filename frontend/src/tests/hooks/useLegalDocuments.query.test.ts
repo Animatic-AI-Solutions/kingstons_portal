@@ -162,8 +162,7 @@ describe('Legal Documents Query Hook', () => {
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
       expect(mockedApi.fetchLegalDocumentsByClientGroup).toHaveBeenCalledWith(
-        clientGroupId,
-        undefined
+        clientGroupId
       );
       expect(result.current.data).toEqual(sampleDocuments);
       expect(result.current.data).toHaveLength(2);
@@ -328,8 +327,8 @@ describe('Legal Documents Query Hook', () => {
       await waitFor(() => expect(result2.current.isSuccess).toBe(true));
 
       // Both should have been called
-      expect(mockedApi.fetchLegalDocumentsByClientGroup).toHaveBeenCalledWith(50, undefined);
-      expect(mockedApi.fetchLegalDocumentsByClientGroup).toHaveBeenCalledWith(51, undefined);
+      expect(mockedApi.fetchLegalDocumentsByClientGroup).toHaveBeenCalledWith(50);
+      expect(mockedApi.fetchLegalDocumentsByClientGroup).toHaveBeenCalledWith(51);
       expect(mockedApi.fetchLegalDocumentsByClientGroup).toHaveBeenCalledTimes(2);
     });
 

@@ -4,6 +4,9 @@
  * Phase 2 components for managing legal documents (Wills, LPOAs, EPAs, etc.)
  */
 
+export { default as LegalDocumentsContainer } from './LegalDocumentsContainer';
+export type { LegalDocumentsContainerProps } from './LegalDocumentsContainer';
+
 export { default as LegalDocumentsTable } from './LegalDocumentsTable';
 export type { LegalDocumentsTableProps } from './LegalDocumentsTable';
 
